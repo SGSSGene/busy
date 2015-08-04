@@ -1,6 +1,8 @@
 #include "Workspace.h"
 
 #include <memory>
+#include <stdio.h>
+
 #include "utils.h"
 #include "git.h"
 #include "estd.h"
@@ -207,7 +209,20 @@ int main(int argc, char** argv) {
 			}
 			std::cout<<"ran "<<allTests.size()<<" test(s)"<<std::endl;
 			std::cout<<"===Ended testing==="<<std::endl;
+		} else if (argc == 2 && std::string(argv[1]) == "install") {
+			auto allFiles = utils::listFiles("./bin/");
+			for (auto const& f : allFiles) {
+				std::cout<<"installing "<<f<<"; Error Code: ";
+				auto oldFile = std::string("./bin/")+f;
+				auto newFile = std::string("/usr/bin/")+f;
+				auto cpFile  = std::string("cp ")+newFile+" "+oldFile;
+				auto error = rename(oldFile.c_str(), newFile.c_str());
+				std::cout<<error<<std::endl;
+				system(cpFile.c_str());
+
+			}
 		}
+
 
 	} catch(std::exception const& e) {
 		std::cerr<<"exception: "<<e.what()<<std::endl;
