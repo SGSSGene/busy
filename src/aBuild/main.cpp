@@ -170,7 +170,16 @@ int main(int argc, char** argv) {
 					git::pull();
 				}
 			}
+		} else if (argc == 2 && std::string(argv[1]) == "push") {
+			auto allPackages = utils::listDirs("./packages", true);
+			//!TODO This should be done in parallel
+			for (auto const& s : allPackages) {
+				auto file = std::string("./packages/") + s;
+				utils::Cwd cwd(file);
+				git::push();
+			}
 		}
+
 	} catch(std::exception const& e) {
 		std::cerr<<"exception: "<<e.what()<<std::endl;
 	}

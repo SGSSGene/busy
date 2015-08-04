@@ -12,6 +12,10 @@ inline void pull() {
 	std::string call = std::string("git pull");
 	system(call.c_str());
 }
+inline void push() {
+	std::string call = std::string("git push");
+	system(call.c_str());
+}
 inline bool isDirty() {
 	utils::rm("abuild_dirty", false, true);
 	std::string call = "test -n \"$(git status --porcelain)\" && (echo \"dirty\" > abuild_dirty)";

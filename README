@@ -37,6 +37,5 @@ Progress:
 • "including" dep ext dependencies (using own namespace, so there can be meta packages)
 • tests
 • status (which also shows unpushed changes)
-• push   (which pushes all sub repositories)
 == Functions ==
 
