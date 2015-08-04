@@ -158,7 +158,7 @@ int main(int argc, char** argv) {
 
 			graph.visitAllNodes();
 
-		} else if (argc == 2 && std::string(argv[1]) == "update") {
+		} else if (argc == 2 && std::string(argv[1]) == "pull") {
 			auto allPackages = utils::listDirs("./packages", true);
 			//!TODO This should be done in parallel
 			for (auto const& s : allPackages) {
