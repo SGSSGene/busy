@@ -171,6 +171,7 @@ namespace utils {
 		}
 		return returnString;
 	}
+
 	int64_t getFileModificationTime(std::string const& _file) {
 		if (not fileExists(_file)) return 0;
 		struct stat buf;

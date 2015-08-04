@@ -83,7 +83,13 @@ int main(int argc, char** argv) {
 //				std::cout<<call<<std::endl;
 			};
 			std::function<void(Project*)> linkingExecFunc = [&graph](Project* project) {
-				std::string call = "ccache clang++ -o "+project->getName();
+				utils::mkdir("bin");
+				utils::mkdir("bin/tests");
+				std::string outFile = std::string("bin/")+project->getName();
+				if (utils::isStartingWith(project->getName(), "test")) {
+					outFile = std::string("bin/tests/")+project->getName();
+				}
+				std::string call = "ccache clang++ -o "+outFile;
 				// Get file dependencies
 				{
 					auto ingoing = graph.getIngoing<std::string, Project>(project, false);

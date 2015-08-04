@@ -2,6 +2,7 @@
 #define EASYBUILD_UTILS_H
 
 #include <functional>
+#include <map>
 #include <string>
 #include <vector>
 
