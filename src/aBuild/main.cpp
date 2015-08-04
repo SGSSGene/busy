@@ -123,6 +123,9 @@ int main(int argc, char** argv) {
 					for (auto const& i : project->getLegacy().includes) {
 						call += " -I "+project->getPackagePath()+"/"+i;
 					}
+					call += " -I "+project->getPackagePath()+"/src/"+project->getPath();
+					call += " -I "+project->getPackagePath()+"/src/";
+
 					auto ingoing = graph.getIngoing<Project, Project>(project, true);
 					for (auto const& f : ingoing) {
 						call += " -isystem "+f->getPackagePath()+"/src";
