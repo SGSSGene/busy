@@ -90,6 +90,11 @@ int main(int argc, char** argv) {
 					outFile = std::string("bin/tests/")+project->getName();
 				}
 				std::string call = "ccache clang++ -o "+outFile;
+
+				// Set all depLibraries libraries
+				for (auto const& l : project->getDepLibraries()) {
+					call += " -l"+l;
+				}
 				// Get file dependencies
 				{
 					auto ingoing = graph.getIngoing<std::string, Project>(project, false);
@@ -102,10 +107,17 @@ int main(int argc, char** argv) {
 					auto outgoing = graph.getIngoing<Project, Project>(project, true);
 					for (auto const& f : outgoing) {
 						call += " .aBuild/lib/"+f->getName()+".a";
+
+						// Set all depLibraries libraries
+						for (auto const& l : f->getDepLibraries()) {
+							call += " -l"+l;
+						}
+
 					}
 				}
-				utils::runProcess(call);
 //				std::cout<<call<<std::endl;
+				utils::runProcess(call);
+
 			};
 
 			std::function<void(std::string*)> compileFileFunc = [&graph](std::string* f) {

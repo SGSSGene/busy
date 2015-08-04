@@ -6,6 +6,7 @@
 namespace aBuild {
 
 	using Dependencies = std::vector<std::string>;
+	using DepLibraries = std::vector<std::string>;
 
 	struct ProjectLegacy {
 		std::vector<std::string> includes;
@@ -21,6 +22,7 @@ namespace aBuild {
 		std::string  path;
 		std::string  packagePath;
 		Dependencies dependencies;
+		DepLibraries depLibraries;
 		std::string  type;
 		mutable std::vector<std::string> cppFiles;
 		ProjectLegacy legacy;
@@ -34,6 +36,7 @@ namespace aBuild {
 			node["dependencies"] % dependencies;
 			node["type"]         % type;
 			node["legacy"]       % legacy;
+			node["depLibraries"] % depLibraries;
 		}
 
 		auto getType() const -> std::string const& {
@@ -57,6 +60,9 @@ namespace aBuild {
 		}
 		auto getDependencies() const -> Dependencies const& {
 			return dependencies;
+		}
+		auto getDepLibraries() const -> DepLibraries const& {
+			return depLibraries;
 		}
 		auto getAllCppFiles() const -> std::vector<std::string> const& {
 			if (cppFiles.empty()) {
