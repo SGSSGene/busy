@@ -1,0 +1,14 @@
+{
+	"extDependencies": [
+		{ "name": "JsonSerializer",
+			"url": "../JsonSerializer.git",
+			"branch": "aBuild"
+		}
+	],
+	"projects": [
+		{ "path": "aBuild",
+		  "dependencies": ["JsonSerializer/jsonSerializer"],
+		  "type": "executable"
+		}
+	]
+}
