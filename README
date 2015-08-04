@@ -29,12 +29,14 @@ Progress:
 
 
 !!TODOs
-• updates(pull) should be done in parallel
+• pull should be done in parallel
 • display dependency tree
 • check if dep-projects can be found
 • loop detection of projects
 • internal dependencies
 • "including" dep ext dependencies (using own namespace, so there can be meta packages)
-
+• tests
+• status (which also shows unpushed changes)
+• push   (which pushes all sub repositories)
 == Functions ==
 
