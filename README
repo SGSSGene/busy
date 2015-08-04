@@ -1,0 +1,40 @@
+== Use cases: ==
+
+(a) // Checkout and build everything
+$ aBuild git@github.com:DemoProject1.git # checksout and builds everything you need
+
+(b) // Rebuild everything
+$ cd DemoProjct1
+$ aBuild <rebuild>
+
+(c) // Update everything
+$ cd DemoProject1
+$ aBuild update
+
+(d) // Test everything
+$ cd DemoProject1
+$ aBuild test
+
+(e) // Create docu
+$ cd DemoProject1
+$ aBuild docu
+
+== Progress ==
+Progress:
+(a) o
+(b) o
+(c) o
+(d) o
+(e) o
+
+
+!!TODOs
+• updates(pull) should be done in parallel
+• display dependency tree
+• check if dep-projects can be found
+• loop detection of projects
+• internal dependencies
+• "including" dep ext dependencies (using own namespace, so there can be meta packages)
+
+== Functions ==
+
