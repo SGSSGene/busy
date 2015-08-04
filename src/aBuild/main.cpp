@@ -45,9 +45,7 @@ static void checkingRequiredPackages(Workspace& ws) {
 	for (auto const& _url : requiredPackages) {
 		PackageURL url {_url};
 		utils::Cwd cwd(url.getPath());
-		if (git::isDirty()) {
-			std::cout<<"ignore " << url.getName() << ": Dirty repository"<<std::endl;
-		} else {
+		if (not git::isDirty()) {
 			if (url.getBranch() != git::getBranch()) {
 				std::cout<<"Changing branch of "<<url.getName()<<std::endl;
 				git::checkout(url.getBranch());
