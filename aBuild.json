@@ -7,8 +7,8 @@
 	],
 	"projects": [
 		{ "path": "aBuild",
-		  "dependencies": ["JsonSerializer/jsonSerializer"],
-		  "type": "executable"
+			"dependencies": ["JsonSerializer/jsonSerializer"],
+			"type": "executable"
 		}
 	]
 }
