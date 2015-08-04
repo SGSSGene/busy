@@ -200,15 +200,12 @@ int main(int argc, char** argv) {
 		} else if (argc == 2 && std::string(argv[1]) == "test") {
 			auto allTests = utils::listFiles("./bin/tests/");
 			std::cout<<"===Start testing==="<<std::endl;
-			std::vector<std::string> failed;
 			for (auto const& t : allTests) {
 				auto p = std::string("./bin/tests/")+t;
-				auto retValue = utils::runProcess(p);
+				system(p.c_str());
 				std::cout<<" • running "<<p<<std::endl;
-				if (not retValue.empty()) {
-					std::cout<<retValue<<std::endl;
-				}
 			}
+			std::cout<<"ran "<<allTests.size()<<" test(s)"<<std::endl;
 			std::cout<<"===Ended testing==="<<std::endl;
 		}
 
