@@ -1,7 +1,7 @@
 {
 	"extDependencies": [
 		{ "name": "JsonSerializer",
-			"url": "../JsonSerializer.git",
+			"url": "../bareRepos/JsonSerializer.git",
 			"branch": "aBuild"
 		}
 	],
