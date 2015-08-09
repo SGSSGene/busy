@@ -3,11 +3,11 @@
 #include <memory>
 #include <stdio.h>
 #include <future>
+#include "BuildAction.h"
 
 #include "utils.h"
 #include "git.h"
 #include "estd.h"
-#include "graph.h"
 
 using namespace aBuild;
 
@@ -61,182 +61,121 @@ static void checkingRequiredPackages(Workspace& ws) {
 	}
 }
 
+
+static void actionDefault() {
+	Workspace ws(".");
+
+	checkingMissingPackages(ws);
+	checkingNotNeededPackages(ws);
+	checkingInvalidPackages(ws);
+	checkingRequiredPackages(ws);
+
+
+	Graph graph;
+
+	auto linkingLibFunc  = BuildAction::getLinkingLibFunc(graph);
+	auto linkingExecFunc = BuildAction::getLinkingExecFunc(graph);
+	auto compileFileFunc = BuildAction::getCompileFileFunc(graph);
+
+	// Create dependency tree
+	auto projects = ws.getAllRequiredProjects();
+	for (auto& e  : projects) {
+		auto& project = e.second;
+		// Adding linking
+		if (project.getType() == "library") {
+			graph.addNode(&project, linkingLibFunc);
+		} else if (project.getType() == "executable") {
+			graph.addNode(&project,  linkingExecFunc);
+		} else {
+			std::cout<<"invalid type: "<<project.getType()<<std::endl;
+		}
+
+
+		// Adding compile files
+		for (auto& f : project.getAllCppFiles()) {
+			graph.addNode(&f, compileFileFunc);
+			graph.addEdge(&f, &project);
+		}
+		for (auto const& dep : project.getDependencies()) {
+			auto l = utils::explode(dep, "/");
+			graph.addEdge(&projects.at(l[1]), &project);
+		}
+	}
+
+	graph.visitAllNodes();
+}
+static void actionTest() {
+	auto allTests = utils::listFiles("./bin/tests/");
+	std::cout<<"===Start testing==="<<std::endl;
+	for (auto const& t : allTests) {
+		auto p = std::string("./bin/tests/")+t;
+		system(p.c_str());
+		std::cout<<" • running "<<p<<std::endl;
+	}
+	std::cout<<"ran "<<allTests.size()<<" test(s)"<<std::endl;
+	std::cout<<"===Ended testing==="<<std::endl;
+}
+static void actionClone(std::string const& _url, std::string const& _dir) {
+	git::clone(_url, "master", _dir);
+	utils::Cwd cwd {_dir};
+	actionDefault();
+	actionTest();
+}
+static void actionPull() {
+	auto allPackages = utils::listDirs("./packages", true);
+	for (auto& p : allPackages) { p = "./packages/"+p; }
+	allPackages.push_back(".");
+
+	utils::runParallel<std::string>(allPackages, [](std::string const& file) {
+		utils::Cwd cwd(file);
+		if (git::isDirty()) {
+			std::cout<<"ignore " << file << ": Dirty repository"<<std::endl;
+		} else {
+			git::pull();
+		}
+	});
+}
+static void actionPush() {
+	auto allPackages = utils::listDirs("./packages", true);
+	for (auto& p : allPackages) { p = "./packages/"+p; }
+	allPackages.push_back(".");
+
+	utils::runParallel<std::string>(allPackages, [](std::string const& file) {
+		utils::Cwd cwd(file);
+		git::push();
+	});
+}
+static void actionInstall() {
+	auto allFiles = utils::listFiles("./bin/");
+	for (auto const& f : allFiles) {
+		std::cout<<"installing "<<f<<"; Error Code: ";
+		auto oldFile = std::string("./bin/")+f;
+		auto newFile = std::string("/usr/bin/")+f;
+		auto cpFile  = std::string("cp ")+newFile+" "+oldFile;
+		auto error = rename(oldFile.c_str(), newFile.c_str());
+		std::cout<<error<<std::endl;
+		system(cpFile.c_str());
+	}
+}
+
 using Action = std::function<void()>;
 
 int main(int argc, char** argv) {
 	try {
 		if (argc == 1) {
-			Workspace ws(".");
-
-			checkingMissingPackages(ws);
-			checkingNotNeededPackages(ws);
-			checkingInvalidPackages(ws);
-			checkingRequiredPackages(ws);
-
-
-			Graph graph;
-
-			std::function<void(Project*)> linkingLibFunc = [&graph](Project* project) {
-				utils::mkdir(".aBuild/lib/");
-				std::string call = "ar rcs .aBuild/lib/"+project->getName()+".a";
-				// Get file dependencies
-				{
-					auto ingoing = graph.getIngoing<std::string, Project>(project, false);
-					for (auto const& f : ingoing) {
-						call += " .aBuild/obj/"+ *f + ".o";
-					}
-				}
-				utils::runProcess(call);
-//				std::cout<<call<<std::endl;
-			};
-			std::function<void(Project*)> linkingExecFunc = [&graph](Project* project) {
-				utils::mkdir("bin");
-				utils::mkdir("bin/tests");
-				std::string outFile = std::string("bin/")+project->getName();
-				if (utils::isStartingWith(project->getName(), "test")) {
-					outFile = std::string("bin/tests/")+project->getName();
-				}
-				std::string call = "ccache clang++ -o "+outFile;
-
-				// Set all depLibraries libraries
-				for (auto const& l : project->getDepLibraries()) {
-					call += " -l"+l;
-				}
-				// Get file dependencies
-				{
-					auto ingoing = graph.getIngoing<std::string, Project>(project, false);
-					for (auto const& f : ingoing) {
-						call += " .aBuild/obj/"+ *f + ".o";
-					}
-				}
-				// Get project dependencies
-				{
-					auto outgoing = graph.getIngoing<Project, Project>(project, true);
-					for (auto const& f : outgoing) {
-						call += " .aBuild/lib/"+f->getName()+".a";
-
-						// Set all depLibraries libraries
-						for (auto const& l : f->getDepLibraries()) {
-							call += " -l"+l;
-						}
-
-					}
-				}
-//				std::cout<<call<<std::endl;
-				utils::runProcess(call);
-
-			};
-
-			std::function<void(std::string*)> compileFileFunc = [&graph](std::string* f) {
-
-				auto l = utils::explode(*f, "/");
-
-				utils::mkdir(".aBuild/obj/" + utils::dirname(*f));
-				std::string call = "ccache clang++ -Qunused-arguments -ggdb -O0 --std=c++11 "
-				                   "-c " + *f + " "
-				                   "-o .aBuild/obj/" + *f + ".o";
-
-				// Get include dependencies
-				{
-					Project* project = *graph.getOutgoing<Project, std::string>(f, false).begin();
-					for (auto const& i : project->getLegacy().includes) {
-						call += " -I "+project->getPackagePath()+"/"+i;
-					}
-					call += " -I "+project->getPackagePath()+"/src/"+project->getPath();
-					call += " -I "+project->getPackagePath()+"/src/";
-
-					auto ingoing = graph.getIngoing<Project, Project>(project, true);
-					for (auto const& f : ingoing) {
-						call += " -isystem "+f->getPackagePath()+"/src";
-						for (auto const& i : f->getLegacy().includes) {
-							call += " -isystem "+f->getPackagePath()+"/"+i;
-						}
-					}
-				}
-				utils::runProcess(call);
-//				std::cout<<call<<std::endl;
-			};
-
-			// Create dependency tree
-			auto projects = ws.getAllRequiredProjects();
-			for (auto& e  : projects) {
-				auto& project = e.second;
-				// Adding linking
-				if (project.getType() == "library") {
-					graph.addNode(&project, linkingLibFunc);
-				} else if (project.getType() == "executable") {
-					graph.addNode(&project,  linkingExecFunc);
-				} else {
-					std::cout<<"invalid type: "<<project.getType()<<std::endl;
-				}
-
-
-				// Adding compile files
-				for (auto& f : project.getAllCppFiles()) {
-					graph.addNode(&f, compileFileFunc);
-					graph.addEdge(&f, &project);
-				}
-				for (auto const& dep : project.getDependencies()) {
-					auto l = utils::explode(dep, "/");
-					graph.addEdge(&projects.at(l[1]), &project);
-				}
-			}
-
-			graph.visitAllNodes();
-		} else if (argc == 4 && std::string(argv[1]) == "clone") {
-			std::string dir = std::string(argv[3]) + "/";
-			git::clone(std::string(argv[2]), "master", dir);
-			utils::Cwd cwd {dir};
-			std::string call = std::string(argv[0]);
-			system(call.c_str());
-			call += " test";
-			system(call.c_str());
-
-		} else if (argc == 2 && std::string(argv[1]) == "pull") {
-			auto allPackages = utils::listDirs("./packages", true);
-			for (auto& p : allPackages) { p = "./packages/"+p; }
-			allPackages.push_back(".");
-
-			utils::runParallel<std::string>(allPackages, [](std::string const& file) {
-				utils::Cwd cwd(file);
-				if (git::isDirty()) {
-					std::cout<<"ignore " << file << ": Dirty repository"<<std::endl;
-				} else {
-					git::pull();
-				}
-			});
-		} else if (argc == 2 && std::string(argv[1]) == "push") {
-			auto allPackages = utils::listDirs("./packages", true);
-			for (auto& p : allPackages) { p = "./packages/"+p; }
-			allPackages.push_back(".");
-
-			utils::runParallel<std::string>(allPackages, [](std::string const& file) {
-				utils::Cwd cwd(file);
-				git::push();
-			});
-
+			actionDefault();
 		} else if (argc == 2 && std::string(argv[1]) == "test") {
-			auto allTests = utils::listFiles("./bin/tests/");
-			std::cout<<"===Start testing==="<<std::endl;
-			for (auto const& t : allTests) {
-				auto p = std::string("./bin/tests/")+t;
-				system(p.c_str());
-				std::cout<<" • running "<<p<<std::endl;
-			}
-			std::cout<<"ran "<<allTests.size()<<" test(s)"<<std::endl;
-			std::cout<<"===Ended testing==="<<std::endl;
+			actionDefault();
+			actionTest();
+		} else if (argc == 4 && std::string(argv[1]) == "clone") {
+			actionClone(std::string(argv[2]), std::string(argv[3]) + "/");
+		} else if (argc == 2 && std::string(argv[1]) == "pull") {
+			actionPull();
+		} else if (argc == 2 && std::string(argv[1]) == "push") {
+			actionPush();
 		} else if (argc == 2 && std::string(argv[1]) == "install") {
-			auto allFiles = utils::listFiles("./bin/");
-			for (auto const& f : allFiles) {
-				std::cout<<"installing "<<f<<"; Error Code: ";
-				auto oldFile = std::string("./bin/")+f;
-				auto newFile = std::string("/usr/bin/")+f;
-				auto cpFile  = std::string("cp ")+newFile+" "+oldFile;
-				auto error = rename(oldFile.c_str(), newFile.c_str());
-				std::cout<<error<<std::endl;
-				system(cpFile.c_str());
-
-			}
+			actionDefault();
+			actionInstall();
 		}
 
 

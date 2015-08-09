@@ -43,7 +43,6 @@ Progress:
 		(1) Decision to be made: do others have to use a name to? exact same name?
 		
 
-	• "aBuild install" should run "aBuild build" at the beginning
 	• loop detection of projects
 		dependencies of projects
 	• adding auto generated defines like "ABUILD_ARMADILLO"
