@@ -55,3 +55,4 @@ Progress:
 	• plugins for own file formats
 	• using external sdk
 	• fixing overuse of "system()"
+	• handle url changes of packages, Idea: delete packages and redownload it
