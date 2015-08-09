@@ -30,20 +30,19 @@ static void checkingMissingPackages(Workspace& ws) {
 }
 static void checkingNotNeededPackages(Workspace& ws) {
 	// Checking not needed packages
-	auto notRequiredPackages = ws.getAllNotRequiredPackages();
-	while (not notRequiredPackages.empty()) {
-		for (auto const& s : notRequiredPackages) {
-			std::cout<<"Not Required "<<s<<std::endl;
-			utils::rm(std::string("packages/")+s, true, true);
-		}
-		notRequiredPackages = ws.getAllNotRequiredPackages();
+	auto notRequiredPackages     = ws.getAllNotRequiredPackages();
+	for (auto const& s : notRequiredPackages) {
+		std::cout<<"Found not required package "<<s<<std::endl;
 	}
 }
 static void checkingInvalidPackages(Workspace& ws) {
 	// checking invalid packages
-	auto invalidPackages = ws.getAllInvalidPackages();
+	auto invalidPackages     = ws.getAllInvalidPackages();
+	auto notRequiredPackages = ws.getAllNotRequiredPackages();
 	for (auto const& p : invalidPackages) {
-		std::cout<<"Package is ill formed: "<<p<<std::endl;
+		if (estd::find(notRequiredPackages, p) == notRequiredPackages.end()) {
+			std::cout<<"Package is ill formed: "<<p<<std::endl;
+		}
 	}
 }
 
