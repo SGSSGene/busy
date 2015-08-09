@@ -49,3 +49,8 @@ Progress:
 	• display dependency tree
 	• use a git library
 	• use CommonOption library (some decision about dynamic parameters have to be made)
+	• use better library for file operations
+	• parallel compiles
+	• plugins for own file formats
+	• using external sdk
+	• fixing overuse of "system()"
