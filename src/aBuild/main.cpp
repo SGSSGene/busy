@@ -184,6 +184,14 @@ int main(int argc, char** argv) {
 			}
 
 			graph.visitAllNodes();
+		} else if (argc == 4 && std::string(argv[1]) == "clone") {
+			std::string dir = std::string(argv[3]) + "/";
+			git::clone(std::string(argv[2]), "master", dir);
+			utils::Cwd cwd {dir};
+			std::string call = std::string(argv[0]);
+			system(call.c_str());
+			call += " test";
+			system(call.c_str());
 
 		} else if (argc == 2 && std::string(argv[1]) == "pull") {
 			auto allPackages = utils::listDirs("./packages", true);
