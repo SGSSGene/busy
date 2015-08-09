@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <stdio.h>
+#include <future>
 
 #include "utils.h"
 #include "git.h"
@@ -16,8 +17,13 @@ static void checkingMissingPackages(Workspace& ws) {
 	while (not missingPackages.empty()) {
 		for (auto const& p : missingPackages) {
 			PackageURL url(p);
-
-			git::clone(url.getURL(), url.getBranch(), url.getPath());
+			utils::mkdir(".aBuild/tmp");
+			utils::rm(".aBuild/tmp/Repo.git", true, true);
+			git::clone(url.getURL(), url.getBranch(), std::string(".aBuild/tmp/Repo.git"));
+			Package package(url);
+			jsonSerializer::read(".aBuild/tmp/Repo.git/aBuild.json", package);
+			std::string call = std::string("mv .aBuild/tmp/Repo.git packages/")+package.getName();
+			system(call.c_str());
 		}
 		missingPackages = ws.getAllMissingPackages();
 	}

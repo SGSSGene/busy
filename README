@@ -30,21 +30,22 @@ Progress:
 
 !!TODOs
 – High Priority
-	• fixing internal dependencies:
-		package need an name packed into the package json file.
-		This way a package can dereference itself.
-		Decision to be made: do others have to use a name to? exact same name?
 	• "including" dep ext dependencies
 		This would allow a flat package hierachy.
 		So we could have meta packages which provide all types of utils,
 		but we don't need to know each real package name.
 		(using own namespace, so there can be meta packages)
 – Low priority
+	• fixing internal dependencies:
+		– only need to make decision (1)
+		– package need an name packed into the package json file.
+		This way a package can dereference itself.
+		(1) Decision to be made: do others have to use a name to? exact same name?
+		
+
 	• loop detection of projects
 		dependencies of projects
 	• adding auto generated defines like "ABUILD_ARMADILLO"
-	• pull should be done in parallel, allowing faster pulls
-	• push should be done in parallel
 	• status (which also shows unpushed changes)
 	• display dependency tree
 	• use a git library

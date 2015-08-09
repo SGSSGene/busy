@@ -44,6 +44,7 @@ namespace aBuild {
 
 	class Package {
 	private:
+		std::string     name;
 		PackageURL      url;
 		ExtDependencies extDependencies;
 		Projects        projects;
@@ -53,12 +54,14 @@ namespace aBuild {
 			: url {_url} {}
 
 		void serialize(jsonSerializer::Node& node) {
+			node["name"]            % name;
 			node["extDependencies"] % extDependencies;
 			node["projects"]        % projects;
 			for (auto& p : projects) {
 				p.setPackagePath(url.getPath());
 			}
 		}
+		auto getName() const -> std::string const& { return name; }
 		auto getURL() const -> PackageURL const& { return url; }
 
 		auto getExtDependencies() const -> ExtDependencies const& {
