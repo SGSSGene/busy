@@ -68,7 +68,7 @@ namespace aBuild {
 			if (cppFiles.empty()) {
 
 				std::string fullPath = getPackagePath()+"/src/"+getPath()+"/";
-				auto allFiles = utils::listFiles(fullPath);
+				auto allFiles = utils::listFiles(fullPath, true);
 				for (auto const& f : allFiles) {
 					if (utils::isEndingWith(f, ".cpp")) {
 						cppFiles.push_back(fullPath + f);
@@ -82,7 +82,7 @@ namespace aBuild {
 			if (cppFiles.empty()) {
 
 				std::string fullPath = getPackagePath()+"/src/"+getPath()+"/";
-				auto allFiles = utils::listFiles(fullPath);
+				auto allFiles = utils::listFiles(fullPath, true);
 				for (auto const& f : allFiles) {
 					if (utils::isEndingWith(f, ".cpp")) {
 						cppFiles.push_back(fullPath + f);

@@ -66,7 +66,7 @@ namespace utils {
 		return std::ifstream(_file).good();
 	}
 
-	std::vector<std::string> listFiles(std::string const& _dir) {
+	std::vector<std::string> listFiles(std::string const& _dir, bool recursive) {
 		std::vector<std::string> entryList;
 
 		DIR* dir;
@@ -78,6 +78,13 @@ namespace utils {
 		while ((dirEntry = readdir(dir)) != NULL) {
 			if (dirEntry->d_type & DT_REG) {
 				entryList.push_back(std::string(dirEntry->d_name));
+			} else if (recursive && dirEntry->d_type & DT_DIR) {
+				if (std::string(".") == dirEntry->d_name) continue;
+				if (std::string("..") == dirEntry->d_name) continue;
+				auto recList = listFiles(_dir + "/" + dirEntry->d_name, recursive);
+				for (auto const& f : recList) {
+					entryList.push_back(std::string(dirEntry->d_name) + "/" + f);
+				}
 			}
 		}
 		closedir(dir);

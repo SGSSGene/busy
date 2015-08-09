@@ -16,7 +16,7 @@ namespace utils {
 	bool fileExists(std::string const& _file);
 //	std::string basename(std::string const& _file);
 
-	std::vector<std::string> listFiles(std::string const& _dir);
+	std::vector<std::string> listFiles(std::string const& _dir, bool recursive = false);
 	std::vector<std::string> listDirs(std::string const& _dir, bool _ignoreParent = false);
 
 	void walkFiles(std::string _dir, std::function<void(std::string)> _func);
