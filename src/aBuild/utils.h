@@ -5,6 +5,9 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
 namespace utils {
 	void mkdir(std::string const& _dir);
@@ -27,6 +30,22 @@ namespace utils {
 	std::vector<std::string> explode(std::string const& _str, std::string const& _del);
 
 	std::string runProcess(std::string const& _call);
+
+	template<typename T>
+	void runParallel(std::vector<T> const& _args, std::function<void(T const& t)> _func) {
+		std::vector<pid_t> pids;
+		for (auto const& a : _args) {
+			auto pid = fork();
+			if (pid == 0) {
+				_func(a);
+				exit(0);
+			}
+			pids.push_back(pid);
+		}
+		for (auto const& p : pids) {
+			while(0 < waitpid(p, nullptr, 0)) {}
+		}
+	}
 
 	int64_t getFileModificationTime(std::string const& _file);
 	std::string cwd();

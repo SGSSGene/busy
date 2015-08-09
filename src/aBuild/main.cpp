@@ -181,24 +181,27 @@ int main(int argc, char** argv) {
 
 		} else if (argc == 2 && std::string(argv[1]) == "pull") {
 			auto allPackages = utils::listDirs("./packages", true);
-			//!TODO This should be done in parallel
-			for (auto const& s : allPackages) {
-				auto file = std::string("./packages/") + s;
+			for (auto& p : allPackages) { p = "./packages/"+p; }
+			allPackages.push_back(".");
+
+			utils::runParallel<std::string>(allPackages, [](std::string const& file) {
 				utils::Cwd cwd(file);
 				if (git::isDirty()) {
 					std::cout<<"ignore " << file << ": Dirty repository"<<std::endl;
 				} else {
 					git::pull();
 				}
-			}
+			});
 		} else if (argc == 2 && std::string(argv[1]) == "push") {
 			auto allPackages = utils::listDirs("./packages", true);
-			//!TODO This should be done in parallel
-			for (auto const& s : allPackages) {
-				auto file = std::string("./packages/") + s;
+			for (auto& p : allPackages) { p = "./packages/"+p; }
+			allPackages.push_back(".");
+
+			utils::runParallel<std::string>(allPackages, [](std::string const& file) {
 				utils::Cwd cwd(file);
 				git::push();
-			}
+			});
+
 		} else if (argc == 2 && std::string(argv[1]) == "test") {
 			auto allTests = utils::listFiles("./bin/tests/");
 			std::cout<<"===Start testing==="<<std::endl;

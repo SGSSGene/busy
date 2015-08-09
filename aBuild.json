@@ -9,6 +9,7 @@
 	"projects": [
 		{ "path": "aBuild",
 			"dependencies": ["JsonSerializer/jsonSerializer"],
+			"depLibraries": ["pthread"],
 			"type": "executable"
 		}
 	]
