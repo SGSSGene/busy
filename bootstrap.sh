@@ -11,5 +11,6 @@ clang++ -ggdb -O0 --std=c++11 \
 	packages/jsoncpp/src/lib_json/json_writer.cpp \
 	-o aBuild
 ./aBuild
+./aBuild test
 sudo ./aBuild install
 rm ./aBuild
