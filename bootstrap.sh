@@ -10,3 +10,6 @@ clang++ -ggdb -O0 --std=c++11 \
 	packages/jsoncpp/src/lib_json/json_value.cpp \
 	packages/jsoncpp/src/lib_json/json_writer.cpp \
 	-o aBuild
+./aBuild
+sudo ./aBuild install
+rm ./aBuild
