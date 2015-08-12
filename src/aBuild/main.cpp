@@ -105,23 +105,25 @@ static void actionDefault() {
 	graph.visitAllNodes();
 }
 static void actionTest() {
-	auto allTests = utils::listFiles("./build/tests/");
-	std::cout<<"===Start testing==="<<std::endl;
-	for (auto const& t : allTests) {
-		auto p = std::string("./build/tests/")+t;
-		system(p.c_str());
-		std::cout<<" • running "<<p<<std::endl;
+	if (utils::fileExists("./build/tests/")) {
+		auto allTests = utils::listFiles("./build/tests/");
+		std::cout<<"===Start testing==="<<std::endl;
+		for (auto const& t : allTests) {
+			auto p = std::string("./build/tests/")+t;
+			system(p.c_str());
+			std::cout<<" • running "<<p<<std::endl;
+		}
 	}
 	for (auto const& d : utils::listDirs("build", true)) {
 		if (d == "tests") continue;
 		std::string path = std::string("./build/") + d + "/tests/";
+		if (not utils::fileExists(path)) continue;
 		for (auto const& t : utils::listFiles(path)) {
 			auto p = path+t;
 			system(p.c_str());
 			std::cout<<" • running "<<p<<std::endl;
 		}
 	}
-	std::cout<<"ran "<<allTests.size()<<" test(s)"<<std::endl;
 	std::cout<<"===Ended testing==="<<std::endl;
 }
 static void actionClone(std::string const& _url, std::string const& _dir) {
