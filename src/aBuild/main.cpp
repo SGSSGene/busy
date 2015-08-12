@@ -105,12 +105,20 @@ static void actionDefault() {
 	graph.visitAllNodes();
 }
 static void actionTest() {
-	auto allTests = utils::listFiles("./bin/tests/");
+	auto allTests = utils::listFiles("./build/tests/");
 	std::cout<<"===Start testing==="<<std::endl;
 	for (auto const& t : allTests) {
-		auto p = std::string("./bin/tests/")+t;
+		auto p = std::string("./build/tests/")+t;
 		system(p.c_str());
 		std::cout<<" • running "<<p<<std::endl;
+	}
+	for (auto const& d : utils::listDirs("build")) {
+		std::string path = std::string("./build/") + d + "/tests/";
+		for (auto const& t : utils::listFiles(path)) {
+			auto p = path+t;
+			system(p.c_str());
+			std::cout<<" • running "<<p<<std::endl;
+		}
 	}
 	std::cout<<"ran "<<allTests.size()<<" test(s)"<<std::endl;
 	std::cout<<"===Ended testing==="<<std::endl;
@@ -146,10 +154,10 @@ static void actionPush() {
 	});
 }
 static void actionInstall() {
-	auto allFiles = utils::listFiles("./bin/");
+	auto allFiles = utils::listFiles("./build/");
 	for (auto const& f : allFiles) {
 		std::cout<<"installing "<<f<<"; Error Code: ";
-		auto oldFile = std::string("./bin/")+f;
+		auto oldFile = std::string("./build/")+f;
 		auto newFile = std::string("/usr/bin/")+f;
 		auto cpFile  = std::string("cp ")+newFile+" "+oldFile;
 		auto error = rename(oldFile.c_str(), newFile.c_str());

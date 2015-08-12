@@ -28,7 +28,7 @@ namespace aBuild {
 					auto l = utils::explode(project->getPackagePath(), "/");
 					binPath = std::string("build/") + l[l.size()-1] + "/";
 				}
-				std::string testPath = binPath + "test/";
+				std::string testPath = binPath + "tests/";
 				utils::mkdir(binPath);
 				utils::mkdir(testPath);
 
