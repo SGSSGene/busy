@@ -35,6 +35,7 @@ Progress:
 		So we could have meta packages which provide all types of utils,
 		but we don't need to know each real package name.
 		(using own namespace, so there can be meta packages)
+	• "depLibraries" should get a new name, they should be transitive
 – Low priority
 	• fixing internal dependencies:
 		– only need to make decision (1)
