@@ -28,6 +28,9 @@ namespace aBuild {
 		auto getPath() const -> std::string const& {
 			return path;
 		}
+		bool operator<(PackageURL const& _other) const {
+			return name < _other.name;
+		}
 		bool operator==(PackageURL const& _other) const {
 			return name == _other.name;
 		}

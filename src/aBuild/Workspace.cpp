@@ -12,7 +12,7 @@ Workspace::Workspace(std::string const& _path)
 }
 
 auto Workspace::getAllMissingPackages() const -> std::vector<PackageURL> {
-	std::vector<PackageURL> retList;
+	std::set<PackageURL> urlSet;
 
 	auto requiredPackages = getAllRequiredPackages();
 	auto allPackages      = utils::listDirs(path + "packages", true);
@@ -26,8 +26,12 @@ auto Workspace::getAllMissingPackages() const -> std::vector<PackageURL> {
 			}
 		}
 		if (not found) {
-			retList.push_back(r);
+			urlSet.insert(r);
 		}
+	}
+	std::vector<PackageURL> retList;
+	for (auto const& p : urlSet) {
+		retList.push_back(p);
 	}
 	return retList;
 }
