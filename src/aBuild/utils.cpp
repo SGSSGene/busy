@@ -46,6 +46,12 @@ namespace utils {
 		call<<"cp "<<_src<<" "<<_dest<<std::endl;
 		system(call.str().c_str());
 	}
+	void mv(std::string const& _src, std::string const& _dest) {
+		std::stringstream call;
+		call<<"mv "<<_src<<" "<<_dest<<std::endl;
+		system(call.str().c_str());
+	}
+
 	std::string dirname(std::string const& _file) {
 		char c[_file.size()+1];
 		memcpy(c, _file.c_str(), _file.size()+1);

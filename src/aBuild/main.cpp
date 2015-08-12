@@ -15,16 +15,15 @@ static void checkingMissingPackages(Workspace& ws) {
 	// Checking missing packages
 	auto missingPackages = ws.getAllMissingPackages();
 	while (not missingPackages.empty()) {
-		for (auto const& p : missingPackages) {
-			PackageURL url(p);
+		utils::runParallel<PackageURL>(missingPackages, [](PackageURL const& url) {
 			utils::mkdir(".aBuild/tmp");
-			utils::rm(".aBuild/tmp/Repo.git", true, true);
-			git::clone(url.getURL(), url.getBranch(), std::string(".aBuild/tmp/Repo.git"));
+			std::string repoName = std::string(".aBuild/tmp/repo_") + url.getName() + ".git";
+			utils::rm(repoName, true, true);
+			git::clone(url.getURL(), url.getBranch(), repoName);
 			Package package(url);
-			jsonSerializer::read(".aBuild/tmp/Repo.git/aBuild.json", package);
-			std::string call = std::string("mv .aBuild/tmp/Repo.git packages/")+package.getName();
-			system(call.c_str());
-		}
+			jsonSerializer::read(repoName + "/aBuild.json", package);
+			utils::mv(repoName, std::string("packages/") + package.getName());
+		});
 		missingPackages = ws.getAllMissingPackages();
 	}
 }
@@ -200,6 +199,16 @@ int main(int argc, char** argv) {
 			actionTest();
 		} else if (argc == 4 && std::string(argv[1]) == "clone") {
 			actionClone(std::string(argv[2]), std::string(argv[3]) + "/");
+		} else if (argc == 3 && std::string(argv[1]) == "clone") {
+			std::string url  = argv[2];
+			std::string path = argv[2];
+			if (utils::isEndingWith(path, ".git")) {
+				for (int i {0}; i<4; ++i) path.pop_back();
+			}
+			auto l = utils::explode(path, "/");
+			path = l[l.size()-1];
+			actionClone(url, path + "/");
+
 		} else if (argc == 2 && std::string(argv[1]) == "pull") {
 			actionPull();
 		} else if (argc == 2 && std::string(argv[1]) == "push") {
