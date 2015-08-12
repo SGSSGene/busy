@@ -23,11 +23,18 @@ namespace aBuild {
 
 		static auto getLinkingExecFunc(Graph const& graph) -> std::function<void(Project*)> {
 			return [&graph](Project* project) {
-				utils::mkdir("bin");
-				utils::mkdir("bin/tests");
-				std::string outFile = std::string("bin/")+project->getName();
+				std::string binPath  = std::string("build/");
+				if (utils::isStartingWith(project->getPackagePath(), "packages/")) {
+					auto l = utils::explode(project->getPackagePath(), "/");
+					binPath = std::string("build/") + l[l.size()-1] + "/";
+				}
+				std::string testPath = binPath + "test/";
+				utils::mkdir(binPath);
+				utils::mkdir(testPath);
+
+				std::string outFile = binPath+project->getName();
 				if (utils::isStartingWith(project->getName(), "test")) {
-					outFile = std::string("bin/tests/")+project->getName();
+					outFile = testPath+project->getName();
 				}
 				std::string call = "ccache clang++ -o "+outFile;
 
