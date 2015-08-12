@@ -105,7 +105,7 @@ static void actionDefault() {
 	graph.visitAllNodes();
 }
 static void actionTest() {
-	if (utils::fileExists("./build/tests/")) {
+	if (utils::dirExists("./build/tests/")) {
 		auto allTests = utils::listFiles("./build/tests/");
 		std::cout<<"===Start testing==="<<std::endl;
 		for (auto const& t : allTests) {
@@ -117,7 +117,7 @@ static void actionTest() {
 	for (auto const& d : utils::listDirs("build", true)) {
 		if (d == "tests") continue;
 		std::string path = std::string("./build/") + d + "/tests/";
-		if (not utils::fileExists(path)) continue;
+		if (not utils::dirExists(path)) continue;
 		for (auto const& t : utils::listFiles(path)) {
 			auto p = path+t;
 			system(p.c_str());

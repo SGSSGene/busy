@@ -17,6 +17,7 @@ namespace utils {
 	std::string dirname(std::string const& _file);
 	std::string _basename(std::string const& _file);
 	bool fileExists(std::string const& _file);
+	bool dirExists(std::string const& _file);
 //	std::string basename(std::string const& _file);
 
 	std::vector<std::string> listFiles(std::string const& _dir, bool recursive = false);

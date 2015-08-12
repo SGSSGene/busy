@@ -65,6 +65,22 @@ namespace utils {
 	bool fileExists(std::string const& _file) {
 		return std::ifstream(_file).good();
 	}
+	bool dirExists(std::string const& _file) {
+		auto l = utils::explode(_file, "/");
+		while (l.size() > 0 && l.back() == "") {
+			l.pop_back();
+		}
+		std::string path;
+		for (int i {0}; i < l.size() -1; ++i) {
+			path += l[i] + "/";
+		}
+		std::string file = l[l.size()-1];
+		for (auto const& s : listDirs(path, true)) {
+			if (s == file) return true;
+		}
+		return false;
+	}
+
 
 	std::vector<std::string> listFiles(std::string const& _dir, bool recursive) {
 		std::vector<std::string> entryList;
