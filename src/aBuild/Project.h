@@ -38,6 +38,10 @@ namespace aBuild {
 			node["legacy"]       % legacy;
 			node["depLibraries"] % depLibraries;
 		}
+		void set(std::string const& _name, std::string const& _type) {
+			path = _name;
+			type = _type;
+		}
 
 		auto getType() const -> std::string const& {
 			return type;

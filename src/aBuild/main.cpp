@@ -112,7 +112,8 @@ static void actionTest() {
 		system(p.c_str());
 		std::cout<<" • running "<<p<<std::endl;
 	}
-	for (auto const& d : utils::listDirs("build")) {
+	for (auto const& d : utils::listDirs("build", true)) {
+		if (d == "tests") continue;
 		std::string path = std::string("./build/") + d + "/tests/";
 		for (auto const& t : utils::listFiles(path)) {
 			auto p = path+t;
@@ -166,6 +167,26 @@ static void actionInstall() {
 	}
 }
 
+static void actionQuickFix() {
+	if (not utils::fileExists("aBuild.json")) {
+		auto dir = utils::explode(utils::cwd(), "/");
+		std::string packageName = dir[dir.size()-1];
+
+		Package package {PackageURL()};
+		package.setName(packageName);
+
+		auto projectDirs = utils::listDirs("src", true);
+		for (auto const& d : projectDirs) {
+			Project p;
+			p.set(d, "executable");
+			package.accessProjects().push_back(std::move(p));
+		}
+		jsonSerializer::write("aBuild.json", package);
+
+	}
+
+}
+
 using Action = std::function<void()>;
 
 int main(int argc, char** argv) {
@@ -184,6 +205,9 @@ int main(int argc, char** argv) {
 		} else if (argc == 2 && std::string(argv[1]) == "install") {
 			actionDefault();
 			actionInstall();
+		} else if (argc == 2 && (std::string(argv[1]) == "quickfix"
+		                         or std::string(argv[1]) == "qf")) {
+			actionQuickFix();
 		}
 
 

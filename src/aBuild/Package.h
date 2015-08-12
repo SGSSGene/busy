@@ -62,12 +62,17 @@ namespace aBuild {
 			}
 		}
 		auto getName() const -> std::string const& { return name; }
+		void setName(std::string const& _name) { name = _name; }
+
 		auto getURL() const -> PackageURL const& { return url; }
 
 		auto getExtDependencies() const -> ExtDependencies const& {
 			return extDependencies;
 		}
 		auto getProjects() const -> Projects const& {
+			return projects;
+		}
+		auto accessProjects() -> Projects& {
 			return projects;
 		}
 	};
