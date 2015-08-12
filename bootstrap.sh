@@ -1,7 +1,7 @@
 #!/bin/bash
 mkdir packages
-git clone ../JsonSerializer.git -b aBuild packages/JsonSerializer
-git clone ../jsoncpp.git        -b aBuild packages/jsoncpp
+git clone git@78.47.95.250:aBuild/JsonSerializer  packages/JsonSerializer
+git clone git@78.47.95.250:aBuild/jsoncpp         packages/jsoncpp
 clang++ -ggdb -O0 --std=c++11 \
 	-isystem packages/JsonSerializer/src/ \
 	-isystem packages/jsoncpp/include \
