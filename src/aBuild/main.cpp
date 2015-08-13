@@ -97,7 +97,7 @@ static void actionDefault() {
 		}
 		for (auto const& dep : project.getDependencies()) {
 			auto l = utils::explode(dep, "/");
-			graph.addEdge(&projects.at(l[1]), &project);
+			graph.addEdge(&projects.at(l[l.size()-1]), &project);
 		}
 	}
 
