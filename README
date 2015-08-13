@@ -46,7 +46,6 @@ Progress:
 
 	• loop detection of projects
 		dependencies of projects
-	• adding auto generated defines like "ABUILD_ARMADILLO"
 	• status (which also shows unpushed changes)
 	• display dependency tree
 	• use a git library

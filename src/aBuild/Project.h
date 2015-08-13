@@ -22,6 +22,7 @@ namespace aBuild {
 		std::string  path;
 		std::string  packagePath;
 		Dependencies dependencies;
+		Dependencies optionalDependencies;
 		DepLibraries depLibraries;
 		std::string  type;
 		mutable std::vector<std::string> cppFiles;
@@ -32,11 +33,12 @@ namespace aBuild {
 			: packagePath {"."} {}
 
 		void serialize(jsonSerializer::Node& node) {
-			node["path"]         % path;
-			node["dependencies"] % dependencies;
-			node["type"]         % type;
-			node["legacy"]       % legacy;
-			node["depLibraries"] % depLibraries;
+			node["path"]                 % path;
+			node["dependencies"]         % dependencies;
+			node["optionalDependencies"] % optionalDependencies;
+			node["type"]                 % type;
+			node["legacy"]               % legacy;
+			node["depLibraries"]         % depLibraries;
 		}
 		void set(std::string const& _name, std::string const& _type) {
 			path = _name;
@@ -64,6 +66,9 @@ namespace aBuild {
 		}
 		auto getDependencies() const -> Dependencies const& {
 			return dependencies;
+		}
+		auto getOptionalDependencies() const -> Dependencies const & {
+			return optionalDependencies;
 		}
 		auto getDepLibraries() const -> DepLibraries const& {
 			return depLibraries;

@@ -86,6 +86,14 @@ namespace aBuild {
 					call += " -I "+project->getPackagePath()+"/src/";
 
 					auto ingoing = graph.getIngoing<Project, Project>(project, true);
+					// Adding all defines of dependent libraries
+					for (auto const& f : ingoing) {
+						call += std::string(" -DABUILD_");
+						for (auto const& c : f->getName()) {
+							call += std::toupper(c);
+						}
+					}
+					// Adding all includes of dependent libraries
 					for (auto const& f : ingoing) {
 						call += " -isystem "+f->getPackagePath()+"/src";
 						for (auto const& i : f->getLegacy().includes) {

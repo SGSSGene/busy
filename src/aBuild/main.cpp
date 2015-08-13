@@ -96,8 +96,16 @@ static void actionDefault() {
 			graph.addEdge(&f, &project);
 		}
 		for (auto const& dep : project.getDependencies()) {
-			auto l = utils::explode(dep, "/");
-			graph.addEdge(&projects.at(l[l.size()-1]), &project);
+			auto l   = utils::explode(dep, "/");
+			auto key = l[l.size() -1];
+			graph.addEdge(&projects.at(key), &project);
+		}
+		for (auto const& dep : project.getOptionalDependencies()) {
+			auto l   = utils::explode(dep, "/");
+			auto key = l[l.size() -1];
+			if (projects.find(key) != projects.end()) {
+				graph.addEdge(&projects.at(key), &project);
+			}
 		}
 	}
 
