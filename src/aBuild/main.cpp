@@ -72,9 +72,10 @@ static void actionDefault() {
 
 	Graph graph;
 
-	auto linkingLibFunc  = BuildAction::getLinkingLibFunc(graph);
-	auto linkingExecFunc = BuildAction::getLinkingExecFunc(graph);
-	auto compileFileFunc = BuildAction::getCompileFileFunc(graph);
+	auto linkingLibFunc     = BuildAction::getLinkingLibFunc(graph);
+	auto linkingExecFunc    = BuildAction::getLinkingExecFunc(graph);
+	auto compileFileCppFunc = BuildAction::getCompileCppFileFunc(graph);
+	auto compileFileCFunc   = BuildAction::getCompileCFileFunc(graph);
 
 	// Create dependency tree
 	auto projects = ws.getAllRequiredProjects();
@@ -92,7 +93,12 @@ static void actionDefault() {
 
 		// Adding compile files
 		for (auto& f : project.getAllCppFiles()) {
-			graph.addNode(&f, compileFileFunc);
+			graph.addNode(&f, compileFileCppFunc);
+			graph.addEdge(&f, &project);
+		}
+		// Adding compile files
+		for (auto& f : project.getAllCFiles()) {
+			graph.addNode(&f, compileFileCFunc);
 			graph.addEdge(&f, &project);
 		}
 		for (auto const& dep : project.getDependencies()) {

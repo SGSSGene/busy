@@ -67,7 +67,7 @@ namespace aBuild {
 
 			};
 		}
-		static auto getCompileFileFunc(Graph const& graph) -> std::function<void(std::string*)> {
+		static auto getCompileCppFileFunc(Graph const& graph) -> std::function<void(std::string*)> {
 			return [&graph](std::string* f) {
 				auto l = utils::explode(*f, "/");
 
@@ -106,5 +106,45 @@ namespace aBuild {
 				utils::runProcess(call);
 			};
 		}
+		static auto getCompileCFileFunc(Graph const& graph) -> std::function<void(std::string*)> {
+			return [&graph](std::string* f) {
+				auto l = utils::explode(*f, "/");
+
+				utils::mkdir(".aBuild/obj/" + utils::dirname(*f));
+				std::string call = "ccache clang -Qunused-arguments -ggdb -O0 --std=c11 "
+				                   "-c " + *f + " "
+				                   "-o .aBuild/obj/" + *f + ".o";
+
+				// Get include dependencies
+				{
+					Project* project = *graph.getOutgoing<Project, std::string>(f, false).begin();
+					for (auto const& i : project->getLegacy().includes) {
+						call += " -I "+project->getPackagePath()+"/"+i;
+					}
+					call += " -I "+project->getPackagePath()+"/src/"+project->getPath();
+					call += " -I "+project->getPackagePath()+"/src/";
+
+					auto ingoing = graph.getIngoing<Project, Project>(project, true);
+					// Adding all defines of dependent libraries
+					call += " -DABUILD";
+					for (auto const& f : ingoing) {
+						call += std::string(" -DABUILD_");
+						for (auto const& c : f->getName()) {
+							call += std::toupper(c);
+						}
+					}
+					// Adding all includes of dependent libraries
+					for (auto const& f : ingoing) {
+						call += " -isystem "+f->getPackagePath()+"/src";
+						for (auto const& i : f->getLegacy().includes) {
+							call += " -isystem "+f->getPackagePath()+"/"+i;
+						}
+					}
+				}
+//				std::cout<<call<<std::endl;
+				utils::runProcess(call);
+			};
+		}
+
 	};
 }

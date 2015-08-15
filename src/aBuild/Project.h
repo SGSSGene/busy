@@ -26,6 +26,8 @@ namespace aBuild {
 		DepLibraries depLibraries;
 		std::string  type;
 		mutable std::vector<std::string> cppFiles;
+		mutable std::vector<std::string> cFiles;
+
 		ProjectLegacy legacy;
 
 	public:
@@ -73,20 +75,6 @@ namespace aBuild {
 		auto getDepLibraries() const -> DepLibraries const& {
 			return depLibraries;
 		}
-		auto getAllCppFiles() const -> std::vector<std::string> const& {
-			if (cppFiles.empty()) {
-
-				std::string fullPath = getPackagePath()+"/src/"+getPath()+"/";
-				auto allFiles = utils::listFiles(fullPath, true);
-				for (auto const& f : allFiles) {
-					if (utils::isEndingWith(f, ".cpp")) {
-						cppFiles.push_back(fullPath + f);
-					}
-				}
-			}
-
-			return cppFiles;
-		}
 		auto getAllCppFiles() -> std::vector<std::string>& {
 			if (cppFiles.empty()) {
 
@@ -100,6 +88,20 @@ namespace aBuild {
 			}
 
 			return cppFiles;
+		}
+		auto getAllCFiles() -> std::vector<std::string>& {
+			if (cFiles.empty()) {
+
+				std::string fullPath = getPackagePath()+"/src/"+getPath()+"/";
+				auto allFiles = utils::listFiles(fullPath, true);
+				for (auto const& f : allFiles) {
+					if (utils::isEndingWith(f, ".c")) {
+						cFiles.push_back(fullPath + f);
+					}
+				}
+			}
+
+			return cFiles;
 		}
 
 
