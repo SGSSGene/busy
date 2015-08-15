@@ -87,6 +87,7 @@ namespace aBuild {
 
 					auto ingoing = graph.getIngoing<Project, Project>(project, true);
 					// Adding all defines of dependent libraries
+					call += " -DABUILD";
 					for (auto const& f : ingoing) {
 						call += std::string(" -DABUILD_");
 						for (auto const& c : f->getName()) {
