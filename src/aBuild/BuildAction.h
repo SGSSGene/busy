@@ -67,8 +67,8 @@ namespace aBuild {
 
 			};
 		}
-		static auto getCompileCppFileFunc(Graph const& graph) -> std::function<void(std::string*)> {
-			return [&graph](std::string* f) {
+		static auto getCompileCppFileFunc(Graph const& graph, bool verbose) -> std::function<void(std::string*)> {
+			return [&graph, verbose](std::string* f) {
 				auto l = utils::explode(*f, "/");
 
 				utils::mkdir(".aBuild/obj/" + utils::dirname(*f));
@@ -102,12 +102,14 @@ namespace aBuild {
 						}
 					}
 				}
-//				std::cout<<call<<std::endl;
+				if (verbose) {
+					std::cout<<call<<std::endl;
+				}
 				utils::runProcess(call);
 			};
 		}
-		static auto getCompileCFileFunc(Graph const& graph) -> std::function<void(std::string*)> {
-			return [&graph](std::string* f) {
+		static auto getCompileCFileFunc(Graph const& graph, bool verbose) -> std::function<void(std::string*)> {
+			return [&graph, verbose](std::string* f) {
 				auto l = utils::explode(*f, "/");
 
 				utils::mkdir(".aBuild/obj/" + utils::dirname(*f));
@@ -141,7 +143,9 @@ namespace aBuild {
 						}
 					}
 				}
-//				std::cout<<call<<std::endl;
+				if (verbose) {
+					std::cout<<call<<std::endl;
+				}
 				utils::runProcess(call);
 			};
 		}

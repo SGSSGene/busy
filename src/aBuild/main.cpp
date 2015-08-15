@@ -61,7 +61,7 @@ static void checkingRequiredPackages(Workspace& ws) {
 }
 
 
-static void actionDefault() {
+static void actionDefault(bool verbose = false) {
 	Workspace ws(".");
 
 	checkingMissingPackages(ws);
@@ -74,8 +74,8 @@ static void actionDefault() {
 
 	auto linkingLibFunc     = BuildAction::getLinkingLibFunc(graph);
 	auto linkingExecFunc    = BuildAction::getLinkingExecFunc(graph);
-	auto compileFileCppFunc = BuildAction::getCompileCppFileFunc(graph);
-	auto compileFileCFunc   = BuildAction::getCompileCFileFunc(graph);
+	auto compileFileCppFunc = BuildAction::getCompileCppFileFunc(graph, verbose);
+	auto compileFileCFunc   = BuildAction::getCompileCFileFunc(graph, verbose);
 
 	// Create dependency tree
 	auto projects = ws.getAllRequiredProjects();
@@ -208,6 +208,8 @@ int main(int argc, char** argv) {
 	try {
 		if (argc == 1) {
 			actionDefault();
+		} else if (argc == 2 && std::string(argv[1]) == "--verbose") {
+			actionDefault(true);
 		} else if (argc == 2 && std::string(argv[1]) == "test") {
 			actionDefault();
 			actionTest();
