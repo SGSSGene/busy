@@ -41,7 +41,8 @@ namespace aBuild {
 		}
 		void serialize(jsonSerializer::Node& node) {
 			node["url"]    % url;
-			node["branch"] % branch;
+			node["branch"] % branch or "master";
+
 			path = "packages/"+getName();
 		}
 	};

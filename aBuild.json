@@ -1,10 +1,7 @@
 {
 	"name": "aBuild",
 	"extDependencies": [
-		{ "name": "JsonSerializer",
-			"url": "git@78.47.95.250:aBuild/JsonSerializer",
-			"branch": "master"
-		}
+		{ "url": "git@78.47.95.250:aBuild/JsonSerializer" }
 	],
 	"projects": [
 		{ "path": "aBuild",
