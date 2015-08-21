@@ -7,16 +7,21 @@ namespace aBuild {
 
 	class PackageURL {
 	private:
-		std::string name;
 		std::string url;
 		std::string branch;
 		std::string path;
 	public:
 		PackageURL()
-			: name {"_"}
+			: url {"_"}
 			, path {"."} {
 		}
-		auto getName() const -> std::string const& {
+		auto getName() const -> std::string {
+			auto name = url;
+			if (utils::isEndingWith(name, ".git")) {
+				for (int i {0}; i<4; ++i) name.pop_back();
+			}
+			auto l = utils::explode(name, "/");
+			name = l[l.size()-1];
 			return name;
 		}
 		auto getURL() const -> std::string const& {
@@ -29,16 +34,15 @@ namespace aBuild {
 			return path;
 		}
 		bool operator<(PackageURL const& _other) const {
-			return name < _other.name;
+			return getName() < _other.getName();
 		}
 		bool operator==(PackageURL const& _other) const {
-			return name == _other.name;
+			return getName() == _other.getName();
 		}
 		void serialize(jsonSerializer::Node& node) {
-			node["name"]   % name;
 			node["url"]    % url;
 			node["branch"] % branch;
-			path = "packages/"+name;
+			path = "packages/"+getName();
 		}
 	};
 
