@@ -36,6 +36,7 @@ Progress:
 		but we don't need to know each real package name.
 		(using own namespace, so there can be meta packages)
 	• "depLibraries" should get a new name, they should be transitive
+	• double declaration of packages that are being used (for the extDependencies, this is anoying)
 – Low priority
 	• fixing internal dependencies:
 		– only need to make decision (1)
