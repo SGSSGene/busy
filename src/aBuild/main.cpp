@@ -183,6 +183,13 @@ static void actionInstall() {
 		system(cpFile.c_str());
 	}
 }
+static void actionStatus(std::string _flavor = "") {
+	Workspace ws(".");
+	if (_flavor != "") {
+		ws.accessConfigFile().activeFlavor = _flavor;
+	}
+	std::cout << "current flavor: " << ws.accessConfigFile().activeFlavor << std::endl;
+}
 
 static void actionQuickFix() {
 	if (not utils::fileExists("aBuild.json")) {
@@ -254,6 +261,10 @@ int main(int argc, char** argv) {
 		} else if (argc == 2 && (std::string(argv[1]) == "quickfix"
 		                         or std::string(argv[1]) == "qf")) {
 			actionQuickFix();
+		} else if (argc == 2 && std::string(argv[1]) == "status") {
+			actionStatus();
+		} else if (argc == 3 && std::string(argv[1]) == "--flavor") {
+			actionStatus(argv[2]);
 		} else if (argc == 2 && std::string(argv[1]) == "ls-files") {
 			return actionListFiles();
 		}

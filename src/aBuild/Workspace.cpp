@@ -8,7 +8,13 @@ namespace aBuild {
 Workspace::Workspace(std::string const& _path)
 	: path {_path + "/"} {
 
+	if (utils::fileExists(path + ".aBuild/workspace.json")) {
+		jsonSerializer::read(path + ".aBuild/workspace.json", configFile);
+	}
 	createPackageFolder();
+}
+Workspace::~Workspace() {
+	jsonSerializer::write(path + ".aBuild/workspace.json", configFile);
 }
 
 auto Workspace::getAllMissingPackages() const -> std::vector<PackageURL> {
