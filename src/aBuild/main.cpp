@@ -3,7 +3,7 @@
 #include <memory>
 #include <stdio.h>
 #include <future>
-#include "BuildAction.h"
+#include "BuildActionClang.h"
 
 #include "utils.h"
 #include "git.h"
@@ -72,10 +72,12 @@ static void actionDefault(bool verbose = false) {
 
 	Graph graph;
 
-	auto linkingLibFunc     = BuildAction::getLinkingLibFunc(graph);
-	auto linkingExecFunc    = BuildAction::getLinkingExecFunc(graph);
-	auto compileFileCppFunc = BuildAction::getCompileCppFileFunc(graph, verbose);
-	auto compileFileCFunc   = BuildAction::getCompileCFileFunc(graph, verbose);
+	std::unique_ptr<BuildAction> action { new BuildActionClang(&graph, verbose) };
+
+	auto linkingLibFunc     = action->getLinkingLibFunc();
+	auto linkingExecFunc    = action->getLinkingExecFunc();
+	auto compileFileCppFunc = action->getCompileCppFileFunc();
+	auto compileFileCFunc   = action->getCompileCFileFunc();
 
 	// Create dependency tree
 	auto projects = ws.getAllRequiredProjects();
