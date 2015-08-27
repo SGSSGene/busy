@@ -199,9 +199,26 @@ static void actionQuickFix() {
 			package.accessProjects().push_back(std::move(p));
 		}
 		jsonSerializer::write("aBuild.json", package);
+	}
+}
 
+std::string getLsFilesString(std::string const& path) {
+	auto printLsFiles = std::string("bash -c \"cat <(git ls-files -o --exclude-standard) <(git ls-files) | sed 's/^/") +path+ std::string("\\//'\"");
+	return printLsFiles;
+}
+static int actionListFiles() {
+	if (not utils::fileExists("aBuild.json")) return EXIT_FAILURE;
+	auto printLsFiles = getLsFilesString(".");
+	system(printLsFiles.c_str());
+	auto projectDirs = utils::listDirs("packages", true);
+	for (auto const& d : projectDirs) {
+		auto path = std::string("packages/")+d;
+		utils::Cwd cwd(path);
+		auto printLsFiles = getLsFilesString(std::string("packages\\/") + d);
+		system(printLsFiles.c_str());
 	}
 
+	return EXIT_SUCCESS;
 }
 
 using Action = std::function<void()>;
@@ -237,9 +254,9 @@ int main(int argc, char** argv) {
 		} else if (argc == 2 && (std::string(argv[1]) == "quickfix"
 		                         or std::string(argv[1]) == "qf")) {
 			actionQuickFix();
+		} else if (argc == 2 && std::string(argv[1]) == "ls-files") {
+			return actionListFiles();
 		}
-
-
 	} catch(std::exception const& e) {
 		std::cerr<<"exception: "<<e.what()<<std::endl;
 	}
