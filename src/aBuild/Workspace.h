@@ -9,9 +9,12 @@ namespace aBuild {
 class Workspace {
 public:
 	class ConfigFile {
-	public:
+	private:
 		std::string activeFlavor { "release" };
+
+	public:
 		auto getActiveFlavor() const -> std::string { return activeFlavor; }
+		void setActiveFlavor(std::string const& _flavor) { activeFlavor = _flavor; }
 		void serialize(jsonSerializer::Node& node) {
 			node["activeFlavor"] % activeFlavor;
 		}

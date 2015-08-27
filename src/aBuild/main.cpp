@@ -186,9 +186,9 @@ static void actionInstall() {
 static void actionStatus(std::string _flavor = "") {
 	Workspace ws(".");
 	if (_flavor != "") {
-		ws.accessConfigFile().activeFlavor = _flavor;
+		ws.accessConfigFile().setActiveFlavor(_flavor);
 	}
-	std::cout << "current flavor: " << ws.accessConfigFile().activeFlavor << std::endl;
+	std::cout << "current flavor: " << ws.accessConfigFile().getActiveFlavor() << std::endl;
 }
 
 static void actionQuickFix() {
