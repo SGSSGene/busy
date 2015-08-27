@@ -72,7 +72,7 @@ static void actionDefault(bool verbose = false) {
 
 	Graph graph;
 
-	std::unique_ptr<BuildAction> action { new BuildActionClang(&graph, verbose) };
+	std::unique_ptr<BuildAction> action { new BuildActionClang(&graph, verbose, &ws.accessConfigFile()) };
 
 	auto linkingLibFunc     = action->getLinkingLibFunc();
 	auto linkingExecFunc    = action->getLinkingExecFunc();

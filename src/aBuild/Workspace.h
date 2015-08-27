@@ -11,6 +11,7 @@ public:
 	class ConfigFile {
 	public:
 		std::string activeFlavor { "release" };
+		auto getActiveFlavor() const -> std::string { return activeFlavor; }
 		void serialize(jsonSerializer::Node& node) {
 			node["activeFlavor"] % activeFlavor;
 		}
