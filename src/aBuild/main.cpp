@@ -274,7 +274,11 @@ int main(int argc, char** argv) {
 			return actionListFiles();
 		}
 	} catch(std::exception const& e) {
-		std::cerr<<"exception: "<<e.what()<<std::endl;
+		std::cerr<<"exception(exception): "<<e.what()<<std::endl;
+	} catch(std::string const& s) {
+		std::cerr<<"exception(string): "<<s<<std::endl;
+	} catch(char const* s) {
+		std::cerr<<"exception(char): "<<s<<std::endl;
 	}
 	return 0;
 }
