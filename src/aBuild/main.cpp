@@ -172,10 +172,15 @@ static void actionPush() {
 	});
 }
 static void actionInstall() {
-	auto allFiles = utils::listFiles("./build/");
+	Workspace ws(".");
+	auto flavor = ws.accessConfigFile().getActiveFlavor();
+	auto buildPath = "./build/" + flavor + "/";
+
+	auto allFiles = utils::listFiles(buildPath);
+
 	for (auto const& f : allFiles) {
 		std::cout<<"installing "<<f<<"; Error Code: ";
-		auto oldFile = std::string("./build/")+f;
+		auto oldFile = buildPath+f;
 		auto newFile = std::string("/usr/bin/")+f;
 		auto cpFile  = std::string("cp ")+newFile+" "+oldFile;
 		auto error = rename(oldFile.c_str(), newFile.c_str());
