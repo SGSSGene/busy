@@ -191,7 +191,11 @@ static void actionInstall() {
 static void actionStatus(std::string _flavor = "") {
 	Workspace ws(".");
 	if (_flavor != "") {
-		ws.accessConfigFile().setActiveFlavor(_flavor);
+		if (_flavor == "release" || _flavor == "debug") {
+			ws.accessConfigFile().setActiveFlavor(_flavor);
+		} else {
+			throw "only \"release\" and \"debug\" are valid flavor arguments";
+		}
 	}
 	std::cout << "current flavor: " << ws.accessConfigFile().getActiveFlavor() << std::endl;
 }
