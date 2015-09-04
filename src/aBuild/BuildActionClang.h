@@ -9,11 +9,12 @@ namespace aBuild {
 		std::string libPath;
 		std::string objPath;
 		std::string execPath;
+
 	public:
 		BuildActionClang(Graph const* _graph, bool _verbose, Workspace::ConfigFile const* _configFile)
 			: BuildAction(_graph, _verbose, _configFile)
 		{
-			buildPath = std::string(".aBuild/") + _configFile->getActiveFlavor() + "/";
+			buildPath = ".aBuild/" + _configFile->getActiveFlavor() + "/";
 			libPath   = buildPath + "lib/";
 			objPath   = buildPath + "obj/";
 			execPath  = "build/" + _configFile->getActiveFlavor() + "/";
@@ -52,6 +53,10 @@ namespace aBuild {
 				}
 				std::string call = "ccache clang++ -o "+outFile;
 
+				if (configFile->getActiveFlavor() == "release") {
+					call += " -s";
+				}
+
 				// Set all depLibraries libraries
 				for (auto const& l : project->getDepLibraries()) {
 					call += " -l"+l;
@@ -86,6 +91,12 @@ namespace aBuild {
 				auto l = utils::explode(*f, "/");
 
 				utils::mkdir(objPath + utils::dirname(*f));
+				std::string flags = " --std=c++11 -Qunused-arguments -Wall -Wextra -fmessage-length=0";
+				if (configFile->getActiveFlavor() == "release") {
+					flags += " -O2";
+				} else if (configFile->getActiveFlavor() == "debug") {
+					flags += " -ggdb -O0 -Wall -Wextra -fmessage-length=0";
+				}
 				std::string call = "ccache clang++ -Qunused-arguments -ggdb -O0 --std=c++11 "
 				                   "-c " + *f + " "
 				                   "-o " + objPath + *f + ".o";
