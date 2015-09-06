@@ -9,11 +9,13 @@ namespace aBuild {
 		Graph const* graph;
 		const bool verbose;
 		Workspace::ConfigFile const* configFile;
+		Toolchain toolchain;
 	public:
-		BuildAction(Graph const* _graph, bool _verbose, Workspace::ConfigFile const* _configFile)
+		BuildAction(Graph const* _graph, bool _verbose, Workspace::ConfigFile const* _configFile, Toolchain const& _toolchain)
 			: graph      {_graph}
 			, verbose    {_verbose}
 			, configFile {_configFile}
+			, toolchain  {_toolchain}
 			{}
 		virtual auto getLinkingLibFunc    () -> std::function<void(Project*)> = 0;
 		virtual auto getLinkingExecFunc   () -> std::function<void(Project*)> = 0;

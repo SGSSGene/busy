@@ -10,13 +10,18 @@ class Workspace {
 public:
 	class ConfigFile {
 	private:
-		std::string activeFlavor { "release" };
+		std::string flavor    { "release" };
+		std::string toolchain { "" };
 
 	public:
-		auto getActiveFlavor() const -> std::string const& { return activeFlavor; }
-		void setActiveFlavor(std::string const& _flavor) { activeFlavor = _flavor; }
+		auto getFlavor() const -> std::string const&     { return flavor; }
+		void setFlavor(std::string const& _flavor)       { flavor = _flavor; }
+		auto getToolchain() const -> std::string const&  { return toolchain; }
+		void setToolchain(std::string const& _toolchain) { toolchain = _toolchain; }
+
 		void serialize(jsonSerializer::Node& node) {
-			node["activeFlavor"] % activeFlavor;
+			node["flavor"]   % flavor;
+			node["toochain"] % toolchain;
 		}
 	};
 private:
@@ -30,7 +35,7 @@ public:
 	ConfigFile& accessConfigFile() { return configFile; }
 
 	auto getAllMissingPackages()     const -> std::vector<PackageURL>;
-	auto getAllValidPackages()       const -> std::vector<Package>;
+	auto getAllValidPackages(bool _includingRoot = false) const -> std::vector<Package>;
 	auto getAllInvalidPackages()     const -> std::vector<std::string>;
 	auto getAllRequiredPackages()    const -> std::vector<PackageURL>;
 	auto getAllNotRequiredPackages() const -> std::vector<std::string>;

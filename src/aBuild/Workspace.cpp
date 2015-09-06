@@ -41,7 +41,7 @@ auto Workspace::getAllMissingPackages() const -> std::vector<PackageURL> {
 	}
 	return retList;
 }
-auto Workspace::getAllValidPackages() const -> std::vector<Package> {
+auto Workspace::getAllValidPackages(bool _includingRoot) const -> std::vector<Package> {
 	std::vector<Package> retList;
 	// Reading package directory finding available packages
 	auto allPackages = utils::listDirs(path + "packages", true);
@@ -52,6 +52,11 @@ auto Workspace::getAllValidPackages() const -> std::vector<Package> {
 			jsonSerializer::read(path2 + "/aBuild.json", p);
 			retList.push_back(std::move(p));
 		} catch (...) {}
+	}
+	if (_includingRoot) {
+		Package p {PackageURL()};
+		jsonSerializer::read("./aBuild.json", p);
+		retList.push_back(std::move(p));
 	}
 	return retList;
 }

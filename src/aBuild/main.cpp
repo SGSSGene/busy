@@ -72,7 +72,21 @@ static void actionDefault(bool verbose = false) {
 
 	Graph graph;
 
-	std::unique_ptr<BuildAction> action { new BuildActionClang(&graph, verbose, &ws.accessConfigFile()) };
+	Toolchain toolchain { "default", "clang", "clang++", "ar" };
+	std::string toolchainName = ws.accessConfigFile().getToolchain();
+	for (auto const& package : ws.getAllValidPackages(true)) {
+		for (auto const& tc : package.getToolchains()) {
+			auto name = tc.getName();
+			if (name == toolchainName) {
+				toolchain = tc;
+				goto endloop;
+			}
+		}
+	}
+endloop:
+	std::cout << "Using toolchain: " << toolchain.getName() << std::endl;
+
+	std::unique_ptr<BuildAction> action { new BuildActionClang(&graph, verbose, &ws.accessConfigFile(), toolchain) };
 
 	auto linkingLibFunc     = action->getLinkingLibFunc();
 	auto linkingExecFunc    = action->getLinkingExecFunc();
@@ -173,8 +187,9 @@ static void actionPush() {
 }
 static void actionInstall() {
 	Workspace ws(".");
-	auto flavor = ws.accessConfigFile().getActiveFlavor();
-	auto buildPath = "./build/" + flavor + "/";
+	auto flavor    = ws.accessConfigFile().getFlavor();
+	auto toolchain = ws.accessConfigFile().getToolchain();
+	auto buildPath = "./build/" + toolchain + "/" + flavor + "/";
 
 	auto allFiles = utils::listFiles(buildPath);
 
@@ -192,12 +207,14 @@ static void actionStatus(std::string _flavor = "") {
 	Workspace ws(".");
 	if (_flavor != "") {
 		if (_flavor == "release" || _flavor == "debug") {
-			ws.accessConfigFile().setActiveFlavor(_flavor);
+			ws.accessConfigFile().setFlavor(_flavor);
 		} else {
 			throw "only \"release\" and \"debug\" are valid flavor arguments";
 		}
 	}
-	std::cout << "current flavor: " << ws.accessConfigFile().getActiveFlavor() << std::endl;
+	std::cout << "current flavor:    " << ws.accessConfigFile().getFlavor() << std::endl;
+	std::cout << "current toolchain: " << ws.accessConfigFile().getToolchain() << std::endl;
+
 }
 
 static void actionQuickFix() {
@@ -236,21 +253,50 @@ static int actionListFiles() {
 
 	return EXIT_SUCCESS;
 }
+static void actionToolchains() {
+	Workspace ws(".");
+	for (auto const& package : ws.getAllValidPackages(true)) {
+		for (auto const& tc : package.getToolchains()) {
+			auto name = tc.getName();
+			if (name != "") {
+				std::cout<<name<<std::endl;
+			}
+		}
+	}
+}
+static void actionToolchain(std::string const& _toolchain) {
+	Workspace ws(".");
+	for (auto const& package : ws.getAllValidPackages(true)) {
+		for (auto const& tc : package.getToolchains()) {
+			auto name = tc.getName();
+			if (name == _toolchain) {
+				ws.accessConfigFile().setToolchain(_toolchain);
+				std::cout << "Set toolchain to " << _toolchain << std::endl;
+				return;
+			}
+		}
+	}
+	std::cout << "Setting toolchain failed" << std::endl;
+}
 
 using Action = std::function<void()>;
 
 int main(int argc, char** argv) {
+	std::string arg1;
+	if (argc >= 2) {
+		arg1 = std::string(argv[1]);
+	}
 	try {
 		if (argc == 1) {
 			actionDefault();
-		} else if (argc == 2 && std::string(argv[1]) == "--verbose") {
+		} else if (arg1 == "--verbose") {
 			actionDefault(true);
-		} else if (argc == 2 && std::string(argv[1]) == "test") {
+		} else if (arg1 == "test") {
 			actionDefault();
 			actionTest();
-		} else if (argc == 4 && std::string(argv[1]) == "clone") {
+		} else if (argc == 4 && arg1 == "clone") {
 			actionClone(std::string(argv[2]), std::string(argv[3]) + "/");
-		} else if (argc == 3 && std::string(argv[1]) == "clone") {
+		} else if (argc == 3 && arg1 == "clone") {
 			std::string url  = argv[2];
 			std::string path = argv[2];
 			if (utils::isEndingWith(path, ".git")) {
@@ -260,22 +306,27 @@ int main(int argc, char** argv) {
 			path = l[l.size()-1];
 			actionClone(url, path + "/");
 
-		} else if (argc == 2 && std::string(argv[1]) == "pull") {
+		} else if (arg1 == "pull") {
 			actionPull();
-		} else if (argc == 2 && std::string(argv[1]) == "push") {
+		} else if (arg1 == "push") {
 			actionPush();
-		} else if (argc == 2 && std::string(argv[1]) == "install") {
+		} else if (arg1 == "install") {
 			actionDefault();
 			actionInstall();
-		} else if (argc == 2 && (std::string(argv[1]) == "quickfix"
-		                         or std::string(argv[1]) == "qf")) {
+		} else if (arg1 == "quickfix" or arg1 == "qf") {
 			actionQuickFix();
-		} else if (argc == 2 && std::string(argv[1]) == "status") {
+		} else if (arg1 == "status") {
 			actionStatus();
-		} else if (argc == 3 && std::string(argv[1]) == "--flavor") {
+		} else if (argc == 3 && arg1 == "--flavor") {
 			actionStatus(argv[2]);
-		} else if (argc == 2 && std::string(argv[1]) == "ls-files") {
+		} else if (arg1 == "ls-files") {
 			return actionListFiles();
+		} else if (arg1 == "toolchains") {
+			actionToolchains();
+		} else if (argc == 3 && arg1 == "toolchain") {
+			actionToolchain(std::string(argv[2]));
+		} else {
+			throw std::string("unknown command: ") + arg1;
 		}
 	} catch(std::exception const& e) {
 		std::cerr<<"exception(exception): "<<e.what()<<std::endl;

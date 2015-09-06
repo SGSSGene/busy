@@ -11,19 +11,19 @@ namespace aBuild {
 		std::string execPath;
 
 	public:
-		BuildActionClang(Graph const* _graph, bool _verbose, Workspace::ConfigFile const* _configFile)
-			: BuildAction(_graph, _verbose, _configFile)
+		BuildActionClang(Graph const* _graph, bool _verbose, Workspace::ConfigFile const* _configFile, Toolchain const& _toolchain)
+			: BuildAction(_graph, _verbose, _configFile, _toolchain)
 		{
-			buildPath = ".aBuild/" + _configFile->getActiveFlavor() + "/";
+			buildPath = ".aBuild/" + _configFile->getToolchain() + "/" + _configFile->getFlavor() + "/";
 			libPath   = buildPath + "lib/";
 			objPath   = buildPath + "obj/";
-			execPath  = "build/" + _configFile->getActiveFlavor() + "/";
+			execPath  = "build/" + _configFile->getToolchain() + "/" + _configFile->getFlavor() + "/";
 		}
 
 		auto getLinkingLibFunc() -> std::function<void(Project*)> override {
 			return [this](Project* project) {
 				utils::mkdir(libPath);
-				std::string call = "ar rcs "+libPath + project->getName()+".a";
+				std::string call = toolchain.getArchivist() + " rcs "+libPath + project->getName()+".a";
 				// Get file dependencies
 				{
 					auto ingoing = graph->getIngoing<std::string, Project>(project, false);
@@ -51,9 +51,9 @@ namespace aBuild {
 				if (utils::isStartingWith(project->getName(), "test")) {
 					outFile = testPath+project->getName();
 				}
-				std::string call = "ccache clang++ -o "+outFile;
+				std::string call = toolchain.getCppCompiler() + " -o "+outFile;
 
-				if (configFile->getActiveFlavor() == "release") {
+				if (configFile->getFlavor() == "release") {
 					call += " -s";
 				}
 
@@ -91,13 +91,13 @@ namespace aBuild {
 				auto l = utils::explode(*f, "/");
 
 				utils::mkdir(objPath + utils::dirname(*f));
-				std::string flags = " --std=c++11 -Qunused-arguments -Wall -Wextra -fmessage-length=0";
-				if (configFile->getActiveFlavor() == "release") {
+				std::string flags = " --std=c++11 -Wall -Wextra -fmessage-length=0";
+				if (configFile->getFlavor() == "release") {
 					flags += " -O2";
-				} else if (configFile->getActiveFlavor() == "debug") {
+				} else if (configFile->getFlavor() == "debug") {
 					flags += " -ggdb -O0 -Wall -Wextra -fmessage-length=0";
 				}
-				std::string call = "ccache clang++ -Qunused-arguments -ggdb -O0 --std=c++11 "
+				std::string call = toolchain.getCppCompiler() + " -ggdb -O0 --std=c++11 "
 				                   "-c " + *f + " "
 				                   "-o " + objPath + *f + ".o";
 
@@ -138,7 +138,7 @@ namespace aBuild {
 				auto l = utils::explode(*f, "/");
 
 				utils::mkdir(".aBuild/obj/" + utils::dirname(*f));
-				std::string call = "ccache clang -Qunused-arguments -ggdb -O0 --std=c11 "
+				std::string call = toolchain.getCCompiler()+ " -ggdb -O0 --std=c11 "
 				                   "-c " + *f + " "
 				                   "-o " + objPath + *f + ".o";
 

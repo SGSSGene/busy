@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Project.h"
+#include "Toolchain.h"
 #include "utils.h"
 
 namespace aBuild {
@@ -52,10 +53,11 @@ namespace aBuild {
 
 	class Package {
 	private:
-		std::string     name;
-		PackageURL      url;
-		ExtDependencies extDependencies;
-		Projects        projects;
+		std::string            name;
+		PackageURL             url;
+		ExtDependencies        extDependencies;
+		Projects               projects;
+		std::vector<Toolchain> toolchains;
 
 	public:
 		Package(PackageURL const& _url)
@@ -65,6 +67,7 @@ namespace aBuild {
 			node["name"]            % name;
 			node["extDependencies"] % extDependencies;
 			node["projects"]        % projects;
+			node["toolchains"]      % toolchains;
 			for (auto& p : projects) {
 				p.setPackagePath(url.getPath());
 			}
@@ -82,6 +85,10 @@ namespace aBuild {
 		}
 		auto accessProjects() -> Projects& {
 			return projects;
+		}
+
+		auto getToolchains() const -> std::vector<Toolchain> const& {
+			return toolchains;
 		}
 	};
 }
