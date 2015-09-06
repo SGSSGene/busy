@@ -137,7 +137,7 @@ namespace aBuild {
 			return [this](std::string* f) {
 				auto l = utils::explode(*f, "/");
 
-				utils::mkdir(".aBuild/obj/" + utils::dirname(*f));
+				utils::mkdir(objPath + utils::dirname(*f));
 				std::string call = toolchain.getCCompiler()+ " -ggdb -O0 --std=c11 "
 				                   "-c " + *f + " "
 				                   "-o " + objPath + *f + ".o";
