@@ -95,9 +95,9 @@ namespace aBuild {
 				if (configFile->getFlavor() == "release") {
 					flags += " -O2";
 				} else if (configFile->getFlavor() == "debug") {
-					flags += " -ggdb -O0 -Wall -Wextra -fmessage-length=0";
+					flags += " -ggdb -O0";
 				}
-				std::string call = toolchain.getCppCompiler() + " -ggdb -O0 --std=c++11 "
+				std::string call = toolchain.getCppCompiler() + flags + " "
 				                   "-c " + *f + " "
 				                   "-o " + objPath + *f + ".o";
 
@@ -138,7 +138,13 @@ namespace aBuild {
 				auto l = utils::explode(*f, "/");
 
 				utils::mkdir(objPath + utils::dirname(*f));
-				std::string call = toolchain.getCCompiler()+ " -ggdb -O0 --std=c11 "
+				std::string flags = " --std=c11 -Wall -Wextra -fmessage-length=0";
+				if (configFile->getFlavor() == "release") {
+					flags += " -O2";
+				} else if (configFile->getFlavor() == "debug") {
+					flags += " -ggdb -O0";
+				}
+				std::string call = toolchain.getCCompiler() + flags + " "
 				                   "-c " + *f + " "
 				                   "-o " + objPath + *f + ".o";
 
