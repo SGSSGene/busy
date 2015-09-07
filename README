@@ -5,11 +5,11 @@ $ aBuild git@github.com:DemoProject1.git # checksout and builds everything you n
 
 (b) // Rebuild everything
 $ cd DemoProjct1
-$ aBuild <rebuild>
+$ aBuild
 
 (c) // Update everything
 $ cd DemoProject1
-$ aBuild update
+$ aBuild pull
 
 (d) // Test everything
 $ cd DemoProject1
@@ -30,20 +30,13 @@ Progress:
 
 !!TODOs
 – High Priority
+– Low priority
 	• "including" dep ext dependencies
 		This would allow a flat package hierachy.
 		So we could have meta packages which provide all types of utils,
 		but we don't need to know each real package name.
 		(using own namespace, so there can be meta packages)
-	• "depLibraries" should get a new name, they should be transitive
-– Low priority
-	• fixing internal dependencies:
-		– only need to make decision (1)
-		– package need an name packed into the package json file.
-		This way a package can dereference itself.
-		(1) Decision to be made: do others have to use a name to? exact same name?
-		
-
+	   "depLibraries" should get a new name, they should be transitive
 	• loop detection of projects
 		dependencies of projects
 	• status (which also shows unpushed changes)
@@ -51,8 +44,13 @@ Progress:
 	• use a git library
 	• use CommonOption library (some decision about dynamic parameters have to be made)
 	• use better library for file operations
-	• parallel compiles
+	• parallel compiling
 	• plugins for own file formats
-	• using external sdk
+	• more advanced toolchain selection
+		– using external sdk
+		– are sdk and toolchain the samething?
+	• installing and finding packages on system?
 	• fixing overuse of "system()"
 	• handle url changes of packages, Idea: delete packages and redownload it
+	• generating docu
+	• testing in docker (no clue how yet)
