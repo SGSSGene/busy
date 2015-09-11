@@ -77,7 +77,7 @@ namespace utils {
 			l.pop_back();
 		}
 		std::string path;
-		for (int i {0}; i < l.size() -1; ++i) {
+		for (int i {0}; i < int(l.size()) -1; ++i) {
 			path += l[i] + "/";
 		}
 		std::string file = l[l.size()-1];

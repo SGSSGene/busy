@@ -37,10 +37,10 @@ namespace utils {
 	void runParallel(std::vector<T> const& _args, std::function<void(T const& t)> _func, int batch = 4) {
 
 		int batchCt = 0;
-		while (batchCt < _args.size()) {
+		while (batchCt < int(_args.size())) {
 			std::vector<pid_t> pids;
 			for (int i {batchCt}; i < batchCt + batch; ++i) {
-				if (i >= _args.size()) break;
+				if (i >= int(_args.size())) break;
 				auto const& a = _args[i];
 				auto pid = fork();
 				if (pid == 0) {
