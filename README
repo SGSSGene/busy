@@ -36,7 +36,7 @@ Progress:
 	• resolving library dependencies (at the moment it's done with weird settings on compiler level)
 	• parallel compiling
 	• using generation dependencies, so already generated cpp files don't get regenerated
-
+	• Providing easy to use toolchains generated from pc directly
 
 – Low priority
 	• "including" dep ext dependencies
