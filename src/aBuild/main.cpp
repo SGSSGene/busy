@@ -11,6 +11,31 @@
 
 using namespace aBuild;
 
+static std::map<std::string, Toolchain> getAllToolchains(Workspace const& ws) {
+	std::map<std::string, Toolchain> retList;
+
+	std::map<std::string, Toolchain> searchPaths {
+	     {"/usr/bin/gcc-4.9", {"system-gcc-4.9", "gcc-4.9", "g++-4.9", "ar"}},
+	     {"/usr/bin/gcc-4.8", {"system-gcc-4.8", "gcc-4.8", "g++-4.8", "ar"}},
+	     {"/usr/bin/gcc-4.7", {"system-gcc-4.7", "gcc-4.7", "g++-4.7", "ar"}},
+	     {"/usr/bin/clang",   {"system-clang",   "clang",   "clang++", "ar"}},
+	     };
+
+	for (auto const& p : searchPaths) {
+		if (utils::fileExists(p.first)) {
+			retList[p.second.getName()] = p.second;
+		}
+	}
+
+	for (auto const& package : ws.getAllValidPackages(true)) {
+		for (auto const& tc : package.getToolchains()) {
+			retList[tc.getName()] = tc;
+		}
+	}
+	return retList;
+}
+
+
 static void checkingMissingPackages(Workspace& ws) {
 	// Checking missing packages
 	auto missingPackages = ws.getAllMissingPackages();
@@ -72,18 +97,14 @@ static void actionDefault(bool verbose = false) {
 
 	Graph graph;
 
-	Toolchain toolchain { "default", "clang", "clang++", "ar" };
+	auto allToolchains = getAllToolchains(ws);
+
+	Toolchain toolchain = allToolchains.rbegin()->second;
 	std::string toolchainName = ws.accessConfigFile().getToolchain();
-	for (auto const& package : ws.getAllValidPackages(true)) {
-		for (auto const& tc : package.getToolchains()) {
-			auto name = tc.getName();
-			if (name == toolchainName) {
-				toolchain = tc;
-				goto endloop;
-			}
-		}
+	if (allToolchains.find(toolchainName) != allToolchains.end()) {
+		toolchain = allToolchains.at(toolchainName);
 	}
-endloop:
+
 	std::cout << "Using toolchain: " << toolchain.getName() << std::endl;
 
 	std::unique_ptr<BuildAction> action { new BuildActionClang(&graph, verbose, &ws.accessConfigFile(), toolchain) };
@@ -255,26 +276,19 @@ static int actionListFiles() {
 }
 static void actionToolchains() {
 	Workspace ws(".");
-	for (auto const& package : ws.getAllValidPackages(true)) {
-		for (auto const& tc : package.getToolchains()) {
-			auto name = tc.getName();
-			if (name != "") {
-				std::cout<<name<<std::endl;
-			}
-		}
+	auto toolchains = getAllToolchains(ws);
+
+	for (auto const& e : toolchains) {
+		std::cout << e.first << std::endl;
 	}
 }
 static void actionToolchain(std::string const& _toolchain) {
 	Workspace ws(".");
-	for (auto const& package : ws.getAllValidPackages(true)) {
-		for (auto const& tc : package.getToolchains()) {
-			auto name = tc.getName();
-			if (name == _toolchain) {
-				ws.accessConfigFile().setToolchain(_toolchain);
-				std::cout << "Set toolchain to " << _toolchain << std::endl;
-				return;
-			}
-		}
+	auto toolchains = getAllToolchains(ws);
+	if (toolchains.find(_toolchain) != toolchains.end()) {
+		ws.accessConfigFile().setToolchain(_toolchain);
+		std::cout << "Set toolchain to " << _toolchain << std::endl;
+		return;
 	}
 	std::cout << "Setting toolchain failed" << std::endl;
 }

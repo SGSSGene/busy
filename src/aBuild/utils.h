@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include "Process.h"
 
 namespace utils {
 	void mkdir(std::string const& _dir);
