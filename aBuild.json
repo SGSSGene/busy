@@ -12,35 +12,35 @@
 	],
 	"toolchains" : [
 	{"name": "clang",
-		"ccompiler":   "clang",
-		"cppcompiler": "clang++ -Qunused-arguments",
-		"archivist":   "ar"
+		"ccompiler":   ["clang"],
+		"cppcompiler": ["clang++", "-Qunused-arguments"],
+		"archivist":   ["ar"]
 	},
 	{"name": "gcc",
-		"ccompiler":   "gcc",
-		"cppcompiler": "g++",
-		"archivist":   "ar"
+		"ccompiler":   ["gcc"],
+		"cppcompiler": ["g++"],
+		"archivist":   ["ar"]
 	},
 	{"name": "ccache-clang",
-		"ccompiler":   "ccache clang",
-		"cppcompiler": "ccache clang++ -Qunused-arguments",
-		"archivist":   "ar"
+		"ccompiler":   ["ccache", "clang"],
+		"cppcompiler": ["ccache", "clang++", "-Qunused-arguments"],
+		"archivist":   ["ar"]
 	},
 	{"name": "ccache-gcc",
-		"ccompiler":   "ccache gcc",
-		"cppcompiler": "ccache g++",
-		"archivist":   "ar"
+		"ccompiler":   ["ccache", "gcc"],
+		"cppcompiler": ["ccache", "g++"],
+		"archivist":   ["ar"]
 	},
 
 	{"name": "gcc-cc-odroid-x2",
-		"ccompiler":   "/opt/odroid-x2/compiler/bin/arm-linux-gnueabihf-gcc",
-		"cppcompiler": "/opt/odroid-x2/compiler/bin/arm-linux-gnueabihf-g++",
-		"archivist":   "/opt/odroid-x2/compiler/bin/arm-linux-gnueabihf-ar"
+		"ccompiler":   ["/opt/odroid-x2/compiler/bin/arm-linux-gnueabihf-gcc"],
+		"cppcompiler": ["/opt/odroid-x2/compiler/bin/arm-linux-gnueabihf-g++"],
+		"archivist":   ["/opt/odroid-x2/compiler/bin/arm-linux-gnueabihf-ar"]
 	},
 	{"name": "gcc-cc-arm-none-eabi",
-		"ccompiler":   "/opt/gcc-arm-none-eabi-4_9-2015q2/bin/arm-none-eabi-gcc",
-		"cppcompiler": "/opt/gcc-arm-none-eabi-4_9-2015q2/bin/arm-none-eabi-g++",
-		"archivist":   "/opt/gcc-arm-none-eabi-4_9-2015q2/bin/arm-none-eabi-ar"
+		"ccompiler":   ["/opt/gcc-arm-none-eabi-4_9-2015q2/bin/arm-none-eabi-gcc"],
+		"cppcompiler": ["/opt/gcc-arm-none-eabi-4_9-2015q2/bin/arm-none-eabi-g++"],
+		"archivist":   ["/opt/gcc-arm-none-eabi-4_9-2015q2/bin/arm-none-eabi-ar"]
 	}
 	]
 

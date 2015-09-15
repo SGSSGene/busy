@@ -27,13 +27,13 @@ class ProcessPImpl final {
 	std::string stdcout;
 	std::string stdcerr;
 public:
-	ProcessPImpl(std::string const& s, std::vector<std::string> const& argv) {
+	ProcessPImpl(std::vector<std::string> const& prog) {
 		pipe(stdoutpipe);
 		pipe(stderrpipe);
 
 		pid=fork();
 		if (pid==0) {
-			childProcess(s, argv);
+			childProcess(prog);
 		} else {
 			parentProcess();
 		}
@@ -53,9 +53,10 @@ public:
 		return status;
 	}
 private:
-	void childProcess(std::string const& s, std::vector<std::string> const& _argv) {
+	void childProcess(std::vector<std::string> const& _prog) {
 		std::string execStr;
 		std::string envPath = getenv("PATH");
+		auto s = _prog[0];
 		for (auto const& _s : utils::explode(envPath, ":")) {
 			if (utils::fileExists(_s+"/"+s)) {
 				execStr = _s+"/"+s;
@@ -64,8 +65,7 @@ private:
 		}
 
 		std::vector<char*> argv;
-		argv.push_back(const_cast<char*>(s.c_str()));
-		for (auto& a : _argv) {
+		for (auto& a : _prog) {
 			argv.push_back(const_cast<char*>(a.c_str()));
 		}
 		argv.push_back(nullptr);
@@ -116,8 +116,8 @@ private:
 	}
 };
 
-Process::Process(std::string const& s, std::vector<std::string> const& argv)
-	: pimpl { new ProcessPImpl(s, argv) } {
+Process::Process(std::vector<std::string> const& prog)
+	: pimpl { new ProcessPImpl(prog) } {
 }
 
 Process::~Process() {
