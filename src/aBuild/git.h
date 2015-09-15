@@ -1,12 +1,13 @@
 #pragma once
 
 #include "utils.h"
+#include "Process.h"
 
 namespace git {
 
 inline void clone(std::string const& _url, std::string const& _commit, std::string const& _dir) {
-	std::string call = std::string("git clone ") + _url + " -b "+_commit + +" "+_dir;
-	utils::runProcess(call);
+	std::cout << "cloning " << _url << std::endl;
+	utils::Process p("git", {"clone", _url, "-b", _commit, _dir});;
 }
 inline void pull() {
 	std::string call = std::string("git pull");

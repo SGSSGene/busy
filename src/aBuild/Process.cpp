@@ -8,6 +8,7 @@
 #include <iostream>
 #include <string>
 #include <sstream>
+#include "utils.h"
 
 #define READ_END 0
 #define WRITE_END 1
@@ -51,24 +52,29 @@ public:
 	}
 private:
 	void childProcess(std::string const& s, std::vector<std::string> const& _argv) {
+		std::string execStr;
+		std::string envPath = getenv("PATH");
+		for (auto const& _s : utils::explode(envPath, ":")) {
+			if (utils::fileExists(_s+"/"+s)) {
+				execStr = _s+"/"+s;
+				break;
+			}
+		}
+
 		std::vector<char*> argv;
+		argv.push_back(const_cast<char*>(s.c_str()));
 		for (auto& a : _argv) {
 			argv.push_back(const_cast<char*>(a.c_str()));
-			std::cout<<a<<std::endl;
 		}
 		argv.push_back(nullptr);
 
-		std::cout<<argv.size()<<std::endl;
-		std::cout<<s<<" "<<argv[0]<<std::endl;
-
-/*		dup2(stdoutpipe[WRITE_END], STDOUT_FILENO);
+		dup2(stdoutpipe[WRITE_END], STDOUT_FILENO);
 		close(stdoutpipe[READ_END]);
 
 		dup2(stderrpipe[WRITE_END], STDERR_FILENO);
-		close(stderrpipe[READ_END]);*/
+		close(stderrpipe[READ_END]);
 
-		execv(s.c_str(), &argv[0]);
-		std::cout<<"error"<<std::endl;
+		execv(execStr.c_str(), &argv[0]);
 		exit(127); /* only if execv fails */
 	}
 	void parentProcess() {

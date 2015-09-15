@@ -1,6 +1,7 @@
 #pragma once
 
 #include "BuildAction.h"
+#include "Process.h"
 
 namespace aBuild {
 	class BuildActionClang : public BuildAction {
@@ -23,16 +24,23 @@ namespace aBuild {
 		auto getLinkingLibFunc() -> std::function<void(Project*)> override {
 			return [this](Project* project) {
 				utils::mkdir(libPath);
-				std::string call = toolchain.getArchivist() + " rcs "+libPath + project->getName()+".a";
-				// Get file dependencies
-				{
-					auto ingoing = graph->getIngoing<std::string, Project>(project, false);
-					for (auto const& f : ingoing) {
-						call += " " + objPath + *f + ".o";
-					}
+				std::string prog = toolchain.getArchivist();
+				std::vector<std::string> parameters;
+				parameters.push_back("rcs");
+				parameters.push_back(libPath + project->getName() + ".a");
+				auto ingoing = graph->getIngoing<std::string, Project>(project, false);
+				for (auto const& f : ingoing) {
+					parameters.push_back(objPath + *f + ".o");
 				}
-//				std::cout<<call<<std::endl;
-				utils::runProcess(call);
+
+				if (verbose) {
+					std::cout<<prog;
+					for (auto const& s : parameters) {
+						std::cout<<" "<<s;
+					}
+					std::cout<<std::endl;
+				}
+				utils::Process p(prog, parameters);
 			};
 		}
 
@@ -51,38 +59,48 @@ namespace aBuild {
 				if (utils::isStartingWith(project->getName(), "test")) {
 					outFile = testPath+project->getName();
 				}
-				std::string call = toolchain.getCppCompiler() + " -o "+outFile;
+				std::string prog = toolchain.getCppCompiler();
+				std::vector<std::string> parameters;
+				parameters.push_back("-o");
+				parameters.push_back(outFile);
 
 				if (configFile->getFlavor() == "release") {
-					call += " -s";
+					parameters.push_back("-s");
 				}
 
 				// Set all depLibraries libraries
 				for (auto const& l : project->getDepLibraries()) {
-					call += " -l"+l;
+					parameters.push_back("-l"+l);
 				}
 				// Get file dependencies
 				{
 					auto ingoing = graph->getIngoing<std::string, Project>(project, false);
 					for (auto const& f : ingoing) {
-						call += " " + objPath + *f + ".o";
+						parameters.push_back(objPath + *f + ".o");
 					}
 				}
 				// Get project dependencies
 				{
 					auto outgoing = graph->getIngoing<Project, Project>(project, true);
 					for (auto const& f : outgoing) {
-						call += " " + libPath + f->getName()+".a";
+						parameters.push_back(libPath + f ->getName() + ".a");
 
 						// Set all depLibraries libraries
 						for (auto const& l : f->getDepLibraries()) {
-							call += " -l"+l;
+							parameters.push_back("-l"+l);
 						}
 
 					}
 				}
-//				std::cout<<call<<std::endl;
-				utils::runProcess(call);
+				if (verbose) {
+					std::cout<<prog;
+					for (auto const& s : parameters) {
+						std::cout<<" "<<s;
+					}
+					std::cout<<std::endl;
+				}
+
+				utils::Process p(prog, parameters);
 
 			};
 		}
@@ -90,47 +108,70 @@ namespace aBuild {
 			return [this](std::string* f) {
 				auto l = utils::explode(*f, "/");
 
+				std::string prog = toolchain.getCppCompiler();
+				std::vector<std::string> parameters;
+
+				parameters.push_back("--std=c++11");
+				parameters.push_back("-Wall");
+				parameters.push_back("-Wextra");
+				parameters.push_back("-fmessage-length=0");
+
+
 				utils::mkdir(objPath + utils::dirname(*f));
-				std::string flags = " --std=c++11 -Wall -Wextra -fmessage-length=0";
 				if (configFile->getFlavor() == "release") {
-					flags += " -O2";
+					parameters.push_back("-O2");
 				} else if (configFile->getFlavor() == "debug") {
-					flags += " -ggdb -O0";
+					parameters.push_back("-ggdb");
+					parameters.push_back("-O0");
 				}
-				std::string call = toolchain.getCppCompiler() + flags + " "
-				                   "-c " + *f + " "
-				                   "-o " + objPath + *f + ".o";
+				parameters.push_back("-c");
+				parameters.push_back(*f);
+				parameters.push_back("-o");
+				parameters.push_back(objPath + *f + ".o");
 
 				// Get include dependencies
 				{
 					Project* project = *graph->getOutgoing<Project, std::string>(f, false).begin();
 					for (auto const& i : project->getLegacy().includes) {
-						call += " -I "+project->getPackagePath()+"/"+i;
+						parameters.push_back("-I");
+						parameters.push_back(project->getPackagePath()+"/"+i);
 					}
-					call += " -I "+project->getPackagePath()+"/src/"+project->getPath();
-					call += " -I "+project->getPackagePath()+"/src/";
+					parameters.push_back("-I");
+					parameters.push_back(project->getPackagePath()+"/src/"+project->getPath());
+					parameters.push_back("-I");
+					parameters.push_back(project->getPackagePath()+"/src/");
 
 					auto ingoing = graph->getIngoing<Project, Project>(project, true);
 					// Adding all defines of dependent libraries
-					call += " -DABUILD";
+					parameters.push_back("-DABUILD");
+
 					for (auto const& f : ingoing) {
-						call += std::string(" -DABUILD_");
+						std::string def = std::string("-DABUILD_");
 						for (auto const& c : f->getName()) {
-							call += std::toupper(c);
+							def += std::toupper(c);
 						}
+						parameters.push_back(def);
+
 					}
 					// Adding all includes of dependent libraries
 					for (auto const& f : ingoing) {
-						call += " -isystem "+f->getPackagePath()+"/src";
+						parameters.push_back("-isystem");
+						parameters.push_back(f->getPackagePath()+"/src");
 						for (auto const& i : f->getLegacy().includes) {
-							call += " -isystem "+f->getPackagePath()+"/"+i;
+							parameters.push_back("-isystem");
+							parameters.push_back(f->getPackagePath()+"/"+i);
 						}
 					}
 				}
 				if (verbose) {
-					std::cout<<call<<std::endl;
+					std::cout<<prog;
+					for (auto const& s : parameters) {
+						std::cout<<" "<<s;
+					}
+					std::cout<<std::endl;
 				}
-				utils::runProcess(call);
+
+				utils::Process p(prog, parameters);
 			};
 		}
 		auto getCompileCFileFunc() -> std::function<void(std::string*)> override {

@@ -6,6 +6,7 @@
 #include "BuildActionClang.h"
 
 #include "utils.h"
+#include "Process.h"
 #include "git.h"
 #include "estd.h"
 
