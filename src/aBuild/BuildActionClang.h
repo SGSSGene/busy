@@ -3,6 +3,12 @@
 #include "BuildAction.h"
 #include "Process.h"
 
+#define TERM_RESET                      "\033[0m"
+#define TERM_RED                        "\033[31m"
+#define TERM_GREEN                      "\033[32m"
+#define TERM_PURPLE                     "\033[35m"
+
+
 namespace aBuild {
 	class BuildActionClang : public BuildAction {
 	private:
@@ -10,8 +16,18 @@ namespace aBuild {
 		std::string libPath;
 		std::string objPath;
 		std::string execPath;
-
 	public:
+		void runProcess(std::vector<std::string> const& prog) const {
+			if (verbose) {
+				for (auto const& s : prog) {
+					std::cout<<" "<<s;
+				}
+				std::cout<<std::endl;
+			}
+			utils::Process p(prog);
+			std::cerr << TERM_PURPLE << p.cerr() << TERM_RESET;
+			std::cout << TERM_GREEN  << p.cout() << TERM_RESET;
+		}
 		BuildActionClang(Graph const* _graph, bool _verbose, Workspace::ConfigFile const* _configFile, Toolchain const& _toolchain)
 			: BuildAction(_graph, _verbose, _configFile, _toolchain)
 		{
@@ -31,16 +47,7 @@ namespace aBuild {
 				for (auto const& f : ingoing) {
 					prog.push_back(objPath + *f + ".o");
 				}
-
-				if (verbose) {
-					for (auto const& s : prog) {
-						std::cout<<" "<<s;
-					}
-					std::cout<<std::endl;
-				}
-				utils::Process p(prog);
-				std::cerr<<p.cerr();
-				std::cout<<p.cout();
+				runProcess(prog);
 			};
 		}
 
@@ -92,17 +99,7 @@ namespace aBuild {
 
 					}
 				}
-				if (verbose) {
-					for (auto const& s : prog) {
-						std::cout<<" "<<s;
-					}
-					std::cout<<std::endl;
-				}
-
-				utils::Process p(prog);
-				std::cerr<<p.cerr();
-				std::cout<<p.cout();
-
+				runProcess(prog);
 			};
 		}
 		auto getCompileCppFileFunc() -> std::function<void(std::string*)> override {
@@ -163,15 +160,7 @@ namespace aBuild {
 						}
 					}
 				}
-				if (verbose) {
-					for (auto const& s : prog) {
-						std::cout<<" "<<s;
-					}
-					std::cout<<std::endl;
-				}
-				utils::Process p(prog);
-				std::cerr<<p.cerr();
-				std::cout<<p.cout();
+				runProcess(prog);
 			};
 		}
 		auto getCompileCFileFunc() -> std::function<void(std::string*)> override {
@@ -231,15 +220,7 @@ namespace aBuild {
 						}
 					}
 				}
-				if (verbose) {
-					for (auto const& s : prog) {
-						std::cout<<" "<<s;
-					}
-					std::cout<<std::endl;
-				}
-				utils::Process p(prog);
-				std::cerr<<p.cerr();
-				std::cout<<p.cout();
+				runProcess(prog);
 			};
 		}
 
