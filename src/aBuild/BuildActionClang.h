@@ -179,46 +179,67 @@ namespace aBuild {
 				auto l = utils::explode(*f, "/");
 
 				utils::mkdir(objPath + utils::dirname(*f));
-				std::string flags = " -std=c11 -Wall -Wextra -fmessage-length=0";
+
+				auto prog = toolchain.getCCompiler();
+
+				prog.push_back("-std=c11");
+				prog.push_back("-Wall");
+				prog.push_back("-Wextra");
+				prog.push_back("-fmessage-length=0");
+
 				if (configFile->getFlavor() == "release") {
-					flags += " -O2";
+					prog.push_back("-O2");
 				} else if (configFile->getFlavor() == "debug") {
-					flags += " -ggdb -O0";
+					prog.push_back("-ggdb");
+					prog.push_back("-O0");
 				}
-				std::string call = toolchain.getCCompiler()[0] + flags + " "
-				                   "-c " + *f + " "
-				                   "-o " + objPath + *f + ".o";
+				prog.push_back("-c");
+				prog.push_back(*f);
+				prog.push_back("-o");
+				prog.push_back(objPath + *f + ".o");
 
 				// Get include dependencies
 				{
 					Project* project = *graph->getOutgoing<Project, std::string>(f, false).begin();
 					for (auto const& i : project->getLegacy().includes) {
-						call += " -I "+project->getPackagePath()+"/"+i;
+						prog.push_back("-I");
+						prog.push_back(project->getPackagePath()+"/"+i);
 					}
-					call += " -I "+project->getPackagePath()+"/src/"+project->getPath();
-					call += " -I "+project->getPackagePath()+"/src/";
+					prog.push_back("-I");
+					prog.push_back(project->getPackagePath()+"/src"+project->getPath());
+					prog.push_back("-I");
+					prog.push_back(project->getPackagePath()+"/src/");
 
 					auto ingoing = graph->getIngoing<Project, Project>(project, true);
 					// Adding all defines of dependent libraries
-					call += " -DABUILD";
+					prog.push_back("-DABUILD");
 					for (auto const& f : ingoing) {
-						call += std::string(" -DABUILD_");
+						std::string def = "-ABUILD_";
 						for (auto const& c : f->getName()) {
-							call += std::toupper(c);
+							def += std::toupper(c);
 						}
+						prog.push_back(def);
+
 					}
 					// Adding all includes of dependent libraries
 					for (auto const& f : ingoing) {
-						call += " -isystem "+f->getPackagePath()+"/src";
+						prog.push_back("-isystem");
+						prog.push_back(f->getPackagePath()+"/src");
 						for (auto const& i : f->getLegacy().includes) {
-							call += " -isystem "+f->getPackagePath()+"/"+i;
+							prog.push_back("-isystem");
+							prog.push_back(f->getPackagePath()+"/" + i);
 						}
 					}
 				}
 				if (verbose) {
-					std::cout<<call<<std::endl;
+					for (auto const& s : prog) {
+						std::cout<<" "<<s;
+					}
+					std::cout<<std::endl;
 				}
-				utils::runProcess(call);
+				utils::Process p(prog);
+				std::cerr<<p.cerr();
+				std::cout<<p.cout();
 			};
 		}
 
