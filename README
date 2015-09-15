@@ -30,6 +30,14 @@ Progress:
 
 !!TODOs
 – High Priority
+	• more advanced toolchain selection
+		– using external sdk
+		– are sdk and toolchain the samething? (no, since sdk is only headrs, while toolchain can be a cross compiler)
+	• resolving library dependencies (at the moment it's done with weird settings on compiler level)
+	• parallel compiling
+	• using generation dependencies, so already generated cpp files don't get regenerated
+
+
 – Low priority
 	• "including" dep ext dependencies
 		This would allow a flat package hierachy.
@@ -44,11 +52,8 @@ Progress:
 	• use a git library
 	• use CommonOption library (some decision about dynamic parameters have to be made)
 	• use better library for file operations
-	• parallel compiling
 	• plugins for own file formats
-	• more advanced toolchain selection
-		– using external sdk
-		– are sdk and toolchain the samething?
+		- can we compile stuff that's not c/c++?
 	• installing and finding packages on system?
 	• fixing overuse of "system()"
 	• handle url changes of packages, Idea: delete packages and redownload it
