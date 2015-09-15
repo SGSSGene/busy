@@ -6,8 +6,10 @@
 #include <sys/types.h> /* for pid_t */
 #include <sys/wait.h> /* for wait */
 #include <iostream>
+#include <mutex>
 #include <string>
 #include <sstream>
+#include <thread>
 #include "utils.h"
 
 #define READ_END 0
@@ -78,17 +80,39 @@ private:
 		exit(127); /* only if execv fails */
 	}
 	void parentProcess() {
-		waitpid(pid, &status, 0); /* wait for child to exit */
+		std::mutex mutex;
+		std::string _stdcout, _stdcerr;
 
+		std::thread t {[&] {
+			int i = 100;
+			while (--i > 0) {
+				char buffer[257];
+				buffer[0] = 0;
+				int size;
+				if ((size = read(stdoutpipe[READ_END], buffer, sizeof(buffer)-1)) >= 0) {
+					std::unique_lock<std::mutex> lock(mutex);
+					buffer[size] = 0;
+					_stdcout += buffer;
+				} else return;
+				buffer[0] = 0;
+				if ((size = read(stderrpipe[READ_END], buffer, sizeof(buffer)-1)) >= 0) {
+					std::unique_lock<std::mutex> lock(mutex);
+					buffer[size] = 0;
+
+					_stdcerr += buffer;
+				} else return;
+			}
+		}};
+
+		waitpid(pid, &status, 0); /* wait for child to exit */
 		close(stdoutpipe[WRITE_END]);
 		close(stderrpipe[WRITE_END]);
-
-		char buffer[256];
-		read(stdoutpipe[READ_END], buffer, sizeof(buffer));
-		stdcout = buffer;
-
-		read(stderrpipe[READ_END], buffer, sizeof(buffer));
-		stdcerr = buffer;
+		t.join();
+		{
+			std::unique_lock<std::mutex> lock(mutex);
+			stdcout = _stdcout;
+			stdcerr = _stdcerr;
+		}
 	}
 };
 

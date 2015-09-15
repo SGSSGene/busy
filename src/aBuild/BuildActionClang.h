@@ -41,6 +41,8 @@ namespace aBuild {
 					std::cout<<std::endl;
 				}
 				utils::Process p(prog, parameters);
+				std::cerr<<p.cerr();
+				std::cout<<p.cout();
 			};
 		}
 
@@ -68,10 +70,6 @@ namespace aBuild {
 					parameters.push_back("-s");
 				}
 
-				// Set all depLibraries libraries
-				for (auto const& l : project->getDepLibraries()) {
-					parameters.push_back("-l"+l);
-				}
 				// Get file dependencies
 				{
 					auto ingoing = graph->getIngoing<std::string, Project>(project, false);
@@ -79,6 +77,11 @@ namespace aBuild {
 						parameters.push_back(objPath + *f + ".o");
 					}
 				}
+				// Set all depLibraries libraries
+				for (auto const& l : project->getDepLibraries()) {
+					parameters.push_back("-l"+l);
+				}
+
 				// Get project dependencies
 				{
 					auto outgoing = graph->getIngoing<Project, Project>(project, true);
@@ -101,6 +104,8 @@ namespace aBuild {
 				}
 
 				utils::Process p(prog, parameters);
+				std::cerr<<p.cerr();
+				std::cout<<p.cout();
 
 			};
 		}
@@ -111,7 +116,7 @@ namespace aBuild {
 				std::string prog = toolchain.getCppCompiler();
 				std::vector<std::string> parameters;
 
-				parameters.push_back("--std=c++11");
+				parameters.push_back("-std=c++11");
 				parameters.push_back("-Wall");
 				parameters.push_back("-Wextra");
 				parameters.push_back("-fmessage-length=0");
@@ -170,8 +175,9 @@ namespace aBuild {
 					}
 					std::cout<<std::endl;
 				}
-
 				utils::Process p(prog, parameters);
+				std::cerr<<p.cerr();
+				std::cout<<p.cout();
 			};
 		}
 		auto getCompileCFileFunc() -> std::function<void(std::string*)> override {
@@ -179,7 +185,7 @@ namespace aBuild {
 				auto l = utils::explode(*f, "/");
 
 				utils::mkdir(objPath + utils::dirname(*f));
-				std::string flags = " --std=c11 -Wall -Wextra -fmessage-length=0";
+				std::string flags = " -std=c11 -Wall -Wextra -fmessage-length=0";
 				if (configFile->getFlavor() == "release") {
 					flags += " -O2";
 				} else if (configFile->getFlavor() == "debug") {
