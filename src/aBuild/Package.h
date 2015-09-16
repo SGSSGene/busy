@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Installation.h"
 #include "Project.h"
 #include "Toolchain.h"
 #include "utils.h"
@@ -50,14 +51,17 @@ namespace aBuild {
 
 	using ExtDependencies = std::vector<PackageURL>;
 	using Projects        = std::vector<Project>;
+	using Installations   = std::vector<Installation>;
+	using Toolchains      = std::vector<Toolchain>;
 
 	class Package {
 	private:
-		std::string            name;
-		PackageURL             url;
-		ExtDependencies        extDependencies;
-		Projects               projects;
-		std::vector<Toolchain> toolchains;
+		std::string     name;
+		PackageURL      url;
+		ExtDependencies extDependencies;
+		Projects        projects;
+		Installations   installations;
+		Toolchains      toolchains;
 
 	public:
 		Package(PackageURL const& _url)
@@ -67,6 +71,7 @@ namespace aBuild {
 			node["name"]            % name;
 			node["extDependencies"] % extDependencies;
 			node["projects"]        % projects;
+			node["installations"]   % installations;
 			node["toolchains"]      % toolchains;
 			for (auto& p : projects) {
 				p.setPackagePath(url.getPath());
@@ -87,8 +92,11 @@ namespace aBuild {
 			return projects;
 		}
 
-		auto getToolchains() const -> std::vector<Toolchain> const& {
+		auto getToolchains() const -> Toolchains const& {
 			return toolchains;
+		}
+		auto getInstallations() const -> Installations const& {
+			return installations;
 		}
 	};
 }

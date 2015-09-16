@@ -12,24 +12,27 @@
 	],
 	"toolchains" : [
 	{"name": "clang",
-		"ccompiler":   ["clang"],
-		"cppcompiler": ["clang++", "-Qunused-arguments"],
-		"archivist":   ["ar"]
+		"ccompiler":     ["clang"],
+		"cppcompiler":   ["clang++", "-Qunused-arguments"],
+		"archivist":     ["ar"],
+		"installations": ["clang"]
 	},
 	{"name": "gcc",
-		"ccompiler":   ["gcc"],
-		"cppcompiler": ["g++"],
-		"archivist":   ["ar"]
+		"ccompiler":     ["gcc"],
+		"cppcompiler":   ["g++"],
+		"archivist":     ["ar"]
 	},
 	{"name": "ccache-clang",
-		"ccompiler":   ["ccache", "clang"],
-		"cppcompiler": ["ccache", "clang++", "-Qunused-arguments"],
-		"archivist":   ["ar"]
+		"ccompiler":     ["ccache", "clang"],
+		"cppcompiler":   ["ccache", "clang++", "-Qunused-arguments"],
+		"archivist":     ["ar"],
+		"installations": ["clang", "ccache"]
 	},
 	{"name": "ccache-gcc",
-		"ccompiler":   ["ccache", "gcc"],
-		"cppcompiler": ["ccache", "g++"],
-		"archivist":   ["ar"]
+		"ccompiler":     ["ccache", "gcc"],
+		"cppcompiler":   ["ccache", "g++"],
+		"archivist":     ["ar"],
+		"installations": ["ccache"]
 	},
 
 	{"name": "gcc-cc-odroid-x2",
@@ -41,8 +44,16 @@
 		"ccompiler":   ["/opt/gcc-arm-none-eabi-4_9-2015q2/bin/arm-none-eabi-gcc"],
 		"cppcompiler": ["/opt/gcc-arm-none-eabi-4_9-2015q2/bin/arm-none-eabi-g++"],
 		"archivist":   ["/opt/gcc-arm-none-eabi-4_9-2015q2/bin/arm-none-eabi-ar"]
-	}
+	}],
+	"installations": [
+		{"name": "clang",
+		"systems": [
+			{ "systems": ["ubuntu"], "type": "system", "url": "clang"}
+		]},
+		{"name": "ccache",
+		"systems": [
+			{ "systems": ["ubuntu"], "type": "system", "url": "ccache"}
+		]}
 	]
-
 }
 }

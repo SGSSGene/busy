@@ -25,8 +25,11 @@ namespace aBuild {
 				std::cout<<std::endl;
 			}
 			utils::Process p(prog);
-			std::cerr << TERM_PURPLE << p.cerr() << TERM_RESET;
-			std::cout << TERM_GREEN  << p.cout() << TERM_RESET;
+			//std::cerr << TERM_PURPLE << p.cerr() << TERM_RESET;
+			//std::cout << TERM_GREEN  << p.cout() << TERM_RESET;
+			std::cout << p.cout() << TERM_RESET;
+			std::cerr << p.cerr() << TERM_RESET;
+
 		}
 		BuildActionClang(Graph const* _graph, bool _verbose, Workspace::ConfigFile const* _configFile, Toolchain const& _toolchain)
 			: BuildAction(_graph, _verbose, _configFile, _toolchain)
