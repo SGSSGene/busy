@@ -59,3 +59,4 @@ Progress:
 	• handle url changes of packages, Idea: delete packages and redownload it
 	• generating docu
 	• testing in docker (no clue how yet)
+	• rewrite url rules or package url rules
