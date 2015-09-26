@@ -18,7 +18,7 @@ namespace aBuild {
 		std::string objPath;
 		std::string execPath;
 	public:
-		void runProcess(std::vector<std::string> const& prog) const {
+		void runProcess(std::vector<std::string> const& prog, bool _noWarnings) const {
 			if (verbose) {
 				for (auto const& s : prog) {
 					std::cout<<" "<<s;
@@ -28,8 +28,11 @@ namespace aBuild {
 			utils::Process p(prog);
 			//std::cerr << TERM_PURPLE << p.cerr() << TERM_RESET;
 			//std::cout << TERM_GREEN  << p.cout() << TERM_RESET;
-			std::cout << p.cout() << TERM_RESET;
-			std::cerr << p.cerr() << TERM_RESET;
+			if (not _noWarnings || p.getStatus() != 0) {
+				std::cout << p.cout() << TERM_RESET;
+				std::cerr << p.cerr() << TERM_RESET;
+			}
+
 
 		}
 		BuildActionClang(Graph const* _graph, bool _verbose, Workspace::ConfigFile const* _configFile, Toolchain const& _toolchain)
@@ -51,7 +54,7 @@ namespace aBuild {
 				for (auto const& f : ingoing) {
 					prog.push_back(objPath + *f + ".o");
 				}
-				runProcess(prog);
+				runProcess(prog, project->getNoWarnings());
 			};
 		}
 
@@ -133,7 +136,7 @@ namespace aBuild {
 				for (auto const& s : depLibraries) {
 					prog.push_back(s);
 				}
-				runProcess(prog);
+				runProcess(prog, project->getNoWarnings());
 			};
 		}
 		auto getCompileCppFileFunc() -> std::function<void(std::string*)> override {
@@ -161,8 +164,8 @@ namespace aBuild {
 				prog.push_back(objPath + *f + ".o");
 
 				// Get include dependencies
+				Project* project = *graph->getOutgoing<Project, std::string>(f, false).begin();
 				{
-					Project* project = *graph->getOutgoing<Project, std::string>(f, false).begin();
 					for (auto const& i : project->getLegacy().includes) {
 						prog.push_back("-I");
 						prog.push_back(project->getPackagePath()+"/"+i);
@@ -194,7 +197,7 @@ namespace aBuild {
 						}
 					}
 				}
-				runProcess(prog);
+				runProcess(prog, project->getNoWarnings());
 			};
 		}
 		auto getCompileCFileFunc() -> std::function<void(std::string*)> override {
@@ -222,8 +225,8 @@ namespace aBuild {
 				prog.push_back(objPath + *f + ".o");
 
 				// Get include dependencies
+				Project* project = *graph->getOutgoing<Project, std::string>(f, false).begin();
 				{
-					Project* project = *graph->getOutgoing<Project, std::string>(f, false).begin();
 					for (auto const& i : project->getLegacy().includes) {
 						prog.push_back("-I");
 						prog.push_back(project->getPackagePath()+"/"+i);
@@ -254,7 +257,7 @@ namespace aBuild {
 						}
 					}
 				}
-				runProcess(prog);
+				runProcess(prog, project->getNoWarnings());
 			};
 		}
 

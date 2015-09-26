@@ -24,6 +24,7 @@ namespace aBuild {
 		Dependencies dependencies;
 		Dependencies optionalDependencies;
 		DepLibraries depLibraries;
+		bool         noWarnings;
 		std::string  type;
 		mutable std::vector<std::string> cppFiles;
 		mutable std::vector<std::string> cFiles;
@@ -41,6 +42,7 @@ namespace aBuild {
 			node["type"]                 % type;
 			node["legacy"]               % legacy;
 			node["depLibraries"]         % depLibraries;
+			node["noWarnings"]           % noWarnings           or false;
 		}
 		void set(std::string const& _name, std::string const& _type) {
 			path = _name;
@@ -74,6 +76,9 @@ namespace aBuild {
 		}
 		auto getDepLibraries() const -> DepLibraries const& {
 			return depLibraries;
+		}
+		bool getNoWarnings() const {
+			return noWarnings;
 		}
 		auto getAllCppFiles() -> std::vector<std::string>& {
 			if (cppFiles.empty()) {
