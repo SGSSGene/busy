@@ -229,10 +229,8 @@ static void actionInstall() {
 		std::cout<<"installing "<<f<<"; Error Code: ";
 		auto oldFile = buildPath+f;
 		auto newFile = std::string("/usr/bin/")+f;
-		auto cpFile  = std::string("cp ")+newFile+" "+oldFile;
-		auto error = rename(oldFile.c_str(), newFile.c_str());
+		auto error = ::rename(oldFile.c_str(), newFile.c_str());
 		std::cout<<error<<std::endl;
-		system(cpFile.c_str());
 	}
 }
 static void actionStatus(std::string _flavor = "") {
@@ -265,21 +263,35 @@ static void actionQuickFix() {
 		jsonSerializer::write("aBuild.json", package);
 	}
 }
-
-std::string getLsFilesString(std::string const& path) {
-	auto printLsFiles = std::string("bash -c \"cat <(git ls-files -o --exclude-standard) <(git ls-files) | sed 's/^/") +path+ std::string("\\//'\"");
-	return printLsFiles;
+std::set<std::string> getLsFiles(std::string const& _cwd) {
+	utils::Cwd cwd(_cwd);
+	utils::Process p1 ({"git", "ls-files"});
+	utils::Process p2 ({"git", "ls-files", "-o", "--exclude-standard"});
+	auto files1 = utils::explode(p1.cout(), "\n");
+	auto files2 = utils::explode(p2.cout(), "\n");
+	std::set<std::string> files;
+	for (auto const& s : files1) {
+		files.insert(s);
+	}
+	for (auto const& s : files2) {
+		files.insert(s);
+	}
+	return files;
 }
+void printLsFiles(std::string const& _cwd) {
+	auto files = getLsFiles(_cwd);
+	for (auto const& s : files) {
+		std::cout << _cwd << "/" << s << std::endl;
+	}
+}
+
 static int actionListFiles() {
 	if (not utils::fileExists("aBuild.json")) return EXIT_FAILURE;
-	auto printLsFiles = getLsFilesString(".");
-	system(printLsFiles.c_str());
+	printLsFiles(".");
 	auto projectDirs = utils::listDirs("packages", true);
 	for (auto const& d : projectDirs) {
 		auto path = std::string("packages/")+d;
-		utils::Cwd cwd(path);
-		auto printLsFiles = getLsFilesString(std::string("packages\\/") + d);
-		system(printLsFiles.c_str());
+		printLsFiles(path);
 	}
 
 	return EXIT_SUCCESS;
