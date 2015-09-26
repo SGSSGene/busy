@@ -12,8 +12,6 @@
 namespace utils {
 	void mkdir(std::string const& _dir);
 	void rm(std::string const& _dir, bool recursive=false, bool force=false);
-	void resetFile(std::string const& _file, std::string const& _str);
-	void cp(std::string const& _src, std::string const& _dest);
 	void mv(std::string const& _src, std::string const& _dest);
 	std::string dirname(std::string const& _file);
 	std::string _basename(std::string const& _file);

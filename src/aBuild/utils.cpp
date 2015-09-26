@@ -18,38 +18,36 @@
 #include <fstream>
 #include <libgen.h>
 
+#include "Process.h"
+
 namespace utils {
 	void mkdir(std::string const& _dir) {
 		std::stringstream call;
-		call<<"mkdir -p "<<_dir;
-		system(call.str().c_str());
+		Process p({"mkdir", "-p", _dir});
+		if (p.getStatus() != 0) {
+			throw std::runtime_error("error running mkdir -p " + _dir);
+		}
 	}
 	void rm(std::string const& _dir, bool recursive, bool force ) {
-		std::stringstream call;
-		call<<"rm ";
+		std::vector<std::string> call ({"rm"});
 		if (recursive) {
-			call<<"-r ";
+			call.push_back("-r");
 		}
 		if (force) {
-			call<<"-f ";
+			call.push_back("-f");
 		}
-		call<<_dir;
-		system(call.str().c_str());
-	}
-	void resetFile(std::string const& _file, std::string const& _str) {
-		std::stringstream call;
-		call<<"echo "<<_str<<" > "<<_file;
-		system(call.str().c_str());
-	}
-	void cp(std::string const& _src, std::string const& _dest) {
-		std::stringstream call;
-		call<<"cp "<<_src<<" "<<_dest<<std::endl;
-		system(call.str().c_str());
+		call.push_back(_dir);
+		Process p(call);
+		if (p.getStatus() != 0) {
+			throw std::runtime_error("error running rm");
+		}
 	}
 	void mv(std::string const& _src, std::string const& _dest) {
-		std::stringstream call;
-		call<<"mv "<<_src<<" "<<_dest<<std::endl;
-		system(call.str().c_str());
+		std::vector<std::string> call ({"mv", _src, _dest});
+		Process p(call);
+		if (p.getStatus() != 0) {
+			throw std::runtime_error("error running rm");
+		}
 	}
 
 	std::string dirname(std::string const& _file) {
@@ -204,16 +202,22 @@ namespace utils {
 	int64_t getFileModificationTime(std::string const& _file) {
 		if (not fileExists(_file)) return 0;
 		struct stat buf;
-		stat(_file.c_str(), &buf);
+		::stat(_file.c_str(), &buf);
 		return buf.st_mtime;
 	}
 	std::string cwd() {
 		char buf[512]; //!TODO risky
-		getcwd(buf, sizeof(buf));
+		char* ret = ::getcwd(buf, sizeof(buf));
+		if (ret == nullptr) {
+			throw std::runtime_error("getcwd faild");
+		}
 		return buf;
 	}
 	void cwd(std::string const& _string) {
-		chdir(_string.c_str());
+		int ret = ::chdir(_string.c_str());
+		if (ret == -1) {
+			throw std::runtime_error("chdir on "+_string+" failed");
+		}
 	}
 	std::string sanitize(std::string const& _s) {
 		std::string r;

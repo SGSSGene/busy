@@ -28,8 +28,11 @@ class ProcessPImpl final {
 	std::string stdcerr;
 public:
 	ProcessPImpl(std::vector<std::string> const& prog) {
-		pipe(stdoutpipe);
-		pipe(stderrpipe);
+		int ret1 = pipe(stdoutpipe);
+		int ret2 = pipe(stderrpipe);
+		if (ret1 == -1 || ret2 == -1) {
+			throw std::runtime_error("couldn't create pipes");
+		}
 
 		pid=fork();
 		if (pid==0) {
@@ -54,9 +57,10 @@ public:
 	}
 private:
 	void childProcess(std::vector<std::string> const& _prog) {
-		std::string execStr;
 		std::string envPath = getenv("PATH");
-		auto s = _prog[0];
+		auto s       = _prog[0];
+		auto execStr = s;
+
 		for (auto const& _s : utils::explode(envPath, ":")) {
 			if (utils::fileExists(_s+"/"+s)) {
 				execStr = _s+"/"+s;
