@@ -198,7 +198,7 @@ namespace aBuild {
 						prog.push_back(project->getPackagePath()+"/"+i);
 					}
 					prog.push_back("-I");
-					prog.push_back(project->getPackagePath()+"/src"+project->getPath());
+					prog.push_back(project->getPackagePath()+"/src/"+project->getPath());
 					prog.push_back("-I");
 					prog.push_back(project->getPackagePath()+"/src/");
 
@@ -206,7 +206,7 @@ namespace aBuild {
 					// Adding all defines of dependent libraries
 					prog.push_back("-DABUILD");
 					for (auto const& f : ingoing) {
-						std::string def = "-ABUILD_";
+						std::string def = "-DABUILD_";
 						for (auto const& c : f->getName()) {
 							def += std::toupper(c);
 						}
