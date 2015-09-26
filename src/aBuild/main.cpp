@@ -165,14 +165,30 @@ static void actionDefault(bool verbose = false) {
 
 	graph.visitAllNodes();
 }
+
+static void runTest(std::string const& call) {
+	std::cout << " • running " << call << "...";
+	utils::Process p({call});
+	if (p.getStatus() == 0) {
+		std::cout << " no errors";
+	} else {
+		std::cout << " errors: " << std::endl;
+		if (p.cout().length() > 0) {
+			std::cout << p.cout() << std::endl;
+		}
+		if (p.cerr().length() > 0) {
+			std::cerr << p.cerr() << std::endl;
+		}
+	}
+	std::cout<<std::endl;
+}
 static void actionTest() {
+	std::cout<<"===Start testing==="<<std::endl;
 	if (utils::dirExists("./build/tests/")) {
 		auto allTests = utils::listFiles("./build/tests/");
-		std::cout<<"===Start testing==="<<std::endl;
 		for (auto const& t : allTests) {
-			auto p = std::string("./build/tests/")+t;
-			system(p.c_str());
-			std::cout<<" • running "<<p<<std::endl;
+			auto call = std::string("./build/tests/")+t;
+			runTest(call);
 		}
 	}
 	for (auto const& d : utils::listDirs("build", true)) {
@@ -180,9 +196,8 @@ static void actionTest() {
 		std::string path = std::string("./build/") + d + "/tests/";
 		if (not utils::dirExists(path)) continue;
 		for (auto const& t : utils::listFiles(path)) {
-			auto p = path+t;
-			system(p.c_str());
-			std::cout<<" • running "<<p<<std::endl;
+			auto call = path+t;
+			runTest(call);
 		}
 	}
 	std::cout<<"===Ended testing==="<<std::endl;
