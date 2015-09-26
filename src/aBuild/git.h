@@ -7,15 +7,22 @@ namespace git {
 
 inline void clone(std::string const& _url, std::string const& _commit, std::string const& _dir) {
 	std::cout << "cloning " << _url << std::endl;
-	utils::Process p({"git", "clone", _url, "-b", _commit, _dir});;
+	utils::Process p({"git", "clone", _url, "-b", _commit, _dir});
+	if (p.getStatus() != 0) {
+		throw std::runtime_error("error running git clone");
+	}
 }
 inline void pull() {
-	std::string call = std::string("git pull");
-	system(call.c_str());
+	utils::Process p({"git", "pull"});
+	if (p.getStatus() != 0) {
+		throw std::runtime_error("error running git clone");
+	}
 }
 inline void push() {
-	std::string call = std::string("git push");
-	system(call.c_str());
+	utils::Process p({"git", "push"});
+	if (p.getStatus() != 0) {
+		throw std::runtime_error("error running git clone");
+	}
 }
 inline bool isDirty() {
 	utils::rm("abuild_dirty", false, true);
@@ -26,8 +33,10 @@ inline bool isDirty() {
 	return exists;
 }
 inline void checkout(std::string const& _commit) {
-	std::string call = "git checkout " + _commit;
-	utils::runProcess(call);
+	utils::Process p({"git", "checkout", _commit});
+	if (p.getStatus() != 0) {
+		throw std::runtime_error("error running git clone");
+	}
 }
 inline std::string getBranch() {
 	utils::rm("abuild_branch", false, true);
