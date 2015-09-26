@@ -2,6 +2,7 @@
 
 #include "BuildAction.h"
 #include "Process.h"
+#include <queue>
 
 #define TERM_RESET                      "\033[0m"
 #define TERM_RED                        "\033[31m"
@@ -84,23 +85,53 @@ namespace aBuild {
 						prog.push_back(objPath + *f + ".o");
 					}
 				}
+				std::vector<std::string> depLibraries;
 				// Set all depLibraries libraries
 				for (auto const& l : project->getDepLibraries()) {
-					prog.push_back("-l"+l);
+					depLibraries.push_back("-l" + l);
 				}
+
+
+				std::vector<std::string> dependencies;
 
 				// Get project dependencies
 				{
-					auto outgoing = graph->getIngoing<Project, Project>(project, true);
-					for (auto const& f : outgoing) {
-						prog.push_back(libPath + f ->getName() + ".a");
+					std::queue<Project*> projectQueue;
+					projectQueue.push(project);
 
-						// Set all depLibraries libraries
-						for (auto const& l : f->getDepLibraries()) {
-							prog.push_back("-l"+l);
+					while (not projectQueue.empty()) {
+						auto curProject = projectQueue.front();
+						projectQueue.pop();
+						auto outgoing = graph->getIngoing<Project, Project>(curProject, true);
+						for (auto const& f : outgoing) {
+							projectQueue.push(f);
+							std::string lib = libPath + f->getName() + ".a";
+							auto iter = std::find(dependencies.begin(), dependencies.end(), lib);
+							if (iter != dependencies.end()) {
+								dependencies.erase(iter);
+							}
+							dependencies.push_back(lib);
+
+							// Set all depLibraries libraries
+							for (auto const& l : f->getDepLibraries()) {
+								std::string lib = "-l" + l;
+								auto iter = std::find(depLibraries.begin(), depLibraries.end(), lib);
+								if (iter != depLibraries.end()) {
+									depLibraries.erase(iter);
+								}
+								depLibraries.push_back(lib);
+							}
+
 						}
-
 					}
+				}
+				// Adding all depndencies to the prog call
+				for (auto const& s : dependencies) {
+					prog.push_back(s);
+				}
+				// Adding all system dependencies at the end
+				for (auto const& s : depLibraries) {
+					prog.push_back(s);
 				}
 				runProcess(prog);
 			};
