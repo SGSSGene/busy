@@ -1,7 +1,8 @@
 {
 	"name": "aBuild",
 	"extDependencies": [
-		{ "url": "git@78.47.95.250:aBuild/JsonSerializer" }
+		{ "url": "git@78.47.95.250:aBuild/JsonSerializer" },
+		{ "url": "git@78.47.95.250:toolchains/commonToolchains" }
 	],
 	"projects": [
 		{ "path": "aBuild",
@@ -11,30 +12,6 @@
 		}
 	],
 	"toolchains" : [
-	{"name": "clang",
-		"ccompiler":     ["clang"],
-		"cppcompiler":   ["clang++", "-Qunused-arguments"],
-		"archivist":     ["ar"],
-		"installations": ["clang"]
-	},
-	{"name": "gcc",
-		"ccompiler":     ["gcc"],
-		"cppcompiler":   ["g++"],
-		"archivist":     ["ar"]
-	},
-	{"name": "ccache-clang",
-		"ccompiler":     ["ccache", "clang"],
-		"cppcompiler":   ["ccache", "clang++", "-Qunused-arguments"],
-		"archivist":     ["ar"],
-		"installations": ["clang", "ccache"]
-	},
-	{"name": "ccache-gcc",
-		"ccompiler":     ["ccache", "gcc"],
-		"cppcompiler":   ["ccache", "g++"],
-		"archivist":     ["ar"],
-		"installations": ["ccache"]
-	},
-
 	{"name": "gcc-cc-odroid-x2",
 		"ccompiler":   ["/opt/odroid-x2/compiler/bin/arm-linux-gnueabihf-gcc"],
 		"cppcompiler": ["/opt/odroid-x2/compiler/bin/arm-linux-gnueabihf-g++"],
@@ -44,16 +21,5 @@
 		"ccompiler":   ["/opt/gcc-arm-none-eabi-4_9-2015q2/bin/arm-none-eabi-gcc"],
 		"cppcompiler": ["/opt/gcc-arm-none-eabi-4_9-2015q2/bin/arm-none-eabi-g++"],
 		"archivist":   ["/opt/gcc-arm-none-eabi-4_9-2015q2/bin/arm-none-eabi-ar"]
-	}],
-	"installations": [
-		{"name": "clang",
-		"systems": [
-			{ "systems": ["ubuntu"], "type": "system", "url": "clang"}
-		]},
-		{"name": "ccache",
-		"systems": [
-			{ "systems": ["ubuntu"], "type": "system", "url": "ccache"}
-		]}
-	]
-}
+	}]
 }
