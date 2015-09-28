@@ -87,10 +87,10 @@ private:
 		std::mutex mutex;
 		std::string _stdcout, _stdcerr;
 
-		std::thread t {[&] {
-			int i = 100;
-			while (--i > 0) {
-				char buffer[257];
+		std::thread t1 {[&] {
+			while (true) {
+				char buffer[4097];
+
 				buffer[0] = 0;
 				int size;
 				if ((size = read(stdoutpipe[READ_END], buffer, sizeof(buffer)-1)) >= 0) {
@@ -98,20 +98,31 @@ private:
 					buffer[size] = 0;
 					_stdcout += buffer;
 				} else return;
+				if (size == 0) return;
+			}
+		}};
+		std::thread t2 {[&] {
+			while (true) {
+				char buffer[4097];
+
 				buffer[0] = 0;
+				int size;
 				if ((size = read(stderrpipe[READ_END], buffer, sizeof(buffer)-1)) >= 0) {
 					std::unique_lock<std::mutex> lock(mutex);
 					buffer[size] = 0;
 
 					_stdcerr += buffer;
 				} else return;
+				if (size == 0) return;
 			}
 		}};
+
 
 		waitpid(pid, &status, 0); /* wait for child to exit */
 		close(stdoutpipe[WRITE_END]);
 		close(stderrpipe[WRITE_END]);
-		t.join();
+		t1.join();
+		t2.join();
 		{
 			std::unique_lock<std::mutex> lock(mutex);
 			stdcout = _stdcout;

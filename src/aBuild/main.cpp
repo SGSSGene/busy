@@ -120,10 +120,15 @@ static void actionDefault(bool verbose = false) {
 
 	std::unique_ptr<BuildAction> action { new BuildActionClang(&graph, verbose, &ws.accessConfigFile(), toolchain) };
 
-	auto linkingLibFunc     = action->getLinkingLibFunc();
-	auto linkingExecFunc    = action->getLinkingExecFunc();
-	auto compileFileCppFunc = action->getCompileCppFileFunc();
-	auto compileFileCFunc   = action->getCompileCFileFunc();
+	auto linkingLibFunc         = action->getLinkingLibFunc();
+	auto linkingExecFunc        = action->getLinkingExecFunc();
+	auto _compileFileCppFunc    = action->getCompileCppFileFunc();
+	auto _compileFileCppFuncDep = action->getCompileCppFileFuncDep();
+	auto compileFileCFunc       = action->getCompileCFileFunc();
+	std::function<void(std::string*)> compileFileCppFunc     = [&] (std::string* p){
+		_compileFileCppFunc(p);
+		_compileFileCppFuncDep(p);
+	};
 
 	// Create dependency tree
 	auto projects = ws.getAllRequiredProjects();
@@ -183,17 +188,21 @@ static void runTest(std::string const& call) {
 	std::cout<<std::endl;
 }
 static void actionTest() {
+	Workspace ws(".");
+	auto toolchain = ws.accessConfigFile().getToolchain();
+	auto flavor    = ws.accessConfigFile().getFlavor();
+	auto buildPath = std::string("./build/") + toolchain + "/" + flavor + "/";
 	std::cout<<"===Start testing==="<<std::endl;
-	if (utils::dirExists("./build/tests/")) {
-		auto allTests = utils::listFiles("./build/tests/");
+	if (utils::dirExists(buildPath + "tests/")) {
+		auto allTests = utils::listFiles(buildPath + "tests/");
 		for (auto const& t : allTests) {
-			auto call = std::string("./build/tests/")+t;
+			auto call = buildPath + "tests/"+t;
 			runTest(call);
 		}
 	}
-	for (auto const& d : utils::listDirs("build", true)) {
+	for (auto const& d : utils::listDirs(buildPath, true)) {
 		if (d == "tests") continue;
-		std::string path = std::string("./build/") + d + "/tests/";
+		std::string path = buildPath + d + "/tests/";
 		if (not utils::dirExists(path)) continue;
 		for (auto const& t : utils::listFiles(path)) {
 			auto call = path+t;

@@ -28,6 +28,7 @@ namespace utils {
 	bool isStartingWith(std::string const& str, std::string const& start);
 
 	std::vector<std::string> explode(std::string const& _str, std::string const& _del);
+	std::vector<std::string> explode(std::string const& _str, std::vector<std::string> const& _del);
 
 	std::string runProcess(std::string const& _call);
 
@@ -53,6 +54,7 @@ namespace utils {
 			batchCt += pids.size();
 		}
 	}
+
 
 	int64_t getFileModificationTime(std::string const& _file);
 	std::string cwd();
