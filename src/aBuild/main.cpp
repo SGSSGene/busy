@@ -10,6 +10,27 @@
 #include "git.h"
 #include "estd.h"
 
+#include <commonOptions/commonOptions.h>
+
+namespace {
+	auto swtHelp       = commonOptions::make_switch("help",       "Shows some inforamation about this program");
+	auto swtInstall    = commonOptions::make_switch("install",    "Installs the script to the current target");
+	auto swtLsFiles    = commonOptions::make_switch("ls-files",   "Print all files of these repositories");
+	auto swtPull       = commonOptions::make_switch("pull",       "Execute pull on all git repositories");
+	auto swtPush       = commonOptions::make_switch("push",       "Execute push on all git repositories");
+	auto swtQuickFix   = commonOptions::make_switch("quickfix",   "Quickfixes aBuild.json");
+	auto swtQF         = commonOptions::make_switch("qf",         "Quickfixes aBuild.json");
+	auto swtStatus     = commonOptions::make_switch("status",     "Shows current status of git repositories");
+	auto swtTest       = commonOptions::make_switch("test",       "Run all unittests");
+	auto swtToolchains = commonOptions::make_switch("toolchains", "Shows available toolchain");
+	auto swtVerbose    = commonOptions::make_switch("verbose",    "Shows more information while running");
+
+	auto optClone      = commonOptions::make_option<std::string>("clone",     {}, "clones given git repository");
+	auto optFlavor     = commonOptions::make_option("flavor",    "", "Changes current flavor");
+	auto optToolchain  = commonOptions::make_option("toolchain", "", "Changes current toolchain");
+
+}
+
 using namespace aBuild;
 
 static std::map<std::string, Toolchain> getAllToolchains(Workspace const& ws) {
@@ -373,51 +394,53 @@ static void actionToolchain(std::string const& _toolchain) {
 using Action = std::function<void()>;
 
 int main(int argc, char** argv) {
+	if (not commonOptions::parse(argc, argv)) {
+		commonOptions::print();
+		return 0;
+	} else if (*swtHelp) {
+		commonOptions::print();
+		return 0;
+	}
+
 	std::string arg1;
 	if (argc >= 2) {
 		arg1 = std::string(argv[1]);
 	}
 	try {
-		if (argc == 1) {
-			actionDefault();
-		} else if (arg1 == "--verbose") {
-			actionDefault(true);
-		} else if (arg1 == "test") {
-			actionDefault();
+		if (*swtTest) {
+			actionDefault(*swtVerbose);
 			actionTest();
-		} else if (argc == 4 && arg1 == "clone") {
-			actionClone(std::string(argv[2]), std::string(argv[3]) + "/");
-		} else if (argc == 3 && arg1 == "clone") {
-			std::string url  = argv[2];
-			std::string path = argv[2];
+		} else if (optClone->size() == 2) {
+			actionClone((*optClone)[0], (*optClone)[1] + "/");
+		} else if (optClone->size() == 1) {
+			std::string url  = (*optClone)[0];
+			std::string path = (*optClone)[0];
 			if (utils::isEndingWith(path, ".git")) {
 				for (int i {0}; i<4; ++i) path.pop_back();
 			}
 			auto l = utils::explode(path, "/");
 			path = l[l.size()-1];
 			actionClone(url, path + "/");
-
-		} else if (arg1 == "pull") {
+		} else if (*swtPull) {
 			actionPull();
-		} else if (arg1 == "push") {
+		} else if (*swtPush) {
 			actionPush();
-		} else if (arg1 == "install") {
-			actionDefault();
+		} else if (*swtInstall) {
 			actionInstall();
-		} else if (arg1 == "quickfix" or arg1 == "qf") {
+		} else if (*swtQuickFix or *swtQF) {
 			actionQuickFix();
-		} else if (arg1 == "status") {
+		} else if (*swtStatus) {
 			actionStatus();
-		} else if (argc == 3 && arg1 == "--flavor") {
-			actionStatus(argv[2]);
-		} else if (arg1 == "ls-files") {
+		} else if (*optFlavor != "") {
+			actionStatus(*optFlavor);
+		} else if (*swtLsFiles) {
 			return actionListFiles();
-		} else if (arg1 == "toolchains") {
+		} else if (*swtToolchains) {
 			actionToolchains();
-		} else if (argc == 3 && arg1 == "toolchain") {
+		} else if (*optToolchain != "") {
 			actionToolchain(std::string(argv[2]));
 		} else {
-			throw std::string("unknown command: ") + arg1;
+			actionDefault(*swtVerbose);
 		}
 	} catch(std::exception const& e) {
 		std::cerr<<"exception(exception): "<<e.what()<<std::endl;
