@@ -1,0 +1,48 @@
+#include "commands.h"
+
+using namespace aBuild;
+
+namespace commands {
+
+static void runTest(std::string const& call) {
+	std::cout << " • running " << call << "...";
+	utils::Process p({call});
+	if (p.getStatus() == 0) {
+		std::cout << " no errors";
+	} else {
+		std::cout << " errors: " << std::endl;
+		if (p.cout().length() > 0) {
+			std::cout << p.cout() << std::endl;
+		}
+		if (p.cerr().length() > 0) {
+			std::cerr << p.cerr() << std::endl;
+		}
+	}
+	std::cout<<std::endl;
+}
+void test() {
+	Workspace ws(".");
+	auto toolchain = ws.accessConfigFile().getToolchain();
+	auto flavor    = ws.accessConfigFile().getFlavor();
+	auto buildPath = std::string("./build/") + toolchain + "/" + flavor + "/";
+	std::cout<<"===Start testing==="<<std::endl;
+	if (utils::dirExists(buildPath + "tests/")) {
+		auto allTests = utils::listFiles(buildPath + "tests/");
+		for (auto const& t : allTests) {
+			auto call = buildPath + "tests/"+t;
+			runTest(call);
+		}
+	}
+	for (auto const& d : utils::listDirs(buildPath, true)) {
+		if (d == "tests") continue;
+		std::string path = buildPath + d + "/tests/";
+		if (not utils::dirExists(path)) continue;
+		for (auto const& t : utils::listFiles(path)) {
+			auto call = path+t;
+			runTest(call);
+		}
+	}
+	std::cout<<"===Ended testing==="<<std::endl;
+}
+
+}
