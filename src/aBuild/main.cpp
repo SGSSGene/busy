@@ -3,6 +3,7 @@
 #include "commands/commands.h"
 
 namespace {
+	auto swtDocu       = commonOptions::make_switch("docu",       "Generates html docu");
 	auto swtHelp       = commonOptions::make_switch("help",       "Shows some inforamation about this program");
 	auto swtInstall    = commonOptions::make_switch("install",    "Installs the script to the current target");
 	auto swtLsFiles    = commonOptions::make_switch("ls-files",   "Print all files of these repositories");
@@ -35,7 +36,9 @@ int main(int argc, char** argv) {
 	}
 
 	try {
-		if (*swtTest) {
+		if (*swtDocu) {
+			commands::docu();
+		} else if (*swtTest) {
 			commands::build(*swtVerbose);
 			commands::test();
 		} else if (optClone->size() == 2) {
