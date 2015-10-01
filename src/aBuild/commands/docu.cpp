@@ -26,8 +26,8 @@ void docu() {
 		utils::Process p1({"doxygen"});
 	}
 	utils::Process p2({"rm", "-rf", "tmp-docu"});
-	std::cout << p2.cout() << std::endl;
-	std::cout << p2.cerr() << std::endl;
+
+	std::cout<<"documentation can be found at file://"<<utils::cwd()<<"/docu/html/index.html"<<std::endl;
 }
 
 
