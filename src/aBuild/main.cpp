@@ -16,7 +16,7 @@ namespace {
 	auto swtToolchains = commonOptions::make_switch("toolchains", "Shows available toolchain");
 	auto swtVerbose    = commonOptions::make_switch("verbose",    "Shows more information while running");
 
-	auto optClone      = commonOptions::make_option<std::string>("clone",     {}, "clones given git repository");
+	auto optClone      = commonOptions::make_multi_option("clone", {}, "clones given git repository");
 	auto optFlavor     = commonOptions::make_option("flavor",    "", "Changes current flavor");
 	auto optToolchain  = commonOptions::make_option("toolchain", "", "Changes current toolchain");
 
