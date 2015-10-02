@@ -3780,15 +3780,15 @@ void createDoxygenLayoutXml() {
     </tab>
     <tab type="classes" visible="yes" title="">
       <tab type="classlist" visible="yes" title="" intro=""/>
-      <tab type="classindex" visible="false" title=""/> 
-      <tab type="hierarchy" visible="false" title="" intro=""/>
-      <tab type="classmembers" visible="false" title="" intro=""/>
+      <tab type="classindex" visible="no" title=""/> 
+      <tab type="hierarchy" visible="no" title="" intro=""/>
+      <tab type="classmembers" visible="no" title="" intro=""/>
     </tab>
-    <tab type="files" visible="false" title="">
+    <tab type="files" visible="no" title="">
       <tab type="filelist" visible="yes" title="" intro=""/>
       <tab type="globals" visible="yes" title="" intro=""/>
     </tab>
-    <tab type="examples" visible="yes" title="" intro=""/>  
+    <tab type="examples" visible="no" title="" intro=""/>  
   </navindex>
 
   <!-- Layout definition for a class page -->
