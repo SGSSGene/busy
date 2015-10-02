@@ -11,14 +11,13 @@ static void runTest(std::string const& call) {
 		std::cout << " no errors";
 	} else {
 		std::cout << " errors: " << std::endl;
-		if (p.cout().length() > 0) {
+		if (p.cout().size() > 0) {
 			std::cout << p.cout() << std::endl;
 		}
-		if (p.cerr().length() > 0) {
+		if (p.cerr().size() > 0) {
 			std::cerr << p.cerr() << std::endl;
 		}
 	}
-	std::cout<<std::endl;
 }
 void test() {
 	Workspace ws(".");
