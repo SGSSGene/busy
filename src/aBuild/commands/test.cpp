@@ -8,7 +8,7 @@ static void runTest(std::string const& call) {
 	std::cout << " • running " << call << "...";
 	utils::Process p({call});
 	if (p.getStatus() == 0) {
-		std::cout << " no errors";
+		std::cout << " no errors" << std::endl;
 	} else {
 		std::cout << " errors: " << std::endl;
 		if (p.cout().size() > 0) {
