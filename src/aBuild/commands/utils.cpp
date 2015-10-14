@@ -78,10 +78,11 @@ void checkingRequiredPackages(Workspace& ws) {
 	auto requiredPackages = ws.getAllRequiredPackages();
 	for (auto const& _url : requiredPackages) {
 		PackageURL url {_url};
-		utils::Cwd cwd(url.getPath());
 		if (not git::isDirty(url.getPath())) {
 			if (url.getBranch() != git::getBranch(url.getPath())) {
-				std::cout<<"Changing branch of "<<url.getName()<<std::endl;
+				std::cout << "Changing branch of " << url.getName();
+				std::cout << " ( " << git::getBranch(url.getPath());
+				std::cout << " -> " << url.getBranch() << " )" << std::endl;
 				git::checkout(url.getPath(), url.getBranch());
 			}
 		}

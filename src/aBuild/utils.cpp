@@ -242,7 +242,7 @@ namespace utils {
 	void cwd(std::string const& _string) {
 		int ret = ::chdir(_string.c_str());
 		if (ret == -1) {
-			throw std::runtime_error("chdir on "+_string+" failed");
+			throw std::runtime_error("chdir to "+_string+" from "+cwd()+" failed");
 		}
 	}
 	std::string sanitize(std::string const& _s) {

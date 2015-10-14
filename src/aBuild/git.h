@@ -40,6 +40,7 @@ inline void checkout(std::string const& _cwd, std::string const& _commit) {
 inline std::string getBranch(std::string const& _cwd) {
 	utils::Process p({"git", "rev-parse", "--abbrev-ref", "HEAD"}, _cwd);
 	std::string branch = p.cout();
+	branch.pop_back();
 	return branch;
 }
 
