@@ -3,11 +3,16 @@ mkdir packages
 git clone git@78.47.95.250:aBuild/JsonSerializer  packages/JsonSerializer
 git clone git@78.47.95.250:aBuild/jsoncpp         packages/jsoncpp
 git clone git@78.47.95.250:aBuild/CommonOptions   packages/CommonOptions
+git clone git@78.47.95.250:aBuild/ThreadPool      packages/ThreadPool
 
 g++ -ggdb -O0 --std=c++11 \
 	-isystem packages/JsonSerializer/src/ \
 	-isystem packages/jsoncpp/include \
+	-isystem packages/CommonOptions/src \
+	-isystem packages/ThreadPool/src \
+	-I src/aBuild/ \
 	src/aBuild/*.cpp \
+	src/aBuild/commands/*.cpp \
 	packages/JsonSerializer/src/jsonSerializer/jsonSerializer.cpp \
 	packages/jsoncpp/src/lib_json/json_reader.cpp \
 	packages/jsoncpp/src/lib_json/json_value.cpp \
@@ -15,6 +20,6 @@ g++ -ggdb -O0 --std=c++11 \
 	-lpthread \
 	-o aBuild
 ./aBuild
-./aBuild test
-sudo ./aBuild install
+./aBuild --test
+sudo ./aBuild --install
 rm ./aBuild
