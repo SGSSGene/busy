@@ -39,21 +39,41 @@ std::map<std::string, Installation> getAllInstallations(Workspace const& ws) {
 
 
 void checkingMissingPackages(Workspace& ws) {
+
+	std::set<PackageURL> queued;
+
+	std::mutex mutex;
+	threadPool::ThreadPool<PackageURL> threadPool;
+	threadPool.spawnThread([&](PackageURL const& url) {
+		utils::mkdir(".aBuild/tmp");
+		std::string repoName = std::string(".aBuild/tmp/repo_") + url.getName() + ".git";
+		utils::rm(repoName, true, true);
+		{
+			std::unique_lock<std::mutex> lock(mutex);
+			std::cout << "cloning " << url.getURL() << std::endl;
+		}
+		git::clone(".", url.getURL(), url.getBranch(), repoName);
+		Package package(url);
+		jsonSerializer::read(repoName + "/aBuild.json", package);
+		{
+			std::unique_lock<std::mutex> lock(mutex);
+			utils::mv(repoName, std::string("packages/") + package.getName());
+			auto missingPackages = ws.getAllMissingPackages();
+			for (auto m : missingPackages) {
+				if (queued.count(m) == 0) {
+					queued.insert(m);
+					threadPool.queue(m);
+				}
+			}
+
+		}
+	}, 4);
+
 	// Checking missing packages
 	auto missingPackages = ws.getAllMissingPackages();
-	while (not missingPackages.empty()) {
-		utils::runParallel<PackageURL>(missingPackages, [](PackageURL const& url) {
-			utils::mkdir(".aBuild/tmp");
-			std::string repoName = std::string(".aBuild/tmp/repo_") + url.getName() + ".git";
-			utils::rm(repoName, true, true);
-			std::cout << "cloning " << url.getURL() << std::endl;
-			git::clone(".", url.getURL(), url.getBranch(), repoName);
-			Package package(url);
-			jsonSerializer::read(repoName + "/aBuild.json", package);
-			utils::mv(repoName, std::string("packages/") + package.getName());
-		});
-		missingPackages = ws.getAllMissingPackages();
-	}
+	queued.insert(missingPackages.begin(), missingPackages.end());
+	threadPool.queueContainer(missingPackages);
+	threadPool.wait();
 }
 void checkingNotNeededPackages(Workspace& ws) {
 	// Checking not needed packages

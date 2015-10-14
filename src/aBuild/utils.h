@@ -32,30 +32,6 @@ namespace utils {
 
 	std::string runProcess(std::string const& _call);
 
-	template<typename T>
-	void runParallel(std::vector<T> const& _args, std::function<void(T const& t)> _func, int batch = 4) {
-
-		int batchCt = 0;
-		while (batchCt < int(_args.size())) {
-			std::vector<pid_t> pids;
-			for (int i {batchCt}; i < batchCt + batch; ++i) {
-				if (i >= int(_args.size())) break;
-				auto const& a = _args[i];
-				auto pid = fork();
-				if (pid == 0) {
-					_func(a);
-					exit(0);
-				}
-				pids.push_back(pid);
-			}
-			for (auto const& p : pids) {
-				while(0 < waitpid(p, nullptr, 0)) {}
-			}
-			batchCt += pids.size();
-		}
-	}
-
-
 	int64_t getFileModificationTime(std::string const& _file);
 	std::string cwd();
 	void cwd(std::string const& _string);
