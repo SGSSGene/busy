@@ -5,47 +5,41 @@
 
 namespace git {
 
-inline void clone(std::string const& _url, std::string const& _commit, std::string const& _dir) {
-	std::cout << "cloning " << _url << std::endl;
-	utils::Process p({"git", "clone", _url, "-b", _commit, _dir});
+inline void clone(std::string const& _cwd, std::string const& _url, std::string const& _commit, std::string const& _dir) {
+	utils::Process p({"git", "clone", _url, "-b", _commit, _dir}, _cwd);
 	if (p.getStatus() != 0) {
 		throw std::runtime_error("error running git clone");
 	}
 }
-inline void pull() {
-	utils::Process p({"git", "pull"});
+inline void pull(std::string const& _cwd) {
+	utils::Process p({"git", "pull"}, _cwd);
 	if (p.getStatus() != 0) {
 		throw std::runtime_error("error running git clone");
 	}
 }
-inline void push() {
-	utils::Process p({"git", "push"});
+inline void push(std::string const& _cwd) {
+	utils::Process p({"git", "push"}, _cwd);
 	if (p.getStatus() != 0) {
 		throw std::runtime_error("error running git clone");
 	}
 }
-inline bool isDirty() {
-	utils::rm("abuild_dirty", false, true);
-	std::string call = "test -n \"$(git status --porcelain)\" && (echo \"dirty\" > abuild_dirty)";
-	utils::runProcess(call);
-	bool exists = utils::fileExists("abuild_dirty");
-	utils::rm("abuild_dirty", false, true);
-	return exists;
+inline bool isDirty(std::string const& _cwd) {
+	utils::Process p({"git", "status", "--porcelain"}, _cwd);
+
+	if (p.cout() == "" && p.cerr() == "") {
+		return false;
+	}
+	return true;
 }
-inline void checkout(std::string const& _commit) {
-	utils::Process p({"git", "checkout", _commit});
+inline void checkout(std::string const& _cwd, std::string const& _commit) {
+	utils::Process p({"git", "checkout", _commit}, _cwd);
 	if (p.getStatus() != 0) {
 		throw std::runtime_error("error running git clone");
 	}
 }
-inline std::string getBranch() {
-	utils::rm("abuild_branch", false, true);
-	std::string call = "git branch | grep \"*\" | cut -d \" \" -f 2 > abuild_branch";
-	utils::runProcess(call);
-	std::ifstream ifs("abuild_branch");
-	std::string branch;
-	std::getline(ifs, branch);
-	utils::rm("abuild_branch", false, true);
+inline std::string getBranch(std::string const& _cwd) {
+	utils::Process p({"git", "rev-parse", "--abbrev-ref", "HEAD"}, _cwd);
+	std::string branch = p.cout();
 	return branch;
 }
 

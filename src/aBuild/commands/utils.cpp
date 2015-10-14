@@ -46,7 +46,8 @@ void checkingMissingPackages(Workspace& ws) {
 			utils::mkdir(".aBuild/tmp");
 			std::string repoName = std::string(".aBuild/tmp/repo_") + url.getName() + ".git";
 			utils::rm(repoName, true, true);
-			git::clone(url.getURL(), url.getBranch(), repoName);
+			std::cout << "cloning " << url.getURL() << std::endl;
+			git::clone(".", url.getURL(), url.getBranch(), repoName);
 			Package package(url);
 			jsonSerializer::read(repoName + "/aBuild.json", package);
 			utils::mv(repoName, std::string("packages/") + package.getName());
@@ -78,10 +79,10 @@ void checkingRequiredPackages(Workspace& ws) {
 	for (auto const& _url : requiredPackages) {
 		PackageURL url {_url};
 		utils::Cwd cwd(url.getPath());
-		if (not git::isDirty()) {
-			if (url.getBranch() != git::getBranch()) {
+		if (not git::isDirty(url.getPath())) {
+			if (url.getBranch() != git::getBranch(url.getPath())) {
 				std::cout<<"Changing branch of "<<url.getName()<<std::endl;
-				git::checkout(url.getBranch());
+				git::checkout(url.getPath(), url.getBranch());
 			}
 		}
 	}

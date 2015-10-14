@@ -27,7 +27,7 @@ class ProcessPImpl final {
 	std::string stdcout;
 	std::string stdcerr;
 public:
-	ProcessPImpl(std::vector<std::string> const& prog) {
+	ProcessPImpl(std::vector<std::string> const& prog, std::string const& _cwd) {
 		int ret1 = pipe(stdoutpipe);
 		int ret2 = pipe(stderrpipe);
 		if (ret1 == -1 || ret2 == -1) {
@@ -36,6 +36,7 @@ public:
 
 		pid=fork();
 		if (pid==0) {
+			utils::Cwd cwd(_cwd);
 			childProcess(prog);
 		} else {
 			parentProcess();
@@ -131,8 +132,8 @@ private:
 	}
 };
 
-Process::Process(std::vector<std::string> const& prog)
-	: pimpl { new ProcessPImpl(prog) } {
+Process::Process(std::vector<std::string> const& prog, std::string const& _cwd)
+	: pimpl { new ProcessPImpl(prog, _cwd) } {
 }
 
 Process::~Process() {

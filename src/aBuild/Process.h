@@ -12,7 +12,7 @@ class Process final {
 private:
 	ProcessPImpl* pimpl;
 public:
-	Process(std::vector<std::string> const& prog);
+	Process(std::vector<std::string> const& prog, std::string const& _cwd = ".");
 
 	~Process();
 	Process(Process const&) = delete;

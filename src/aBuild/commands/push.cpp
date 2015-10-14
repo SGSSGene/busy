@@ -10,9 +10,8 @@ void push() {
 	for (auto& p : allPackages) { p = "./packages/"+p; }
 	allPackages.push_back(".");
 
-	utils::runParallel<std::string>(allPackages, [](std::string const& file) {
-		utils::Cwd cwd(file);
-		git::push();
+	utils::runParallel<std::string>(allPackages, [](std::string const& path) {
+		git::push(path);
 	});
 }
 
