@@ -4,6 +4,7 @@
 #include <map>
 #include <set>
 #include <vector>
+#include <threadPool/threadPool.h>
 
 namespace aBuild {
 
@@ -172,43 +173,54 @@ public:
 	}
 
 
-	void visitAllNodes() {
+	void visitAllNodes(int threadCt = 1) {
 		std::map<NodeBase const*, std::set<NodeBase const*>> ingoingNodes;
 		for (auto& n : nodes) {
 			ingoingNodes[n] = getIngoing(n);
 		}
 
-		// queue all nodeBases without ingoing edges
-		std::vector<NodeBase const*> openList;
-		for (auto iter = ingoingNodes.begin(); iter != ingoingNodes.end();) {
-			if (iter->second.empty()) {
-				openList.push_back(iter->first);
-				iter = ingoingNodes.erase(iter);
-			} else {
-				++iter;
-			}
-		}
-		while (not openList.empty()) {
-			auto top = openList.back();
-			openList.pop_back();
+		std::mutex mutex;
+		threadPool::ThreadPool<NodeBase const*> threadPool;
+		threadPool.spawnThread([&](NodeBase const* top) {
 			top->call();
-			auto outgoing = getOutgoing(top);
-			for (auto const& o : outgoing) {
-				for (auto iter = ingoingNodes.begin(); iter != ingoingNodes.end();) {
-					if (iter->first == o) {
-						iter->second.erase(top);
-						if (iter->second.empty()) {
-							openList.push_back(iter->first);
-							iter = ingoingNodes.erase(iter);
+			{
+				std::unique_lock<std::mutex> lock(mutex);
+				auto outgoing = getOutgoing(top);
+				for (auto const& o : outgoing) {
+					for (auto iter = ingoingNodes.begin(); iter != ingoingNodes.end();) {
+						if (iter->first == o) {
+							iter->second.erase(top);
+							if (iter->second.empty()) {
+								threadPool.queue(iter->first);
+//								openList.push_back(iter->first);
+								iter = ingoingNodes.erase(iter);
+							} else {
+								++iter;
+							}
 						} else {
 							++iter;
 						}
-					} else {
-						++iter;
 					}
 				}
 			}
+		}, threadCt);
+
+
+		// queue all nodeBases without ingoing edges
+		std::vector<NodeBase const*> openList;
+		{
+			std::unique_lock<std::mutex> lock(mutex);
+			for (auto iter = ingoingNodes.begin(); iter != ingoingNodes.end();) {
+				if (iter->second.empty()) {
+					threadPool.queue(iter->first);
+					//openList.push_back(iter->first);
+					iter = ingoingNodes.erase(iter);
+				} else {
+					++iter;
+				}
+			}
 		}
+		threadPool.wait();
 	}
 };
 

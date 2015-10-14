@@ -20,6 +20,8 @@ namespace aBuild {
 		mutable std::map<std::string, int64_t> fileModTime; // caching
 		mutable std::map<std::string, bool>    fileChanged; // caching
 
+		std::mutex mutex;
+
 		int64_t getFileModTime(std::string const& s) const {
 			auto iter = fileModTime.find(s);
 			if (iter != fileModTime.end()) {
@@ -37,19 +39,28 @@ namespace aBuild {
 			return iter->second;
 		}
 	public:
-		void runProcess(std::vector<std::string> const& prog, bool _noWarnings) const {
+		void runProcess(std::vector<std::string> const& prog, bool _noWarnings, std::unique_lock<std::mutex>& _lock) const {
 			if (verbose) {
 				for (auto const& s : prog) {
 					std::cout<<" "<<s;
 				}
 				std::cout<<std::endl;
 			}
-			utils::Process p(prog);
+
+			std::condition_variable cv;
+			std::unique_ptr<utils::Process> p;
+			std::thread t ([&]{
+				p.reset(new utils::Process(prog));
+				std::unique_lock<std::mutex> lock(*_lock.mutex());
+				cv.notify_one();
+			});
+			cv.wait(_lock);
+			t.join();
 			//std::cerr << TERM_PURPLE << p.cerr() << TERM_RESET;
 			//std::cout << TERM_GREEN  << p.cout() << TERM_RESET;
-			if (not _noWarnings || p.getStatus() != 0 || verbose) {
-				std::cout << p.cout() << TERM_RESET;
-				std::cerr << p.cerr() << TERM_RESET;
+			if (not _noWarnings || p->getStatus() != 0 || verbose) {
+				std::cout << p->cout() << TERM_RESET;
+				std::cerr << p->cerr() << TERM_RESET;
 			}
 			if (verbose) {
 				std::cout<<"==="<<std::endl;
@@ -68,6 +79,7 @@ namespace aBuild {
 
 		auto getLinkingLibFunc() -> std::function<void(Project*)> override {
 			return [this](Project* project) {
+				std::unique_lock<std::mutex> lock(mutex);
 				utils::mkdir(libPath);
 				auto prog = toolchain.getArchivist();
 				prog.push_back("rcs");
@@ -86,7 +98,7 @@ namespace aBuild {
 				}
 				if (_fileChanged) {
 					fileChanged[outputFile] = true;
-					runProcess(prog, project->getNoWarnings());
+					runProcess(prog, project->getNoWarnings(), lock);
 				} else {
 					fileChanged[outputFile] = false;
 				}
@@ -95,6 +107,7 @@ namespace aBuild {
 
 		auto getLinkingExecFunc() -> std::function<void(Project*)> override {
 			return [this](Project* project) {
+				std::unique_lock<std::mutex> lock(mutex);
 				std::string binPath  = execPath;
 				if (utils::isStartingWith(project->getPackagePath(), "packages/")) {
 					auto l = utils::explode(project->getPackagePath(), "/");
@@ -187,7 +200,7 @@ namespace aBuild {
 				}
 				if (_fileChanged) {
 					fileChanged[outFile] = true;
-					runProcess(prog, project->getNoWarnings());
+					runProcess(prog, project->getNoWarnings(), lock);
 				} else {
 					fileChanged[outFile] = false;
 				}
@@ -195,6 +208,7 @@ namespace aBuild {
 		}
 		auto getCompileCppFileFunc() -> std::function<void(std::string*)> override {
 			return [this](std::string* f) {
+				std::unique_lock<std::mutex> lock(mutex);
 				auto l = utils::explode(*f, "/");
 
 				auto prog = toolchain.getCppCompiler();
@@ -282,11 +296,12 @@ namespace aBuild {
 						}
 					}
 				}
-				runProcess(prog, project->getNoWarnings());
+				runProcess(prog, project->getNoWarnings(), lock);
 			};
 		}
 		auto getCompileCppFileFuncDep() -> std::function<void(std::string*)> override {
 			return [this](std::string* f) {
+				std::unique_lock<std::mutex> lock(mutex);
 				if (not hasFileChanged(*f)) {
 					return;
 				}
@@ -365,6 +380,7 @@ namespace aBuild {
 
 		auto getCompileCFileFunc() -> std::function<void(std::string*)> override {
 			return [this](std::string* f) {
+				std::unique_lock<std::mutex> lock(mutex);
 				auto l = utils::explode(*f, "/");
 
 				utils::mkdir(objPath + utils::dirname(*f));
@@ -420,7 +436,7 @@ namespace aBuild {
 						}
 					}
 				}
-				runProcess(prog, project->getNoWarnings());
+				runProcess(prog, project->getNoWarnings(), lock);
 			};
 		}
 

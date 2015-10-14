@@ -33,7 +33,7 @@ Progress:
 	• more advanced toolchain selection
 		– using external sdk
 		– are sdk and toolchain the samething? (no, since sdk is only headrs, while toolchain can be a cross compiler)
-	• parallel compiling
+	• parallel compiling is staticly set to 10, this is not smart ;-)
 
 – Low priority
 	• "including" dep ext dependencies

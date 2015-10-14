@@ -3,11 +3,12 @@
 	"extDependencies": [
 		{ "url": "git@78.47.95.250:aBuild/JsonSerializer" },
 		{ "url": "git@78.47.95.250:aBuild/CommonOptions" },
+		{ "url": "git@78.47.95.250:aBuild/ThreadPool" },
 		{ "url": "git@78.47.95.250:toolchains/commonToolchains" }
 	],
 	"projects": [
 		{ "path": "aBuild",
-			"dependencies": ["JsonSerializer/jsonSerializer", "CommonOptions/commonOptions"],
+			"dependencies": ["JsonSerializer/jsonSerializer", "CommonOptions/commonOptions", "ThreadPool/threadPool"],
 			"depLibraries": ["pthread"],
 			"type": "executable"
 		}

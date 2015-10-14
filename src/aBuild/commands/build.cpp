@@ -77,7 +77,7 @@ void build(bool verbose) {
 		}
 	}
 
-	graph.visitAllNodes();
+	graph.visitAllNodes(10);
 }
 
 }
