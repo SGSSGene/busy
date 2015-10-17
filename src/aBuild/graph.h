@@ -173,11 +173,13 @@ public:
 	}
 
 
-	void visitAllNodes(int threadCt = 1) {
+	void visitAllNodes(int threadCt = 1, std::function<void(int, int)> _monitor = [](int, int){}) {
 		std::map<NodeBase const*, std::set<NodeBase const*>> ingoingNodes;
 		for (auto& n : nodes) {
 			ingoingNodes[n] = getIngoing(n);
 		}
+		int total = 0;
+		int done = 0;
 
 		std::mutex mutex;
 		threadPool::ThreadPool<NodeBase const*> threadPool;
@@ -191,6 +193,7 @@ public:
 						if (iter->first == o) {
 							iter->second.erase(top);
 							if (iter->second.empty()) {
+								++total;
 								threadPool.queue(iter->first);
 //								openList.push_back(iter->first);
 								iter = ingoingNodes.erase(iter);
@@ -202,9 +205,12 @@ public:
 						}
 					}
 				}
-			}
-		}, threadCt);
+				++done;
+				_monitor(done, total);
 
+			}
+
+		}, threadCt);
 
 		// queue all nodeBases without ingoing edges
 		std::vector<NodeBase const*> openList;
@@ -212,6 +218,7 @@ public:
 			std::unique_lock<std::mutex> lock(mutex);
 			for (auto iter = ingoingNodes.begin(); iter != ingoingNodes.end();) {
 				if (iter->second.empty()) {
+					++total;
 					threadPool.queue(iter->first);
 					//openList.push_back(iter->first);
 					iter = ingoingNodes.erase(iter);

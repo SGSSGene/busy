@@ -77,7 +77,14 @@ void build(bool verbose) {
 		}
 	}
 
-	graph.visitAllNodes(10);
+	graph.visitAllNodes(10, [](int done, int total) {
+		std::cout << "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b";
+		std::cout << "working on job: " << done << "/" << total << std::flush;
+
+		if (done == total) {
+			std::cout << std::endl;
+		}
+	});
 }
 
 }
