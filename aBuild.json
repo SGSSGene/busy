@@ -9,7 +9,6 @@
 	"projects": [
 		{ "path": "aBuild",
 			"dependencies": ["Serializer/serializer", "CommonOptions/commonOptions", "ThreadPool/threadPool"],
-			"depLibraries": ["pthread"],
 			"type": "executable"
 		}
 	],
