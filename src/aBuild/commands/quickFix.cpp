@@ -31,6 +31,9 @@ void quickFix() {
 			package.accessProjects().push_back(std::move(p));
 		}
 	}
+	for (auto& project : package.accessProjects()) {
+		project.quickFix();
+	}
 	serializer::json::write("aBuild.json", package);
 }
 

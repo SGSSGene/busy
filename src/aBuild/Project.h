@@ -56,16 +56,7 @@ namespace aBuild {
 		auto getType() const -> std::string const& {
 			return type;
 		}
-		/** tries to determine type by name
-		 *  name starting with "test" are executables
-		 *  everything else is a library
-		 */
-		auto getDefaultTypeByName() const -> std::string {
-			if (utils::isStartingWith(path, "test")) {
-				return "executable";
-			}
-			return "library";
-		}
+
 		auto getLegacy() const -> ProjectLegacy const& {
 			return legacy;
 		}
@@ -94,35 +85,14 @@ namespace aBuild {
 		bool getNoWarnings() const {
 			return noWarnings;
 		}
-		auto getAllCppFiles() -> std::vector<std::string>& {
-			if (cppFiles.empty()) {
 
-				std::string fullPath = getPackagePath()+"/src/"+getPath()+"/";
-				auto allFiles = utils::listFiles(fullPath, true);
-				for (auto const& f : allFiles) {
-					if (utils::isEndingWith(f, ".cpp")) {
-						cppFiles.push_back(fullPath + f);
-					}
-				}
-			}
+		void quickFix();
 
-			return cppFiles;
-		}
-		auto getAllCFiles() -> std::vector<std::string>& {
-			if (cFiles.empty()) {
+		auto getDefaultTypeByName() const -> std::string;
+		auto getDefaultDependencies() const -> Dependencies;
 
-				std::string fullPath = getPackagePath()+"/src/"+getPath()+"/";
-				auto allFiles = utils::listFiles(fullPath, true);
-				for (auto const& f : allFiles) {
-					if (utils::isEndingWith(f, ".c")) {
-						cFiles.push_back(fullPath + f);
-					}
-				}
-			}
-
-			return cFiles;
-		}
-
-
+		auto getAllFiles(std::set<std::string> const& _ending) const -> std::vector<std::string>;
+		auto getAllCppFiles() -> std::vector<std::string>&;
+		auto getAllCFiles() -> std::vector<std::string>&;
 	};
 }

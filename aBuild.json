@@ -1,26 +1,42 @@
 {
-	"name": "aBuild",
-	"extDependencies": [
-		{ "url": "git@78.47.95.250:aBuild/Serializer" },
-		{ "url": "git@78.47.95.250:aBuild/CommonOptions" },
-		{ "url": "git@78.47.95.250:aBuild/ThreadPool" },
-		{ "url": "git@78.47.95.250:toolchains/commonToolchains" }
-	],
-	"projects": [
-		{ "path": "aBuild",
-			"dependencies": ["Serializer/serializer", "CommonOptions/commonOptions", "ThreadPool/threadPool"],
-			"type": "executable"
-		}
-	],
-	"toolchains" : [
-	{"name": "gcc-cc-odroid-x2",
-		"ccompiler":   ["/opt/odroid-x2/compiler/bin/arm-linux-gnueabihf-gcc"],
-		"cppcompiler": ["/opt/odroid-x2/compiler/bin/arm-linux-gnueabihf-g++"],
-		"archivist":   ["/opt/odroid-x2/compiler/bin/arm-linux-gnueabihf-ar"]
-	},
-	{"name": "gcc-cc-arm-none-eabi",
-		"ccompiler":   ["/opt/gcc-arm-none-eabi-4_9-2015q2/bin/arm-none-eabi-gcc"],
-		"cppcompiler": ["/opt/gcc-arm-none-eabi-4_9-2015q2/bin/arm-none-eabi-g++"],
-		"archivist":   ["/opt/gcc-arm-none-eabi-4_9-2015q2/bin/arm-none-eabi-ar"]
-	}]
+   "extDependencies" : [
+      {
+         "url" : "git@78.47.95.250:aBuild/Serializer"
+      },
+      {
+         "url" : "git@78.47.95.250:aBuild/CommonOptions"
+      },
+      {
+         "url" : "git@78.47.95.250:aBuild/ThreadPool"
+      },
+      {
+         "url" : "git@78.47.95.250:toolchains/commonToolchains"
+      }
+   ],
+   "name" : "aBuild",
+   "projects" : [
+      {
+         "dependencies" : [
+            "CommonOptions/commonOptions",
+            "Serializer/serializer",
+            "ThreadPool/threadPool"
+         ],
+         "path" : "aBuild",
+         "type" : "executable"
+      }
+   ],
+   "toolchains" : [
+      {
+         "archivist" : [ "/opt/odroid-x2/compiler/bin/arm-linux-gnueabihf-ar" ],
+         "ccompiler" : [ "/opt/odroid-x2/compiler/bin/arm-linux-gnueabihf-gcc" ],
+         "cppcompiler" : [ "/opt/odroid-x2/compiler/bin/arm-linux-gnueabihf-g++" ],
+         "name" : "gcc-cc-odroid-x2"
+      },
+      {
+         "archivist" : [ "/opt/gcc-arm-none-eabi-4_9-2015q2/bin/arm-none-eabi-ar" ],
+         "ccompiler" : [ "/opt/gcc-arm-none-eabi-4_9-2015q2/bin/arm-none-eabi-gcc" ],
+         "cppcompiler" : [ "/opt/gcc-arm-none-eabi-4_9-2015q2/bin/arm-none-eabi-g++" ],
+         "name" : "gcc-cc-arm-none-eabi"
+      }
+   ]
 }
