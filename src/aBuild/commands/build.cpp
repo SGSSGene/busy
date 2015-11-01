@@ -39,6 +39,7 @@ void build(bool verbose) {
 		_compileFileCppFuncDep(p);
 	};
 
+
 	// Create dependency tree
 	auto projects = ws.getAllRequiredProjects();
 	for (auto& e  : projects) {
