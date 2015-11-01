@@ -5,7 +5,7 @@ git clone git@78.47.95.250:aBuild/jsoncpp         packages/jsoncpp
 git clone git@78.47.95.250:aBuild/CommonOptions   packages/CommonOptions
 git clone git@78.47.95.250:aBuild/ThreadPool      packages/ThreadPool
 
-g++ -ggdb -O0 --std=c++11 \
+g++-4.9 -ggdb -O0 --std=c++11 \
 	-isystem packages/Serializer/src/ \
 	-isystem packages/jsoncpp/include \
 	-isystem packages/CommonOptions/src \
