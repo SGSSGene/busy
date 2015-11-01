@@ -43,14 +43,14 @@ namespace aBuild {
 			node["path"]                 % path;
 			node["dependencies"]         % dependencies;
 			node["optionalDependencies"] % optionalDependencies;
-			node["type"]                 % type                 or getTypeByName();
+			node["type"]                 % type                 or getDefaultTypeByName();
 			node["legacy"]               % legacy;
 			node["depLibraries"]         % depLibraries;
 			node["noWarnings"]           % noWarnings           or false;
 		}
 		void set(std::string const& _name) {
 			path = _name;
-			type = getTypeByName();
+			type = getDefaultTypeByName();
 		}
 
 		auto getType() const -> std::string const& {
@@ -60,7 +60,7 @@ namespace aBuild {
 		 *  name starting with "test" are executables
 		 *  everything else is a library
 		 */
-		auto getTypeByName() const -> std::string {
+		auto getDefaultTypeByName() const -> std::string {
 			if (utils::isStartingWith(path, "test")) {
 				return "executable";
 			}
