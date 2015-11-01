@@ -43,7 +43,7 @@ namespace aBuild {
 			node["path"]                 % path;
 			node["dependencies"]         % dependencies;
 			node["optionalDependencies"] % optionalDependencies;
-			node["type"]                 % type;
+			node["type"]                 % type                 or getTypeByName();
 			node["legacy"]               % legacy;
 			node["depLibraries"]         % depLibraries;
 			node["noWarnings"]           % noWarnings           or false;
@@ -55,6 +55,16 @@ namespace aBuild {
 
 		auto getType() const -> std::string const& {
 			return type;
+		}
+		/** tries to determine type by name
+		 *  name starting with "test" are executables
+		 *  everything else is a library
+		 */
+		auto getTypeByName() const -> std::string {
+			if (utils::isStartingWith(path, "test")) {
+				return "executable";
+			}
+			return "library";
 		}
 		auto getLegacy() const -> ProjectLegacy const& {
 			return legacy;
