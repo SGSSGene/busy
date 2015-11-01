@@ -48,9 +48,9 @@ namespace aBuild {
 			node["depLibraries"]         % depLibraries;
 			node["noWarnings"]           % noWarnings           or false;
 		}
-		void set(std::string const& _name, std::string const& _type) {
+		void set(std::string const& _name) {
 			path = _name;
-			type = _type;
+			type = getTypeByName();
 		}
 
 		auto getType() const -> std::string const& {
