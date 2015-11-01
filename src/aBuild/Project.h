@@ -34,7 +34,9 @@ namespace aBuild {
 
 	public:
 		Project()
-			: packagePath {"."} {}
+			: packagePath { "." }
+			, noWarnings  { false }
+		{}
 
 		template<typename Node>
 		void serialize(Node& node) {
