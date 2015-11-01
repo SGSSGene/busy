@@ -7,11 +7,12 @@
 namespace aBuild {
 
 void Project::quickFix() {
-	for (auto const& d : getDefaultDependencies()) {
+//!TODO sometimes wrong dependencies get detected, this is bad
+/*	for (auto const& d : getDefaultDependencies()) {
 		if (std::find(dependencies.begin(), dependencies.end(), d) == dependencies.end()) {
 			dependencies.push_back(d);
 		}
-	}
+	}*/
 	std::sort(dependencies.begin(), dependencies.end());
 }
 
