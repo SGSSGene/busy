@@ -11,13 +11,13 @@ void clone(std::string const& _cwd, std::string const& _url, std::string const& 
 void pull(std::string const& _cwd) {
 	utils::Process p({"git", "pull"}, _cwd);
 	if (p.getStatus() != 0) {
-		throw std::runtime_error("error running git clone");
+		throw std::runtime_error("error running git pull");
 	}
 }
 void push(std::string const& _cwd) {
 	utils::Process p({"git", "push"}, _cwd);
 	if (p.getStatus() != 0) {
-		throw std::runtime_error("error running git clone");
+		throw std::runtime_error("error running git push");
 	}
 }
 bool isDirty(std::string const& _cwd) {
@@ -31,7 +31,7 @@ bool isDirty(std::string const& _cwd) {
 void checkout(std::string const& _cwd, std::string const& _commit) {
 	utils::Process p({"git", "checkout", _commit}, _cwd);
 	if (p.getStatus() != 0) {
-		throw std::runtime_error("error running git clone");
+		throw std::runtime_error("error running git checkout");
 	}
 }
 std::string getBranch(std::string const& _cwd) {
