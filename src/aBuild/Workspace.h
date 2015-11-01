@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Package.h"
-#include <jsonSerializer/jsonSerializer.h>
+#include <serializer/serializer.h>
 
 namespace aBuild {
 
@@ -19,7 +19,8 @@ public:
 		auto getToolchain() const -> std::string const&  { return toolchain; }
 		void setToolchain(std::string const& _toolchain) { toolchain = _toolchain; }
 
-		void serialize(jsonSerializer::Node& node) {
+		template<typename Node>
+		void serialize(Node& node) {
 			node["flavor"]   % flavor;
 			node["toochain"] % toolchain;
 		}

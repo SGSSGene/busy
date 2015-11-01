@@ -1,5 +1,7 @@
 #pragma once
 
+#include <iostream>
+#include <fstream>
 #include "BuildAction.h"
 #include "Process.h"
 #include <queue>

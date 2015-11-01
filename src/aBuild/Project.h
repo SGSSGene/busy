@@ -1,6 +1,6 @@
 #pragma once
 
-#include <jsonSerializer/jsonSerializer.h>
+#include <serializer/serializer.h>
 #include "utils.h"
 
 namespace aBuild {
@@ -11,7 +11,8 @@ namespace aBuild {
 	struct ProjectLegacy {
 		std::vector<std::string> includes;
 
-		void serialize(jsonSerializer::Node& node) {
+		template<typename Node>
+		void serialize(Node& node) {
 			node["includes"] % includes;
 		}
 	};
@@ -35,7 +36,8 @@ namespace aBuild {
 		Project()
 			: packagePath {"."} {}
 
-		void serialize(jsonSerializer::Node& node) {
+		template<typename Node>
+		void serialize(Node& node) {
 			node["path"]                 % path;
 			node["dependencies"]         % dependencies;
 			node["optionalDependencies"] % optionalDependencies;

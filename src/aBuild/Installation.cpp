@@ -1,6 +1,8 @@
 #include "Installation.h"
 #include "Process.h"
 
+#include <iostream>
+
 namespace aBuild {
 bool System::isInstalled() const {
 	if (type == "system") {

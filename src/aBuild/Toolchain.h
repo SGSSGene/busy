@@ -1,6 +1,6 @@
 #pragma once
 
-#include <jsonSerializer/jsonSerializer.h>
+#include <serializer/serializer.h>
 
 namespace aBuild {
 
@@ -47,7 +47,9 @@ public:
 	}
 	bool isInstalled(std::map<std::string, Installation> const& installations) const;
 	void install(std::map<std::string, Installation> const& installations) const;
-	void serialize(jsonSerializer::Node& node) {
+
+	template<typename Node>
+	void serialize(Node& node) {
 		node["name"]          % name;
 		node["ccompiler"]     % cCompiler;
 		node["cppcompiler"]   % cppCompiler;

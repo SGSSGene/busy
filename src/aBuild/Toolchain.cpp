@@ -2,6 +2,8 @@
 
 #include "Installation.h"
 
+#include <iostream>
+
 namespace aBuild {
 
 bool Toolchain::isInstalled(std::map<std::string, Installation> const& installations) const {

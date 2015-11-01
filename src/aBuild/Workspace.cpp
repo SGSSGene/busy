@@ -9,12 +9,12 @@ Workspace::Workspace(std::string const& _path)
 	: path {_path + "/"} {
 
 	if (utils::fileExists(path + ".aBuild/workspace.json")) {
-		jsonSerializer::read(path + ".aBuild/workspace.json", configFile);
+		serializer::json::read(path + ".aBuild/workspace.json", configFile);
 	}
 	createPackageFolder();
 }
 Workspace::~Workspace() {
-	jsonSerializer::write(path + ".aBuild/workspace.json", configFile);
+	serializer::json::write(path + ".aBuild/workspace.json", configFile);
 }
 
 auto Workspace::getAllMissingPackages() const -> std::vector<PackageURL> {
@@ -49,13 +49,13 @@ auto Workspace::getAllValidPackages(bool _includingRoot) const -> std::vector<Pa
 		try {
 			std::string path2 = path + "packages/" + s;
 			Package p {PackageURL()};
-			jsonSerializer::read(path2 + "/aBuild.json", p);
+			serializer::json::read(path2 + "/aBuild.json", p);
 			retList.push_back(std::move(p));
 		} catch (...) {}
 	}
 	if (_includingRoot) {
 		Package p {PackageURL()};
-		jsonSerializer::read("./aBuild.json", p);
+		serializer::json::read("./aBuild.json", p);
 		retList.push_back(std::move(p));
 	}
 	return retList;
@@ -68,7 +68,7 @@ auto Workspace::getAllInvalidPackages() const -> std::vector<std::string> {
 		try {
 			std::string path2 = path + "packages/" + s;
 			Package p {PackageURL()};
-			jsonSerializer::read(path2 + "/aBuild.json", p);
+			serializer::json::read(path2 + "/aBuild.json", p);
 		} catch (...) {
 			retList.push_back(s);
 		}
@@ -82,7 +82,7 @@ auto Workspace::getAllRequiredPackages() const -> std::vector<PackageURL> {
 	std::vector<Package> openPackages;
 	{
 		Package p {PackageURL()};
-		jsonSerializer::read(path + "aBuild.json", p);
+		serializer::json::read(path + "aBuild.json", p);
 		openPackages.push_back(std::move(p));
 	}
 	while(not openPackages.empty()) {
@@ -95,7 +95,7 @@ auto Workspace::getAllRequiredPackages() const -> std::vector<PackageURL> {
 				PackageURL url{p2};
 				Package p {url};
 				try {
-					jsonSerializer::read(url.getPath() + "/aBuild.json", p);
+					serializer::json::read(url.getPath() + "/aBuild.json", p);
 					openPackages.push_back(std::move(p));
 				} catch(...) {}
 			}
@@ -121,7 +121,7 @@ auto Workspace::getAllRequiredProjects()    const -> std::map<std::string, Proje
 	// Adding root package projects
 	//
 	Package p {PackageURL()};
-	jsonSerializer::read(path + "aBuild.json", p);
+	serializer::json::read(path + "aBuild.json", p);
 	for (auto project : p.getProjects()) {
 		retList[project.getPath()] = project;
 	}
@@ -130,7 +130,7 @@ auto Workspace::getAllRequiredProjects()    const -> std::map<std::string, Proje
 	auto required = getAllRequiredPackages();
 	for (auto url : required) {
 		Package package {url};
-		jsonSerializer::read(url.getPath() + "/aBuild.json", package);
+		serializer::json::read(url.getPath() + "/aBuild.json", package);
 
 		for (auto project : package.getProjects()) {
 			retList[project.getName()] = project;

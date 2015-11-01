@@ -1,6 +1,6 @@
 #pragma once
 
-#include <jsonSerializer/jsonSerializer.h>
+#include <serializer/serializer.h>
 
 namespace aBuild {
 
@@ -10,7 +10,8 @@ private:
 	std::string type;
 	std::string url;
 public:
-	void serialize(jsonSerializer::Node& node) {
+	template<typename Node>
+	void serialize(Node& node) {
 		node["systems"] % systems;
 		node["type"]    % type;
 		node["url"]     % url;
@@ -35,7 +36,8 @@ private:
 	std::string name;
 	std::vector<System> systems;
 public:
-	void serialize(jsonSerializer::Node& node) {
+	template<typename Node>
+	void serialize(Node& node) {
 		node["name"]    % name;
 		node["systems"] % systems;
 	}

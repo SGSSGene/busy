@@ -41,7 +41,8 @@ namespace aBuild {
 		bool operator==(PackageURL const& _other) const {
 			return getName() == _other.getName();
 		}
-		void serialize(jsonSerializer::Node& node) {
+		template<typename Node>
+		void serialize(Node& node) {
 			node["url"]    % url;
 			node["branch"] % branch or "master";
 
@@ -67,7 +68,8 @@ namespace aBuild {
 		Package(PackageURL const& _url)
 			: url {_url} {}
 
-		void serialize(jsonSerializer::Node& node) {
+		template<typename Node>
+		void serialize(Node& node) {
 			node["name"]            % name;
 			node["extDependencies"] % extDependencies;
 			node["projects"]        % projects;

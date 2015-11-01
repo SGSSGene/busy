@@ -18,7 +18,7 @@ void quickFix() {
 			p.set(d, "executable");
 			package.accessProjects().push_back(std::move(p));
 		}
-		jsonSerializer::write("aBuild.json", package);
+		serializer::json::write("aBuild.json", package);
 	}
 }
 
