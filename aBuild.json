@@ -8,9 +8,6 @@
       },
       {
          "url" : "git@78.47.95.250:aBuild/ThreadPool"
-      },
-      {
-         "url" : "git@78.47.95.250:toolchains/commonToolchains"
       }
    ],
    "name" : "aBuild",
@@ -23,20 +20,6 @@
          ],
          "path" : "aBuild",
          "type" : "executable"
-      }
-   ],
-   "toolchains" : [
-      {
-         "archivist" : [ "/opt/odroid-x2/compiler/bin/arm-linux-gnueabihf-ar" ],
-         "ccompiler" : [ "/opt/odroid-x2/compiler/bin/arm-linux-gnueabihf-gcc" ],
-         "cppcompiler" : [ "/opt/odroid-x2/compiler/bin/arm-linux-gnueabihf-g++" ],
-         "name" : "gcc-cc-odroid-x2"
-      },
-      {
-         "archivist" : [ "/opt/gcc-arm-none-eabi-4_9-2015q2/bin/arm-none-eabi-ar" ],
-         "ccompiler" : [ "/opt/gcc-arm-none-eabi-4_9-2015q2/bin/arm-none-eabi-gcc" ],
-         "cppcompiler" : [ "/opt/gcc-arm-none-eabi-4_9-2015q2/bin/arm-none-eabi-g++" ],
-         "name" : "gcc-cc-arm-none-eabi"
       }
    ]
 }
