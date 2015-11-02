@@ -1,13 +1,13 @@
 {
    "extDependencies" : [
       {
-         "url" : "git@78.47.95.250:aBuild/Serializer"
+         "url" : "git@cakeface.de:aBuild/Serializer"
       },
       {
-         "url" : "git@78.47.95.250:aBuild/CommonOptions"
+         "url" : "git@cakeface.de:aBuild/CommonOptions"
       },
       {
-         "url" : "git@78.47.95.250:aBuild/ThreadPool"
+         "url" : "git@cakeface.de:aBuild/ThreadPool"
       }
    ],
    "name" : "aBuild",
