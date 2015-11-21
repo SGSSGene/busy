@@ -24,7 +24,7 @@ public:
 	T* ptr;
 	std::function<void(T*)> func { [](T*){} };
 	~Node() override {}
-	void const* getPtr() const { return ptr; }
+	void const* getPtr() const override { return ptr; }
 	void call() const override { func(ptr); }
 };
 
