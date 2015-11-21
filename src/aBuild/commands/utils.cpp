@@ -8,10 +8,14 @@ std::map<std::string, Toolchain> getAllToolchains(Workspace const& ws) {
 	std::map<std::string, Toolchain> retList;
 
 	std::map<std::string, Toolchain> searchPaths {
-	     {"/usr/bin/gcc-4.9", {"system-gcc-4.9", true, "gcc-4.9", "g++-4.9", "ar"}},
-	     {"/usr/bin/gcc-4.8", {"system-gcc-4.8", true, "gcc-4.8", "g++-4.8", "ar"}},
-	     {"/usr/bin/gcc-4.7", {"system-gcc-4.7", true, "gcc-4.7", "g++-4.7", "ar"}},
-	     {"/usr/bin/clang",   {"system-clang",   true, "clang",   "clang++", "ar"}},
+	     {"/usr/bin/gcc",       {"system-gcc",       true, "gcc",       "g++",         "ar"}},
+	     {"/usr/bin/gcc-5.1",   {"system-gcc-5.1",   true, "gcc-5.1",   "g++-5.1",     "ar"}},
+	     {"/usr/bin/gcc-5.0",   {"system-gcc-5.0",   true, "gcc-5.0",   "g++-5.0",     "ar"}},
+	     {"/usr/bin/gcc-4.9",   {"system-gcc-4.9",   true, "gcc-4.9",   "g++-4.9",     "ar"}},
+	     {"/usr/bin/gcc-4.8",   {"system-gcc-4.8",   true, "gcc-4.8",   "g++-4.8",     "ar"}},
+	     {"/usr/bin/gcc-4.7",   {"system-gcc-4.7",   true, "gcc-4.7",   "g++-4.7",     "ar"}},
+	     {"/usr/bin/clang",     {"system-clang",     true, "clang",     "clang++",     "ar"}},
+	     {"/usr/bin/clang-3.8", {"system-clang-3.8", true, "clang-3.8", "clang++-3.8", "ar"}},
 	     };
 
 	for (auto const& p : searchPaths) {
