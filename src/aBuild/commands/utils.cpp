@@ -9,6 +9,8 @@ std::map<std::string, Toolchain> getAllToolchains(Workspace const& ws) {
 
 	std::map<std::string, Toolchain> searchPaths {
 	     {"/usr/bin/gcc",       {"system-gcc",       true, "gcc",       "g++",         "ar"}},
+	     {"/usr/bin/gcc-5.3",   {"system-gcc-5.3",   true, "gcc-5.3",   "g++-5.3",     "ar"}},
+	     {"/usr/bin/gcc-5.2",   {"system-gcc-5.2",   true, "gcc-5.2",   "g++-5.2",     "ar"}},
 	     {"/usr/bin/gcc-5.1",   {"system-gcc-5.1",   true, "gcc-5.1",   "g++-5.1",     "ar"}},
 	     {"/usr/bin/gcc-5.0",   {"system-gcc-5.0",   true, "gcc-5.0",   "g++-5.0",     "ar"}},
 	     {"/usr/bin/gcc-4.9",   {"system-gcc-4.9",   true, "gcc-4.9",   "g++-4.9",     "ar"}},
