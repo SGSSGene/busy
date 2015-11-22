@@ -11,9 +11,14 @@ Workspace::Workspace(std::string const& _path)
 	if (utils::fileExists(path + ".aBuild/workspace.json")) {
 		serializer::json::read(path + ".aBuild/workspace.json", configFile);
 	}
+	createABuildFolder();
 	createPackageFolder();
 }
 Workspace::~Workspace() {
+	save();
+}
+
+void Workspace::save() {
 	serializer::json::write(path + ".aBuild/workspace.json", configFile);
 }
 
@@ -147,6 +152,13 @@ void Workspace::createPackageFolder() {
 		utils::mkdir(path + "packages");
 	}
 }
+void Workspace::createABuildFolder() {
+	// check if packages folder exists
+	if (not utils::fileExists(path + ".aBuild")) {
+		utils::mkdir(path + ".aBuild");
+	}
+}
+
 
 
 }

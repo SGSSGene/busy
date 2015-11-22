@@ -24,6 +24,7 @@ void build(bool verbose) {
 		toolchain = allToolchains.at(toolchainName);
 	}
 	ws.accessConfigFile().setToolchain(toolchain.getName());
+	ws.save();
 
 	std::cout << "Using toolchain: " << ws.accessConfigFile().getToolchain() << std::endl;
 	std::cout << "Using flavor:    " << ws.accessConfigFile().getFlavor() << std::endl;

@@ -33,6 +33,8 @@ public:
 	Workspace(std::string const& _path);
 	~Workspace();
 
+	void save();
+
 	ConfigFile& accessConfigFile() { return configFile; }
 
 	auto getAllMissingPackages()     const -> std::vector<PackageURL>;
@@ -44,6 +46,7 @@ public:
 	auto getAllRequiredProjects()    const -> std::map<std::string, Project>;
 
 private:
+	void createABuildFolder();
 	void createPackageFolder();
 };
 
