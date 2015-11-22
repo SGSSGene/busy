@@ -23,8 +23,9 @@ void build(bool verbose) {
 	if (allToolchains.find(toolchainName) != allToolchains.end()) {
 		toolchain = allToolchains.at(toolchainName);
 	}
+	ws.accessConfigFile().setToolchain(toolchain.getName());
 
-	std::cout << "Using toolchain: " << toolchain.getName() << std::endl;
+	std::cout << "Using toolchain: " << ws.accessConfigFile().getToolchain() << std::endl;
 	std::cout << "Using flavor:    " << ws.accessConfigFile().getFlavor() << std::endl;
 
 	std::unique_ptr<BuildAction> action { new BuildActionClang(&graph, verbose, &ws.accessConfigFile(), toolchain) };
