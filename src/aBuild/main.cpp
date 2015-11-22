@@ -4,6 +4,7 @@
 
 namespace {
 	auto swtDocu       = commonOptions::make_switch("docu",       "Generates html docu");
+	auto swtClang      = commonOptions::make_switch("clang",      "Generates a .clang_complete file");
 	auto swtHelp       = commonOptions::make_switch("help",       "Shows some inforamation about this program");
 	auto swtInstall    = commonOptions::make_switch("install",    "Installs the script to the current target");
 	auto swtLsFiles    = commonOptions::make_switch("ls-files",   "Print all files of these repositories");
@@ -70,6 +71,8 @@ int main(int argc, char** argv) {
 			commands::toolchains();
 		} else if (*optToolchain != "") {
 			commands::toolchain(*optToolchain);
+		} else if (*swtClang) {
+			commands::clang();
 		} else {
 			commands::build(*swtVerbose);
 		}

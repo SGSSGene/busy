@@ -15,6 +15,7 @@
 
 namespace commands {
 	void build(bool verbose = false);
+	void clang();
 	void docu();
 	void test();
 	void clone(std::string const& _url, std::string const& _dir);

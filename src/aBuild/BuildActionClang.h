@@ -350,5 +350,90 @@ namespace aBuild {
 			};
 		}
 
+		auto getCompileClangCompleteFunc() -> std::function<void(std::string*)> override {
+			return [this](std::string* f) {
+				std::unique_lock<std::mutex> lock(mutex);
+				auto l = utils::explode(*f, "/");
+
+				auto prog = toolchain.getCppCompiler();
+
+				prog.push_back("-std=c++11");
+
+				std::string inputFile  = *f;
+				std::string outputFile = objPath + *f + ".o";
+
+				auto outputFileMod = getFileModTime(outputFile);
+
+				auto nothingChanged = true;
+				if (not utils::fileExists(outputFile)) {
+					nothingChanged = false;
+				} else if (outputFileMod < getFileModTime(inputFile)) {
+					nothingChanged = false;
+				} else if (not utils::fileExists(objPath + *f + ".d")) {
+					nothingChanged = false;
+				} else {
+					std::ifstream ifs(objPath + *f + ".d");
+					for (std::string line; std::getline(ifs, line);) {
+						if (not utils::fileExists(line)) {
+							nothingChanged = false;
+							break;
+						} else if (outputFileMod < getFileModTime(line)) {
+							nothingChanged = false;
+							break;
+						}
+					}
+				}
+
+
+				if (nothingChanged) {
+					fileChanged[*f] = false;
+					return;
+				}
+
+				// Get include dependencies
+				Project* project = *graph->getOutgoing<Project, std::string>(f, false).begin();
+				{
+					for (auto const& i : project->getLegacy().includes) {
+						prog.push_back("-I");
+						prog.push_back(project->getPackagePath()+"/"+i);
+					}
+					prog.push_back("-I");
+					prog.push_back(project->getPackagePath()+"/src/"+project->getPath());
+					prog.push_back("-I");
+					prog.push_back(project->getPackagePath()+"/src/");
+
+					auto ingoing = graph->getIngoing<Project, Project>(project, true);
+					// Adding all defines of dependent libraries
+					prog.push_back("-DABUILD");
+
+					for (auto const& f : ingoing) {
+						std::string def = std::string("-DABUILD_");
+						for (auto const& c : f->getName()) {
+							def += std::toupper(c);
+						}
+						prog.push_back(def);
+
+					}
+					// Adding all includes of dependent libraries
+					for (auto const& f : ingoing) {
+						prog.push_back("-isystem");
+						prog.push_back(f->getPackagePath()+"/src");
+						for (auto const& i : f->getLegacy().includes) {
+							prog.push_back("-isystem");
+							prog.push_back(f->getPackagePath()+"/"+i);
+						}
+					}
+				}
+				std::fstream fs(".clang_complete", std::ios_base::out | std::ios_base::app);
+
+				for (auto const& p : prog) {
+					fs<<p<<" ";
+				}
+				fs<<std::endl;
+				//std::ofstream fstream 
+				//runProcess(prog, project->getNoWarnings(), lock);
+			};
+		}
+
 	};
 }
