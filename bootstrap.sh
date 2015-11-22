@@ -1,11 +1,13 @@
 #!/bin/bash
-mkdir packages
-git clone git@cakeface:aBuild/Serializer      packages/Serializer
-git clone git@cakeface:aBuild/jsoncpp         packages/jsoncpp
-git clone git@cakeface:aBuild/CommonOptions   packages/CommonOptions
-git clone git@cakeface:aBuild/ThreadPool      packages/ThreadPool
+set -e
 
-g++-4.9 -ggdb -O0 --std=c++11 \
+mkdir -p packages
+git clone git@cakeface.de:aBuild/Serializer      packages/Serializer
+git clone git@cakeface.de:aBuild/jsoncpp         packages/jsoncpp
+git clone git@cakeface.de:aBuild/CommonOptions   packages/CommonOptions
+git clone git@cakeface.de:aBuild/ThreadPool      packages/ThreadPool
+
+g++ -ggdb -O0 --std=c++11 \
 	-isystem packages/Serializer/src/ \
 	-isystem packages/jsoncpp/include \
 	-isystem packages/CommonOptions/src \
