@@ -61,8 +61,15 @@ namespace aBuild {
 			//std::cerr << TERM_PURPLE << p.cerr() << TERM_RESET;
 			//std::cout << TERM_GREEN  << p.cout() << TERM_RESET;
 			if (not _noWarnings || p->getStatus() != 0 || verbose) {
-				std::cout << p->cout() << TERM_RESET;
-				std::cerr << p->cerr() << TERM_RESET;
+				if (p->cout() != "" || p->cerr() != "") {
+					std::cout<<std::endl;
+					for (auto const& s : prog) {
+						std::cout<<" "<<s;
+					}
+					std::cout<<std::endl;
+					std::cout << p->cout() << TERM_RESET;
+					std::cerr << p->cerr() << TERM_RESET;
+				}
 			}
 			if (verbose) {
 				std::cout<<"==="<<std::endl;
