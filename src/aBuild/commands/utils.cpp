@@ -17,6 +17,7 @@ std::map<std::string, Toolchain> getAllToolchains(Workspace const& ws) {
 	     {"/usr/bin/gcc-4.8",   {"system-gcc-4.8",   true, "gcc-4.8",   "g++-4.8",     "ar"}},
 	     {"/usr/bin/gcc-4.7",   {"system-gcc-4.7",   true, "gcc-4.7",   "g++-4.7",     "ar"}},
 	     {"/usr/bin/clang",     {"system-clang",     true, "clang",     "clang++",     "ar"}},
+	     {"/usr/bin/clang-3.6", {"system-clang-3.6", true, "clang-3.6", "clang++-3.6", "ar"}},
 	     {"/usr/bin/clang-3.8", {"system-clang-3.8", true, "clang-3.8", "clang++-3.8", "ar"}},
 	     };
 
