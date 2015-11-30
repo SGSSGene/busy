@@ -2,7 +2,6 @@
 
 using namespace aBuild;
 
-
 namespace commands {
 
 void build(bool verbose) {
