@@ -26,6 +26,7 @@ namespace aBuild {
 		Dependencies optionalDependencies;
 		DepLibraries depLibraries;
 		bool         noWarnings;
+		bool         wholeArchive;
 		std::string  type;
 		mutable std::vector<std::string> cppFiles;
 		mutable std::vector<std::string> cFiles;
@@ -34,8 +35,9 @@ namespace aBuild {
 
 	public:
 		Project()
-			: packagePath { "." }
-			, noWarnings  { false }
+			: packagePath  { "." }
+			, noWarnings   { false }
+			, wholeArchive { false }
 		{}
 
 		template<typename Node>
@@ -47,6 +49,7 @@ namespace aBuild {
 			node["legacy"]               % legacy;
 			node["depLibraries"]         % depLibraries;
 			node["noWarnings"]           % noWarnings           or false;
+			node["wholeArchive"]         % wholeArchive         or false;
 		}
 		void set(std::string const& _name) {
 			path = _name;
@@ -84,6 +87,9 @@ namespace aBuild {
 		}
 		bool getNoWarnings() const {
 			return noWarnings;
+		}
+		bool getWholeArchive() const {
+			return wholeArchive;
 		}
 
 		void quickFix();

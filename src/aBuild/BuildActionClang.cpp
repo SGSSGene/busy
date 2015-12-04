@@ -51,6 +51,8 @@ auto BuildActionClang:: getLinkingExecFunc() -> std::function<void(Project*)> {
 
 		std::vector<std::string> dependencies;
 
+		std::set<std::string>    dependenciesWholeArchive; //! using -Wl,--whole-archive flag to make sure all static c'tor are being used
+
 		// Get project dependencies
 		{
 			std::queue<Project*> projectQueue;
@@ -68,6 +70,10 @@ auto BuildActionClang:: getLinkingExecFunc() -> std::function<void(Project*)> {
 						dependencies.erase(iter);
 					}
 					dependencies.push_back(lib);
+					if (f->getWholeArchive()) {
+						dependenciesWholeArchive.insert(lib);
+					}
+
 
 					// Set all depLibraries libraries
 					for (auto const& l : f->getDepLibraries()) {
@@ -83,7 +89,14 @@ auto BuildActionClang:: getLinkingExecFunc() -> std::function<void(Project*)> {
 		}
 		// Adding all depndencies to the prog call
 		for (auto const& s : dependencies) {
+			bool wholeArchive = dependenciesWholeArchive.find(s) != dependenciesWholeArchive.end();
+			if (wholeArchive) {
+				prog.push_back("-Wl,--whole-archive");
+			}
 			prog.push_back(s);
+			if (wholeArchive) {
+				prog.push_back("-Wl,--no-whole-archive");
+			}
 			if (hasFileChanged(s)) {
 				_fileChanged = true;
 			}
