@@ -60,7 +60,7 @@ namespace aBuild {
 			cv.wait(_lock);
 			t.join();
 
-			if (p->cerr() != "") {
+			if (p->getStatus() != 0) {
 				success = false;
 			}
 			//std::cerr << TERM_PURPLE << p.cerr() << TERM_RESET;
