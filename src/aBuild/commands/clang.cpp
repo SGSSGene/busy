@@ -28,16 +28,17 @@ void clang() {
 
 	std::unique_ptr<BuildAction> action { new BuildActionClang(&graph, false, &ws.accessConfigFile(), toolchain) };
 
-	std::function<void(Project*)>     linkingLibFunc   = [](Project*) {};
-	std::function<void(Project*)>     linkingExecFunc  = [](Project*) {};
-	std::function<void(std::string*)> compileFileCFunc = [](std::string*) {};
+	std::function<bool(Project*)>     linkingLibFunc   = [](Project*) {return true; };
+	std::function<bool(Project*)>     linkingExecFunc  = [](Project*) {return true; };
+	std::function<bool(std::string*)> compileFileCFunc = [](std::string*) {return true; };
 
 	auto compileClangCompleteFunc = action->getCompileClangCompleteFunc();
 
-	std::function<void(std::string*)> compileFileCppFunc     = [&] (std::string* p){
+	std::function<bool(std::string*)> compileFileCppFunc     = [&] (std::string* p){
 		if (*p == "src/justclangcomplete.cpp") {
 			compileClangCompleteFunc(p);
 		}
+		return true;
 	};
 	std::list<std::string> fakeFiles;
 

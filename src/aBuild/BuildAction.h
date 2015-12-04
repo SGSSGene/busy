@@ -17,11 +17,11 @@ namespace aBuild {
 			, configFile {_configFile}
 			, toolchain  {_toolchain}
 			{}
-		virtual auto getLinkingLibFunc    ()         -> std::function<void(Project*)> = 0;
-		virtual auto getLinkingExecFunc   ()         -> std::function<void(Project*)> = 0;
-		virtual auto getCompileCppFileFunc()         -> std::function<void(std::string*)> = 0;
+		virtual auto getLinkingLibFunc    ()         -> std::function<bool(Project*)> = 0;
+		virtual auto getLinkingExecFunc   ()         -> std::function<bool(Project*)> = 0;
+		virtual auto getCompileCppFileFunc()         -> std::function<bool(std::string*)> = 0;
 		virtual auto getCompileCppFileFuncDep()      -> std::function<void(std::string*)> = 0;
-		virtual auto getCompileCFileFunc  ()         -> std::function<void(std::string*)> = 0;
+		virtual auto getCompileCFileFunc  ()         -> std::function<bool(std::string*)> = 0;
 		virtual auto getCompileClangCompleteFunc()   -> std::function<void(std::string*)> = 0;
 	};
 }

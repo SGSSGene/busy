@@ -4,7 +4,7 @@ using namespace aBuild;
 
 namespace commands {
 
-void build(bool verbose) {
+void build(bool verbose, bool noconsole) {
 	Workspace ws(".");
 
 	checkingMissingPackages(ws);
@@ -35,9 +35,10 @@ void build(bool verbose) {
 	auto _compileFileCppFunc    = action->getCompileCppFileFunc();
 	auto _compileFileCppFuncDep = action->getCompileCppFileFuncDep();
 	auto compileFileCFunc       = action->getCompileCFileFunc();
-	std::function<void(std::string*)> compileFileCppFunc     = [&] (std::string* p){
-		_compileFileCppFunc(p);
+	std::function<bool(std::string*)> compileFileCppFunc     = [&] (std::string* p){
+		bool error = _compileFileCppFunc(p);
 		_compileFileCppFuncDep(p);
+		return error;
 	};
 
 
@@ -79,14 +80,23 @@ void build(bool verbose) {
 		}
 	}
 
-	graph.visitAllNodes(10, [](int done, int total) {
-		std::cout << "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b";
-		std::cout << "working on job: " << done << "/" << total << std::flush;
+	bool success = graph.visitAllNodes(10, [=](int done, int total) {
+		if (not noconsole) {
+			std::cout << "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b";
+			std::cout << "working on job: " << done << "/" << total << std::flush;
 
-		if (done == total) {
-			std::cout << std::endl;
+			if (done == total) {
+				std::cout << std::endl;
+			}
+		} else if (done == total) {
+			std::cout << "working on job: "<< done << "/" << total << std::endl;
 		}
 	});
+	if (not success) {
+		std::cout<<"Build failed"<<std::endl;
+	} else {
+		std::cout<<"Build succeeded"<<std::endl;
+	}
 }
 
 }

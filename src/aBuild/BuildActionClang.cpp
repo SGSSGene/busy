@@ -2,7 +2,7 @@
 
 namespace aBuild {
 
-auto BuildActionClang:: getLinkingExecFunc() -> std::function<void(Project*)> {
+auto BuildActionClang:: getLinkingExecFunc() -> std::function<bool(Project*)> {
 	return [this](Project* project) {
 		std::unique_lock<std::mutex> lock(mutex);
 		std::string binPath  = execPath;
@@ -109,10 +109,11 @@ auto BuildActionClang:: getLinkingExecFunc() -> std::function<void(Project*)> {
 		}
 		if (_fileChanged) {
 			fileChanged[outFile] = true;
-			runProcess(prog, project->getNoWarnings(), lock);
+			return runProcess(prog, project->getNoWarnings(), lock);
 		} else {
 			fileChanged[outFile] = false;
 		}
+		return true;
 	};
 }
 

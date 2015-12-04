@@ -16,16 +16,16 @@ public:
 	bool operator==(NodeBase const& _other) {
 		return getPtr() == _other.getPtr();
 	}
-	virtual void call() const = 0;
+	virtual bool call() const = 0;
 };
 template<typename T>
 class Node : public NodeBase {
 public:
 	T* ptr;
-	std::function<void(T*)> func { [](T*){} };
+	std::function<bool(T*)> func { [](T*){return true;} };
 	~Node() override {}
 	void const* getPtr() const override { return ptr; }
-	void call() const override { func(ptr); }
+	bool call() const override { return func(ptr); }
 };
 
 class GraphNodeManager;
@@ -58,7 +58,7 @@ public:
 	}
 
 	template<typename T>
-	Node<T> const* addNode(T* _ptr, std::function<void(T*)> _func) {
+	Node<T> const* addNode(T* _ptr, std::function<bool(T*)> _func) {
 		GraphNodeManagerBase<T>::map[this][_ptr].ptr  = _ptr;
 		GraphNodeManagerBase<T>::map[this][_ptr].func = _func;
 
@@ -82,9 +82,18 @@ private:
 public:
 	template<typename T>
 	void addNode(T* _node, std::function<void(T*)> _func) {
+		addNode(_node, [=](T* _t) {
+			_func(_t);
+			return true;
+		});
+	}
+
+	template<typename T>
+	void addNode(T* _node, std::function<bool(T*)> _func) {
 		auto p = nodeManager.addNode(_node, _func);
 		nodes.insert(p);
 	}
+
 
 	template<typename T1, typename T2>
 	void addEdge(T1* _src, T2* _to) {
@@ -173,7 +182,8 @@ public:
 	}
 
 
-	void visitAllNodes(int threadCt = 1, std::function<void(int, int)> _monitor = [](int, int){}) {
+	bool visitAllNodes(int threadCt = 1, std::function<void(int, int)> _monitor = [](int, int){}) {
+		std::atomic_bool success { true };
 		std::map<NodeBase const*, std::set<NodeBase const*>> ingoingNodes;
 		for (auto& n : nodes) {
 			ingoingNodes[n] = getIngoing(n);
@@ -184,7 +194,13 @@ public:
 		std::mutex mutex;
 		threadPool::ThreadPool<NodeBase const*> threadPool;
 		threadPool.spawnThread([&](NodeBase const* top) {
-			top->call();
+			// Only run, if no error occured
+			if (success) {
+				bool _success = top->call();
+				if (not _success) {
+					success = false;
+				}
+			}
 			{
 				std::unique_lock<std::mutex> lock(mutex);
 				auto outgoing = getOutgoing(top);
@@ -228,6 +244,7 @@ public:
 			}
 		}
 		threadPool.wait();
+		return success;
 	}
 };
 

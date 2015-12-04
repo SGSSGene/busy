@@ -41,7 +41,8 @@ namespace aBuild {
 			return iter->second;
 		}
 	public:
-		void runProcess(std::vector<std::string> const& prog, bool _noWarnings, std::unique_lock<std::mutex>& _lock) const {
+		bool runProcess(std::vector<std::string> const& prog, bool _noWarnings, std::unique_lock<std::mutex>& _lock) const {
+			bool success = true;
 			if (verbose) {
 				for (auto const& s : prog) {
 					std::cout<<" "<<s;
@@ -58,6 +59,10 @@ namespace aBuild {
 			});
 			cv.wait(_lock);
 			t.join();
+
+			if (p->cerr() != "") {
+				success = false;
+			}
 			//std::cerr << TERM_PURPLE << p.cerr() << TERM_RESET;
 			//std::cout << TERM_GREEN  << p.cout() << TERM_RESET;
 			if (not _noWarnings || p->getStatus() != 0 || verbose) {
@@ -74,8 +79,7 @@ namespace aBuild {
 			if (verbose) {
 				std::cout<<"==="<<std::endl;
 			}
-
-
+			return success;
 		}
 		BuildActionClang(Graph const* _graph, bool _verbose, Workspace::ConfigFile const* _configFile, Toolchain const& _toolchain)
 			: BuildAction(_graph, _verbose, _configFile, _toolchain)
@@ -86,7 +90,7 @@ namespace aBuild {
 			execPath  = "build/" + _configFile->getToolchain() + "/" + _configFile->getFlavor() + "/";
 		}
 
-		auto getLinkingLibFunc() -> std::function<void(Project*)> override {
+		auto getLinkingLibFunc() -> std::function<bool(Project*)> override {
 			return [this](Project* project) {
 				std::unique_lock<std::mutex> lock(mutex);
 				utils::mkdir(libPath);
@@ -107,16 +111,17 @@ namespace aBuild {
 				}
 				if (_fileChanged) {
 					fileChanged[outputFile] = true;
-					runProcess(prog, project->getNoWarnings(), lock);
+					return runProcess(prog, project->getNoWarnings(), lock);
 				} else {
 					fileChanged[outputFile] = false;
 				}
+				return true;
 			};
 		}
 
-		auto getLinkingExecFunc() -> std::function<void(Project*)> override;
+		auto getLinkingExecFunc() -> std::function<bool(Project*)> override;
 
-		auto getCompileCppFileFunc() -> std::function<void(std::string*)> override {
+		auto getCompileCppFileFunc() -> std::function<bool(std::string*)> override {
 			return [this](std::string* f) {
 				std::unique_lock<std::mutex> lock(mutex);
 				auto l = utils::explode(*f, "/");
@@ -156,7 +161,7 @@ namespace aBuild {
 
 				if (nothingChanged) {
 					fileChanged[*f] = false;
-					return;
+					return true;
 				}
 
 				prog.push_back("-c");
@@ -206,7 +211,7 @@ namespace aBuild {
 						}
 					}
 				}
-				runProcess(prog, project->getNoWarnings(), lock);
+				return runProcess(prog, project->getNoWarnings(), lock);
 			};
 		}
 		auto getCompileCppFileFuncDep() -> std::function<void(std::string*)> override {
@@ -288,7 +293,7 @@ namespace aBuild {
 			};
 		}
 
-		auto getCompileCFileFunc() -> std::function<void(std::string*)> override {
+		auto getCompileCFileFunc() -> std::function<bool(std::string*)> override {
 			return [this](std::string* f) {
 				std::unique_lock<std::mutex> lock(mutex);
 				auto l = utils::explode(*f, "/");
@@ -346,7 +351,7 @@ namespace aBuild {
 						}
 					}
 				}
-				runProcess(prog, project->getNoWarnings(), lock);
+				return runProcess(prog, project->getNoWarnings(), lock);
 			};
 		}
 

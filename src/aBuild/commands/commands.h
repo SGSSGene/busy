@@ -12,9 +12,8 @@
 #include "git.h"
 #include "estd.h"
 
-
 namespace commands {
-	void build(bool verbose = false);
+	void build(bool verbose = false, bool noconsole=false);
 	void clang();
 	void docu();
 	void test();
