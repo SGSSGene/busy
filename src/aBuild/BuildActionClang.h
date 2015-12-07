@@ -196,7 +196,13 @@ namespace aBuild {
 					for (auto const& f : ingoing) {
 						std::string def = std::string("-DABUILD_");
 						for (auto const& c : f->getName()) {
-							def += std::toupper(c);
+							if ((c >= 'A' and c <= 'Z')
+							    or (c >= 'a' and c <= 'z')
+							    or (c >= '0' and c <= '9')) {
+								def += std::toupper(c);
+							} else {
+								def += "_";
+							}
 						}
 						prog.push_back(def);
 
