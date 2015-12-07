@@ -205,8 +205,22 @@ namespace aBuild {
 							}
 						}
 						prog.push_back(def);
-
 					}
+
+					{
+						std::string def = std::string("-DABUILD_");
+						for (auto const& c : project->getName()) {
+							if ((c >= 'A' and c <= 'Z')
+							    or (c >= 'a' and c <= 'z')
+							    or (c >= '0' and c <= '9')) {
+								def += std::toupper(c);
+							} else {
+								def += "_";
+							}
+						}
+						prog.push_back(def);
+					}
+
 					// Adding all includes of dependent libraries
 					for (auto const& f : ingoing) {
 						prog.push_back("-isystem");
