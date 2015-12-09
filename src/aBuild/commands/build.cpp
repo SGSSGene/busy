@@ -25,8 +25,8 @@ void build(bool verbose, bool noconsole) {
 	ws.accessConfigFile().setToolchain(toolchain.getName());
 	ws.save();
 
-	std::cout << "Using toolchain: " << ws.accessConfigFile().getToolchain() << std::endl;
 	std::cout << "Using flavor:    " << ws.accessConfigFile().getFlavor() << std::endl;
+	std::cout << "Using toolchain: " << ws.accessConfigFile().getToolchain() << std::endl;
 
 	std::unique_ptr<BuildAction> action { new BuildActionClang(&graph, verbose, &ws.accessConfigFile(), toolchain) };
 
