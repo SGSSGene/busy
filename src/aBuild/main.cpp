@@ -5,6 +5,7 @@
 namespace {
 	auto swtDocu       = commonOptions::make_switch("docu",       "Generates html docu");
 	auto swtClang      = commonOptions::make_switch("clang",      "Generates a .clang_complete file");
+	auto swtClean      = commonOptions::make_switch("clean",      "Cleans current build and .aBuild directory");
 	auto swtHelp       = commonOptions::make_switch("help",       "Shows some inforamation about this program");
 	auto swtInstall    = commonOptions::make_switch("install",    "Installs the script to the current target");
 	auto swtLsFiles    = commonOptions::make_switch("ls-files",   "Print all files of these repositories");
@@ -42,6 +43,8 @@ int main(int argc, char** argv) {
 		} else if (*swtTest) {
 			commands::build(*swtVerbose, *swtNoConsole);
 			commands::test();
+		} else if (*swtClean) {
+			commands::clean();
 		} else if (optClone->size() == 2) {
 			commands::clone((*optClone)[0], (*optClone)[1] + "/");
 		} else if (optClone->size() == 1) {
