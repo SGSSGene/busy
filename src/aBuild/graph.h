@@ -213,12 +213,13 @@ public:
 	}
 
 
-	bool visitAllNodes(int threadCt = 1, std::function<void(int, int)> _monitor = [](int, int){}) {
+	bool visitAllNodes(int threadCt = 1, std::function<void(int, int, int)> _monitor = [](int, int, int){}) {
 		std::atomic_bool success { true };
 		std::map<NodeBase const*, std::set<NodeBase const*>> ingoingNodes;
 		for (auto& n : nodes) {
 			ingoingNodes[n] = getIngoing(n);
 		}
+		int totaltotal = nodes.size();
 		int total = 0;
 		int done = 0;
 
@@ -253,7 +254,7 @@ public:
 					}
 				}
 				++done;
-				_monitor(done, total);
+				_monitor(done, total, totaltotal);
 
 			}
 

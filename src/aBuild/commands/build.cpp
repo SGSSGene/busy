@@ -90,10 +90,10 @@ void build(std::string const& rootProjectName, bool verbose, bool noconsole) {
 		graph.removeUnreachableOutgoing(rootProject);
 	}
 
-	bool success = graph.visitAllNodes(10, [=](int done, int total) {
+	bool success = graph.visitAllNodes(10, [=](int done, int total, int totaltotal) {
 		if (not noconsole) {
-			std::cout << "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b";
-			std::cout << "working on job: " << done << "/" << total << std::flush;
+			std::cout << "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b";
+			std::cout << "working on job: " << done << "/" << total << "/" << totaltotal << std::flush;
 
 			if (done == total) {
 				std::cout << std::endl;
