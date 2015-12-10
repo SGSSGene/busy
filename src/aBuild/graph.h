@@ -191,15 +191,17 @@ public:
 		for (auto n : reachableNodes) {
 			allNodes.erase(n);
 		}
+		allNodes.erase(node);
 
 		for (auto iter = edges.begin(); iter != edges.end();) {
-			if (allNodes.count(iter->first) > 0 || allNodes.count(iter->second)) {
+			if (allNodes.count(iter->first) > 0 || allNodes.count(iter->second) > 0) {
 				iter = edges.erase(iter);
 			} else {
 				++iter;
 			}
 		}
 		nodes = reachableNodes;
+		nodes.insert(node);
 	}
 	void getReachableIngoingImpl(NodeBase const* _node, std::set<NodeBase const*>& _retVal) {
 		for (auto const& e : edges) {

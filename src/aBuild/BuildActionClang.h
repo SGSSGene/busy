@@ -178,7 +178,9 @@ namespace aBuild {
 				}
 
 				// Get include dependencies
-				Project* project = *graph->getOutgoing<Project, std::string>(f, false).begin();
+				auto list = graph->getOutgoing<Project, std::string>(f, false);
+				auto iter = list.begin();
+				Project* project = *iter;
 				{
 					for (auto const& i : project->getLegacy().includes) {
 						prog.push_back("-I");
