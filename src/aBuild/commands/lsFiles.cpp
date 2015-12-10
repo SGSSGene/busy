@@ -19,20 +19,24 @@ std::set<std::string> getLsFiles(std::string const& _cwd) {
 	}
 	return files;
 }
-void printLsFiles(std::string const& _cwd) {
+void printLsFiles(std::string const& _prefix, std::string const& _cwd) {
 	auto files = getLsFiles(_cwd);
 	for (auto const& s : files) {
-		std::cout << _cwd << "/" << s << std::endl;
+		if (_cwd == ".") {
+			std::cout << _prefix << s << std::endl;
+		} else {
+			std::cout << _prefix <<_cwd << "/" << s << std::endl;
+		}
 	}
 }
 
-int listFiles() {
+int listFiles(std::string const& _relPath) {
 	if (not utils::fileExists("aBuild.json")) return EXIT_FAILURE;
-	printLsFiles(".");
+	printLsFiles(_relPath, ".");
 	auto projectDirs = utils::listDirs("packages", true);
 	for (auto const& d : projectDirs) {
 		auto path = std::string("packages/")+d;
-		printLsFiles(path);
+		printLsFiles(_relPath, path);
 	}
 
 	return EXIT_SUCCESS;

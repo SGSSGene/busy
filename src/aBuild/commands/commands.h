@@ -24,7 +24,7 @@ namespace commands {
 	void install();
 	void status(std::string _flavor = "");
 	void quickFix();
-	int  listFiles();
+	int  listFiles(std::string const& _relPath);
 	void toolchains();
 	void toolchain(std::string const& _toolchain);
 
