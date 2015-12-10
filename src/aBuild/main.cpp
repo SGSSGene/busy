@@ -28,7 +28,30 @@ using namespace aBuild;
 
 using Action = std::function<void()>;
 
+/**
+ * check current working dir, and changes, if this is very likely to be
+ * the wrong one. idea is to always endup in the cwd where aBuild.json is
+ * located
+ */
+void checkCwd() {
+	auto cwd = utils::cwd();
+	while (cwd != "/" and not utils::fileExists("aBuild.json")) {
+		utils::cwd("..");
+		cwd = utils::cwd();
+	}
+	auto dirs = utils::explode(cwd, "/");
+	if (dirs.size() > 1) {
+		if (dirs[dirs.size()-2] == "packages"
+		    and utils::fileExists("../../aBuild.json")) {
+		    utils::cwd("../..");
+		}
+	}
+
+}
+
 int main(int argc, char** argv) {
+	checkCwd();
+
 	if (not commonOptions::parse(argc, argv)) {
 		commonOptions::print();
 		return 0;
