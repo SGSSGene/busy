@@ -63,7 +63,7 @@ int main(int argc, char** argv) {
 		return 0;
 	}
 
-	std::string relPath = "";
+	std::string relPath = ".";
 	if (not *swtLsFiles) {
 		relPath = checkCwd();
 	}

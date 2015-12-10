@@ -31,12 +31,21 @@ void printLsFiles(std::string const& _prefix, std::string const& _cwd) {
 }
 
 int listFiles(std::string const& _relPath) {
-	if (not utils::fileExists("aBuild.json")) return EXIT_FAILURE;
 	printLsFiles(_relPath, ".");
-	auto projectDirs = utils::listDirs("packages", true);
-	for (auto const& d : projectDirs) {
-		auto path = std::string("packages/")+d;
-		printLsFiles(_relPath, path);
+	auto cwdDirs = utils::cwd();
+	auto cwdDirsList = utils::explode(cwdDirs, "/");
+	if (cwdDirsList[cwdDirsList.size()-1] == "packages") {
+		auto projectDirs = utils::listDirs(".", true);
+		for (auto const& d : projectDirs) {
+			auto path = d;
+			printLsFiles(_relPath, path);
+		}
+	} else {
+		auto projectDirs = utils::listDirs("packages", true);
+		for (auto const& d : projectDirs) {
+			auto path = std::string("packages/")+d;
+			printLsFiles(_relPath, path);
+		}
 	}
 
 	return EXIT_SUCCESS;
