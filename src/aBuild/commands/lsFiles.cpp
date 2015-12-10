@@ -40,7 +40,7 @@ int listFiles(std::string const& _relPath) {
 			auto path = d;
 			printLsFiles(_relPath, path);
 		}
-	} else {
+	} else if (utils::fileExists("packages")) {
 		auto projectDirs = utils::listDirs("packages", true);
 		for (auto const& d : projectDirs) {
 			auto path = std::string("packages/")+d;
