@@ -13,7 +13,7 @@
 #include "estd.h"
 
 namespace commands {
-	void build(bool verbose = false, bool noconsole=false);
+	void build(std::string const& rootProjectName, bool verbose = false, bool noconsole=false);
 	void clang();
 	void clean();
 	void docu();

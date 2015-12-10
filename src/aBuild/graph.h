@@ -181,6 +181,35 @@ public:
 		return retSet;
 	}
 
+	template<typename T1>
+	void removeUnreachableOutgoing(T1* _node) {
+		auto node = nodeManager.getNode(_node);
+		auto allNodes = nodes;
+		std::set<NodeBase const*> reachableNodes;
+		getReachableIngoingImpl(node, reachableNodes);
+
+		for (auto n : reachableNodes) {
+			allNodes.erase(n);
+		}
+
+		for (auto iter = edges.begin(); iter != edges.end();) {
+			if (allNodes.count(iter->first) > 0 || allNodes.count(iter->second)) {
+				iter = edges.erase(iter);
+			} else {
+				++iter;
+			}
+		}
+		nodes = reachableNodes;
+	}
+	void getReachableIngoingImpl(NodeBase const* _node, std::set<NodeBase const*>& _retVal) {
+		for (auto const& e : edges) {
+			if (e.second == _node) {
+				_retVal.insert(e.first);
+				getReachableIngoingImpl(e.first, _retVal);
+			}
+		}
+	}
+
 
 	bool visitAllNodes(int threadCt = 1, std::function<void(int, int)> _monitor = [](int, int){}) {
 		std::atomic_bool success { true };

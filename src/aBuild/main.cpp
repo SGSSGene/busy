@@ -22,6 +22,7 @@ namespace {
 	
 
 	auto optClone      = commonOptions::make_multi_option("clone", {}, "clones given git repository");
+	auto optBuild      = commonOptions::make_option("build", "", "builds a specific project");
 	auto optFlavor     = commonOptions::make_option("flavor",    "", "Changes current flavor");
 	auto optToolchain  = commonOptions::make_option("toolchain", "", "Changes current toolchain");
 
@@ -73,7 +74,7 @@ int main(int argc, char** argv) {
 		if (*swtDocu) {
 			commands::docu();
 		} else if (*swtTest) {
-			commands::build(*swtVerbose, *swtNoConsole);
+			commands::build("", *swtVerbose, *swtNoConsole);
 			commands::test();
 		} else if (*swtClean) {
 			commands::clean();
@@ -111,7 +112,7 @@ int main(int argc, char** argv) {
 		} else if (*swtClang) {
 			commands::clang();
 		} else {
-			commands::build(*swtVerbose, *swtNoConsole);
+			commands::build(*optBuild, *swtVerbose, *swtNoConsole);
 		}
 	} catch(std::exception const& e) {
 		std::cerr<<"exception(exception): "<<e.what()<<std::endl;

@@ -4,7 +4,9 @@ using namespace aBuild;
 
 namespace commands {
 
-void build(bool verbose, bool noconsole) {
+void build(std::string const& rootProjectName, bool verbose, bool noconsole) {
+	Project*    rootProject { nullptr };
+
 	Workspace ws(".");
 
 	checkingMissingPackages(ws);
@@ -46,6 +48,9 @@ void build(bool verbose, bool noconsole) {
 	auto projects = ws.getAllRequiredProjects();
 	for (auto& e  : projects) {
 		auto& project = e.second;
+		if (project.getName() == rootProjectName) {
+			rootProject = &project;
+		}
 		// Adding linking
 		if (project.getType() == "library") {
 			graph.addNode(&project, linkingLibFunc);
@@ -78,6 +83,11 @@ void build(bool verbose, bool noconsole) {
 				graph.addEdge(&projects.at(key), &project);
 			}
 		}
+	}
+
+	if (rootProject) {
+		std::cout << "Compiling project: " << rootProject->getName() << std::endl;
+		graph.removeUnreachableOutgoing(rootProject);
 	}
 
 	bool success = graph.visitAllNodes(10, [=](int done, int total) {

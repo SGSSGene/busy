@@ -20,6 +20,9 @@
          ],
          "path" : "aBuild",
          "type" : "executable"
+      },
+      {
+      	"path": "testEmptyProject"
       }
    ]
 }
