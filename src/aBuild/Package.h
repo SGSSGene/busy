@@ -44,7 +44,7 @@ namespace aBuild {
 		template<typename Node>
 		void serialize(Node& node) {
 			node["url"]    % url;
-			node["branch"] % branch or "master";
+			node["branch"] % branch or std::string("master");
 
 			path = "packages/"+getName();
 		}

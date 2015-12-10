@@ -48,8 +48,8 @@ namespace aBuild {
 			node["type"]                 % type                 or getDefaultTypeByName();
 			node["legacy"]               % legacy;
 			node["depLibraries"]         % depLibraries;
-			node["noWarnings"]           % noWarnings           or false;
-			node["wholeArchive"]         % wholeArchive         or false;
+			node["noWarnings"]           % noWarnings           or bool(false);
+			node["wholeArchive"]         % wholeArchive         or bool(false);
 		}
 		void set(std::string const& _name) {
 			path = _name;
