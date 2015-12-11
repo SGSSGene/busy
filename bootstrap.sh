@@ -23,6 +23,5 @@ g++ -ggdb -O0 --std=c++11 \
 	-lpthread \
 	-o aBuild
 ./aBuild
-./aBuild --test
 sudo ./aBuild --install
 rm ./aBuild
