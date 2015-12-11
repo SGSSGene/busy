@@ -17,6 +17,7 @@ namespace commands {
 	void clang();
 	void clean();
 	void docu();
+	void eclipse();
 	void test();
 	void clone(std::string const& _url, std::string const& _dir);
 	void pull();

@@ -6,6 +6,7 @@ namespace {
 	auto swtDocu       = commonOptions::make_switch("docu",        "Generates html docu");
 	auto swtClang      = commonOptions::make_switch("clang",       "Generates a .clang_complete file");
 	auto swtClean      = commonOptions::make_switch("clean",       "Cleans current build and .aBuild directory");
+	auto swtEclipse    = commonOptions::make_switch("eclipse",     "Generate Eclipse .project and .cproject file");
 	auto swtHelp       = commonOptions::make_switch("help",        "Shows some inforamation about this program");
 	auto swtInstall    = commonOptions::make_switch("install",     "Installs the script to the current target");
 	auto swtLsFiles    = commonOptions::make_switch("ls-files",    "Print all files of these repositories");
@@ -89,6 +90,8 @@ int main(int argc, char** argv) {
 			auto l = utils::explode(path, "/");
 			path = l[l.size()-1];
 			commands::clone(url, path + "/");
+		} else if (*swtEclipse) {
+			commands::eclipse();
 		} else if (*swtPull) {
 			commands::pull();
 		} else if (*swtPush) {
