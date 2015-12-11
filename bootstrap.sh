@@ -22,6 +22,6 @@ g++ -ggdb -O0 --std=c++11 \
 	packages/jsoncpp/src/lib_json/json_writer.cpp \
 	-lpthread \
 	-o aBuild
-./aBuild
+./aBuild --build aBuild
 sudo ./aBuild --install
 rm ./aBuild
