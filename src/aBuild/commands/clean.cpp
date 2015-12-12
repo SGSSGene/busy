@@ -12,8 +12,12 @@ void clean() {
 	auto cleanAbuildPath = std::string("./.aBuild/") + toolchain + "/" + flavor + "/";
 	auto cleanBuildPath  = std::string("./build/") + toolchain + "/" + flavor + "/";
 
-	utils::rm(cleanAbuildPath, true);
-	utils::rm(cleanBuildPath, true);
+	if (utils::fileExists(cleanAbuildPath)) {
+		utils::rm(cleanAbuildPath, true);
+	}
+	if (utils::fileExists(cleanBuildPath)) {
+		utils::rm(cleanBuildPath, true);
+	}
 
 	std::cout << "cleaned " << cleanAbuildPath << " and " << cleanBuildPath << std::endl;
 
