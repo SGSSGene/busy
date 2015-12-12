@@ -5,6 +5,16 @@
 
 namespace aBuild {
 
+static void convertJsonToYaml(std::string const& _str) {
+	// converting yaml files to json files
+	if (utils::fileExists(_str + "/aBuild.json")) {
+		Package package {PackageURL()};
+		serializer::json::read(_str + "/aBuild.json", package);
+		serializer::yaml::write(_str + "/aBuild.yaml", package);
+		utils::rm(_str + "/aBuild.json");
+	}
+}
+
 Workspace::Workspace(std::string const& _path)
 	: path {_path + "/"} {
 
@@ -53,14 +63,15 @@ auto Workspace::getAllValidPackages(bool _includingRoot) const -> std::vector<Pa
 	for (auto const& s : allPackages) {
 		try {
 			std::string path2 = path + "packages/" + s;
+			convertJsonToYaml(path2);
 			Package p {PackageURL()};
-			serializer::json::read(path2 + "/aBuild.json", p);
+			serializer::yaml::read(path2 + "/aBuild.yaml", p);
 			retList.push_back(std::move(p));
 		} catch (...) {}
 	}
 	if (_includingRoot) {
 		Package p {PackageURL()};
-		serializer::json::read("./aBuild.json", p);
+		serializer::yaml::read("./aBuild.yaml", p);
 		retList.push_back(std::move(p));
 	}
 	return retList;
@@ -72,8 +83,9 @@ auto Workspace::getAllInvalidPackages() const -> std::vector<std::string> {
 	for (auto const& s : allPackages) {
 		try {
 			std::string path2 = path + "packages/" + s;
+			convertJsonToYaml(path2);
 			Package p {PackageURL()};
-			serializer::json::read(path2 + "/aBuild.json", p);
+			serializer::yaml::read(path2 + "/aBuild.yaml", p);
 		} catch (...) {
 			retList.push_back(s);
 		}
@@ -87,7 +99,8 @@ auto Workspace::getAllRequiredPackages() const -> std::vector<PackageURL> {
 	std::vector<Package> openPackages;
 	{
 		Package p {PackageURL()};
-		serializer::json::read(path + "aBuild.json", p);
+		convertJsonToYaml(path);
+		serializer::yaml::read(path + "aBuild.yaml", p);
 		openPackages.push_back(std::move(p));
 	}
 	while(not openPackages.empty()) {
@@ -100,7 +113,8 @@ auto Workspace::getAllRequiredPackages() const -> std::vector<PackageURL> {
 				PackageURL url{p2};
 				Package p {url};
 				try {
-					serializer::json::read(url.getPath() + "/aBuild.json", p);
+					convertJsonToYaml(url.getPath());
+					serializer::yaml::read(url.getPath() + "/aBuild.yaml", p);
 					openPackages.push_back(std::move(p));
 				} catch(...) {}
 			}
@@ -126,7 +140,8 @@ auto Workspace::getAllRequiredProjects()    const -> std::map<std::string, Proje
 	// Adding root package projects
 	//
 	Package p {PackageURL()};
-	serializer::json::read(path + "aBuild.json", p);
+	convertJsonToYaml(path);
+	serializer::yaml::read(path + "aBuild.yaml", p);
 	for (auto project : p.getProjects()) {
 		retList[project.getPath()] = project;
 	}
@@ -135,7 +150,8 @@ auto Workspace::getAllRequiredProjects()    const -> std::map<std::string, Proje
 	auto required = getAllRequiredPackages();
 	for (auto url : required) {
 		Package package {url};
-		serializer::json::read(url.getPath() + "/aBuild.json", package);
+		convertJsonToYaml(url.getPath());
+		serializer::yaml::read(url.getPath() + "/aBuild.yaml", package);
 
 		for (auto project : package.getProjects()) {
 			retList[project.getName()] = project;

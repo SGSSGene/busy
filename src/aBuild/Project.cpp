@@ -56,7 +56,7 @@ auto Project::getDefaultDependencies() const -> Dependencies {
 	for (auto packageName : utils::listDirs("packages", true)) {
 		utils::Cwd cwd("packages/" + packageName);
 		Package package {PackageURL{}};
-		serializer::json::read("aBuild.json", package);
+		serializer::yaml::read("aBuild.yaml", package);
 		for (auto const& project : package.getProjects()) {
 			pathsOfInterest.insert( {package.getName(), project.getName()} );
 		}

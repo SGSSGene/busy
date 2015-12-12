@@ -1,0 +1,13 @@
+projects:
+  - dependencies:
+      - CommonOptions/commonOptions
+      - Serializer/serializer
+      - ThreadPool/threadPool
+    path: aBuild
+    type: executable
+  - path: testEmptyProject
+name: aBuild
+extDependencies:
+  - url: git@cakeface.de:aBuild/Serializer
+  - url: git@cakeface.de:aBuild/CommonOptions
+  - url: git@cakeface.de:aBuild/ThreadPool

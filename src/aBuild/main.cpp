@@ -14,9 +14,9 @@ namespace {
 	auto swtNoConsole  = commonOptions::make_switch("noterminal",  "Doesn't use pretty output to display current progress");
 	auto swtPull       = commonOptions::make_switch("pull",        "Execute pull on all git repositories");
 	auto swtPush       = commonOptions::make_switch("push",        "Execute push on all git repositories");
-	auto swtQuickFix   = commonOptions::make_switch("quickfix",    "Quickfixes aBuild.json");
-	auto swtQF         = commonOptions::make_switch("qf",          "Quickfixes aBuild.json");
-	auto swtRelPath    = commonOptions::make_switch("showRelPath", "Show the relative path to the root aBuild.json file");
+	auto swtQuickFix   = commonOptions::make_switch("quickfix",    "Quickfixes aBuild.yaml");
+	auto swtQF         = commonOptions::make_switch("qf",          "Quickfixes aBuild.yaml");
+	auto swtRelPath    = commonOptions::make_switch("showRelPath", "Show the relative path to the root aBuild.yaml file");
 	auto swtStatus     = commonOptions::make_switch("status",      "Shows current status of git repositories");
 	auto swtTest       = commonOptions::make_switch("test",        "Run all unittests");
 	auto swtToolchains = commonOptions::make_switch("toolchains",  "Shows available toolchain");
@@ -40,7 +40,8 @@ using Action = std::function<void()>;
 std::string checkCwd() {
 	std::string relPath = ".";
 	auto cwd = utils::cwd();
-	while (cwd != "/" and not utils::fileExists("aBuild.json")) {
+	while (cwd != "/" and not (utils::fileExists("aBuild.json")
+	                           or utils::fileExists("aBuild.yaml"))) {
 		utils::cwd("..");
 		relPath = relPath + "/..";
 		cwd = utils::cwd();
@@ -48,7 +49,8 @@ std::string checkCwd() {
 	auto dirs = utils::explode(cwd, "/");
 	if (dirs.size() > 1) {
 		if (dirs[dirs.size()-2] == "packages"
-		    and utils::fileExists("../../aBuild.json")) {
+		    and (utils::fileExists("../../aBuild.json")
+		         or utils::fileExists("../../aBuild.yaml"))) {
 			utils::cwd("../..");
 			relPath = relPath + "/../..";
 		}
@@ -70,6 +72,13 @@ int main(int argc, char** argv) {
 		relPath = checkCwd();
 	}
 
+	// converting yaml files to json files
+	if (utils::fileExists("aBuild.json")) {
+		Package package {PackageURL()};
+		serializer::json::read("aBuild.json", package);
+		serializer::yaml::write("aBuild.yaml", package);
+		utils::rm("aBuild.json");
+	}
 
 	try {
 		if (*swtDocu) {

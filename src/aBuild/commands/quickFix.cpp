@@ -7,13 +7,13 @@ namespace commands {
 void quickFix() {
 	Package package {PackageURL()};
 
-	if (not utils::fileExists("aBuild.json")) {
+	if (utils::fileExists("aBuild.yaml")) {
+		serializer::yaml::read("aBuild.yaml", package);
+	} else {
 		auto dir = utils::explode(utils::cwd(), "/");
 		std::string packageName = dir[dir.size()-1];
 
 		package.setName(packageName);
-	} else {
-		serializer::json::read("aBuild.json", package);
 	}
 
 	auto projectDirs = utils::listDirs("src", true);
@@ -34,7 +34,7 @@ void quickFix() {
 	for (auto& project : package.accessProjects()) {
 		project.quickFix();
 	}
-	serializer::json::write("aBuild.json", package);
+	serializer::yaml::write("aBuild.yaml", package);
 }
 
 

@@ -61,7 +61,7 @@ void checkingMissingPackages(Workspace& ws) {
 		}
 		git::clone(".", url.getURL(), url.getBranch(), repoName);
 		Package package(url);
-		serializer::json::read(repoName + "/aBuild.json", package);
+		serializer::yaml::read(repoName + "/aBuild.yaml", package);
 		{
 			std::unique_lock<std::mutex> lock(mutex);
 			utils::mv(repoName, std::string("packages/") + package.getName());
