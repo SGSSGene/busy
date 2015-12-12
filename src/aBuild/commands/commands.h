@@ -16,6 +16,7 @@ namespace commands {
 	void build(std::string const& rootProjectName, bool verbose = false, bool noconsole=false);
 	void clang();
 	void clean();
+	void cleanAll();
 	void docu();
 	void eclipse();
 	void test();
