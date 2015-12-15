@@ -88,7 +88,6 @@ int main(int argc, char** argv) {
 		if (*swtDocu) {
 			commands::docu();
 		} else if (*swtTest) {
-			commands::build("", *swtVerbose, *swtNoConsole);
 			commands::test();
 		} else if (*swtClean) {
 			commands::clean();
