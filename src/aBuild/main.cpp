@@ -73,11 +73,15 @@ int main(int argc, char** argv) {
 	}
 
 	// converting yaml files to json files
-	if (utils::fileExists("aBuild.json")) {
+	if (utils::fileExists("aBuild.json")
+	    and not utils::fileExists("aBuild.yaml")) {
 		Package package {PackageURL()};
+		std::cout << "found aBuild.json converting to aBuild.yaml" << std::endl;
 		serializer::json::read("aBuild.json", package);
 		serializer::yaml::write("aBuild.yaml", package);
-		utils::rm("aBuild.json");
+	} else if (utils::fileExists("aBuild.json")
+	           and utils::fileExists("aBuild.yaml")) {
+		std::cout << "found aBuild.json and aBuild.yaml, using aBuild.yaml." << std::endl;
 	}
 
 	try {
