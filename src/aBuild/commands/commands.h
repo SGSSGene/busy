@@ -5,7 +5,6 @@
 #include <memory>
 #include <stdio.h>
 #include <future>
-#include "BuildActionClang.h"
 
 #include "utils.h"
 #include "Process.h"

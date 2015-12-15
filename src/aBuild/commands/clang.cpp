@@ -1,5 +1,7 @@
 #include "commands.h"
 
+#include "BuildAction.h"
+
 using namespace aBuild;
 
 namespace commands {
@@ -26,7 +28,7 @@ void clang() {
 	ws.accessConfigFile().setToolchain(toolchain.getName());
 	ws.save();
 
-	std::unique_ptr<BuildAction> action { new BuildActionClang(&graph, false, &ws.accessConfigFile(), toolchain) };
+	std::unique_ptr<BuildAction> action { new BuildAction(&graph, false, &ws.accessConfigFile(), toolchain) };
 
 	std::function<bool(Project*)>     linkingLibFunc   = [](Project*) {return true; };
 	std::function<bool(Project*)>     linkingExecFunc  = [](Project*) {return true; };

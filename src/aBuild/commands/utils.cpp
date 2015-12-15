@@ -1,5 +1,7 @@
 #include "commands.h"
 
+#include <threadPool/threadPool.h>
+
 using namespace aBuild;
 
 namespace commands {

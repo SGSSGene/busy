@@ -1,5 +1,7 @@
 #include "commands.h"
 
+#include "BuildAction.h"
+
 using namespace aBuild;
 
 namespace commands {
@@ -30,7 +32,7 @@ void build(std::string const& rootProjectName, bool verbose, bool noconsole) {
 	std::cout << "Using flavor:    " << ws.accessConfigFile().getFlavor() << std::endl;
 	std::cout << "Using toolchain: " << ws.accessConfigFile().getToolchain() << std::endl;
 
-	std::unique_ptr<BuildAction> action { new BuildActionClang(&graph, verbose, &ws.accessConfigFile(), toolchain) };
+	std::unique_ptr<BuildAction> action { new BuildAction(&graph, verbose, &ws.accessConfigFile(), toolchain) };
 
 	auto linkingLibFunc         = action->getLinkingLibFunc();
 	auto linkingExecFunc        = action->getLinkingExecFunc();
