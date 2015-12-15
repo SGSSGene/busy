@@ -1,4 +1,5 @@
 #include "commands.h"
+#include <iostream>
 #include <errno.h>
 
 #include "Process.h"

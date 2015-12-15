@@ -1,4 +1,5 @@
 #include "commands.h"
+#include <iostream>
 
 using namespace aBuild;
 

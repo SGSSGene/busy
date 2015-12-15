@@ -1,4 +1,5 @@
 #include "Workspace.h"
+#include <iostream>
 
 #include "utils.h"
 #include "estd.h"

@@ -1,5 +1,6 @@
 #include "commands.h"
 #include <threadPool/threadPool.h>
+#include <iostream>
 using namespace aBuild;
 
 namespace commands {
