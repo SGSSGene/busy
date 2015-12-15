@@ -8,6 +8,9 @@ int64_t BuildAction::getFileModTime(std::string const& s) const {
 		return iter->second;
 	}
 	auto mod = utils::getFileModificationTime(s);
+	if (mod > configFile->getLastCompileTime()) {
+		mod = configFile->getLastCompileTime();
+	}
 	fileModTime[s] = mod;
 	return mod;
 }

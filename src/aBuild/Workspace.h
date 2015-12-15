@@ -12,17 +12,21 @@ public:
 	private:
 		std::string flavor    { "release" };
 		std::string toolchain { "" };
+		uint64_t    lastCompileTime;
 
 	public:
 		auto getFlavor() const -> std::string const&     { return flavor; }
 		void setFlavor(std::string const& _flavor)       { flavor = _flavor; }
 		auto getToolchain() const -> std::string const&  { return toolchain; }
 		void setToolchain(std::string const& _toolchain) { toolchain = _toolchain; }
+		int64_t getLastCompileTime() const { return lastCompileTime; }
+		void setLastCompileTime(int64_t _time) { lastCompileTime = _time; }
 
 		template<typename Node>
 		void serialize(Node& node) {
-			node["flavor"]   % flavor;
-			node["toochain"] % toolchain;
+			node["flavor"]          % flavor;
+			node["toochain"]        % toolchain;
+			node["lastCompileTime"] % lastCompileTime or 0ull;
 		}
 	};
 private:

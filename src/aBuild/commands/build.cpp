@@ -1,5 +1,7 @@
 #include "commands.h"
 
+#include <chrono>
+
 #include "BuildAction.h"
 
 using namespace aBuild;
@@ -28,6 +30,12 @@ void build(std::string const& rootProjectName, bool verbose, bool noconsole) {
 	}
 	ws.accessConfigFile().setToolchain(toolchain.getName());
 	ws.save();
+
+	{
+		auto now = std::chrono::system_clock::now();
+		auto timeSinceBegin = std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch());
+		ws.accessConfigFile().setLastCompileTime(timeSinceBegin.count());
+	}
 
 	std::cout << "Using flavor:    " << ws.accessConfigFile().getFlavor() << std::endl;
 	std::cout << "Using toolchain: " << ws.accessConfigFile().getToolchain() << std::endl;
