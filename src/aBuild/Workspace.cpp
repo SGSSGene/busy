@@ -14,9 +14,6 @@ static void convertJsonToYaml(std::string const& _str) {
 		serializer::json::read(_str + "/aBuild.json", package);
 		serializer::yaml::write(_str + "/aBuild.yaml", package);
 		std::cout << "converting " << _str << "/aBuild.json to " << _str + "/aBuild.yaml" << std::endl;
-	} else if (utils::fileExists(_str + "/aBuild.json")
-	    and utils::fileExists(_str + "/aBuild.yaml")) {
-		std::cout << "found aBuild.json and aBuild.yaml at " << _str << ", going to use aBuild.yaml" << std::endl;
 	}
 }
 
