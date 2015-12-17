@@ -45,6 +45,9 @@ std::string checkCwd() {
 		utils::cwd("..");
 		relPath = relPath + "/..";
 		cwd = utils::cwd();
+		if (cwd == "/") {
+			throw std::runtime_error("this is not a aBuild packages/workspace");
+		}
 	}
 	auto dirs = utils::explode(cwd, "/");
 	if (dirs.size() > 1) {
