@@ -68,7 +68,7 @@ void build(std::string const& rootProjectName, bool verbose, bool noconsole) {
 		} else if (project.getType() == "executable") {
 			graph.addNode(&project,  linkingExecFunc);
 		} else {
-			std::cout<<"invalid type: "<<project.getType()<<std::endl;
+			throw std::runtime_error("Project " + project.getName() + " has unknown type " + project.getType());
 		}
 
 
