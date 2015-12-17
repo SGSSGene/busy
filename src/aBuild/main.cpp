@@ -62,32 +62,33 @@ std::string checkCwd() {
 }
 
 int main(int argc, char** argv) {
-	if (not commonOptions::parse(argc, argv)) {
-		commonOptions::print();
-		return 0;
-	} else if (*swtHelp) {
-		commonOptions::print();
-		return 0;
-	}
-
-	std::string relPath = ".";
-	if (not *swtLsFiles) {
-		relPath = checkCwd();
-	}
-
-	// converting yaml files to json files
-	if (utils::fileExists("aBuild.json")
-	    and not utils::fileExists("aBuild.yaml")) {
-		Package package {PackageURL()};
-		std::cout << "found aBuild.json converting to aBuild.yaml" << std::endl;
-		serializer::json::read("aBuild.json", package);
-		serializer::yaml::write("aBuild.yaml", package);
-	} else if (utils::fileExists("aBuild.json")
-	           and utils::fileExists("aBuild.yaml")) {
-		std::cout << "found aBuild.json and aBuild.yaml, using aBuild.yaml." << std::endl;
-	}
-
 	try {
+
+		if (not commonOptions::parse(argc, argv)) {
+			commonOptions::print();
+			return 0;
+		} else if (*swtHelp) {
+			commonOptions::print();
+			return 0;
+		}
+
+		std::string relPath = ".";
+		if (not *swtLsFiles) {
+			relPath = checkCwd();
+		}
+
+		// converting yaml files to json files
+		if (utils::fileExists("aBuild.json")
+			and not utils::fileExists("aBuild.yaml")) {
+			Package package {PackageURL()};
+			std::cout << "found aBuild.json converting to aBuild.yaml" << std::endl;
+			serializer::json::read("aBuild.json", package);
+			serializer::yaml::write("aBuild.yaml", package);
+		} else if (utils::fileExists("aBuild.json")
+				   and utils::fileExists("aBuild.yaml")) {
+			std::cout << "found aBuild.json and aBuild.yaml, using aBuild.yaml." << std::endl;
+		}
+
 		if (*swtDocu) {
 			commands::docu();
 		} else if (*swtTest) {
@@ -134,12 +135,14 @@ int main(int argc, char** argv) {
 		} else {
 			commands::build(*optBuild, *swtVerbose, *swtNoConsole);
 		}
+	} catch(std::runtime_error e) {
+		std::cerr<<"exception(runtime_error): " << e.what() << std::endl;
 	} catch(std::exception const& e) {
-		std::cerr<<"exception(exception): "<<e.what()<<std::endl;
+		std::cerr << "exception(exception): " << e.what() << std::endl;
 	} catch(std::string const& s) {
-		std::cerr<<"exception(string): "<<s<<std::endl;
+		std::cerr << "exception(string): " << s << std::endl;
 	} catch(char const* s) {
-		std::cerr<<"exception(char): "<<s<<std::endl;
+		std::cerr << "exception(char): " << s << std::endl;
 	}
 	return 0;
 }
