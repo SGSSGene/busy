@@ -84,11 +84,20 @@ void build(std::string const& rootProjectName, bool verbose, bool noconsole) {
 		}
 		for (auto const& dep : project.getDependencies()) {
 			auto l   = utils::explode(dep, "/");
+			if (l.size() != 2) {
+				throw std::runtime_error("Project " + project.getName() + " has unknown dependency " + dep);
+			}
 			auto key = l[l.size() -1];
+			if (projects.find(key) == projects.end()) {
+				throw std::runtime_error("Project " + project.getName() + " has unknown dependency " + dep);
+			}
 			graph.addEdge(&projects.at(key), &project);
 		}
 		for (auto const& dep : project.getOptionalDependencies()) {
 			auto l   = utils::explode(dep, "/");
+			if (l.size() != 2) {
+				throw std::runtime_error("Project " + project.getName() + " has unknown dependency " + dep);
+			}
 			auto key = l[l.size() -1];
 			if (projects.find(key) != projects.end()) {
 				graph.addEdge(&projects.at(key), &project);
