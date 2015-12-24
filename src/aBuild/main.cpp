@@ -23,6 +23,7 @@ namespace {
 	auto swtVerbose    = commonOptions::make_switch("verbose",     "Shows more information while running");
 
 	auto optClone      = commonOptions::make_multi_option("clone", {}, "clones given git repository");
+	auto optGit        = commonOptions::make_multi_option("git",   {}, "executes given options on every repository (including root package)");
 	auto optBuild      = commonOptions::make_option("build", "", "builds a specific project");
 	auto optFlavor     = commonOptions::make_option("flavor",    "", "Changes current flavor");
 	auto optToolchain  = commonOptions::make_option("toolchain", "", "Changes current toolchain");
@@ -108,6 +109,8 @@ int main(int argc, char** argv) {
 			auto l = utils::explode(path, "/");
 			path = l[l.size()-1];
 			commands::clone(url, path + "/");
+		} else if (optGit->size() > 0) {
+			commands::git(*optGit);
 		} else if (*swtEclipse) {
 			commands::eclipse();
 		} else if (*swtPull) {

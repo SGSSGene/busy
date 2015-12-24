@@ -18,6 +18,7 @@ namespace commands {
 	void cleanAll();
 	void docu();
 	void eclipse();
+	void git(std::vector<std::string> const& _options);
 	void test();
 	void clone(std::string const& _url, std::string const& _dir);
 	void pull();
