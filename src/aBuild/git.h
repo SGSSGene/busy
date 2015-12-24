@@ -10,6 +10,10 @@ void pull(std::string const& _cwd);
 void push(std::string const& _cwd);
 bool isDirty(std::string const& _cwd);
 void checkout(std::string const& _cwd, std::string const& _commit);
-std::string getBranch(std::string const& _cwd);
+auto getBranch(std::string const& _cwd) -> std::string;
+
+int untrackedFiles(std::string const& _cwd);
+int changedFiles(std::string const& _cwd);
+int commitsAhead(std::string const& _cwd);
 
 }

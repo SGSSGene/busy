@@ -1,4 +1,6 @@
 #include "git.h"
+#include <algorithm>
+#include <sstream>
 
 namespace git {
 
@@ -34,11 +36,57 @@ void checkout(std::string const& _cwd, std::string const& _commit) {
 		throw std::runtime_error("error running git checkout");
 	}
 }
-std::string getBranch(std::string const& _cwd) {
+auto getBranch(std::string const& _cwd) -> std::string {
 	utils::Process p({"git", "rev-parse", "--abbrev-ref", "HEAD"}, _cwd);
 	std::string branch = p.cout();
 	branch.pop_back();
 	return branch;
 }
+
+int untrackedFiles(std::string const& _cwd) {
+	utils::Process p({"git", "status", "--porcelain"}, _cwd);
+	auto const& s = p.cout();
+	auto lines = utils::explode(s, "\n");
+	int ct = 0;
+	for (auto const& l : lines) {
+		if (utils::isStartingWith(l, "?? ")) {
+			ct += 1;
+		}
+	}
+	return ct;
+}
+
+int changedFiles(std::string const& _cwd) {
+	utils::Process p({"git", "status", "--porcelain"}, _cwd);
+	auto const& s = p.cout();
+	auto lines = utils::explode(s, "\n");
+	int ct = 0;
+	for (auto const& l : lines) {
+		if (not utils::isStartingWith(l, "?? ")) {
+			ct += 1;
+		}
+	}
+	return ct;
+}
+
+int commitsAhead(std::string const& _cwd) {
+	utils::Process p({"git", "status", "-u", "no"}, _cwd);
+	auto const& s = p.cout();
+	auto lines = utils::explode(s, "\n");
+	auto pos = lines[1].find("up-to-date");
+	if (pos != std::string::npos) {
+		return 0;
+	}
+	auto posBy     = lines[1].rfind("by") + 3;
+	auto posCommit = lines[1].rfind("commit") - 1;
+	auto numberAsStr = lines[1].substr(posBy, posCommit);
+
+	int ct = 0;
+	std::stringstream ss;
+	ss << numberAsStr;
+	ss >> ct;
+	return ct;
+}
+
 
 }
