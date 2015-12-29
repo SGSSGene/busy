@@ -70,13 +70,22 @@ public:
 	Node<T> const* getNode(T const* _ptr) const {
 		return &GraphNodeManagerBase<T>::map.at(this).at(_ptr);
 	}
+	template <typename T>
+	std::vector<Node<T> const*> getNodes(std::vector<T const*> const& _ptrs) const {
+		std::vector<Node<T> const*> retList;
+		retList.reserve(_ptrs.size());
+		for (auto p : _ptrs) {
+			retList.push_back(getNode(p));
+		}
+		return retList;
+	}
 
 };
 
 class Graph {
 private:
-	std::set<NodeBase const*> nodes;
-	std::set<std::pair<NodeBase const*, NodeBase const*>> edges;
+	std::set<NodeBase const*> mNodes;
+	std::set<std::pair<NodeBase const*, NodeBase const*>> mEdges;
 
 	GraphNodeManager nodeManager;
 public:
@@ -91,7 +100,7 @@ public:
 	template<typename T>
 	void addNode(T* _node, std::function<bool(T*)> _func) {
 		auto p = nodeManager.addNode(_node, _func);
-		nodes.insert(p);
+		mNodes.insert(p);
 	}
 
 
@@ -100,15 +109,15 @@ public:
 		auto p1 = nodeManager.addNode(_src);
 		auto p2 = nodeManager.addNode(_to);
 
-		nodes.insert(p1);
-		nodes.insert(p2);
+		mNodes.insert(p1);
+		mNodes.insert(p2);
 
-		edges.insert({p1, p2});
+		mEdges.insert({p1, p2});
 	}
 
 	auto getIngoing(NodeBase const* _node) const -> std::set<NodeBase const*> {
 		std::set<NodeBase const*> retSet;
-		for (auto const& e : edges) {
+		for (auto const& e : mEdges) {
 			if (e.second == _node) {
 				retSet.insert(e.first);
 			}
@@ -117,7 +126,7 @@ public:
 	}
 	auto getOutgoing(NodeBase const* _node) const -> std::set<NodeBase const*> {
 		std::set<NodeBase const*> retSet;
-		for (auto const& e : edges) {
+		for (auto const& e : mEdges) {
 			if (e.first == _node) {
 				retSet.insert(e.second);
 			}
@@ -137,7 +146,7 @@ public:
 	auto getIngoingImpl(NodeBase const* _node, bool recursive) const -> std::set<T1*> {
 		std::set<T1*> retSet;
 
-		for (auto const& e : edges) {
+		for (auto const& e : mEdges) {
 			if (e.second == _node) {
 				auto ptr = dynamic_cast<Node<T1> const*>(e.first);
 				if (ptr != nullptr) {
@@ -165,7 +174,7 @@ public:
 	auto getOutgoingImpl(NodeBase const* _node, bool recursive) const -> std::set<T1*> {
 		std::set<T1*> retSet;
 
-		for (auto const& e : edges) {
+		for (auto const& e : mEdges) {
 			if (e.first == _node) {
 				auto ptr = dynamic_cast<Node<T1> const*>(e.second);
 				if (ptr != nullptr) {
@@ -182,29 +191,40 @@ public:
 	}
 
 	template<typename T1>
-	void removeUnreachableOutgoing(T1* _node) {
-		auto node = nodeManager.getNode(_node);
-		auto allNodes = nodes;
+	void removeUnreachableIngoing(std::vector<T1 const*> const& _nodes) {
+		auto nodes = nodeManager.getNodes(_nodes);
+		auto allNodes = mNodes;
 		std::set<NodeBase const*> reachableNodes;
-		getReachableIngoingImpl(node, reachableNodes);
+		getReachableIngoingImpl(nodes, reachableNodes);
 
 		for (auto n : reachableNodes) {
 			allNodes.erase(n);
 		}
-		allNodes.erase(node);
+		for (auto& n : nodes) {
+			allNodes.erase(n);
+		}
 
-		for (auto iter = edges.begin(); iter != edges.end();) {
+		for (auto iter = mEdges.begin(); iter != mEdges.end();) {
 			if (allNodes.count(iter->first) > 0 || allNodes.count(iter->second) > 0) {
-				iter = edges.erase(iter);
+				iter = mEdges.erase(iter);
 			} else {
 				++iter;
 			}
 		}
-		nodes = reachableNodes;
-		nodes.insert(node);
+		mNodes = reachableNodes;
+		for (auto& n : nodes) {
+			mNodes.insert(n);
+		}
 	}
+	template <typename T>
+	void getReachableIngoingImpl(std::vector<Node<T> const*> const& _nodes, std::set<NodeBase const*>& _retVal) {
+		for (auto n : _nodes) {
+			getReachableIngoingImpl(n, _retVal);
+		}
+	}
+
 	void getReachableIngoingImpl(NodeBase const* _node, std::set<NodeBase const*>& _retVal) {
-		for (auto const& e : edges) {
+		for (auto const& e : mEdges) {
 			if (e.second == _node) {
 				_retVal.insert(e.first);
 				getReachableIngoingImpl(e.first, _retVal);
@@ -216,10 +236,10 @@ public:
 	bool visitAllNodes(int threadCt = 1, std::function<void(int, int, int)> _monitor = [](int, int, int){}) {
 		std::atomic_bool success { true };
 		std::map<NodeBase const*, std::set<NodeBase const*>> ingoingNodes;
-		for (auto& n : nodes) {
+		for (auto& n : mNodes) {
 			ingoingNodes[n] = getIngoing(n);
 		}
-		int totaltotal = nodes.size();
+		int totaltotal = mNodes.size();
 		int total = 0;
 		int done = 0;
 

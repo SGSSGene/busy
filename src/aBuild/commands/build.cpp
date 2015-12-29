@@ -105,9 +105,11 @@ void build(std::string const& rootProjectName, bool verbose, bool noconsole) {
 		}
 	}
 
+
 	if (rootProject) {
 		std::cout << "Compiling project: " << rootProject->getName() << std::endl;
-		graph.removeUnreachableOutgoing(rootProject);
+		// Removing stuff that is not a dependency on rootProject
+		graph.removeUnreachableIngoing<Project>({rootProject});
 	}
 
 	bool success = graph.visitAllNodes(10, [=](int done, int total, int totaltotal) {
