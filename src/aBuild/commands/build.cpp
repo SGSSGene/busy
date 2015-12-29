@@ -10,7 +10,7 @@ using namespace aBuild;
 namespace commands {
 
 void build(std::string const& rootProjectName, bool verbose, bool noconsole) {
-	Project*    rootProject { nullptr };
+	std::vector<Project const*> rootProjects;
 
 	Workspace ws(".");
 
@@ -54,19 +54,25 @@ void build(std::string const& rootProjectName, bool verbose, bool noconsole) {
 		return error;
 	};
 
-
+	auto excludedProjects = ws.getExcludedProjects();
 	// Create dependency tree
 	auto projects = ws.getAllRequiredProjects();
 	for (auto& e  : projects) {
 		auto& project = e.second;
-		if (project.getName() == rootProjectName) {
-			rootProject = &project;
+		if (excludedProjects.count(project.getName()) != 0) continue;
+
+		if ((project.getName() == rootProjectName) || (rootProjectName == "" && excludedProjects.size() > 0)) {
+			rootProjects.push_back(&project);
 		}
+
 		// Adding linking
 		if (project.getType() == "library") {
 			graph.addNode(&project, linkingLibFunc);
 		} else if (project.getType() == "executable") {
 			graph.addNode(&project,  linkingExecFunc);
+			if (rootProjectName == "" && excludedProjects.size() > 0) {
+				rootProjects.push_back(&project);
+			}
 		} else {
 			throw std::runtime_error("Project " + project.getName() + " has unknown type " + project.getType());
 		}
@@ -100,16 +106,22 @@ void build(std::string const& rootProjectName, bool verbose, bool noconsole) {
 			}
 			auto key = l[l.size() -1];
 			if (projects.find(key) != projects.end()) {
-				graph.addEdge(&projects.at(key), &project);
+				if (excludedProjects.count(key) == 0) {
+					graph.addEdge(&projects.at(key), &project);
+				}
 			}
 		}
 	}
 
 
-	if (rootProject) {
-		std::cout << "Compiling project: " << rootProject->getName() << std::endl;
+	if (rootProjects.size() > 0) {
+		std::cout << "Compiling project(s): ";
+		for (auto p : rootProjects) {
+			std::cout << p->getName() << ", ";
+		}
+		std::cout << std::endl;
 		// Removing stuff that is not a dependency on rootProject
-		graph.removeUnreachableIngoing<Project>({rootProject});
+		graph.removeUnreachableIngoing(rootProjects);
 	}
 
 	bool success = graph.visitAllNodes(10, [=](int done, int total, int totaltotal) {

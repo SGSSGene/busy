@@ -49,6 +49,8 @@ public:
 
 	auto getAllRequiredProjects()    const -> std::map<std::string, Project>;
 
+	auto getExcludedProjects() const -> std::set<std::string>;
+
 private:
 	void createABuildFolder();
 	void createPackageFolder();

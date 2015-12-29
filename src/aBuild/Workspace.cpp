@@ -4,6 +4,8 @@
 #include "utils.h"
 #include "estd.h"
 
+#include <iostream>
+
 namespace aBuild {
 
 static void convertJsonToYaml(std::string const& _str) {
@@ -139,13 +141,16 @@ auto Workspace::getAllNotRequiredPackages() const -> std::vector<std::string> {
 }
 auto Workspace::getAllRequiredProjects()    const -> std::map<std::string, Project> {
 	std::map<std::string, Project> retList;
+
 	// Adding root package projects
-	//
-	Package p {PackageURL()};
-	convertJsonToYaml(path);
-	serializer::yaml::read(path + "aBuild.yaml", p);
-	for (auto project : p.getProjects()) {
-		retList[project.getPath()] = project;
+	{
+		Package p {PackageURL()};
+		convertJsonToYaml(path);
+		serializer::yaml::read(path + "aBuild.yaml", p);
+
+		for (auto project : p.getProjects()) {
+			retList[project.getPath()] = project;
+		}
 	}
 
 	// Adding all dependent projects
@@ -154,9 +159,38 @@ auto Workspace::getAllRequiredProjects()    const -> std::map<std::string, Proje
 		Package package {url};
 		convertJsonToYaml(url.getPath());
 		serializer::yaml::read(url.getPath() + "/aBuild.yaml", package);
-
 		for (auto project : package.getProjects()) {
 			retList[project.getName()] = project;
+		}
+	}
+	return retList;
+}
+auto Workspace::getExcludedProjects() const -> std::set<std::string> {
+	std::set<std::string> retList;
+	// Adding root package projects
+	{
+		Package p {PackageURL()};
+		convertJsonToYaml(path);
+		serializer::yaml::read(path + "aBuild.yaml", p);
+		for (auto o : p.getOverrides()) {
+			auto chains = o.getExcludeFromToolchains();
+			if (std::find(chains.begin(), chains.end(), configFile.getToolchain()) != chains.end()) {
+				retList.insert(o.getProjectToOverride());
+			}
+		}
+	}
+
+	// Adding all dependent projects
+	auto required = getAllRequiredPackages();
+	for (auto url : required) {
+		Package package {url};
+		convertJsonToYaml(url.getPath());
+		serializer::yaml::read(url.getPath() + "/aBuild.yaml", package);
+		for (auto o : package.getOverrides()) {
+			auto chains = o.getExcludeFromToolchains();
+			if (std::find(chains.begin(), chains.end(), configFile.getToolchain()) != chains.end()) {
+				retList.insert(o.getProjectToOverride());
+			}
 		}
 	}
 	return retList;

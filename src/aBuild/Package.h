@@ -12,6 +12,7 @@ namespace aBuild {
 	using Projects        = std::vector<Project>;
 	using Installations   = std::vector<Installation>;
 	using Toolchains      = std::vector<Toolchain>;
+	using Overrides       = std::vector<Override>;
 
 	class Package {
 	private:
@@ -19,6 +20,7 @@ namespace aBuild {
 		PackageURL      url;
 		ExtDependencies extDependencies;
 		Projects        projects;
+		Overrides       overrides;
 		Installations   installations;
 		Toolchains      toolchains;
 
@@ -34,14 +36,16 @@ namespace aBuild {
 		auto getProjects() const -> Projects const&;
 		auto accessProjects() -> Projects&;
 
-		auto getToolchains() const -> Toolchains const&;
+		auto getOverrides() const -> Overrides const&;
 		auto getInstallations() const -> Installations const&;
+		auto getToolchains() const -> Toolchains const&;
 
 		template <typename Node>
 		void serialize(Node& node) {
 			node["name"]            % name;
 			node["extDependencies"] % extDependencies;
 			node["projects"]        % projects;
+			node["overrides"]       % overrides;
 			node["installations"]   % installations;
 			node["toolchains"]      % toolchains;
 			for (auto& p : projects) {

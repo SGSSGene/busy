@@ -27,11 +27,16 @@ auto Package::accessProjects() -> Projects& {
 	return projects;
 }
 
-auto Package::getToolchains() const -> Toolchains const& {
-	return toolchains;
+auto Package::getOverrides() const -> Overrides const& {
+	return overrides;
 }
+
 auto Package::getInstallations() const -> Installations const& {
 	return installations;
 }
+auto Package::getToolchains() const -> Toolchains const& {
+	return toolchains;
+}
+
 
 }
