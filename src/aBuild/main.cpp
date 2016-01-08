@@ -22,8 +22,8 @@ namespace {
 	auto swtToolchains = commonOptions::make_switch("toolchains",  "Shows available toolchain");
 	auto swtVerbose    = commonOptions::make_switch("verbose",     "Shows more information while running");
 
-	auto optClone      = commonOptions::make_multi_option("clone", {}, "clones given git repository");
-	auto optGit        = commonOptions::make_multi_option("git",   {}, "executes given options on every repository (including root package)");
+//	auto optClone      = commonOptions::make_multi_option("clone", {}, "clones given git repository");
+//	auto optGit        = commonOptions::make_multi_option("git",   {}, "executes given options on every repository (including root package)");
 	auto optBuild      = commonOptions::make_option("build", "", "builds a specific project");
 	auto optFlavor     = commonOptions::make_option("flavor",    "", "Changes current flavor");
 	auto optToolchain  = commonOptions::make_option("toolchain", "", "Changes current toolchain");
@@ -98,7 +98,7 @@ int main(int argc, char** argv) {
 			commands::clean();
 		} else if (*swtCleanAll) {
 			commands::cleanAll();
-		} else if (optClone->size() == 2) {
+/*		} else if (optClone->size() == 2) {
 			commands::clone((*optClone)[0], (*optClone)[1] + "/");
 		} else if (optClone->size() == 1) {
 			std::string url  = (*optClone)[0];
@@ -110,7 +110,7 @@ int main(int argc, char** argv) {
 			path = l[l.size()-1];
 			commands::clone(url, path + "/");
 		} else if (optGit->size() > 0) {
-			commands::git(*optGit);
+			commands::git(*optGit);*/
 		} else if (*swtEclipse) {
 			commands::eclipse();
 		} else if (*swtPull) {
