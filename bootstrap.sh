@@ -25,6 +25,7 @@ g++ -ggdb -O0 --std=c++11 \
 	packages/jsoncpp/src/lib_json/json_value.cpp \
 	packages/jsoncpp/src/lib_json/json_writer.cpp \
 	packages/yaml-cpp/src/yaml-cpp/*.cpp \
+	packages/CommonOptions/src/commonOptions/*.cpp \
 	-lpthread \
 	-o aBuild
 ./aBuild --build aBuild
