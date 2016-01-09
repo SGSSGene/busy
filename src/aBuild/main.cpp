@@ -128,7 +128,9 @@ int main(int argc, char** argv) {
 		} else if (*optFlavor != "") {
 			commands::status(*optFlavor);
 		} else if (*swtLsFiles) {
-			return commands::listFiles(relPath + "/");
+			int exitCode = commands::listFiles(relPath + "/");
+			exit(exitCode);
+			return exitCode;
 		} else if (*swtToolchains) {
 			commands::toolchains();
 		} else if (*optToolchain != "") {
@@ -140,12 +142,16 @@ int main(int argc, char** argv) {
 		}
 	} catch(std::runtime_error e) {
 		std::cerr<<"exception(runtime_error): " << e.what() << std::endl;
+		return EXIT_FAILURE;
 	} catch(std::exception const& e) {
 		std::cerr << "exception(exception): " << e.what() << std::endl;
+		return EXIT_FAILURE;
 	} catch(std::string const& s) {
 		std::cerr << "exception(string): " << s << std::endl;
+		return EXIT_FAILURE;
 	} catch(char const* s) {
 		std::cerr << "exception(char): " << s << std::endl;
+		return EXIT_FAILURE;
 	}
-	return 0;
+	return EXIT_SUCCESS;
 }

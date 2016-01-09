@@ -32,6 +32,10 @@ void printLsFiles(std::string const& _prefix, std::string const& _cwd) {
 }
 
 int listFiles(std::string const& _relPath) {
+	if (not utils::fileExists("aBuild.yaml")) {
+		return EXIT_FAILURE;
+	}
+
 	printLsFiles(_relPath, ".");
 	auto cwdDirs = utils::cwd();
 	auto cwdDirsList = utils::explode(cwdDirs, "/");
