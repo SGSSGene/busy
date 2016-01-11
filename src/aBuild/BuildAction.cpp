@@ -485,6 +485,7 @@ auto BuildAction::getCompileClangCompleteFunc() -> std::function<void(std::strin
 		auto l = utils::explode(*f, "/");
 
 		auto prog = toolchain.getCppCompiler();
+		prog.erase(prog.begin());
 
 		prog.push_back("-std=c++11");
 
@@ -554,13 +555,10 @@ auto BuildAction::getCompileClangCompleteFunc() -> std::function<void(std::strin
 			}
 		}
 		std::fstream fs(".clang_complete", std::ios_base::out | std::ios_base::app);
-
 		for (auto const& p : prog) {
 			fs<<p<<" ";
 		}
 		fs<<std::endl;
-		//std::ofstream fstream
-		//runProcess(prog, project->getNoWarnings(), lock);
 	};
 }
 
