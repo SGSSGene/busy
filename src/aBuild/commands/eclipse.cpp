@@ -73,7 +73,7 @@ R"|(<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 					<folderInfo id="cdt.managedbuild.config.gnu.exe.debug.496408544." name="/" resourcePath="">
 						<toolChain id="cdt.managedbuild.toolchain.gnu.exe.debug.1670165173" name="Linux GCC" superClass="cdt.managedbuild.toolchain.gnu.exe.debug">
 							<targetPlatform id="cdt.managedbuild.target.gnu.platform.exe.debug.833510060" name="Debug Platform" superClass="cdt.managedbuild.target.gnu.platform.exe.debug"/>
-							<builder arguments="-c &quot;aBuild --flavor=debug ; aBuild --noterminal&quot;" buildPath="${workspace_loc:/)|" << _projectName << R"|(}/" command="bash" id="cdt.managedbuild.target.gnu.builder.exe.debug.986940758" keepEnvironmentInBuildfile="false" managedBuildOn="false" name="Gnu Make Builder" superClass="cdt.managedbuild.target.gnu.builder.exe.debug"/>
+							<builder arguments="-c &quot;aBuild flavor=debug ; aBuild --noterminal&quot;" buildPath="${workspace_loc:/)|" << _projectName << R"|(}/" command="bash" id="cdt.managedbuild.target.gnu.builder.exe.debug.986940758" keepEnvironmentInBuildfile="false" managedBuildOn="false" name="Gnu Make Builder" superClass="cdt.managedbuild.target.gnu.builder.exe.debug"/>
 							<tool id="cdt.managedbuild.tool.gnu.archiver.base.1320209044" name="GCC Archiver" superClass="cdt.managedbuild.tool.gnu.archiver.base"/>
 							<tool id="cdt.managedbuild.tool.gnu.cpp.compiler.exe.debug.1576934299" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.exe.debug">
 								<option id="gnu.cpp.compiler.exe.debug.option.optimization.level.622376607" name="Optimization Level" superClass="gnu.cpp.compiler.exe.debug.option.optimization.level" value="gnu.cpp.compiler.optimization.level.none" valueType="enumerated"/>
@@ -133,7 +133,7 @@ R"|(								</option>
 					<folderInfo id="cdt.managedbuild.config.gnu.exe.release.223859876." name="/" resourcePath="">
 						<toolChain id="cdt.managedbuild.toolchain.gnu.exe.release.1083116967" name="Linux GCC" superClass="cdt.managedbuild.toolchain.gnu.exe.release">
 							<targetPlatform id="cdt.managedbuild.target.gnu.platform.exe.release.1361131952" name="Debug Platform" superClass="cdt.managedbuild.target.gnu.platform.exe.release"/>
-							<builder arguments="-c &quot;aBuild --flavor=release ; aBuild --noterminal&quot;" buildPath="${workspace_loc:/)|" << _projectName << R"|(}/" command="bash" id="cdt.managedbuild.target.gnu.builder.exe.release.1915712032" keepEnvironmentInBuildfile="false" managedBuildOn="false" name="Gnu Make Builder" superClass="cdt.managedbuild.target.gnu.builder.exe.release"/>
+							<builder arguments="-c &quot;aBuild flavor=release ; aBuild --noterminal&quot;" buildPath="${workspace_loc:/)|" << _projectName << R"|(}/" command="bash" id="cdt.managedbuild.target.gnu.builder.exe.release.1915712032" keepEnvironmentInBuildfile="false" managedBuildOn="false" name="Gnu Make Builder" superClass="cdt.managedbuild.target.gnu.builder.exe.release"/>
 							<tool id="cdt.managedbuild.tool.gnu.archiver.base.524627035" name="GCC Archiver" superClass="cdt.managedbuild.tool.gnu.archiver.base"/>
 							<tool id="cdt.managedbuild.tool.gnu.cpp.compiler.exe.release.1687446195" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.exe.release">
 								<option id="gnu.cpp.compiler.exe.release.option.optimization.level.69011137" name="Optimization Level" superClass="gnu.cpp.compiler.exe.release.option.optimization.level" value="gnu.cpp.compiler.optimization.level.most" valueType="enumerated"/>
