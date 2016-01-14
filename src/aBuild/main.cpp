@@ -3,30 +3,32 @@
 #include "commands/commands.h"
 
 namespace {
-	auto swtDocu       = commonOptions::make_switch("docu",        "Generates html docu");
-	auto swtClang      = commonOptions::make_switch("clang",       "Generates a .clang_complete file");
-	auto swtClean      = commonOptions::make_switch("clean",       "Cleans current build and .aBuild directory");
-	auto swtCleanAll   = commonOptions::make_switch("cleanall",    "deletes all build files");
-	auto swtEclipse    = commonOptions::make_switch("eclipse",     "Generate Eclipse .project and .cproject file");
+	auto cmdBuild      = commonOptions::make_command("build",     "", "builds a specific project");
+	auto cmdClang      = commonOptions::make_command("clang",         "Generates a .clang_complete file");
+	auto cmdClean      = commonOptions::make_command("clean",         "Cleans current build and .aBuild directory");
+	auto cmdCleanAll   = commonOptions::make_command("cleanall",      "deletes all build files");
+	auto cmdDocu       = commonOptions::make_command("docu",          "Generates html docu");
+	auto cmdEclipse    = commonOptions::make_command("eclipse",       "Generate Eclipse .project and .cproject file");
+	auto cmdFlavor     = commonOptions::make_command("flavor",    "", "Changes current flavor");
+	auto cmdInstall    = commonOptions::make_command("install",       "Installs the script to the current target");
+	auto cmdLsFiles    = commonOptions::make_command("ls-files",      "Print all files of these repositories");
+	auto cmdPull       = commonOptions::make_command("pull",          "Execute pull on all git repositories");
+	auto cmdPush       = commonOptions::make_command("push",          "Execute push on all git repositories");
+	auto cmdQF         = commonOptions::make_command("qf",            "Quickfixes aBuild.yaml");
+	auto cmdQuickFix   = commonOptions::make_command("quickfix",      "Quickfixes aBuild.yaml");
+	auto cmdRelPath    = commonOptions::make_command("showRelPath",   "Show the relative path to the root aBuild.yaml file");
+	auto cmdStatus     = commonOptions::make_command("status",        "Shows current status of git repositories");
+	auto cmdTest       = commonOptions::make_command("test",          "Run all unittests");
+	auto cmdToolchain  = commonOptions::make_command("toolchain", "", "Changes current toolchain");
+	auto cmdToolchains = commonOptions::make_command("toolchains",    "Shows available toolchain");
+
+
 	auto swtHelp       = commonOptions::make_switch("help",        "Shows some inforamation about this program");
-	auto swtInstall    = commonOptions::make_switch("install",     "Installs the script to the current target");
-	auto swtLsFiles    = commonOptions::make_switch("ls-files",    "Print all files of these repositories");
 	auto swtNoConsole  = commonOptions::make_switch("noterminal",  "Doesn't use pretty output to display current progress");
-	auto swtPull       = commonOptions::make_switch("pull",        "Execute pull on all git repositories");
-	auto swtPush       = commonOptions::make_switch("push",        "Execute push on all git repositories");
-	auto swtQuickFix   = commonOptions::make_switch("quickfix",    "Quickfixes aBuild.yaml");
-	auto swtQF         = commonOptions::make_switch("qf",          "Quickfixes aBuild.yaml");
-	auto swtRelPath    = commonOptions::make_switch("showRelPath", "Show the relative path to the root aBuild.yaml file");
-	auto swtStatus     = commonOptions::make_switch("status",      "Shows current status of git repositories");
-	auto swtTest       = commonOptions::make_switch("test",        "Run all unittests");
-	auto swtToolchains = commonOptions::make_switch("toolchains",  "Shows available toolchain");
 	auto swtVerbose    = commonOptions::make_switch("verbose",     "Shows more information while running");
 
 //	auto optClone      = commonOptions::make_multi_option("clone", {}, "clones given git repository");
 //	auto optGit        = commonOptions::make_multi_option("git",   {}, "executes given options on every repository (including root package)");
-	auto optBuild      = commonOptions::make_option("build", "", "builds a specific project");
-	auto optFlavor     = commonOptions::make_option("flavor",    "", "Changes current flavor");
-	auto optToolchain  = commonOptions::make_option("toolchain", "", "Changes current toolchain");
 
 }
 using namespace aBuild;
@@ -74,7 +76,7 @@ int main(int argc, char** argv) {
 		}
 
 		std::string relPath = ".";
-		if (not *swtLsFiles) {
+		if (not *cmdLsFiles) {
 			relPath = checkCwd();
 		}
 
@@ -90,13 +92,13 @@ int main(int argc, char** argv) {
 			std::cout << "found aBuild.json and aBuild.yaml, using aBuild.yaml." << std::endl;
 		}
 
-		if (*swtDocu) {
+		if (*cmdDocu) {
 			commands::docu();
-		} else if (*swtTest) {
+		} else if (*cmdTest) {
 			commands::test();
-		} else if (*swtClean) {
+		} else if (*cmdClean) {
 			commands::clean();
-		} else if (*swtCleanAll) {
+		} else if (*cmdCleanAll) {
 			commands::cleanAll();
 /*		} else if (optClone->size() == 2) {
 			commands::clone((*optClone)[0], (*optClone)[1] + "/");
@@ -111,34 +113,34 @@ int main(int argc, char** argv) {
 			commands::clone(url, path + "/");
 		} else if (optGit->size() > 0) {
 			commands::git(*optGit);*/
-		} else if (*swtEclipse) {
+		} else if (*cmdEclipse) {
 			commands::eclipse();
-		} else if (*swtPull) {
+		} else if (*cmdPull) {
 			commands::pull();
-		} else if (*swtPush) {
+		} else if (*cmdPush) {
 			commands::push();
-		} else if (*swtRelPath) {
+		} else if (*cmdRelPath) {
 			std::cout<<relPath<<std::endl;
-		} else if (*swtInstall) {
+		} else if (*cmdInstall) {
 			commands::install();
-		} else if (*swtQuickFix or *swtQF) {
+		} else if (*cmdQuickFix or *cmdQF) {
 			commands::quickFix();
-		} else if (*swtStatus) {
+		} else if (*cmdStatus) {
 			commands::status();
-		} else if (*optFlavor != "") {
-			commands::status(*optFlavor);
-		} else if (*swtLsFiles) {
+		} else if (*cmdFlavor != "") {
+			commands::status(*cmdFlavor);
+		} else if (*cmdLsFiles) {
 			int exitCode = commands::listFiles(relPath + "/");
 			exit(exitCode);
 			return exitCode;
-		} else if (*swtToolchains) {
+		} else if (*cmdToolchains) {
 			commands::toolchains();
-		} else if (*optToolchain != "") {
-			commands::toolchain(*optToolchain);
-		} else if (*swtClang) {
+		} else if (*cmdToolchain != "") {
+			commands::toolchain(*cmdToolchain);
+		} else if (*cmdClang) {
 			commands::clang();
 		} else {
-			commands::build(*optBuild, *swtVerbose, *swtNoConsole);
+			commands::build(*cmdBuild, *swtVerbose, *swtNoConsole);
 		}
 	} catch(std::runtime_error e) {
 		std::cerr<<"exception(runtime_error): " << e.what() << std::endl;
