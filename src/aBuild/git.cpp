@@ -19,7 +19,7 @@ void pull(std::string const& _cwd) {
 void push(std::string const& _cwd) {
 	utils::Process p({"git", "push"}, _cwd);
 	if (p.getStatus() != 0) {
-		throw std::runtime_error("error running git push");
+		throw std::runtime_error("error running git push on " + _cwd);
 	}
 }
 bool isDirty(std::string const& _cwd) {
