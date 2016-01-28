@@ -7,13 +7,13 @@ namespace git {
 void clone(std::string const& _cwd, std::string const& _url, std::string const& _commit, std::string const& _dir) {
 	utils::Process p({"git", "clone", _url, "-b", _commit, _dir}, _cwd);
 	if (p.getStatus() != 0) {
-		throw std::runtime_error("error running git clone");
+		throw std::runtime_error("error running git clone on " + _cwd);
 	}
 }
 void pull(std::string const& _cwd) {
 	utils::Process p({"git", "pull"}, _cwd);
 	if (p.getStatus() != 0) {
-		throw std::runtime_error("error running git pull");
+		throw std::runtime_error("error running git pull on " + _cwd);
 	}
 }
 void push(std::string const& _cwd) {
@@ -33,7 +33,7 @@ bool isDirty(std::string const& _cwd) {
 void checkout(std::string const& _cwd, std::string const& _commit) {
 	utils::Process p({"git", "checkout", _commit}, _cwd);
 	if (p.getStatus() != 0) {
-		throw std::runtime_error("error running git checkout");
+		throw std::runtime_error("error running git checkout on " + _cwd);
 	}
 }
 auto getBranch(std::string const& _cwd) -> std::string {
