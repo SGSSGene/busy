@@ -243,6 +243,8 @@ public:
 		int total = 0;
 		int done = 0;
 
+		_monitor(done, total, totaltotal);
+
 		std::mutex mutex;
 		threadPool::ThreadPool<NodeBase const*> threadPool;
 		threadPool.spawnThread([&](NodeBase const* top) {

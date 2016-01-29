@@ -129,11 +129,11 @@ void build(std::string const& rootProjectName, bool verbose, bool noconsole) {
 			std::cout << "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b";
 			std::cout << "working on job: " << done << "/" << total << "/" << totaltotal << std::flush;
 
-			if (done == total) {
+			if (done == totaltotal) {
 				std::cout << std::endl;
 			}
-		} else if (done == total) {
-			std::cout << "working on job: "<< done << "/" << total << std::endl;
+		} else if (done == totaltotal) {
+			std::cout << "working on job: "<< done << "/" << total << "/" << totaltotal << std::endl;
 		}
 	});
 	if (not success) {
