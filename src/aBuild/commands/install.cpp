@@ -2,7 +2,6 @@
 #include <iostream>
 #include <errno.h>
 
-#include "Process.h"
 
 using namespace aBuild;
 
@@ -66,7 +65,7 @@ void install() {
 			cp.push_back("cp");
 			cp.push_back(oldFile);
 			cp.push_back(newFile);
-			utils::Process p(cp);
+			process::Process p(cp);
 			error = p.getStatus();
 			break;
 		}

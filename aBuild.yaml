@@ -9,5 +9,6 @@ projects:
       - CommonOptions/commonOptions
       - Serializer/serializer
       - ThreadPool/threadPool
+      - Process/process
     path: aBuild
   - path: testEmptyProject

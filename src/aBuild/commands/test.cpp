@@ -7,7 +7,7 @@ namespace commands {
 
 static void runTest(std::string const& call) {
 	std::cout << " • running " << call << "...";
-	utils::Process p({call});
+	process::Process p({call});
 	if (p.getStatus() == 0) {
 		std::cout << " no errors" << std::endl;
 	} else {

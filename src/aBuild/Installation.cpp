@@ -1,5 +1,5 @@
 #include "Installation.h"
-#include "Process.h"
+#include <process/Process.h>
 
 #include <iostream>
 
@@ -7,7 +7,7 @@ namespace aBuild {
 bool System::isInstalled() const {
 	if (type == "system") {
 		if (systems.count("ubuntu") > 0) {
-			utils::Process p({"which", url});
+			process::Process p({"which", url});
 			return p.getStatus() == 0;
 		}
 	}
@@ -18,7 +18,7 @@ void System::install() const {
 	if (type == "system") {
 		if (systems.count("ubuntu") > 0) {
 			std::cout << "sudo apt-get install -y " << url << std::endl;
-			utils::Process p({"sudo", "apt-get", "install", "-y", url});
+			process::Process p({"sudo", "apt-get", "install", "-y", url});
 		}
 	}
 }

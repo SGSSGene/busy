@@ -1,5 +1,4 @@
 #include "commands.h"
-#include "Process.h"
 
 using namespace aBuild;
 
@@ -17,7 +16,7 @@ void git(std::vector<std::string> const& _options) {
 
 	auto validPackages = ws.getAllValidPackages();
 	for (auto const& p : validPackages) {
-		utils::Process proc(call, "packages/" + p.getName());
+		process::Process proc(call, "packages/" + p.getName());
 		std::cout << p.getName() << ":" << std::endl;
 		if (proc.cout().size() > 0) {
 			std::cout << proc.cout() << std::endl;
@@ -27,7 +26,7 @@ void git(std::vector<std::string> const& _options) {
 		}
 	}
 
-	utils::Process proc(call, ".");
+	process::Process proc(call, ".");
 	std::cout << ws.getAllValidPackages(true).back().getName() << ":" << std::endl;
 	if (proc.cout().size() > 0) {
 		std::cout << proc.cout() << std::endl;

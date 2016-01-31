@@ -24,9 +24,9 @@ void docu() {
 		createFooter();
 		createrHeader();
 
-		utils::Process p1({"doxygen"});
+		process::Process p1({"doxygen"});
 	}
-	utils::Process p2({"rm", "-rf", "tmp-docu"});
+	process::Process p2({"rm", "-rf", "tmp-docu"});
 
 	std::cout<<"documentation can be found at file://"<<utils::cwd()<<"/docu/html/index.html"<<std::endl;
 }

@@ -7,8 +7,8 @@ namespace commands {
 
 std::set<std::string> getLsFiles(std::string const& _cwd) {
 	utils::Cwd cwd(_cwd);
-	utils::Process p1 ({"git", "ls-files"});
-	utils::Process p2 ({"git", "ls-files", "-o", "--exclude-standard"});
+	process::Process p1 ({"git", "ls-files"});
+	process::Process p2 ({"git", "ls-files", "-o", "--exclude-standard"});
 	auto files1 = utils::explode(p1.cout(), "\n");
 	auto files2 = utils::explode(p2.cout(), "\n");
 	std::set<std::string> files;

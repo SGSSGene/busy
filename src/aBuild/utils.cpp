@@ -18,12 +18,12 @@
 #include <fstream>
 #include <libgen.h>
 
-#include "Process.h"
+#include <process/Process.h>
 
 namespace utils {
 	void mkdir(std::string const& _dir) {
 		std::stringstream call;
-		Process p({"mkdir", "-p", _dir});
+		process::Process p({"mkdir", "-p", _dir});
 		if (p.getStatus() != 0) {
 			throw std::runtime_error("error running mkdir -p " + _dir);
 		}
@@ -37,14 +37,14 @@ namespace utils {
 			call.push_back("-f");
 		}
 		call.push_back(_dir);
-		Process p(call);
+		process::Process p(call);
 		if (p.getStatus() != 0) {
 			throw std::runtime_error("error running rm");
 		}
 	}
 	void mv(std::string const& _src, std::string const& _dest) {
 		std::vector<std::string> call ({"mv", _src, _dest});
-		Process p(call);
+		process::Process p(call);
 		if (p.getStatus() != 0) {
 			throw std::runtime_error("error running rm");
 		}

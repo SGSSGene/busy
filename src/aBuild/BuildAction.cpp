@@ -1,5 +1,7 @@
 #include "BuildAction.h"
 
+#include <process/Process.h>
+
 namespace aBuild {
 
 int64_t BuildAction::getFileModTime(std::string const& s) const {
@@ -46,9 +48,9 @@ bool BuildAction::runProcess(std::vector<std::string> const& prog, bool _noWarni
 	}
 
 	std::condition_variable cv;
-	std::unique_ptr<utils::Process> p;
+	std::unique_ptr<process::Process> p;
 	std::thread t ([&]{
-		p.reset(new utils::Process(prog));
+		p.reset(new process::Process(prog));
 		std::unique_lock<std::mutex> lock(*_lock.mutex());
 		cv.notify_one();
 	});
@@ -403,7 +405,7 @@ auto BuildAction::getCompileCppFileFuncDep() -> std::function<void(std::string*)
 				}
 			}
 		}
-		utils::Process p(prog);
+		process::Process p(prog);
 		if (p.getStatus() == 0) {
 			auto depFiles = utils::explode(p.cout(), std::vector<std::string> {"\n", " ", "\\"});
 
