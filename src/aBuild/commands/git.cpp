@@ -16,25 +16,12 @@ void git(std::vector<std::string> const& _options) {
 
 	auto validPackages = ws.getAllValidPackages();
 	for (auto const& p : validPackages) {
-		process::Process proc(call, "packages/" + p.getName());
-		std::cout << p.getName() << ":" << std::endl;
-		if (proc.cout().size() > 0) {
-			std::cout << proc.cout() << std::endl;
-		}
-		if (proc.cerr().size() > 0) {
-			std::cerr << proc.cerr() << std::endl;
-		}
+		std::cout << "processing " << p.getName() << std::endl;
+		process::InteractiveProcess proc(call, "packages/" + p.getName());
 	}
 
-	process::Process proc(call, ".");
-	std::cout << ws.getAllValidPackages(true).back().getName() << ":" << std::endl;
-	if (proc.cout().size() > 0) {
-		std::cout << proc.cout() << std::endl;
-	}
-	if (proc.cerr().size() > 0) {
-		std::cerr << proc.cerr() << std::endl;
-	}
-
+	std::cout << "processing " << "." << std::endl;
+	process::InteractiveProcess proc(call, ".");
 }
 
 }

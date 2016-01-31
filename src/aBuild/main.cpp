@@ -10,6 +10,7 @@ namespace {
 	auto cmdDocu       = commonOptions::make_command("docu",          "Generates html docu");
 	auto cmdEclipse    = commonOptions::make_command("eclipse",       "Generate Eclipse .project and .cproject file");
 	auto cmdFlavor     = commonOptions::make_command("flavor",    "", "Changes current flavor");
+	auto cmdGit        = commonOptions::make_command("git", std::vector<std::string>{}, "executes given options on every repository (including root package)");
 	auto cmdInstall    = commonOptions::make_command("install",       "Installs the script to the current target");
 	auto cmdLsFiles    = commonOptions::make_command("ls-files",      "Print all files of these repositories");
 	auto cmdPull       = commonOptions::make_command("pull",          "Execute pull on all git repositories");
@@ -28,7 +29,6 @@ namespace {
 	auto swtVerbose    = commonOptions::make_switch("verbose",     "Shows more information while running");
 
 //	auto optClone      = commonOptions::make_multi_option("clone", {}, "clones given git repository");
-//	auto optGit        = commonOptions::make_multi_option("git",   {}, "executes given options on every repository (including root package)");
 
 }
 using namespace aBuild;
@@ -110,9 +110,9 @@ int main(int argc, char** argv) {
 			}
 			auto l = utils::explode(path, "/");
 			path = l[l.size()-1];
-			commands::clone(url, path + "/");
-		} else if (optGit->size() > 0) {
-			commands::git(*optGit);*/
+			commands::clone(url, path + "/");*/
+		} else if (cmdGit->size() > 0) {
+			commands::git(*cmdGit);
 		} else if (*cmdEclipse) {
 			commands::eclipse();
 		} else if (*cmdPull) {
