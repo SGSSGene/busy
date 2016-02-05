@@ -156,6 +156,25 @@ auto BuildAction::getLinkingExecFunc() -> std::function<bool(Project*)> {
 		}
 
 
+		// Get systemLibraries paths
+		{
+			auto ingoing = graph->getIngoing<Project, Project>(project, true);
+			for (auto const& f : ingoing) {
+				for (auto const& i : f->getLegacy().systemLibraries) {
+					prog.push_back("-L");
+					prog.push_back(i);
+				}
+			}
+			for (auto const& f : ingoing) {
+				for (auto const& i : f->getLegacy().linkingOption) {
+					prog.push_back(i);
+				}
+			}
+		}
+
+
+
+
 		std::vector<std::string> dependencies;
 
 		std::set<std::string>    dependenciesWholeArchive; //! using -Wl,--whole-archive flag to make sure all static c'tor are being used
@@ -335,6 +354,14 @@ auto BuildAction::getCompileCppFileFunc() -> std::function<bool(std::string*)> {
 					prog.push_back("-isystem");
 					prog.push_back(f->getPackagePath()+"/"+i);
 				}
+				for (auto const& i : f->getLegacy().systemIncludes) {
+					prog.push_back("-isystem");
+					prog.push_back(i);
+				}
+				for (auto const& i : f->getLegacy().systemLibraries) {
+					prog.push_back("-L");
+					prog.push_back(i);
+				}
 			}
 		}
 		return runProcess(prog, project->getNoWarnings(), lock);
@@ -402,6 +429,10 @@ auto BuildAction::getCompileCppFileFuncDep() -> std::function<void(std::string*)
 				for (auto const& i : f->getLegacy().includes) {
 					prog.push_back("-isystem");
 					prog.push_back(f->getPackagePath()+"/"+i);
+				}
+				for (auto const& i : f->getLegacy().systemIncludes) {
+					prog.push_back("-isystem");
+					prog.push_back(i);
 				}
 			}
 		}
@@ -474,6 +505,10 @@ auto BuildAction::getCompileCFileFunc() -> std::function<bool(std::string*)> {
 				for (auto const& i : f->getLegacy().includes) {
 					prog.push_back("-isystem");
 					prog.push_back(f->getPackagePath()+"/" + i);
+				}
+				for (auto const& i : f->getLegacy().systemIncludes) {
+					prog.push_back("-isystem");
+					prog.push_back(i);
 				}
 			}
 		}
@@ -553,6 +588,10 @@ auto BuildAction::getCompileClangCompleteFunc() -> std::function<void(std::strin
 				for (auto const& i : f->getLegacy().includes) {
 					prog.push_back("-isystem");
 					prog.push_back(f->getPackagePath()+"/"+i);
+				}
+				for (auto const& i : f->getLegacy().systemIncludes) {
+					prog.push_back("-isystem");
+					prog.push_back(i);
 				}
 			}
 		}
