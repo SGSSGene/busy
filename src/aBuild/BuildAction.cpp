@@ -255,6 +255,8 @@ auto BuildAction::getCompileCppFileFunc() -> std::function<bool(std::string*)> {
 		prog.push_back("-Wall");
 		prog.push_back("-Wextra");
 		prog.push_back("-fmessage-length=0");
+		prog.push_back("-fmax-errors=3");
+
 
 		std::string inputFile  = *f;
 		std::string outputFile = objPath + *f + ".o";
