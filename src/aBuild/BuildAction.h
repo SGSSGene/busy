@@ -35,7 +35,7 @@ namespace aBuild {
 
 	public:
 		BuildAction(Graph const* _graph, bool _verbose, Workspace::ConfigFile const* _configFile, Toolchain const& _toolchain);
-		bool runProcess(std::vector<std::string> const& prog, bool _noWarnings, std::unique_lock<std::mutex>& _lock) const;
+		bool runProcess(std::vector<std::string> const& prog, bool _noWarnings) const;
 
 
 		auto getLinkingLibFunc()           -> std::function<bool(Project*)>;

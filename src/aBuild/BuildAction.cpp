@@ -38,7 +38,7 @@ BuildAction::BuildAction(Graph const* _graph, bool _verbose, Workspace::ConfigFi
 }
 
 
-bool BuildAction::runProcess(std::vector<std::string> const& prog, bool _noWarnings, std::unique_lock<std::mutex>& _lock) const {
+bool BuildAction::runProcess(std::vector<std::string> const& prog, bool _noWarnings) const {
 	bool success = true;
 	if (verbose) {
 		for (auto const& s : prog) {
@@ -47,30 +47,22 @@ bool BuildAction::runProcess(std::vector<std::string> const& prog, bool _noWarni
 		std::cout<<std::endl;
 	}
 
-	std::condition_variable cv;
-	std::unique_ptr<process::Process> p;
-	std::thread t ([&]{
-		p.reset(new process::Process(prog));
-		std::unique_lock<std::mutex> lock(*_lock.mutex());
-		cv.notify_one();
-	});
-	cv.wait(_lock);
-	t.join();
+	process::Process p(prog);
 
-	if (p->getStatus() != 0) {
+	if (p.getStatus() != 0) {
 		success = false;
 	}
 	//std::cerr << TERM_PURPLE << p.cerr() << TERM_RESET;
 	//std::cout << TERM_GREEN  << p.cout() << TERM_RESET;
-	if (not _noWarnings || p->getStatus() != 0 || verbose) {
-		if (p->cout() != "" || p->cerr() != "") {
+	if (not _noWarnings || p.getStatus() != 0 || verbose) {
+		if (p.cout() != "" || p.cerr() != "") {
 			std::cout<<std::endl;
 			for (auto const& s : prog) {
 				std::cout<<" "<<s;
 			}
 			std::cout<<std::endl;
-			std::cout << p->cout() << TERM_RESET;
-			std::cerr << p->cerr() << TERM_RESET;
+			std::cout << p.cout() << TERM_RESET;
+			std::cerr << p.cerr() << TERM_RESET;
 		}
 	}
 	if (verbose) {
@@ -100,7 +92,8 @@ auto BuildAction::getLinkingLibFunc() -> std::function<bool(Project*)> {
 		}
 		if (_fileChanged) {
 			fileChanged[outputFile] = true;
-			return runProcess(prog, project->getNoWarnings(), lock);
+			lock.unlock();
+			return runProcess(prog, project->getNoWarnings());
 		} else {
 			fileChanged[outputFile] = false;
 		}
@@ -235,7 +228,8 @@ auto BuildAction::getLinkingExecFunc() -> std::function<bool(Project*)> {
 		}
 		if (_fileChanged) {
 			fileChanged[outFile] = true;
-			return runProcess(prog, project->getNoWarnings(), lock);
+			lock.unlock();
+			return runProcess(prog, project->getNoWarnings());
 		} else {
 			fileChanged[outFile] = false;
 		}
@@ -366,7 +360,8 @@ auto BuildAction::getCompileCppFileFunc() -> std::function<bool(std::string*)> {
 				}
 			}
 		}
-		return runProcess(prog, project->getNoWarnings(), lock);
+		lock.unlock();
+		return runProcess(prog, project->getNoWarnings());
 	};
 }
 auto BuildAction::getCompileCppFileFuncDep() -> std::function<void(std::string*)> {
@@ -438,6 +433,7 @@ auto BuildAction::getCompileCppFileFuncDep() -> std::function<void(std::string*)
 				}
 			}
 		}
+		lock.unlock();
 		process::Process p(prog);
 		if (p.getStatus() == 0) {
 			auto depFiles = utils::explode(p.cout(), std::vector<std::string> {"\n", " ", "\\"});
@@ -514,7 +510,8 @@ auto BuildAction::getCompileCFileFunc() -> std::function<bool(std::string*)> {
 				}
 			}
 		}
-		return runProcess(prog, project->getNoWarnings(), lock);
+		lock.unlock();
+		return runProcess(prog, project->getNoWarnings());
 	};
 }
 
