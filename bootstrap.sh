@@ -28,8 +28,9 @@ g++ -ggdb -O0 --std=c++11 \
 	packages/jsoncpp/src/lib_json/json_writer.cpp \
 	packages/yaml-cpp/src/yaml-cpp/*.cpp \
 	packages/CommonOptions/src/commonOptions/*.cpp \
+	packages/Process/src/process/*.cpp \
 	-lpthread \
 	-o aBuild
 ./aBuild --build aBuild
-sudo ./aBuild --install
+sudo ./aBuild install
 rm ./aBuild
