@@ -2,6 +2,7 @@
 
 mkdir -p packages
 git clone git@cakeface.de:aBuild/Serializer      packages/Serializer
+git clone git@cakeface.de:aBuild/Process         packages/Process
 git clone git@cakeface.de:aBuild/jsoncpp         packages/jsoncpp
 git clone git@cakeface.de:aBuild/CommonOptions   packages/CommonOptions
 git clone git@cakeface.de:aBuild/ThreadPool      packages/ThreadPool
@@ -15,6 +16,7 @@ g++ -ggdb -O0 --std=c++11 \
 	-isystem packages/CommonOptions/src \
 	-isystem packages/ThreadPool/src \
 	-isystem packages/yaml-cpp/include \
+	-isystem packages/Process/src \
 	-I src/aBuild/ \
 	src/aBuild/*.cpp \
 	src/aBuild/commands/*.cpp \
