@@ -28,6 +28,8 @@ namespace {
 	auto swtNoConsole  = commonOptions::make_switch("noterminal",  "Doesn't use pretty output to display current progress");
 	auto swtVerbose    = commonOptions::make_switch("verbose",     "Shows more information while running");
 
+	auto optJobCt      = commonOptions::make_option("j",       10, "changes the amount of jobs");
+
 //	auto optClone      = commonOptions::make_multi_option("clone", {}, "clones given git repository");
 
 }
@@ -140,7 +142,7 @@ int main(int argc, char** argv) {
 		} else if (*cmdClang) {
 			commands::clang();
 		} else {
-			commands::build(*cmdBuild, *swtVerbose, *swtNoConsole);
+			commands::build(*cmdBuild, *swtVerbose, *swtNoConsole, *optJobCt);
 		}
 	} catch(std::runtime_error e) {
 		std::cerr<<"exception(runtime_error): " << e.what() << std::endl;

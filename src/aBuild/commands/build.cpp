@@ -9,7 +9,7 @@ using namespace aBuild;
 
 namespace commands {
 
-void build(std::string const& rootProjectName, bool verbose, bool noconsole) {
+void build(std::string const& rootProjectName, bool verbose, bool noconsole, int jobs) {
 	std::vector<Project const*> rootProjects;
 
 	Workspace ws(".");
@@ -124,7 +124,7 @@ void build(std::string const& rootProjectName, bool verbose, bool noconsole) {
 		graph.removeUnreachableIngoing(rootProjects);
 	}
 
-	bool success = graph.visitAllNodes(10, [=](int done, int total, int totaltotal) {
+	bool success = graph.visitAllNodes(jobs, [=](int done, int total, int totaltotal) {
 		if (not noconsole) {
 			std::cout << "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b";
 			std::cout << "working on job: " << done << "/" << total << "/" << totaltotal << std::flush;
