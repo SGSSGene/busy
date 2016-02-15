@@ -290,7 +290,7 @@ auto BuildAction::getCompileCppFileFunc() -> std::function<bool(std::string*)> {
 
 		utils::mkdir(objPath + utils::dirname(*f));
 		if (configFile->getFlavor() == "release") {
-			prog.push_back("-O2");
+			prog.push_back("-O3");
 		} else if (configFile->getFlavor() == "debug") {
 			prog.push_back("-ggdb");
 			prog.push_back("-O0");
