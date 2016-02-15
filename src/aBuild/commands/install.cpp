@@ -9,7 +9,7 @@ namespace commands {
 
 void install() {
 	Workspace ws(".");
-	auto flavor    = ws.accessConfigFile().getFlavor();
+	auto buildMode     = ws.accessConfigFile().getBuildMode();
 
 	auto allToolchains = getAllToolchains(ws);
 
@@ -21,7 +21,7 @@ void install() {
 	ws.accessConfigFile().setToolchain(toolchain.getName());
 	ws.save();
 
-	auto buildPath = "./build/" + toolchainName + "/" + flavor + "/";
+	auto buildPath = "./build/" + toolchainName + "/" + buildMode + "/";
 
 	auto allFiles = utils::listFiles(buildPath);
 

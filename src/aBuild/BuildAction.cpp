@@ -31,10 +31,10 @@ BuildAction::BuildAction(Graph const* _graph, bool _verbose, Workspace::ConfigFi
 	, configFile {_configFile}
 	, toolchain  {_toolchain}
 {
-	buildPath = ".aBuild/" + _configFile->getToolchain() + "/" + _configFile->getFlavor() + "/";
+	buildPath = ".aBuild/" + _configFile->getToolchain() + "/" + _configFile->getBuildMode() + "/";
 	libPath   = buildPath + "lib/";
 	objPath   = buildPath + "obj/";
-	execPath  = "build/" + _configFile->getToolchain() + "/" + _configFile->getFlavor() + "/";
+	execPath  = "build/" + _configFile->getToolchain() + "/" + _configFile->getBuildMode() + "/";
 }
 
 
@@ -128,7 +128,7 @@ auto BuildAction::getLinkingExecFunc() -> std::function<bool(Project*)> {
 		}
 
 
-		if (configFile->getFlavor() == "release") {
+		if (configFile->getBuildMode() == "release") {
 			prog.push_back("-s");
 		}
 
@@ -289,9 +289,9 @@ auto BuildAction::getCompileCppFileFunc() -> std::function<bool(std::string*)> {
 		prog.push_back(outputFile);
 
 		utils::mkdir(objPath + utils::dirname(*f));
-		if (configFile->getFlavor() == "release") {
+		if (configFile->getBuildMode() == "release") {
 			prog.push_back("-O3");
-		} else if (configFile->getFlavor() == "debug") {
+		} else if (configFile->getBuildMode() == "debug") {
 			prog.push_back("-ggdb");
 			prog.push_back("-O0");
 		}
@@ -388,9 +388,9 @@ auto BuildAction::getCompileCppFileFuncDep() -> std::function<void(std::string*)
 		prog.push_back("/dev/stdout");
 
 		utils::mkdir(objPath + utils::dirname(*f));
-		if (configFile->getFlavor() == "release") {
-			prog.push_back("-O2");
-		} else if (configFile->getFlavor() == "debug") {
+		if (configFile->getBuildMode() == "release") {
+			prog.push_back("-O3");
+		} else if (configFile->getBuildMode() == "debug") {
 			prog.push_back("-ggdb");
 			prog.push_back("-O0");
 		}
@@ -462,9 +462,9 @@ auto BuildAction::getCompileCFileFunc() -> std::function<bool(std::string*)> {
 		prog.push_back("-Wextra");
 		prog.push_back("-fmessage-length=0");
 
-		if (configFile->getFlavor() == "release") {
-			prog.push_back("-O2");
-		} else if (configFile->getFlavor() == "debug") {
+		if (configFile->getBuildMode() == "release") {
+			prog.push_back("-O3");
+		} else if (configFile->getBuildMode() == "debug") {
 			prog.push_back("-ggdb");
 			prog.push_back("-O0");
 		}

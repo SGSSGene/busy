@@ -24,7 +24,7 @@ namespace commands {
 	void pull();
 	void push();
 	void install();
-	void status(std::string _flavor = "");
+	void status(std::string _buildMode = "");
 	void quickFix();
 	int  listFiles(std::string const& _relPath);
 	void toolchains();

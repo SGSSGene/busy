@@ -23,8 +23,8 @@ static void runTest(std::string const& call) {
 void test() {
 	Workspace ws(".");
 	auto toolchain = ws.accessConfigFile().getToolchain();
-	auto flavor    = ws.accessConfigFile().getFlavor();
-	auto buildPath = std::string("./build/") + toolchain + "/" + flavor + "/";
+	auto buildMode = ws.accessConfigFile().getBuildMode();
+	auto buildPath = std::string("./build/") + toolchain + "/" + buildMode + "/";
 	std::cout<<"===Start testing==="<<std::endl;
 	if (utils::dirExists(buildPath + "tests/")) {
 		auto allTests = utils::listFiles(buildPath + "tests/");

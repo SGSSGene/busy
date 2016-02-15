@@ -4,12 +4,12 @@
 
 namespace {
 	auto cmdBuild      = commonOptions::make_command("build",     "", "builds a specific project");
+	auto cmdBuildMode  = commonOptions::make_command("buildMode", "", "Changes current buildmode to release or debug");
 	auto cmdClang      = commonOptions::make_command("clang",         "Generates a .clang_complete file");
 	auto cmdClean      = commonOptions::make_command("clean",         "Cleans current build and .aBuild directory");
 	auto cmdCleanAll   = commonOptions::make_command("cleanall",      "deletes all build files");
 	auto cmdDocu       = commonOptions::make_command("docu",          "Generates html docu");
 	auto cmdEclipse    = commonOptions::make_command("eclipse",       "Generate Eclipse .project and .cproject file");
-	auto cmdFlavor     = commonOptions::make_command("flavor",    "", "Changes current flavor");
 	auto cmdGit        = commonOptions::make_command("git", std::vector<std::string>{}, "executes given options on every repository (including root package)");
 	auto cmdInstall    = commonOptions::make_command("install",       "Installs the script to the current target");
 	auto cmdLsFiles    = commonOptions::make_command("ls-files",      "Print all files of these repositories");
@@ -129,8 +129,8 @@ int main(int argc, char** argv) {
 			commands::quickFix();
 		} else if (*cmdStatus) {
 			commands::status();
-		} else if (*cmdFlavor != "") {
-			commands::status(*cmdFlavor);
+		} else if (*cmdBuildMode != "") {
+			commands::status(*cmdBuildMode);
 		} else if (*cmdLsFiles) {
 			int exitCode = commands::listFiles(relPath + "/");
 			exit(exitCode);

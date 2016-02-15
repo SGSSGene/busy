@@ -38,7 +38,7 @@ void build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 		ws.accessConfigFile().setLastCompileTime(timeSinceBegin.count());
 	}
 
-	std::cout << "Using flavor:    " << ws.accessConfigFile().getFlavor() << std::endl;
+	std::cout << "Using buildMode: " << ws.accessConfigFile().getBuildMode() << std::endl;
 	std::cout << "Using toolchain: " << ws.accessConfigFile().getToolchain() << std::endl;
 
 	std::unique_ptr<BuildAction> action { new BuildAction(&graph, verbose, &ws.accessConfigFile(), toolchain) };

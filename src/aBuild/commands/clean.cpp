@@ -9,9 +9,9 @@ namespace commands {
 void clean() {
 	Workspace ws(".");
 	auto toolchain = ws.accessConfigFile().getToolchain();
-	auto flavor    = ws.accessConfigFile().getFlavor();
-	auto cleanAbuildPath = std::string("./.aBuild/") + toolchain + "/" + flavor + "/";
-	auto cleanBuildPath  = std::string("./build/") + toolchain + "/" + flavor + "/";
+	auto buildMode = ws.accessConfigFile().getBuildMode();
+	auto cleanAbuildPath = std::string("./.aBuild/") + toolchain + "/" + buildMode + "/";
+	auto cleanBuildPath  = std::string("./build/") + toolchain + "/" + buildMode + "/";
 
 	if (utils::fileExists(cleanAbuildPath)) {
 		utils::rm(cleanAbuildPath, true);

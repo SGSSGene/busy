@@ -6,13 +6,13 @@ using namespace aBuild;
 namespace commands {
 
 
-void status(std::string _flavor) {
+void status(std::string _buildMode) {
 	Workspace ws(".");
-	if (_flavor != "") {
-		if (_flavor == "release" || _flavor == "debug") {
-			ws.accessConfigFile().setFlavor(_flavor);
+	if (_buildMode != "") {
+		if (_buildMode == "release" || _buildMode == "debug") {
+			ws.accessConfigFile().setBuildMode(_buildMode);
 		} else {
-			throw "only \"release\" and \"debug\" are valid flavor arguments";
+			throw "only \"release\" and \"debug\" are valid buildMode arguments";
 		}
 	}
 
@@ -25,7 +25,7 @@ void status(std::string _flavor) {
 	}
 	ws.accessConfigFile().setToolchain(toolchain.getName());
 
-	std::cout << "current flavor:    " << ws.accessConfigFile().getFlavor() << std::endl;
+	std::cout << "current buildmode: " << ws.accessConfigFile().getBuildMode() << std::endl;
 	std::cout << "current toolchain: " << ws.accessConfigFile().getToolchain() << std::endl;
 
 	auto validPackages = ws.getAllValidPackages(true);
