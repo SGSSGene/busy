@@ -31,6 +31,6 @@ g++ -ggdb -O0 --std=c++11 \
 	packages/Process/src/process/*.cpp \
 	-lpthread \
 	-o aBuild
-./aBuild --build aBuild
+./aBuild build aBuild
 sudo ./aBuild install
 rm ./aBuild
