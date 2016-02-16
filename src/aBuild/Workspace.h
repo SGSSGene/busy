@@ -24,7 +24,7 @@ public:
 
 		template<typename Node>
 		void serialize(Node& node) {
-			node["buildMode"]       % buildMode;
+			node["buildMode"]       % buildMode or "release";
 			node["toochain"]        % toolchain;
 			node["lastCompileTime"] % lastCompileTime or 0ull;
 		}

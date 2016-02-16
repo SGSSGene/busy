@@ -140,6 +140,7 @@ void build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 		std::cout<<"Build failed"<<std::endl;
 	} else {
 		std::cout<<"Build succeeded"<<std::endl;
+		ws.save();
 	}
 }
 
