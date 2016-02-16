@@ -10,7 +10,7 @@ class Workspace {
 public:
 	class ConfigFile {
 	private:
-		std::string buildMode { "release" };
+		std::string buildMode { "debug" };
 		std::string toolchain { "" };
 		uint64_t    lastCompileTime;
 
@@ -24,8 +24,8 @@ public:
 
 		template<typename Node>
 		void serialize(Node& node) {
-			node["buildMode"]       % buildMode or "release";
-			node["toochain"]        % toolchain;
+			node["buildMode"]       % buildMode or std::string("debug");
+			node["toolchain"]       % toolchain;
 			node["lastCompileTime"] % lastCompileTime or 0ull;
 		}
 	};
