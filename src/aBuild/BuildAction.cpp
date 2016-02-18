@@ -224,6 +224,17 @@ auto BuildAction::getLinkingExecFunc() -> std::function<bool(Project*)> {
 auto BuildAction::getCompileCppFileFunc() -> std::function<bool(std::string*)> {
 	return [this](std::string* f) {
 		std::unique_lock<std::mutex> lock(mMutex);
+
+		std::string inputFile  = *f;
+		std::string outputFile = mObjPath + *f + ".o";
+
+		auto changed = fileOrDependencyChanged(inputFile, outputFile);
+		// if nothing changed, no need to compile
+		if (not changed) {
+			mFileChanged[*f] = false;
+			return true;
+		}
+
 		auto l = utils::explode(*f, "/");
 
 		auto prog = mToolchain.getCppCompiler();
@@ -233,39 +244,6 @@ auto BuildAction::getCompileCppFileFunc() -> std::function<bool(std::string*)> {
 		prog.push_back("-Wextra");
 		prog.push_back("-fmessage-length=0");
 		prog.push_back("-fmax-errors=3");
-
-
-		std::string inputFile  = *f;
-		std::string outputFile = mObjPath + *f + ".o";
-
-		auto outputFileMod = getFileModTime(outputFile);
-
-		auto nothingChanged = true;
-		if (not utils::fileExists(outputFile)) {
-			nothingChanged = false;
-		} else if (outputFileMod < getFileModTime(inputFile)) {
-			nothingChanged = false;
-		} else if (not utils::fileExists(mObjPath + *f + ".d")) {
-			nothingChanged = false;
-		} else {
-			std::ifstream ifs(mObjPath + *f + ".d");
-			for (std::string line; std::getline(ifs, line);) {
-				if (not utils::fileExists(line)) {
-					nothingChanged = false;
-					break;
-				} else if (outputFileMod < getFileModTime(line)) {
-					nothingChanged = false;
-					break;
-				}
-			}
-		}
-
-
-		if (nothingChanged) {
-			mFileChanged[*f] = false;
-			return true;
-		}
-
 		prog.push_back("-c");
 		prog.push_back(inputFile);
 		prog.push_back("-o");
@@ -305,9 +283,6 @@ auto BuildAction::getCompileCppFileFuncDep() -> std::function<void(std::string*)
 
 
 		prog.push_back("-std=c++11");
-		prog.push_back("-Wall");
-		prog.push_back("-Wextra");
-		prog.push_back("-fmessage-length=0");
 
 		prog.push_back("-c");
 		prog.push_back(*f);
@@ -316,12 +291,6 @@ auto BuildAction::getCompileCppFileFuncDep() -> std::function<void(std::string*)
 		prog.push_back("/dev/stdout");
 
 		utils::mkdir(mObjPath + utils::dirname(*f));
-		if (mConfigFile->getBuildMode() == "release") {
-			prog.push_back("-O3");
-		} else if (mConfigFile->getBuildMode() == "debug") {
-			prog.push_back("-ggdb");
-			prog.push_back("-O0");
-		}
 
 		// Get include dependencies
 		Project* project = *mGraph->getOutgoing<Project, std::string>(f, false).begin();
@@ -348,6 +317,17 @@ auto BuildAction::getCompileCppFileFuncDep() -> std::function<void(std::string*)
 auto BuildAction::getCompileCFileFunc() -> std::function<bool(std::string*)> {
 	return [this](std::string* f) {
 		std::unique_lock<std::mutex> lock(mMutex);
+
+		std::string inputFile  = *f;
+		std::string outputFile = mObjPath + *f + ".o";
+
+		auto changed = fileOrDependencyChanged(inputFile, outputFile);
+		// if nothing changed, no need to compile
+		if (not changed) {
+			mFileChanged[*f] = false;
+			return true;
+		}
+
 		auto l = utils::explode(*f, "/");
 
 		utils::mkdir(mObjPath + utils::dirname(*f));
@@ -358,17 +338,20 @@ auto BuildAction::getCompileCFileFunc() -> std::function<bool(std::string*)> {
 		prog.push_back("-Wall");
 		prog.push_back("-Wextra");
 		prog.push_back("-fmessage-length=0");
+		prog.push_back("-fmax-errors=3");
+		prog.push_back("-c");
+		prog.push_back(*f);
+		prog.push_back("-o");
+		prog.push_back(mObjPath + *f + ".o");
 
+		utils::mkdir(mObjPath + utils::dirname(*f));
 		if (mConfigFile->getBuildMode() == "release") {
 			prog.push_back("-O3");
 		} else if (mConfigFile->getBuildMode() == "debug") {
 			prog.push_back("-ggdb");
 			prog.push_back("-O0");
 		}
-		prog.push_back("-c");
-		prog.push_back(*f);
-		prog.push_back("-o");
-		prog.push_back(mObjPath + *f + ".o");
+
 
 		// Get include dependencies
 		Project* project = *mGraph->getOutgoing<Project, std::string>(f, false).begin();
@@ -431,6 +414,30 @@ auto BuildAction::getIncludeAndDefines(Project* project) const -> std::vector<st
 
 	return retList;
 }
+
+bool BuildAction::fileOrDependencyChanged(std::string const& _inputFile, std::string const& _outputFile) const {
+	auto outputFileMod = getFileModTime(_outputFile);
+
+	if (not utils::fileExists(_outputFile)) {
+		return true;
+	} else if (outputFileMod < getFileModTime(_inputFile)) {
+		return true;
+	} else if (not utils::fileExists(mObjPath + _inputFile + ".d")) {
+		return true;
+	}
+
+	std::ifstream ifs(mObjPath + _inputFile + ".d");
+	for (std::string line; std::getline(ifs, line);) {
+		if (not utils::fileExists(line)) {
+			return true;
+		} else if (outputFileMod < getFileModTime(line)) {
+			return true;
+		}
+	}
+	
+	return false;
+}
+
 
 
 auto BuildAction::getFileModTime(std::string const& s) const -> int64_t {

@@ -45,6 +45,8 @@ namespace aBuild {
 
 		auto getIncludeAndDefines(Project* project) const -> std::vector<std::string>;
 
+		bool fileOrDependencyChanged(std::string const& _inputFile, std::string const& _outputFile) const;
+
 		auto getFileModTime(std::string const& s) const -> int64_t;
 		bool hasFileChanged(std::string const& s) const;
 	};
