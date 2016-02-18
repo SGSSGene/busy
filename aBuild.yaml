@@ -5,10 +5,5 @@ extDependencies:
   - url: git@cakeface.de:aBuild/ThreadPool
 projects:
   - type: executable
-    dependencies:
-      - CommonOptions/commonOptions
-      - Serializer/serializer
-      - ThreadPool/threadPool
-      - Process/process
     path: aBuild
-  - path: testEmptyProject
+    auto: true
