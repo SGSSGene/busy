@@ -16,22 +16,19 @@
 namespace aBuild {
 	class BuildAction {
 	private:
-		Graph const* graph;
-		const bool verbose;
-		Workspace::ConfigFile const* configFile;
-		Toolchain toolchain;
+		Graph const*                 mGraph;
+		bool const                   mVerbose;
+		Workspace::ConfigFile const* mConfigFile;
+		Toolchain                    mToolchain;
 
-		std::string buildPath;
-		std::string libPath;
-		std::string objPath;
-		std::string execPath;
-		mutable std::map<std::string, int64_t> fileModTime; // caching
-		mutable std::map<std::string, bool>    fileChanged; // caching
+		std::string mBuildPath;
+		std::string mLibPath;
+		std::string mObjPath;
+		std::string mExecPath;
+		mutable std::map<std::string, int64_t> mFileModTime; // caching
+		mutable std::map<std::string, bool>    mFileChanged; // caching
 
-		std::mutex mutex;
-
-		int64_t getFileModTime(std::string const& s) const;
-		bool hasFileChanged(std::string const& s) const;
+		std::mutex mMutex;
 
 	public:
 		BuildAction(Graph const* _graph, bool _verbose, Workspace::ConfigFile const* _configFile, Toolchain const& _toolchain);
@@ -44,5 +41,11 @@ namespace aBuild {
 		auto getCompileCppFileFuncDep()    -> std::function<void(std::string*)>;
 		auto getCompileCFileFunc()         -> std::function<bool(std::string*)>;
 		auto getCompileClangCompleteFunc() -> std::function<void(std::string*)>;
+	private:
+
+		auto getIncludeAndDefines(Project* project) const -> std::vector<std::string>;
+
+		auto getFileModTime(std::string const& s) const -> int64_t;
+		bool hasFileChanged(std::string const& s) const;
 	};
 }

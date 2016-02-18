@@ -32,11 +32,8 @@ void build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 	ws.accessConfigFile().setToolchain(toolchain.getName());
 	ws.save();
 
-	{
-		auto now = std::chrono::system_clock::now();
-		auto timeSinceBegin = std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch());
-		ws.accessConfigFile().setLastCompileTime(timeSinceBegin.count());
-	}
+	auto timeSinceBegin = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch());
+
 
 	std::cout << "Using buildMode: " << ws.accessConfigFile().getBuildMode() << std::endl;
 	std::cout << "Using toolchain: " << ws.accessConfigFile().getToolchain() << std::endl;
@@ -88,6 +85,7 @@ void build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 			graph.addNode(&f, compileFileCFunc);
 			graph.addEdge(&f, &project);
 		}
+		// adding dependencies between projects
 		for (auto const& dep : project.getDependencies()) {
 			auto l   = utils::explode(dep, "/");
 			if (l.size() != 2) {
@@ -99,6 +97,7 @@ void build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 			}
 			graph.addEdge(&projects.at(key), &project);
 		}
+		// adding dependencies between optional projects
 		for (auto const& dep : project.getOptionalDependencies()) {
 			auto l   = utils::explode(dep, "/");
 			if (l.size() != 2) {
@@ -140,6 +139,7 @@ void build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 		std::cout<<"Build failed"<<std::endl;
 	} else {
 		std::cout<<"Build succeeded"<<std::endl;
+		ws.accessConfigFile().setLastCompileTime(timeSinceBegin.count());
 		ws.save();
 	}
 }

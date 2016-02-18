@@ -106,5 +106,9 @@ namespace aBuild {
 		auto getAllFiles(std::set<std::string> const& _ending) const -> std::vector<std::string>;
 		auto getAllCppFiles() -> std::vector<std::string>&;
 		auto getAllCFiles() -> std::vector<std::string>&;
+
+		auto getComIncludePaths() const -> std::vector<std::string>;
+		auto getComSystemIncludePaths(std::set<Project*> const& _dependencies) const -> std::vector<std::string>;
+		auto getComDefines(std::set<Project*> const& _dependencies) const -> std::vector<std::string>;
 	};
 }

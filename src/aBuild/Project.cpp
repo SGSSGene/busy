@@ -136,6 +136,81 @@ auto Project::getAllCFiles() -> std::vector<std::string>& {
 	return cFiles;
 }
 
+auto Project::getComIncludePaths() const -> std::vector<std::string> {
+	std::vector<std::string> retList;
+
+	// add all includes from legacy
+	for (auto const& i : getLegacy().includes) {
+		retList.emplace_back(getPackagePath() + "/" + i);
+	}
+
+	// add all local includes
+	retList.emplace_back(getPackagePath()+"/src/" + getPath());
+
+	// add itself as inlude
+	retList.emplace_back(getPackagePath()+"/src/");
+
+	return retList;
+
+}
+auto Project::getComSystemIncludePaths(std::set<Project*> const& _dependencies) const -> std::vector<std::string> {
+	std::vector<std::string> retList;
+
+	// Adding all includes of dependent libraries
+	for (auto const& project : _dependencies) {
+		retList.push_back(project->getPackagePath()+"/src");
+		for (auto const& i : project->getLegacy().includes) {
+			retList.push_back(project->getPackagePath()+"/"+i);
+		}
+		for (auto const& i : project->getLegacy().systemIncludes) {
+			retList.push_back(i);
+		}
+	}
+
+	return retList;
+}
+
+auto Project::getComDefines(std::set<Project*> const& _dependencies) const -> std::vector<std::string> {
+	std::vector<std::string> retList;
+
+	// Adding macro to indicate busy is being used
+	retList.push_back("-DABUILD");
+
+	// Adding all defines of dependend libraries
+	for (auto const& project : _dependencies) {
+		std::string def = std::string("-DABUILD_");
+		for (auto const& c : project->getName()) {
+			if ((c >= 'A' and c <= 'Z')
+			    or (c >= 'a' and c <= 'z')
+			    or (c >= '0' and c <= '9')) {
+				def += std::toupper(c);
+			} else {
+				def += "_";
+			}
+		}
+		retList.push_back(def);
+	}
+
+	// Adding library itself to busy definition
+	{
+		std::string def = std::string("-DABUILD_");
+		for (auto const& c : getName()) {
+			if ((c >= 'A' and c <= 'Z')
+			    or (c >= 'a' and c <= 'z')
+			    or (c >= '0' and c <= '9')) {
+				def += std::toupper(c);
+			} else {
+				def += "_";
+			}
+		}
+		retList.push_back(def);
+	}
+
+	return retList;
+}
+
+
+
 
 }
 

@@ -4,43 +4,22 @@
 
 namespace aBuild {
 
-int64_t BuildAction::getFileModTime(std::string const& s) const {
-	auto iter = fileModTime.find(s);
-	if (iter != fileModTime.end()) {
-		return iter->second;
-	}
-	auto mod = utils::getFileModificationTime(s);
-	if (mod > configFile->getLastCompileTime()) {
-		mod = configFile->getLastCompileTime();
-	}
-	fileModTime[s] = mod;
-	return mod;
-}
-
-bool BuildAction::hasFileChanged(std::string const& s) const {
-	auto iter = fileChanged.find(s);
-	if (iter == fileChanged.end()) {
-		return true;
-	}
-	return iter->second;
-}
-
 BuildAction::BuildAction(Graph const* _graph, bool _verbose, Workspace::ConfigFile const* _configFile, Toolchain const& _toolchain)
-	: graph      {_graph}
-	, verbose    {_verbose}
-	, configFile {_configFile}
-	, toolchain  {_toolchain}
+	: mGraph      {_graph}
+	, mVerbose    {_verbose}
+	, mConfigFile {_configFile}
+	, mToolchain  {_toolchain}
 {
-	buildPath = ".aBuild/" + _configFile->getToolchain() + "/" + _configFile->getBuildMode() + "/";
-	libPath   = buildPath + "lib/";
-	objPath   = buildPath + "obj/";
-	execPath  = "build/" + _configFile->getToolchain() + "/" + _configFile->getBuildMode() + "/";
+	mBuildPath = ".aBuild/" + mConfigFile->getToolchain() + "/" + mConfigFile->getBuildMode() + "/";
+	mLibPath   = mBuildPath + "lib/";
+	mObjPath   = mBuildPath + "obj/";
+	mExecPath  = "build/" + mConfigFile->getToolchain() + "/" + mConfigFile->getBuildMode() + "/";
 }
 
 
 bool BuildAction::runProcess(std::vector<std::string> const& prog, bool _noWarnings) const {
 	bool success = true;
-	if (verbose) {
+	if (mVerbose) {
 		for (auto const& s : prog) {
 			std::cout<<" "<<s;
 		}
@@ -54,7 +33,7 @@ bool BuildAction::runProcess(std::vector<std::string> const& prog, bool _noWarni
 	}
 	//std::cerr << TERM_PURPLE << p.cerr() << TERM_RESET;
 	//std::cout << TERM_GREEN  << p.cout() << TERM_RESET;
-	if (not _noWarnings || p.getStatus() != 0 || verbose) {
+	if (not _noWarnings or p.getStatus() != 0 or mVerbose) {
 		if (p.cout() != "" || p.cerr() != "") {
 			std::cout<<std::endl;
 			for (auto const& s : prog) {
@@ -65,7 +44,7 @@ bool BuildAction::runProcess(std::vector<std::string> const& prog, bool _noWarni
 			std::cerr << p.cerr() << TERM_RESET;
 		}
 	}
-	if (verbose) {
+	if (mVerbose) {
 		std::cout<<"==="<<std::endl;
 	}
 	return success;
@@ -73,29 +52,33 @@ bool BuildAction::runProcess(std::vector<std::string> const& prog, bool _noWarni
 
 auto BuildAction::getLinkingLibFunc() -> std::function<bool(Project*)> {
 	return [this](Project* project) {
-		std::unique_lock<std::mutex> lock(mutex);
-		utils::mkdir(libPath);
-		auto prog = toolchain.getArchivist();
+		std::unique_lock<std::mutex> lock(mMutex);
+		utils::mkdir(mLibPath);
+		auto prog = mToolchain.getArchivist();
 		prog.push_back("rcs");
-		std::string outputFile = libPath + project->getName() + ".a";
+		std::string outputFile = mLibPath + project->getName() + ".a";
 		prog.push_back(outputFile);
+
 		bool _fileChanged = false;
+		// is output file available
 		if (not utils::fileExists(outputFile)) {
 			_fileChanged = true;
 		}
-		auto ingoing = graph->getIngoing<std::string, Project>(project, false);
+		// did any of the object files changed
+		auto ingoing = mGraph->getIngoing<std::string, Project>(project, false);
 		for (auto const& f : ingoing) {
-			prog.push_back(objPath + *f + ".o");
+			prog.push_back(mObjPath + *f + ".o");
 			if (hasFileChanged(*f)) {
 				_fileChanged = true;
 			}
 		}
+		// if something changed compile
 		if (_fileChanged) {
-			fileChanged[outputFile] = true;
+			mFileChanged[outputFile] = true;
 			lock.unlock();
 			return runProcess(prog, project->getNoWarnings());
 		} else {
-			fileChanged[outputFile] = false;
+			mFileChanged[outputFile] = false;
 		}
 		return true;
 	};
@@ -104,11 +87,11 @@ auto BuildAction::getLinkingLibFunc() -> std::function<bool(Project*)> {
 
 auto BuildAction::getLinkingExecFunc() -> std::function<bool(Project*)> {
 	return [this](Project* project) {
-		std::unique_lock<std::mutex> lock(mutex);
-		std::string binPath  = execPath;
+		std::unique_lock<std::mutex> lock(mMutex);
+		std::string binPath  = mExecPath;
 		if (utils::isStartingWith(project->getPackagePath(), "packages/")) {
 			auto l = utils::explode(project->getPackagePath(), "/");
-			binPath = execPath + l[l.size()-1] + "/";
+			binPath = mExecPath + l[l.size()-1] + "/";
 		}
 		std::string testPath = binPath + "tests/";
 		utils::mkdir(binPath);
@@ -118,7 +101,7 @@ auto BuildAction::getLinkingExecFunc() -> std::function<bool(Project*)> {
 		if (utils::isStartingWith(project->getName(), "test")) {
 			outFile = testPath+project->getName();
 		}
-		auto prog = toolchain.getCppCompiler();
+		auto prog = mToolchain.getCppCompiler();
 		prog.push_back("-o");
 		prog.push_back(outFile);
 
@@ -128,15 +111,15 @@ auto BuildAction::getLinkingExecFunc() -> std::function<bool(Project*)> {
 		}
 
 
-		if (configFile->getBuildMode() == "release") {
+		if (mConfigFile->getBuildMode() == "release") {
 			prog.push_back("-s");
 		}
 
 		// Get file dependencies
 		{
-			auto ingoing = graph->getIngoing<std::string, Project>(project, false);
+			auto ingoing = mGraph->getIngoing<std::string, Project>(project, false);
 			for (auto const& f : ingoing) {
-				prog.push_back(objPath + *f + ".o");
+				prog.push_back(mObjPath + *f + ".o");
 				if (hasFileChanged(*f)) {
 					_fileChanged = true;
 				}
@@ -151,7 +134,7 @@ auto BuildAction::getLinkingExecFunc() -> std::function<bool(Project*)> {
 
 		// Get systemLibraries paths
 		{
-			auto ingoing = graph->getIngoing<Project, Project>(project, true);
+			auto ingoing = mGraph->getIngoing<Project, Project>(project, true);
 			for (auto const& f : ingoing) {
 				for (auto const& i : f->getLegacy().systemLibraries) {
 					prog.push_back("-L");
@@ -180,10 +163,10 @@ auto BuildAction::getLinkingExecFunc() -> std::function<bool(Project*)> {
 			while (not projectQueue.empty()) {
 				auto curProject = projectQueue.front();
 				projectQueue.pop();
-				auto outgoing = graph->getIngoing<Project, Project>(curProject, true);
+				auto outgoing = mGraph->getIngoing<Project, Project>(curProject, true);
 				for (auto const& f : outgoing) {
 					projectQueue.push(f);
-					std::string lib = libPath + f->getName() + ".a";
+					std::string lib = mLibPath + f->getName() + ".a";
 					auto iter = std::find(dependencies.begin(), dependencies.end(), lib);
 					if (iter != dependencies.end()) {
 						dependencies.erase(iter);
@@ -227,11 +210,11 @@ auto BuildAction::getLinkingExecFunc() -> std::function<bool(Project*)> {
 			prog.push_back("-l" + s);
 		}
 		if (_fileChanged) {
-			fileChanged[outFile] = true;
+			mFileChanged[outFile] = true;
 			lock.unlock();
 			return runProcess(prog, project->getNoWarnings());
 		} else {
-			fileChanged[outFile] = false;
+			mFileChanged[outFile] = false;
 		}
 		return true;
 	};
@@ -240,10 +223,10 @@ auto BuildAction::getLinkingExecFunc() -> std::function<bool(Project*)> {
 
 auto BuildAction::getCompileCppFileFunc() -> std::function<bool(std::string*)> {
 	return [this](std::string* f) {
-		std::unique_lock<std::mutex> lock(mutex);
+		std::unique_lock<std::mutex> lock(mMutex);
 		auto l = utils::explode(*f, "/");
 
-		auto prog = toolchain.getCppCompiler();
+		auto prog = mToolchain.getCppCompiler();
 
 		prog.push_back("-std=c++11");
 		prog.push_back("-Wall");
@@ -253,7 +236,7 @@ auto BuildAction::getCompileCppFileFunc() -> std::function<bool(std::string*)> {
 
 
 		std::string inputFile  = *f;
-		std::string outputFile = objPath + *f + ".o";
+		std::string outputFile = mObjPath + *f + ".o";
 
 		auto outputFileMod = getFileModTime(outputFile);
 
@@ -262,10 +245,10 @@ auto BuildAction::getCompileCppFileFunc() -> std::function<bool(std::string*)> {
 			nothingChanged = false;
 		} else if (outputFileMod < getFileModTime(inputFile)) {
 			nothingChanged = false;
-		} else if (not utils::fileExists(objPath + *f + ".d")) {
+		} else if (not utils::fileExists(mObjPath + *f + ".d")) {
 			nothingChanged = false;
 		} else {
-			std::ifstream ifs(objPath + *f + ".d");
+			std::ifstream ifs(mObjPath + *f + ".d");
 			for (std::string line; std::getline(ifs, line);) {
 				if (not utils::fileExists(line)) {
 					nothingChanged = false;
@@ -279,7 +262,7 @@ auto BuildAction::getCompileCppFileFunc() -> std::function<bool(std::string*)> {
 
 
 		if (nothingChanged) {
-			fileChanged[*f] = false;
+			mFileChanged[*f] = false;
 			return true;
 		}
 
@@ -288,92 +271,37 @@ auto BuildAction::getCompileCppFileFunc() -> std::function<bool(std::string*)> {
 		prog.push_back("-o");
 		prog.push_back(outputFile);
 
-		utils::mkdir(objPath + utils::dirname(*f));
-		if (configFile->getBuildMode() == "release") {
+		utils::mkdir(mObjPath + utils::dirname(*f));
+		if (mConfigFile->getBuildMode() == "release") {
 			prog.push_back("-O3");
-		} else if (configFile->getBuildMode() == "debug") {
+		} else if (mConfigFile->getBuildMode() == "debug") {
 			prog.push_back("-ggdb");
 			prog.push_back("-O0");
 		}
 
 		// Get include dependencies
-		auto list = graph->getOutgoing<Project, std::string>(f, false);
+		auto list = mGraph->getOutgoing<Project, std::string>(f, false);
 		auto iter = list.begin();
 		Project* project = *iter;
-		{
-			for (auto const& i : project->getLegacy().includes) {
-				prog.push_back("-I");
-				prog.push_back(project->getPackagePath()+"/"+i);
-			}
-			prog.push_back("-I");
-			prog.push_back(project->getPackagePath()+"/src/"+project->getPath());
-			prog.push_back("-I");
-			prog.push_back(project->getPackagePath()+"/src/");
 
-			auto ingoing = graph->getIngoing<Project, Project>(project, true);
-			// Adding all defines of dependent libraries
-			prog.push_back("-DABUILD");
-
-			for (auto const& f : ingoing) {
-				std::string def = std::string("-DABUILD_");
-				for (auto const& c : f->getName()) {
-					if ((c >= 'A' and c <= 'Z')
-					    or (c >= 'a' and c <= 'z')
-					    or (c >= '0' and c <= '9')) {
-						def += std::toupper(c);
-					} else {
-						def += "_";
-					}
-				}
-				prog.push_back(def);
-			}
-
-			{
-				std::string def = std::string("-DABUILD_");
-				for (auto const& c : project->getName()) {
-					if ((c >= 'A' and c <= 'Z')
-					    or (c >= 'a' and c <= 'z')
-					    or (c >= '0' and c <= '9')) {
-						def += std::toupper(c);
-					} else {
-						def += "_";
-					}
-				}
-				prog.push_back(def);
-			}
-
-			// Adding all includes of dependent libraries
-			for (auto const& f : ingoing) {
-				prog.push_back("-isystem");
-				prog.push_back(f->getPackagePath()+"/src");
-				for (auto const& i : f->getLegacy().includes) {
-					prog.push_back("-isystem");
-					prog.push_back(f->getPackagePath()+"/"+i);
-				}
-				for (auto const& i : f->getLegacy().systemIncludes) {
-					prog.push_back("-isystem");
-					prog.push_back(i);
-				}
-				for (auto const& i : f->getLegacy().systemLibraries) {
-					prog.push_back("-L");
-					prog.push_back(i);
-				}
-			}
+		for (auto const& e : getIncludeAndDefines(project)) {
+			prog.push_back(e);
 		}
+
 		lock.unlock();
 		return runProcess(prog, project->getNoWarnings());
 	};
 }
 auto BuildAction::getCompileCppFileFuncDep() -> std::function<void(std::string*)> {
 	return [this](std::string* f) {
-		std::unique_lock<std::mutex> lock(mutex);
+		std::unique_lock<std::mutex> lock(mMutex);
 		if (not hasFileChanged(*f)) {
 			return;
 		}
 
 		auto l = utils::explode(*f, "/");
 
-		auto prog = toolchain.getCppCompiler();
+		auto prog = mToolchain.getCppCompiler();
 
 
 		prog.push_back("-std=c++11");
@@ -387,58 +315,27 @@ auto BuildAction::getCompileCppFileFuncDep() -> std::function<void(std::string*)
 		prog.push_back("-MF");
 		prog.push_back("/dev/stdout");
 
-		utils::mkdir(objPath + utils::dirname(*f));
-		if (configFile->getBuildMode() == "release") {
+		utils::mkdir(mObjPath + utils::dirname(*f));
+		if (mConfigFile->getBuildMode() == "release") {
 			prog.push_back("-O3");
-		} else if (configFile->getBuildMode() == "debug") {
+		} else if (mConfigFile->getBuildMode() == "debug") {
 			prog.push_back("-ggdb");
 			prog.push_back("-O0");
 		}
 
 		// Get include dependencies
-		Project* project = *graph->getOutgoing<Project, std::string>(f, false).begin();
-		{
-			for (auto const& i : project->getLegacy().includes) {
-				prog.push_back("-I");
-				prog.push_back(project->getPackagePath()+"/"+i);
-			}
-			prog.push_back("-I");
-			prog.push_back(project->getPackagePath()+"/src/"+project->getPath());
-			prog.push_back("-I");
-			prog.push_back(project->getPackagePath()+"/src/");
+		Project* project = *mGraph->getOutgoing<Project, std::string>(f, false).begin();
 
-			auto ingoing = graph->getIngoing<Project, Project>(project, true);
-			// Adding all defines of dependent libraries
-			prog.push_back("-DABUILD");
-
-			for (auto const& f : ingoing) {
-				std::string def = std::string("-DABUILD_");
-				for (auto const& c : f->getName()) {
-					def += std::toupper(c);
-				}
-				prog.push_back(def);
-
-			}
-			// Adding all includes of dependent libraries
-			for (auto const& f : ingoing) {
-				prog.push_back("-isystem");
-				prog.push_back(f->getPackagePath()+"/src");
-				for (auto const& i : f->getLegacy().includes) {
-					prog.push_back("-isystem");
-					prog.push_back(f->getPackagePath()+"/"+i);
-				}
-				for (auto const& i : f->getLegacy().systemIncludes) {
-					prog.push_back("-isystem");
-					prog.push_back(i);
-				}
-			}
+		for (auto const& e : getIncludeAndDefines(project)) {
+			prog.push_back(e);
 		}
+
 		lock.unlock();
 		process::Process p(prog);
 		if (p.getStatus() == 0) {
 			auto depFiles = utils::explode(p.cout(), std::vector<std::string> {"\n", " ", "\\"});
 
-			std::ofstream ofs(objPath + *f + ".d");
+			std::ofstream ofs(mObjPath + *f + ".d");
 			for (auto iter = ++depFiles.begin(); iter != depFiles.end(); ++iter) {
 				if (iter->length() > 0) {
 					ofs << *iter << std::endl;
@@ -450,66 +347,36 @@ auto BuildAction::getCompileCppFileFuncDep() -> std::function<void(std::string*)
 
 auto BuildAction::getCompileCFileFunc() -> std::function<bool(std::string*)> {
 	return [this](std::string* f) {
-		std::unique_lock<std::mutex> lock(mutex);
+		std::unique_lock<std::mutex> lock(mMutex);
 		auto l = utils::explode(*f, "/");
 
-		utils::mkdir(objPath + utils::dirname(*f));
+		utils::mkdir(mObjPath + utils::dirname(*f));
 
-		auto prog = toolchain.getCCompiler();
+		auto prog = mToolchain.getCCompiler();
 
 		prog.push_back("-std=c11");
 		prog.push_back("-Wall");
 		prog.push_back("-Wextra");
 		prog.push_back("-fmessage-length=0");
 
-		if (configFile->getBuildMode() == "release") {
+		if (mConfigFile->getBuildMode() == "release") {
 			prog.push_back("-O3");
-		} else if (configFile->getBuildMode() == "debug") {
+		} else if (mConfigFile->getBuildMode() == "debug") {
 			prog.push_back("-ggdb");
 			prog.push_back("-O0");
 		}
 		prog.push_back("-c");
 		prog.push_back(*f);
 		prog.push_back("-o");
-		prog.push_back(objPath + *f + ".o");
+		prog.push_back(mObjPath + *f + ".o");
 
 		// Get include dependencies
-		Project* project = *graph->getOutgoing<Project, std::string>(f, false).begin();
-		{
-			for (auto const& i : project->getLegacy().includes) {
-				prog.push_back("-I");
-				prog.push_back(project->getPackagePath()+"/"+i);
-			}
-			prog.push_back("-I");
-			prog.push_back(project->getPackagePath()+"/src/"+project->getPath());
-			prog.push_back("-I");
-			prog.push_back(project->getPackagePath()+"/src/");
+		Project* project = *mGraph->getOutgoing<Project, std::string>(f, false).begin();
 
-			auto ingoing = graph->getIngoing<Project, Project>(project, true);
-			// Adding all defines of dependent libraries
-			prog.push_back("-DABUILD");
-			for (auto const& f : ingoing) {
-				std::string def = "-DABUILD_";
-				for (auto const& c : f->getName()) {
-					def += std::toupper(c);
-				}
-				prog.push_back(def);
-
-			}
-			// Adding all includes of dependent libraries
-			for (auto const& f : ingoing) {
-				prog.push_back("-isystem");
-				prog.push_back(f->getPackagePath()+"/src");
-				for (auto const& i : f->getLegacy().includes) {
-					prog.push_back("-isystem");
-					prog.push_back(f->getPackagePath()+"/" + i);
-				}
-				for (auto const& i : f->getLegacy().systemIncludes) {
-					prog.push_back("-isystem");
-					prog.push_back(i);
-				}
-			}
+		for (auto const& e : getIncludeAndDefines(project)) {
+			prog.push_back(e);
 		}
+
 		lock.unlock();
 		return runProcess(prog, project->getNoWarnings());
 	};
@@ -517,83 +384,21 @@ auto BuildAction::getCompileCFileFunc() -> std::function<bool(std::string*)> {
 
 auto BuildAction::getCompileClangCompleteFunc() -> std::function<void(std::string*)> {
 	return [this](std::string* f) {
-		std::unique_lock<std::mutex> lock(mutex);
+		std::unique_lock<std::mutex> lock(mMutex);
 		auto l = utils::explode(*f, "/");
 
-		auto prog = toolchain.getCppCompiler();
+		auto prog = mToolchain.getCppCompiler();
 		prog.erase(prog.begin());
 
 		prog.push_back("-std=c++11");
 
-		std::string inputFile  = *f;
-		std::string outputFile = objPath + *f + ".o";
-
-		auto outputFileMod = getFileModTime(outputFile);
-
-		auto nothingChanged = true;
-		if (not utils::fileExists(outputFile)) {
-			nothingChanged = false;
-		} else if (outputFileMod < getFileModTime(inputFile)) {
-			nothingChanged = false;
-		} else if (not utils::fileExists(objPath + *f + ".d")) {
-			nothingChanged = false;
-		} else {
-			std::ifstream ifs(objPath + *f + ".d");
-			for (std::string line; std::getline(ifs, line);) {
-				if (not utils::fileExists(line)) {
-					nothingChanged = false;
-					break;
-				} else if (outputFileMod < getFileModTime(line)) {
-					nothingChanged = false;
-					break;
-				}
-			}
-		}
-
-
-		if (nothingChanged) {
-			fileChanged[*f] = false;
-			return;
-		}
-
 		// Get include dependencies
-		Project* project = *graph->getOutgoing<Project, std::string>(f, false).begin();
-		{
-			for (auto const& i : project->getLegacy().includes) {
-				prog.push_back("-I");
-				prog.push_back(project->getPackagePath()+"/"+i);
-			}
-			prog.push_back("-I");
-			prog.push_back(project->getPackagePath()+"/src/"+project->getPath());
-			prog.push_back("-I");
-			prog.push_back(project->getPackagePath()+"/src/");
+		Project* project = *mGraph->getOutgoing<Project, std::string>(f, false).begin();
 
-			auto ingoing = graph->getIngoing<Project, Project>(project, true);
-			// Adding all defines of dependent libraries
-			prog.push_back("-DABUILD");
-
-			for (auto const& f : ingoing) {
-				std::string def = std::string("-DABUILD_");
-				for (auto const& c : f->getName()) {
-					def += std::toupper(c);
-				}
-				prog.push_back(def);
-
-			}
-			// Adding all includes of dependent libraries
-			for (auto const& f : ingoing) {
-				prog.push_back("-isystem");
-				prog.push_back(f->getPackagePath()+"/src");
-				for (auto const& i : f->getLegacy().includes) {
-					prog.push_back("-isystem");
-					prog.push_back(f->getPackagePath()+"/"+i);
-				}
-				for (auto const& i : f->getLegacy().systemIncludes) {
-					prog.push_back("-isystem");
-					prog.push_back(i);
-				}
-			}
+		for (auto const& e : getIncludeAndDefines(project)) {
+			prog.push_back(e);
 		}
+
 		std::fstream fs(".clang_complete", std::ios_base::out | std::ios_base::app);
 		for (auto const& p : prog) {
 			fs<<p<<" ";
@@ -602,7 +407,51 @@ auto BuildAction::getCompileClangCompleteFunc() -> std::function<void(std::strin
 	};
 }
 
+auto BuildAction::getIncludeAndDefines(Project* project) const -> std::vector<std::string> {
+	std::vector<std::string> retList;
 
+	auto ingoing = mGraph->getIngoing<Project, Project>(project, true);
 
+	// Adding all defines of dependend libraries
+	for (auto const& d : project->getComDefines(ingoing)) {
+		retList.push_back(d);
+	}
+
+	// aAding all includes depending inside of the project
+	for (auto const& i : project->getComIncludePaths()) {
+		retList.push_back("-I");
+		retList.push_back(i);
+	}
+
+	// Adding all includes of dependening libraries
+	for (auto const& i : project->getComSystemIncludePaths(ingoing)) {
+		retList.push_back("-isystem");
+		retList.push_back(i);
+	}
+
+	return retList;
 }
 
+
+auto BuildAction::getFileModTime(std::string const& s) const -> int64_t {
+	auto iter = mFileModTime.find(s);
+	if (iter != mFileModTime.end()) {
+		return iter->second;
+	}
+	auto mod = utils::getFileModificationTime(s);
+	if (mod > mConfigFile->getLastCompileTime()) {
+		mod = mConfigFile->getLastCompileTime();
+	}
+	mFileModTime[s] = mod;
+	return mod;
+}
+
+bool BuildAction::hasFileChanged(std::string const& s) const {
+	auto iter = mFileChanged.find(s);
+	if (iter == mFileChanged.end()) {
+		return true;
+	}
+	return iter->second;
+}
+
+}
