@@ -25,11 +25,8 @@ namespace aBuild {
 		std::string mLibPath;
 		std::string mObjPath;
 		std::string mExecPath;
-		mutable std::map<std::string, int64_t> mFileModTime; // caching
-		mutable std::map<std::string, bool>    mFileChanged; // caching
 
 		std::mutex mMutex;
-
 	public:
 		BuildAction(Graph const* _graph, bool _verbose, Workspace::ConfigFile const* _configFile, Toolchain const& _toolchain);
 		bool runProcess(std::vector<std::string> const& prog, bool _noWarnings) const;
@@ -46,8 +43,5 @@ namespace aBuild {
 		auto getIncludeAndDefines(Project* project) const -> std::vector<std::string>;
 
 		bool fileOrDependencyChanged(std::string const& _inputFile, std::string const& _outputFile) const;
-
-		auto getFileModTime(std::string const& s) const -> int64_t;
-		bool hasFileChanged(std::string const& s) const;
 	};
 }

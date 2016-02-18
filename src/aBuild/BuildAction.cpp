@@ -1,6 +1,7 @@
 #include "BuildAction.h"
 
 #include <process/Process.h>
+#include "FileStates.h"
 
 namespace aBuild {
 
@@ -68,17 +69,15 @@ auto BuildAction::getLinkingLibFunc() -> std::function<bool(Project*)> {
 		auto ingoing = mGraph->getIngoing<std::string, Project>(project, false);
 		for (auto const& f : ingoing) {
 			prog.push_back(mObjPath + *f + ".o");
-			if (hasFileChanged(*f)) {
+			if (getFileStates().hasFileChanged(*f)) {
 				_fileChanged = true;
 			}
 		}
 		// if something changed compile
+		getFileStates().setFileChanged(outputFile, _fileChanged);
 		if (_fileChanged) {
-			mFileChanged[outputFile] = true;
 			lock.unlock();
 			return runProcess(prog, project->getNoWarnings());
-		} else {
-			mFileChanged[outputFile] = false;
 		}
 		return true;
 	};
@@ -97,16 +96,16 @@ auto BuildAction::getLinkingExecFunc() -> std::function<bool(Project*)> {
 		utils::mkdir(binPath);
 		utils::mkdir(testPath);
 
-		std::string outFile = binPath+project->getName();
+		std::string outputFile = binPath+project->getName();
 		if (utils::isStartingWith(project->getName(), "test")) {
-			outFile = testPath+project->getName();
+			outputFile = testPath+project->getName();
 		}
 		auto prog = mToolchain.getCppCompiler();
 		prog.push_back("-o");
-		prog.push_back(outFile);
+		prog.push_back(outputFile);
 
 		bool _fileChanged = false;
-		if (not utils::fileExists(outFile)) {
+		if (not utils::fileExists(outputFile)) {
 			_fileChanged = true;
 		}
 
@@ -120,7 +119,7 @@ auto BuildAction::getLinkingExecFunc() -> std::function<bool(Project*)> {
 			auto ingoing = mGraph->getIngoing<std::string, Project>(project, false);
 			for (auto const& f : ingoing) {
 				prog.push_back(mObjPath + *f + ".o");
-				if (hasFileChanged(*f)) {
+				if (getFileStates().hasFileChanged(*f)) {
 					_fileChanged = true;
 				}
 			}
@@ -199,7 +198,7 @@ auto BuildAction::getLinkingExecFunc() -> std::function<bool(Project*)> {
 			if (wholeArchive) {
 				prog.push_back("-Wl,--no-whole-archive");
 			}
-			if (hasFileChanged(s)) {
+			if (getFileStates().hasFileChanged(s)) {
 				_fileChanged = true;
 			}
 		}
@@ -209,12 +208,11 @@ auto BuildAction::getLinkingExecFunc() -> std::function<bool(Project*)> {
 		for (auto const& s : depLibraries) {
 			prog.push_back("-l" + s);
 		}
+
+		getFileStates().setFileChanged(outputFile, _fileChanged);
 		if (_fileChanged) {
-			mFileChanged[outFile] = true;
 			lock.unlock();
 			return runProcess(prog, project->getNoWarnings());
-		} else {
-			mFileChanged[outFile] = false;
 		}
 		return true;
 	};
@@ -230,8 +228,8 @@ auto BuildAction::getCompileCppFileFunc() -> std::function<bool(std::string*)> {
 
 		auto changed = fileOrDependencyChanged(inputFile, outputFile);
 		// if nothing changed, no need to compile
+		getFileStates().setFileChanged(outputFile, changed);
 		if (not changed) {
-			mFileChanged[*f] = false;
 			return true;
 		}
 
@@ -273,7 +271,7 @@ auto BuildAction::getCompileCppFileFunc() -> std::function<bool(std::string*)> {
 auto BuildAction::getCompileCppFileFuncDep() -> std::function<void(std::string*)> {
 	return [this](std::string* f) {
 		std::unique_lock<std::mutex> lock(mMutex);
-		if (not hasFileChanged(*f)) {
+		if (not getFileStates().hasFileChanged(*f)) {
 			return;
 		}
 
@@ -322,9 +320,10 @@ auto BuildAction::getCompileCFileFunc() -> std::function<bool(std::string*)> {
 		std::string outputFile = mObjPath + *f + ".o";
 
 		auto changed = fileOrDependencyChanged(inputFile, outputFile);
+
 		// if nothing changed, no need to compile
+		getFileStates().setFileChanged(outputFile, changed);
 		if (not changed) {
-			mFileChanged[*f] = false;
 			return true;
 		}
 
@@ -416,13 +415,21 @@ auto BuildAction::getIncludeAndDefines(Project* project) const -> std::vector<st
 }
 
 bool BuildAction::fileOrDependencyChanged(std::string const& _inputFile, std::string const& _outputFile) const {
-	auto outputFileMod = getFileModTime(_outputFile);
-
 	if (not utils::fileExists(_outputFile)) {
 		return true;
-	} else if (outputFileMod < getFileModTime(_inputFile)) {
+	}
+
+	auto outputFileMod = getFileStates().getFileModTime(_outputFile);
+	auto inputFileMod  = getFileStates().getFileModTime(_inputFile);
+	if (outputFileMod > mConfigFile->getLastCompileTime()) {
+		outputFileMod = mConfigFile->getLastCompileTime();
+	}
+
+	if (outputFileMod < inputFileMod) {
 		return true;
-	} else if (not utils::fileExists(mObjPath + _inputFile + ".d")) {
+	}
+
+	if (not utils::fileExists(mObjPath + _inputFile + ".d")) {
 		return true;
 	}
 
@@ -430,35 +437,14 @@ bool BuildAction::fileOrDependencyChanged(std::string const& _inputFile, std::st
 	for (std::string line; std::getline(ifs, line);) {
 		if (not utils::fileExists(line)) {
 			return true;
-		} else if (outputFileMod < getFileModTime(line)) {
+		}
+		auto inputFileMod  = getFileStates().getFileModTime(line);
+
+		if (outputFileMod < inputFileMod) {
 			return true;
 		}
 	}
-	
+
 	return false;
 }
-
-
-
-auto BuildAction::getFileModTime(std::string const& s) const -> int64_t {
-	auto iter = mFileModTime.find(s);
-	if (iter != mFileModTime.end()) {
-		return iter->second;
-	}
-	auto mod = utils::getFileModificationTime(s);
-	if (mod > mConfigFile->getLastCompileTime()) {
-		mod = mConfigFile->getLastCompileTime();
-	}
-	mFileModTime[s] = mod;
-	return mod;
-}
-
-bool BuildAction::hasFileChanged(std::string const& s) const {
-	auto iter = mFileChanged.find(s);
-	if (iter == mFileChanged.end()) {
-		return true;
-	}
-	return iter->second;
-}
-
 }
