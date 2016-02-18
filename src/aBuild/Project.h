@@ -4,6 +4,7 @@
 #include "utils.h"
 
 namespace aBuild {
+	class Workspace;
 
 	using Dependencies = std::vector<std::string>;
 	using DepLibraries = std::vector<std::string>;
@@ -126,8 +127,8 @@ namespace aBuild {
 		void quickFix();
 
 		auto getDefaultTypeByName() const -> std::string;
-		auto getDefaultDependencies(std::map<std::string, Project> const& _projects) const -> Dependencies;
-		auto getDefaultOptionalDependencies(std::map<std::string, Project> const& _projects) const -> Dependencies;
+		auto getDefaultDependencies(Workspace* _workspace, std::map<std::string, Project> const& _projects) const -> Dependencies;
+		auto getDefaultOptionalDependencies(Workspace* _workspace, std::map<std::string, Project> const& _projects) const -> Dependencies;
 
 		auto getAllFiles(std::set<std::string> const& _ending) const -> std::vector<std::string>;
 		auto getAllFilesFlat(std::set<std::string> const& _ending) const -> std::vector<std::string>;

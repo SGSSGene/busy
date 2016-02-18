@@ -85,23 +85,15 @@ void build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 	for (auto p : autoProjects) {
 		auto& project = *p;
 		
-		auto dep = project.getDefaultDependencies(requiredProjects);
-		std::cout << "found \"auto\" project: " << p->getName() << std::endl;
-		for (auto const& d : dep) {
-			std::cout << "dep: " << d << std::endl;
-		}
-		std::cout << std::endl;
-		auto optDep = project.getDefaultOptionalDependencies(requiredProjects);
-		for (auto const& d : optDep) {
-			std::cout << "optDep: " << d << std::endl;
-		}
-		std::cout << std::endl;
+		auto dep = project.getDefaultDependencies(&ws, requiredProjects);
+		auto optDep = project.getDefaultOptionalDependencies(&ws, requiredProjects);
 
 
 		project.setDependencies(std::move(dep));
 		project.setOptionalDependencies(std::move(optDep));
 	}
-
+	// save all the auto detected dependencies
+	ws.save();
 
 
 	// Create dependency tree

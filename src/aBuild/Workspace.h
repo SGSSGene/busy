@@ -8,11 +8,25 @@ namespace aBuild {
 
 class Workspace {
 public:
+	struct FileState {
+		int64_t lastChange {0};
+		std::vector<std::string> dependencies;
+		std::vector<std::string> optDependencies;
+
+		template <typename Node>
+		void serialize(Node& node) {
+			node["lastChange"]      % lastChange;
+			node["dependencies"]    % dependencies;
+			node["optDependencies"] % optDependencies;
+		}
+	};
 	class ConfigFile {
 	private:
 		std::string buildMode { "debug" };
 		std::string toolchain { "" };
 		uint64_t    lastCompileTime;
+
+		std::map<std::string, FileState> mAutoFileStates;
 
 	public:
 		auto getBuildMode() const -> std::string const&  { return buildMode; }
@@ -22,11 +36,15 @@ public:
 		auto getLastCompileTime() const -> int64_t       { return lastCompileTime; }
 		void setLastCompileTime(int64_t _time)           { lastCompileTime = _time; }
 
+		auto accessAutoFileStates() -> std::map<std::string, FileState>& { return mAutoFileStates; }
+
+
 		template<typename Node>
 		void serialize(Node& node) {
 			node["buildMode"]       % buildMode or std::string("debug");
 			node["toolchain"]       % toolchain;
 			node["lastCompileTime"] % lastCompileTime or 0ull;
+			node["autoFileStates"]  % mAutoFileStates;
 		}
 	};
 private:

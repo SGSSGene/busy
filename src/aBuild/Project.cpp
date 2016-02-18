@@ -1,6 +1,8 @@
 #include "Project.h"
 
 #include "Workspace.h"
+
+#include "FileStates.h"
 #include <algorithm>
 #include <iostream>
 #include <fstream>
@@ -28,11 +30,22 @@ auto Project::getDefaultTypeByName() const -> std::string {
 	return "library";
 }
 
-auto Project::getDefaultDependencies(std::map<std::string, Project> const& _projects) const -> Dependencies {
+auto Project::getDefaultDependencies(Workspace* _workspace, std::map<std::string, Project> const& _projects) const -> Dependencies {
+	auto& fileStates = _workspace->accessConfigFile().accessAutoFileStates();
 	Dependencies dep;
 	auto allFiles = getAllFiles({".cpp", ".c", ".h"});
-	std::set<std::pair<std::string, std::string>> filesOfInterest;
+	std::set<std::string> filesOfInterest;
 	for (auto const& f : allFiles) {
+		auto currentTime = getFileStates().getFileModTime(f);
+		auto lastTime    = fileStates[f].lastChange;
+		if (lastTime == currentTime) {
+			for (auto const& file : fileStates[f].dependencies) {
+				filesOfInterest.insert(file);
+			}
+			continue;
+		}
+		fileStates[f].lastChange = currentTime;
+
 		std::ifstream ifs(f);
 		std::string line;
 		while (std::getline(ifs, line)) {
@@ -42,28 +55,18 @@ auto Project::getDefaultDependencies(std::map<std::string, Project> const& _proj
 
 				auto pos1 = parts[1].find("<")+1;
 				auto pos2 = parts[1].find(">")-pos1;
-				auto l = utils::explode(parts[1].substr(pos1, pos2), "/");
-				std::pair<std::string, std::string> pair {l[0], ""};
-				if (l.size() == 2) {
-					pair.second = l[1];
-				}
-
-				if (std::find(filesOfInterest.begin(), filesOfInterest.end(), pair) == filesOfInterest.end()) {
-					filesOfInterest.insert(pair);
-				}
+				auto file = parts[1].substr(pos1, pos2);
+				filesOfInterest.insert(file);
+				fileStates[f].dependencies.push_back(file);
 			}
 		}
 	}
 
-	for (auto const& f : filesOfInterest) {
-		if (f.second == "") continue;
-
+	for (auto const& file : filesOfInterest) {
 		for (auto const& e : _projects) {
 			auto& project = e.second;
 			if (&project == this) continue;
 
-			auto file = f.first + "/" + f.second;
-		
 			for (auto const& h : project.getAllHFilesFlat()) {
 				if (file == h) {
 					auto package = project.getPackagePath();
@@ -88,11 +91,22 @@ auto Project::getDefaultDependencies(std::map<std::string, Project> const& _proj
 	return dep;
 }
 
-auto Project::getDefaultOptionalDependencies(std::map<std::string, Project> const& _projects) const -> Dependencies {
+auto Project::getDefaultOptionalDependencies(Workspace* _workspace, std::map<std::string, Project> const& _projects) const -> Dependencies {
+	auto& fileStates = _workspace->accessConfigFile().accessAutoFileStates();
 	Dependencies dep;
 	auto allFiles = getAllFiles({".cpp", ".c", ".h"});
-	std::set<std::pair<std::string, std::string>> filesOfInterest;
+	std::set<std::string> filesOfInterest;
 	for (auto const& f : allFiles) {
+		auto currentTime = getFileStates().getFileModTime(f);
+		auto lastTime    = fileStates[f].lastChange;
+		if (lastTime == currentTime) {
+			for (auto const& file : fileStates[f].optDependencies) {
+				filesOfInterest.insert(file);
+			}
+			continue;
+		}
+		fileStates[f].lastChange = currentTime;
+
 		std::ifstream ifs(f);
 		std::string line;
 		bool optionalSection = false;
@@ -109,29 +123,20 @@ auto Project::getDefaultOptionalDependencies(std::map<std::string, Project> cons
 
 				auto pos1 = parts[1].find("<")+1;
 				auto pos2 = parts[1].find(">")-pos1;
-				auto l = utils::explode(parts[1].substr(pos1, pos2), "/");
-				std::pair<std::string, std::string> pair {l[0], ""};
-				if (l.size() == 2) {
-					pair.second = l[1];
-				}
 
-				if (std::find(filesOfInterest.begin(), filesOfInterest.end(), pair) == filesOfInterest.end()) {
-					filesOfInterest.insert(pair);
-				}
+				auto file = parts[1].substr(pos1, pos2);
+				filesOfInterest.insert(file);
+				fileStates[f].optDependencies.push_back(file);
 			}
 
 		}
 	}
 
-	for (auto const& f : filesOfInterest) {
-		if (f.second == "") continue;
-
+	for (auto const& file : filesOfInterest) {
 		for (auto const& e : _projects) {
 			auto& project = e.second;
 			if (&project == this) continue;
 
-			auto file = f.first + "/" + f.second;
-		
 			for (auto const& h : project.getAllHFilesFlat()) {
 				if (file == h) {
 					auto package = project.getPackagePath();
