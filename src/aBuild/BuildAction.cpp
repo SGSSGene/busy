@@ -65,6 +65,7 @@ auto BuildAction::getLinkingLibFunc() -> std::function<bool(Project*)> {
 		if (not utils::fileExists(outputFile)) {
 			_fileChanged = true;
 		}
+
 		// did any of the object files changed
 		auto ingoing = mGraph->getIngoing<std::string, Project>(project, false);
 		for (auto const& f : ingoing) {
@@ -229,6 +230,7 @@ auto BuildAction::getCompileCppFileFunc() -> std::function<bool(std::string*)> {
 		auto changed = fileOrDependencyChanged(inputFile, outputFile);
 		// if nothing changed, no need to compile
 		getFileStates().setFileChanged(outputFile, changed);
+		getFileStates().setFileChanged(inputFile, changed);
 		if (not changed) {
 			return true;
 		}
@@ -271,7 +273,15 @@ auto BuildAction::getCompileCppFileFunc() -> std::function<bool(std::string*)> {
 auto BuildAction::getCompileCppFileFuncDep() -> std::function<void(std::string*)> {
 	return [this](std::string* f) {
 		std::unique_lock<std::mutex> lock(mMutex);
-		if (not getFileStates().hasFileChanged(*f)) {
+
+		std::string inputFile  = *f;
+		std::string outputFile = mObjPath + *f + ".o";
+
+		auto changed = fileOrDependencyChanged(inputFile, outputFile);
+		// if nothing changed, no need to compile
+		getFileStates().setFileChanged(outputFile, changed);
+		getFileStates().setFileChanged(inputFile, changed);
+		if (not changed) {
 			return;
 		}
 
@@ -295,6 +305,13 @@ auto BuildAction::getCompileCppFileFuncDep() -> std::function<void(std::string*)
 
 		for (auto const& e : getIncludeAndDefines(project)) {
 			prog.push_back(e);
+		}
+
+		if (mVerbose) {
+			for (auto const& s : prog) {
+				std::cout<<" "<<s;
+			}
+			std::cout<<std::endl;
 		}
 
 		lock.unlock();
@@ -323,6 +340,7 @@ auto BuildAction::getCompileCFileFunc() -> std::function<bool(std::string*)> {
 
 		// if nothing changed, no need to compile
 		getFileStates().setFileChanged(outputFile, changed);
+		getFileStates().setFileChanged(inputFile, changed);
 		if (not changed) {
 			return true;
 		}

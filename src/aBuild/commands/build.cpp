@@ -96,7 +96,6 @@ void build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 	// save all the auto detected dependencies
 	ws.save();
 
-
 	// Create dependency tree
 	auto projects = requiredProjects;
 	for (auto& e  : projects) {
