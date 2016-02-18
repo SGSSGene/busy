@@ -64,6 +64,7 @@ void build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 	std::vector<Project*> autoProjects;
 
 	for (auto const& pDir : packagesDir) {
+		if (not utils::fileExists(pDir + "/src")) continue;
 		// Find auto projects
 		auto projectDirs = utils::listDirs(pDir + "/src", true);
 		for (auto const& d : projectDirs) {
