@@ -174,7 +174,10 @@ namespace utils {
 		std::vector<std::string> retList;
 		while (str.length() > 0) {
 			auto p = str.find(_del);
-			retList.push_back(str.substr(0, p));
+			auto e = str.substr(0, p);
+			if (e != "") {
+				retList.emplace_back(std::move(e));
+			}
 			if (p == std::string::npos) {
 				return retList;
 			}
@@ -198,8 +201,10 @@ namespace utils {
 					delSize = s.length();
 				}
 			}
-			auto _str = str.substr(0, p);
-			retList.push_back(_str);
+			auto e = str.substr(0, p);
+			if (e != "") {
+				retList.emplace_back(std::move(e));
+			}
 			if (p == std::string::npos) {
 				return retList;
 			}

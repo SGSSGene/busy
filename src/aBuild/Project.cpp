@@ -28,7 +28,7 @@ auto Project::getDefaultTypeByName() const -> std::string {
 	return "library";
 }
 
-auto Project::getDefaultDependencies() const -> Dependencies {
+auto Project::getDefaultDependencies(std::map<std::string, Project> const& _projects) const -> Dependencies {
 	Dependencies dep;
 	auto allFiles = getAllFiles({".cpp", ".c", ".h"});
 	std::set<std::pair<std::string, std::string>> filesOfInterest;
@@ -36,61 +36,48 @@ auto Project::getDefaultDependencies() const -> Dependencies {
 		std::ifstream ifs(f);
 		std::string line;
 		while (std::getline(ifs, line)) {
-			if (utils::isStartingWith(line, "#include <")
-			    and utils::isEndingWith(line, ">")) {
-				auto pos1 = line.find("<")+1;
-				auto pos2 = line.find(">")-pos1;
-				auto l = utils::explode(line.substr(pos1, pos2), "/");
-				if (l.size() == 1) {
-					filesOfInterest.insert({l[0], ""});
-				} else if (l.size() == 2) {
-					filesOfInterest.insert({l[0], l[1]});
+			auto parts = utils::explode(line, std::vector<std::string>{" ", "\t"});
+			if (parts.size() == 2 && parts[0] == "#include"
+			    && parts[1].front() == '<' && parts[1].back() == '>') {
+
+				auto pos1 = parts[1].find("<")+1;
+				auto pos2 = parts[1].find(">")-pos1;
+				auto l = utils::explode(parts[1].substr(pos1, pos2), "/");
+				std::pair<std::string, std::string> pair {l[0], ""};
+				if (l.size() == 2) {
+					pair.second = l[1];
+				}
+
+				if (std::find(filesOfInterest.begin(), filesOfInterest.end(), pair) == filesOfInterest.end()) {
+					filesOfInterest.insert(pair);
 				}
 			}
 		}
 	}
-	if (not utils::dirExists("./packages")) return dep;
-
-	std::set<std::pair<std::string, std::string>> pathsOfInterest;
-
-	for (auto packageName : utils::listDirs("packages", true)) {
-		utils::Cwd cwd("packages/" + packageName);
-		Package package {PackageURL{}};
-		serializer::yaml::read("aBuild.yaml", package);
-		for (auto const& project : package.getProjects()) {
-			pathsOfInterest.insert( {package.getName(), project.getName()} );
-		}
-	}
-	for (auto projectNames : utils::listDirs("src", true)) {
-		pathsOfInterest.insert( {"../", projectNames} );
-	}
-
-	// get current package name
-	auto dir = utils::explode(utils::cwd(), "/");
-	std::string packageName = dir[dir.size()-1];
 
 	for (auto const& f : filesOfInterest) {
-		for (auto const& p : pathsOfInterest) {
-			if ((f.second == "" and utils::fileExists("./packages/"+p.first+"/src/"+f.first))
-			 or (f.second != "" and utils::fileExists("./packages/"+p.first+"/src/"+p.second+"/"+f.second))) {
-				std::string x = p.first + "/" + p.second;
-				if (p.first == "../") {
-					x = packageName + "/" + p.second;
-				}
-				if (x == packageName + "/" + getName()) continue; // Same Project (self refering)
-				bool found = false;
-				for (auto const& f : dep) {
-					if (f == x) {
-						found = true;
-						break;
+		if (f.second == "") continue;
+
+		for (auto const& e : _projects) {
+			auto& project = e.second;
+			if (&project == this) continue;
+
+			auto file = f.first + "/" + f.second;
+		
+			for (auto const& h : project.getAllHFilesFlat()) {
+				if (file == h) {
+					auto package = project.getPackagePath();
+					auto pList   = utils::explode(package, "/");
+					auto d       = pList.back() + "/" + project.getName();
+					if (std::find(dep.begin(), dep.end(), d) == dep.end()) {
+						dep.emplace_back(d);
 					}
-				}
-				if (not found) {
-					dep.push_back(x);
+					break;
 				}
 			}
 		}
 	}
+
 	dep.erase(std::remove_if(dep.begin(), dep.end(), [&](std::string const& s) {
 		if (std::find(optionalDependencies.begin(), optionalDependencies.end(), s) != optionalDependencies.end()) {
 			return true;
@@ -101,25 +88,124 @@ auto Project::getDefaultDependencies() const -> Dependencies {
 	return dep;
 }
 
+auto Project::getDefaultOptionalDependencies(std::map<std::string, Project> const& _projects) const -> Dependencies {
+	Dependencies dep;
+	auto allFiles = getAllFiles({".cpp", ".c", ".h"});
+	std::set<std::pair<std::string, std::string>> filesOfInterest;
+	for (auto const& f : allFiles) {
+		std::ifstream ifs(f);
+		std::string line;
+		bool optionalSection = false;
+
+		while (std::getline(ifs, line)) {
+			auto parts = utils::explode(line, std::vector<std::string>{" ", "\t"});
+			if (parts.size() == 1 && parts[0] == "#endif") {
+				optionalSection = false;
+			} else if (parts.size() == 2 && parts[0] == "#ifdef") {
+				optionalSection = true;
+			} else if (optionalSection
+			    && parts.size() == 2 && parts[0] == "#include"
+			    && parts[1].front() == '<' && parts[1].back() == '>') {
+
+				auto pos1 = parts[1].find("<")+1;
+				auto pos2 = parts[1].find(">")-pos1;
+				auto l = utils::explode(parts[1].substr(pos1, pos2), "/");
+				std::pair<std::string, std::string> pair {l[0], ""};
+				if (l.size() == 2) {
+					pair.second = l[1];
+				}
+
+				if (std::find(filesOfInterest.begin(), filesOfInterest.end(), pair) == filesOfInterest.end()) {
+					filesOfInterest.insert(pair);
+				}
+			}
+
+		}
+	}
+
+	for (auto const& f : filesOfInterest) {
+		if (f.second == "") continue;
+
+		for (auto const& e : _projects) {
+			auto& project = e.second;
+			if (&project == this) continue;
+
+			auto file = f.first + "/" + f.second;
+		
+			for (auto const& h : project.getAllHFilesFlat()) {
+				if (file == h) {
+					auto package = project.getPackagePath();
+					auto pList   = utils::explode(package, "/");
+					auto d       = pList.back() + "/" + project.getName();
+					if (std::find(dep.begin(), dep.end(), d) == dep.end()) {
+						dep.emplace_back(d);
+					}
+					break;
+				}
+			}
+		}
+	}
+
+	dep.erase(std::remove_if(dep.begin(), dep.end(), [&](std::string const& s) {
+		if (std::find(optionalDependencies.begin(), optionalDependencies.end(), s) != optionalDependencies.end()) {
+			return true;
+		}
+		return false;
+	}), dep.end());
+
+	return dep;
+}
+
+
 auto Project::getAllFiles(std::set<std::string> const& _ending) const -> std::vector<std::string> {
 	std::vector<std::string> files;
 
-	std::string fullPath = getPackagePath()+"/src/"+getPath()+"/";
+	std::vector<std::string> allPaths;
+	allPaths.emplace_back(std::string("./") + getPackagePath() + "/src/" + getPath() + "/");
+	for (auto const& i : getLegacy().includes) {
+		allPaths.emplace_back(std::string("./") + getPackagePath() + "/" + i + "/");
+	}
 
-	if (not utils::dirExists("./"+fullPath)) return files;
+	for (auto const& p : allPaths) {
+		if (not utils::dirExists(p)) continue;
 
-
-	auto allFiles = utils::listFiles(fullPath, true);
-	for (auto const& f : allFiles) {
-		for (auto const& ending : _ending) {
-			if (utils::isEndingWith(f, ending)) {
-				files.push_back(fullPath + f);
-				break;
+		auto allFiles = utils::listFiles(p, true);
+		for (auto const& f : allFiles) {
+			for (auto const& ending : _ending) {
+				if (utils::isEndingWith(f, ending)) {
+					files.push_back(p + f);
+					break;
+				}
 			}
 		}
 	}
 	return files;
 }
+auto Project::getAllFilesFlat(std::set<std::string> const& _ending) const -> std::vector<std::string> {
+	std::vector<std::string> files;
+
+	std::vector<std::tuple<std::string, std::string>> allPaths;
+	allPaths.emplace_back(std::make_tuple(std::string("./") + getPackagePath() + "/src/" + getPath() + "/", getPath() + "/"));
+	for (auto const& i : getLegacy().includes) {
+		allPaths.emplace_back(std::make_tuple(std::string("./") + getPackagePath() + "/" + i + "/", std::string("")));
+	}
+
+	for (auto const& p : allPaths) {
+		if (not utils::dirExists(std::get<0>(p))) continue;
+
+		auto allFiles = utils::listFiles(std::get<0>(p), true);
+		for (auto const& f : allFiles) {
+			for (auto const& ending : _ending) {
+				if (utils::isEndingWith(f, ending)) {
+					files.push_back(std::get<1>(p) + f);
+					break;
+				}
+			}
+		}
+	}
+	return files;
+}
+
 
 
 auto Project::getAllCppFiles() -> std::vector<std::string>& {
@@ -132,9 +218,24 @@ auto Project::getAllCFiles() -> std::vector<std::string>& {
 	if (cFiles.empty()) {
 		cFiles = getAllFiles({".c"});
 	}
-
 	return cFiles;
 }
+auto Project::getAllHFiles() const -> std::vector<std::string> const& {
+	if (hFiles.empty()) {
+		hFiles = getAllFiles({".h"});
+	}
+
+	return hFiles;
+}
+auto Project::getAllHFilesFlat() const -> std::vector<std::string> const& {
+	if (hFilesFlat.empty()) {
+		hFilesFlat = getAllFilesFlat({".h"});
+	}
+
+	return hFilesFlat;
+}
+
+
 
 auto Project::getComIncludePaths() const -> std::vector<std::string> {
 	std::vector<std::string> retList;

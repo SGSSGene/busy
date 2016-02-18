@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include "BuildAction.h"
+#include "FileStates.h"
 
 using namespace aBuild;
 
@@ -52,10 +53,62 @@ void build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 	};
 
 	auto excludedProjects = ws.getExcludedProjects();
+	auto requiredProjects = ws.getAllRequiredProjects();
+
+	auto packagesDir = utils::listDirs("packages", true);
+	for (auto& p : packagesDir) {
+		p = "packages/" + p;
+	}
+	packagesDir.push_back(".");
+
+	std::vector<Project*> autoProjects;
+
+	for (auto const& pDir : packagesDir) {
+		// Find auto projects
+		auto projectDirs = utils::listDirs(pDir + "/src", true);
+		for (auto const& d : projectDirs) {
+			if (excludedProjects.count(d) != 0) continue;
+			auto iter = requiredProjects.find(d);
+			if (iter == requiredProjects.end()) {
+				requiredProjects[d].set(d);
+				requiredProjects[d].setPackagePath(pDir);
+				requiredProjects[d].setAuto(true);
+			}
+
+			auto& project = requiredProjects.at(d);
+			if (project.getIgnore()) continue;
+			if (not project.getAuto()) continue;
+
+			autoProjects.push_back(&project);
+		}
+	}
+	for (auto p : autoProjects) {
+		auto& project = *p;
+		
+		auto dep = project.getDefaultDependencies(requiredProjects);
+		std::cout << "found \"auto\" project: " << p->getName() << std::endl;
+		for (auto const& d : dep) {
+			std::cout << "dep: " << d << std::endl;
+		}
+		std::cout << std::endl;
+		auto optDep = project.getDefaultOptionalDependencies(requiredProjects);
+		for (auto const& d : optDep) {
+			std::cout << "optDep: " << d << std::endl;
+		}
+		std::cout << std::endl;
+
+
+		project.setDependencies(std::move(dep));
+		project.setOptionalDependencies(std::move(optDep));
+	}
+
+
+
 	// Create dependency tree
-	auto projects = ws.getAllRequiredProjects();
+	auto projects = requiredProjects;
 	for (auto& e  : projects) {
 		auto& project = e.second;
+		if (project.getIgnore()) continue;
 		if (excludedProjects.count(project.getName()) != 0) continue;
 
 		if ((project.getName() == rootProjectName) || (rootProjectName == "" && excludedProjects.size() > 0)) {

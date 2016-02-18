@@ -33,9 +33,13 @@ namespace aBuild {
 		DepLibraries depLibraries;
 		bool         noWarnings;
 		bool         wholeArchive;
+		bool         mAuto;
+		bool         mIgnore;
 		std::string  type;
 		mutable std::vector<std::string> cppFiles;
 		mutable std::vector<std::string> cFiles;
+		mutable std::vector<std::string> hFiles;
+		mutable std::vector<std::string> hFilesFlat;
 
 		ProjectLegacy legacy;
 
@@ -44,6 +48,8 @@ namespace aBuild {
 			: packagePath  { "." }
 			, noWarnings   { false }
 			, wholeArchive { false }
+			, mAuto        { false }
+			, mIgnore      { false }
 		{}
 
 		template<typename Node>
@@ -56,6 +62,8 @@ namespace aBuild {
 			node["depLibraries"]         % depLibraries;
 			node["noWarnings"]           % noWarnings           or bool(false);
 			node["wholeArchive"]         % wholeArchive         or bool(false);
+			node["auto"]                 % mAuto                or bool(false);
+			node["ignore"]               % mIgnore              or bool(false);
 		}
 		void set(std::string const& _name) {
 			path = _name;
@@ -83,6 +91,13 @@ namespace aBuild {
 		void setPackagePath(std::string const& s) {
 			packagePath = s;
 		}
+		void setDependencies(Dependencies _dep) {
+			dependencies = std::move(_dep);
+		}
+		void setOptionalDependencies(Dependencies _dep) {
+			optionalDependencies = std::move(_dep);
+		}
+
 		auto getDependencies() const -> Dependencies const& {
 			return dependencies;
 		}
@@ -98,15 +113,28 @@ namespace aBuild {
 		bool getWholeArchive() const {
 			return wholeArchive;
 		}
+		void setAuto(bool _auto) {
+			mAuto = _auto;
+		}
+		bool getAuto() const {
+			return mAuto;
+		}
+		bool getIgnore() const {
+			return mIgnore;
+		}
 
 		void quickFix();
 
 		auto getDefaultTypeByName() const -> std::string;
-		auto getDefaultDependencies() const -> Dependencies;
+		auto getDefaultDependencies(std::map<std::string, Project> const& _projects) const -> Dependencies;
+		auto getDefaultOptionalDependencies(std::map<std::string, Project> const& _projects) const -> Dependencies;
 
 		auto getAllFiles(std::set<std::string> const& _ending) const -> std::vector<std::string>;
+		auto getAllFilesFlat(std::set<std::string> const& _ending) const -> std::vector<std::string>;
 		auto getAllCppFiles() -> std::vector<std::string>&;
 		auto getAllCFiles() -> std::vector<std::string>&;
+		auto getAllHFiles() const -> std::vector<std::string> const&;
+		auto getAllHFilesFlat() const -> std::vector<std::string> const&;
 
 		auto getComIncludePaths() const -> std::vector<std::string>;
 		auto getComSystemIncludePaths(std::set<Project*> const& _dependencies) const -> std::vector<std::string>;
