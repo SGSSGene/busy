@@ -71,6 +71,7 @@ namespace aBuild {
 		}
 		auto getName() const -> std::string {
 			auto l = utils::explode(getPath(), "/");
+			if (l.size() == 0) throw std::runtime_error("project name is invalid: " + getPath());
 			return l[l.size()-1];
 		}
 		auto getPath() const -> std::string const& {
