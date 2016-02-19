@@ -92,10 +92,9 @@ void build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 	}
 	for (auto p : autoProjects) {
 		auto& project = *p;
-		
-		auto dep = project.getDefaultDependencies(&ws, requiredProjects);
-		auto optDep = project.getDefaultOptionalDependencies(&ws, requiredProjects);
 
+		auto dep    = project.getDefaultDependencies(&ws, requiredProjects);
+		auto optDep = project.getDefaultOptionalDependencies(&ws, requiredProjects);
 
 		project.setDependencies(std::move(dep));
 		project.setOptionalDependencies(std::move(optDep));
