@@ -10,6 +10,12 @@ void cleanAll() {
 	utils::rm("./build", true);
 	utils::mkdir("./build");
 
+	Workspace ws(".");
+	auto& config = ws.accessConfigFile();
+
+	config.setLastCompileTime(0);
+	config.accessAutoFileStates().clear();
+	ws.save();
 
 	auto dirs = utils::listDirs(".aBuild", true);
 	for (auto d : dirs) {
