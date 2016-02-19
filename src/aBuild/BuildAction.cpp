@@ -172,7 +172,17 @@ auto BuildAction::getLinkingExecFunc() -> std::function<bool(Project*)> {
 						dependencies.erase(iter);
 					}
 					dependencies.push_back(lib);
-					if (f->getWholeArchive()) {
+
+					// check if any this project or one of its dependencies is a wholeArchive
+					bool wholeArchive = f->getWholeArchive();
+					auto outgoingSubProject = mGraph->getIngoing<Project, Project>(f, true);
+					for (auto const& p : outgoingSubProject) {
+						if (p->getWholeArchive()) {
+							wholeArchive = true;
+							break;
+						}
+					}
+					if (wholeArchive) {
 						dependenciesWholeArchive.insert(lib);
 					}
 
