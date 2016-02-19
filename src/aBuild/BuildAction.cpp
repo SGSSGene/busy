@@ -125,10 +125,10 @@ auto BuildAction::getLinkingExecFunc() -> std::function<bool(Project*)> {
 				}
 			}
 		}
-		std::vector<std::string> depLibraries;
+		std::set<std::string> depLibraries;
 		// Set all depLibraries libraries
 		for (auto const& l : project->getDepLibraries()) {
-			depLibraries.push_back(l);
+			depLibraries.insert(l);
 		}
 
 
@@ -152,6 +152,7 @@ auto BuildAction::getLinkingExecFunc() -> std::function<bool(Project*)> {
 
 
 		std::vector<std::string> dependencies;
+		std::list<std::string>   tempDependencies;
 
 		std::set<std::string>    dependenciesWholeArchive; //! using -Wl,--whole-archive flag to make sure all static c'tor are being used
 
@@ -167,11 +168,11 @@ auto BuildAction::getLinkingExecFunc() -> std::function<bool(Project*)> {
 				for (auto const& f : outgoing) {
 					projectQueue.push(f);
 					std::string lib = mLibPath + f->getName() + ".a";
-					auto iter = std::find(dependencies.begin(), dependencies.end(), lib);
-					if (iter != dependencies.end()) {
-						dependencies.erase(iter);
+					auto iter = std::find(tempDependencies.begin(), tempDependencies.end(), lib);
+					if (iter != tempDependencies.end()) {
+						tempDependencies.erase(iter);
 					}
-					dependencies.push_back(lib);
+					tempDependencies.push_back(lib);
 
 					// check if any this project or one of its dependencies is a wholeArchive
 					bool wholeArchive = f->getWholeArchive();
@@ -190,16 +191,17 @@ auto BuildAction::getLinkingExecFunc() -> std::function<bool(Project*)> {
 					// Set all depLibraries libraries
 					for (auto const& l : f->getDepLibraries()) {
 						std::string lib = l;
-						auto iter = std::find(depLibraries.begin(), depLibraries.end(), lib);
-						if (iter == depLibraries.end()) {
-							depLibraries.push_back(lib);
-						}
+						depLibraries.insert(lib);
 					}
 
 				}
 			}
 		}
-		// Adding all depndencies to the prog call
+		dependencies.reserve(tempDependencies.size());
+		for (auto& s: tempDependencies) {
+			dependencies.emplace_back(std::move(s));
+		}
+		tempDependencies.clear();
 		for (auto const& s : dependencies) {
 			bool wholeArchive = dependenciesWholeArchive.find(s) != dependenciesWholeArchive.end();
 			if (wholeArchive) {

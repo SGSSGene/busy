@@ -145,7 +145,12 @@ public:
 	template<typename T1>
 	auto getIngoingImpl(NodeBase const* _node, bool recursive) const -> std::set<T1*> {
 		std::set<T1*> retSet;
+		getIngoingImpl(_node, recursive, retSet);
+		return retSet;
+	}
 
+	template<typename T1>
+	void getIngoingImpl(NodeBase const* _node, bool recursive, std::set<T1*>& retSet) const {
 		for (auto const& e : mEdges) {
 			if (e.second == _node) {
 				auto ptr = dynamic_cast<Node<T1> const*>(e.first);
@@ -153,14 +158,12 @@ public:
 					retSet.insert(ptr->ptr);
 				}
 				if (recursive) {
-					for (auto const& r : getIngoingImpl<T1>(e.first, recursive)) {
-						retSet.insert(r);
-					}
+					getIngoingImpl<T1>(e.first, recursive, retSet);
 				}
 			}
 		}
-		return retSet;
 	}
+
 
 
 
