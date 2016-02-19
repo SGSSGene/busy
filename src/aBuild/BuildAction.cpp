@@ -382,6 +382,66 @@ auto BuildAction::getCompileCFileFunc() -> std::function<bool(std::string*)> {
 	};
 }
 
+auto BuildAction::getCompileCFileFuncDep() -> std::function<void(std::string*)> {
+	return [this](std::string* f) {
+		std::unique_lock<std::mutex> lock(mMutex);
+
+		std::string inputFile  = *f;
+		std::string outputFile = mObjPath + *f + ".o";
+
+		auto changed = fileOrDependencyChanged(inputFile, outputFile);
+		// if nothing changed, no need to compile
+		getFileStates().setFileChanged(outputFile, changed);
+		getFileStates().setFileChanged(inputFile, changed);
+		if (not changed) {
+			return;
+		}
+
+		auto l = utils::explode(*f, "/");
+
+		auto prog = mToolchain.getCppCompiler();
+
+
+		prog.push_back("-std=c11");
+
+		prog.push_back("-c");
+		prog.push_back(*f);
+		prog.push_back("-M");
+		prog.push_back("-MF");
+		prog.push_back("/dev/stdout");
+
+		utils::mkdir(mObjPath + utils::dirname(*f));
+
+		// Get include dependencies
+		Project* project = *mGraph->getOutgoing<Project, std::string>(f, false).begin();
+
+		for (auto const& e : getIncludeAndDefines(project)) {
+			prog.push_back(e);
+		}
+
+		if (mVerbose) {
+			for (auto const& s : prog) {
+				std::cout<<" "<<s;
+			}
+			std::cout<<std::endl;
+		}
+
+		lock.unlock();
+		process::Process p(prog);
+		if (p.getStatus() == 0) {
+			auto depFiles = utils::explode(p.cout(), std::vector<std::string> {"\n", " ", "\\"});
+
+			std::ofstream ofs(mObjPath + *f + ".d");
+			for (auto iter = ++depFiles.begin(); iter != depFiles.end(); ++iter) {
+				if (iter->length() > 0) {
+					ofs << *iter << std::endl;
+				}
+			}
+		}
+	};
+}
+
+
 auto BuildAction::getCompileClangCompleteFunc() -> std::function<void(std::string*)> {
 	return [this](std::string* f) {
 		std::unique_lock<std::mutex> lock(mMutex);

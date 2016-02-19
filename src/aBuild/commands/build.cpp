@@ -45,10 +45,17 @@ void build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 	auto linkingExecFunc        = action->getLinkingExecFunc();
 	auto _compileFileCppFunc    = action->getCompileCppFileFunc();
 	auto _compileFileCppFuncDep = action->getCompileCppFileFuncDep();
-	auto compileFileCFunc       = action->getCompileCFileFunc();
-	std::function<bool(std::string*)> compileFileCppFunc     = [&] (std::string* p){
+	auto _compileFileCFunc      = action->getCompileCFileFunc();
+	auto _compileFileCFuncDep   = action->getCompileCFileFuncDep();
+
+	std::function<bool(std::string*)> compileFileCppFunc = [&] (std::string* p){
 		bool error = _compileFileCppFunc(p);
 		_compileFileCppFuncDep(p);
+		return error;
+	};
+	std::function<bool(std::string*)> compileFileCFunc = [&] (std::string* p) {
+		bool error = _compileFileCFunc(p);
+		_compileFileCFuncDep(p);
 		return error;
 	};
 

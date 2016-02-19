@@ -37,6 +37,7 @@ namespace aBuild {
 		auto getCompileCppFileFunc()       -> std::function<bool(std::string*)>;
 		auto getCompileCppFileFuncDep()    -> std::function<void(std::string*)>;
 		auto getCompileCFileFunc()         -> std::function<bool(std::string*)>;
+		auto getCompileCFileFuncDep()      -> std::function<void(std::string*)>;
 		auto getCompileClangCompleteFunc() -> std::function<void(std::string*)>;
 	private:
 
