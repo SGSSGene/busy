@@ -151,8 +151,8 @@ auto BuildAction::getLinkingExecFunc() -> std::function<bool(Project*)> {
 
 
 
+		std::list<Project*> orderedProjects;
 		std::vector<std::string> dependencies;
-		std::list<std::string>   tempDependencies;
 
 		std::set<std::string>    dependenciesWholeArchive; //! using -Wl,--whole-archive flag to make sure all static c'tor are being used
 
@@ -165,44 +165,41 @@ auto BuildAction::getLinkingExecFunc() -> std::function<bool(Project*)> {
 			while (not projectQueue.empty()) {
 				auto curProject = projectQueue.front();
 				projectQueue.pop();
+
 				auto outgoing = mGraph->getIngoing<Project, Project>(curProject, true);
-				for (auto const& f : outgoing) {
-					projectQueue.push(f);
-					std::string lib = mLibPath + f->getName() + ".a";
-					auto iter = std::find(tempDependencies.begin(), tempDependencies.end(), lib);
-					if (iter != tempDependencies.end()) {
-						tempDependencies.erase(iter);
+				for (auto const& p : outgoing) {
+					projectQueue.push(p);
+				
+					auto iter = std::find(orderedProjects.begin(), orderedProjects.end(), p);
+					if (iter != orderedProjects.end()) {
+						orderedProjects.erase(iter);
 					}
-					tempDependencies.push_back(lib);
-
-					// check if any this project or one of its dependencies is a wholeArchive
-					bool wholeArchive = f->getWholeArchive();
-					auto outgoingSubProject = mGraph->getIngoing<Project, Project>(f, true);
-					for (auto const& p : outgoingSubProject) {
-						if (p->getWholeArchive()) {
-							wholeArchive = true;
-							break;
-						}
-					}
-					if (wholeArchive) {
-						dependenciesWholeArchive.insert(lib);
-					}
-
-
-					// Set all depLibraries libraries
-					for (auto const& l : f->getDepLibraries()) {
-						std::string lib = l;
-						depLibraries.insert(lib);
-					}
-
+					orderedProjects.push_back(p);
 				}
 			}
 		}
-		dependencies.reserve(tempDependencies.size());
-		for (auto& s: tempDependencies) {
-			dependencies.emplace_back(std::move(s));
+		for (auto project : orderedProjects) {
+			// check if any this project or one of its dependencies is a wholeArchive
+			std::string lib = mLibPath + project->getName() + ".a";
+
+			bool wholeArchive = project->getWholeArchive();
+			auto outgoingSubProject = mGraph->getIngoing<Project, Project>(project, true);
+			for (auto const& p : outgoingSubProject) {
+				if (p->getWholeArchive()) {
+					wholeArchive = true;
+					break;
+				}
+			}
+			if (wholeArchive) {
+				dependenciesWholeArchive.insert(lib);
+			}
+			// Set all depLibraries libraries
+			for (auto const& l : project->getDepLibraries()) {
+				depLibraries.insert(l);
+			}
+			dependencies.emplace_back(lib);
 		}
-		tempDependencies.clear();
+
 		for (auto const& s : dependencies) {
 			bool wholeArchive = dependenciesWholeArchive.find(s) != dependenciesWholeArchive.end();
 			if (wholeArchive) {
