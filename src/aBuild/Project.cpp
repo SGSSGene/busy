@@ -72,6 +72,7 @@ auto Project::getDefaultDependencies(Workspace* _workspace, std::map<std::string
 					auto package = project.getPackagePath();
 					auto pList   = utils::explode(package, "/");
 					auto d       = pList.back() + "/" + project.getName();
+
 					if (std::find(dep.begin(), dep.end(), d) == dep.end()) {
 						dep.emplace_back(d);
 					}
@@ -196,6 +197,29 @@ auto Project::getAllFilesFlat(std::set<std::string> const& _ending) const -> std
 	}
 	return files;
 }
+auto Project::getAllFilesFlatNoEnding() const -> std::vector<std::string> {
+	std::vector<std::string> files;
+
+	std::vector<std::tuple<std::string, std::string>> allPaths;
+	allPaths.emplace_back(std::make_tuple(std::string("./") + getPackagePath() + "/src/" + getPath() + "/", getPath() + "/"));
+	for (auto const& i : getLegacy().includes) {
+		allPaths.emplace_back(std::make_tuple(std::string("./") + getPackagePath() + "/" + i + "/", std::string("")));
+	}
+
+	for (auto const& p : allPaths) {
+		if (not utils::dirExists(std::get<0>(p))) continue;
+
+		auto allFiles = utils::listFiles(std::get<0>(p), true);
+		for (auto const& f : allFiles) {
+			if (f.find('.') == std::string::npos) {
+				files.push_back(std::get<1>(p) + f);
+				break;
+			}
+		}
+	}
+	return files;
+}
+
 
 
 
@@ -221,6 +245,9 @@ auto Project::getAllHFiles() const -> std::vector<std::string> const& {
 auto Project::getAllHFilesFlat() const -> std::vector<std::string> const& {
 	if (hFilesFlat.empty()) {
 		hFilesFlat = getAllFilesFlat({".h"});
+		for (auto& s : getAllFilesFlatNoEnding()) {
+			hFilesFlat.emplace_back(std::move(s));
+		}
 	}
 
 	return hFilesFlat;

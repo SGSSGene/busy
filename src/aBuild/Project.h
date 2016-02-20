@@ -132,6 +132,8 @@ namespace aBuild {
 
 		auto getAllFiles(std::set<std::string> const& _ending) const -> std::vector<std::string>;
 		auto getAllFilesFlat(std::set<std::string> const& _ending) const -> std::vector<std::string>;
+		auto getAllFilesFlatNoEnding() const -> std::vector<std::string>;
+
 		auto getAllCppFiles() -> std::vector<std::string>&;
 		auto getAllCFiles() -> std::vector<std::string>&;
 		auto getAllHFiles() const -> std::vector<std::string> const&;
