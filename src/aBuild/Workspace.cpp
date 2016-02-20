@@ -22,8 +22,8 @@ static void convertJsonToYaml(std::string const& _str) {
 Workspace::Workspace(std::string const& _path)
 	: path {_path + "/"} {
 
-	if (utils::fileExists(path + ".aBuild/workspace.json")) {
-		serializer::json::read(path + ".aBuild/workspace.json", configFile);
+	if (utils::fileExists(path + ".aBuild/workspace.yaml")) {
+		serializer::yaml::read(path + ".aBuild/workspace.yaml", configFile);
 	}
 	createABuildFolder();
 	createPackageFolder();
@@ -33,7 +33,7 @@ Workspace::~Workspace() {
 }
 
 void Workspace::save() {
-	serializer::json::write(path + ".aBuild/workspace.json", configFile);
+	serializer::yaml::write(path + ".aBuild/workspace.yaml", configFile);
 }
 
 auto Workspace::getAllMissingPackages() const -> std::vector<PackageURL> {
