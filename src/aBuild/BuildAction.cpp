@@ -86,20 +86,20 @@ auto BuildAction::getLinkingLibFunc() -> std::function<bool(Project*)> {
 
 
 auto BuildAction::getLinkingExecFunc() -> std::function<bool(Project*)> {
-	return [this](Project* project) {
+	return [this](Project* _project) {
 		std::unique_lock<std::mutex> lock(mMutex);
 		std::string binPath  = mExecPath;
-		if (utils::isStartingWith(project->getPackagePath(), "packages/")) {
-			auto l = utils::explode(project->getPackagePath(), "/");
+		if (utils::isStartingWith(_project->getPackagePath(), "packages/")) {
+			auto l = utils::explode(_project->getPackagePath(), "/");
 			binPath = mExecPath + l[l.size()-1] + "/";
 		}
 		std::string testPath = binPath + "tests/";
 		utils::mkdir(binPath);
 		utils::mkdir(testPath);
 
-		std::string outputFile = binPath+project->getName();
-		if (utils::isStartingWith(project->getName(), "test")) {
-			outputFile = testPath+project->getName();
+		std::string outputFile = binPath+_project->getName();
+		if (utils::isStartingWith(_project->getName(), "test")) {
+			outputFile = testPath+_project->getName();
 		}
 		auto prog = mToolchain.getCppCompiler();
 		prog.push_back("-o");
@@ -117,7 +117,7 @@ auto BuildAction::getLinkingExecFunc() -> std::function<bool(Project*)> {
 
 		// Get file dependencies
 		{
-			auto ingoing = mGraph->getIngoing<std::string, Project>(project, false);
+			auto ingoing = mGraph->getIngoing<std::string, Project>(_project, false);
 			for (auto const& f : ingoing) {
 				prog.push_back(mObjPath + *f + ".o");
 				if (getFileStates().hasFileChanged(*f)) {
@@ -127,14 +127,14 @@ auto BuildAction::getLinkingExecFunc() -> std::function<bool(Project*)> {
 		}
 		std::set<std::string> depLibraries;
 		// Set all depLibraries libraries
-		for (auto const& l : project->getDepLibraries()) {
+		for (auto const& l : _project->getDepLibraries()) {
 			depLibraries.insert(l);
 		}
 
 
 		// Get systemLibraries paths
 		{
-			auto ingoing = mGraph->getIngoing<Project, Project>(project, true);
+			auto ingoing = mGraph->getIngoing<Project, Project>(_project, true);
 			for (auto const& f : ingoing) {
 				for (auto const& i : f->getLegacy().systemLibraries) {
 					prog.push_back("-L");
@@ -159,7 +159,8 @@ auto BuildAction::getLinkingExecFunc() -> std::function<bool(Project*)> {
 		// Get project dependencies
 		{
 			std::queue<Project*> projectQueue;
-			projectQueue.push(project);
+			projectQueue.push(_project);
+
 
 			while (not projectQueue.empty()) {
 				auto curProject = projectQueue.front();
@@ -225,7 +226,7 @@ auto BuildAction::getLinkingExecFunc() -> std::function<bool(Project*)> {
 		getFileStates().setFileChanged(outputFile, _fileChanged);
 		if (_fileChanged) {
 			lock.unlock();
-			return runProcess(prog, project->getNoWarnings());
+			return runProcess(prog, _project->getNoWarnings());
 		}
 		return true;
 	};
