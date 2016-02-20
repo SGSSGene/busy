@@ -81,13 +81,6 @@ auto Project::getDefaultDependencies(Workspace* _workspace, std::map<std::string
 		}
 	}
 
-	dep.erase(std::remove_if(dep.begin(), dep.end(), [&](std::string const& s) {
-		if (std::find(optionalDependencies.begin(), optionalDependencies.end(), s) != optionalDependencies.end()) {
-			return true;
-		}
-		return false;
-	}), dep.end());
-
 	return dep;
 }
 
@@ -150,13 +143,6 @@ auto Project::getDefaultOptionalDependencies(Workspace* _workspace, std::map<std
 			}
 		}
 	}
-
-	dep.erase(std::remove_if(dep.begin(), dep.end(), [&](std::string const& s) {
-		if (std::find(optionalDependencies.begin(), optionalDependencies.end(), s) != optionalDependencies.end()) {
-			return true;
-		}
-		return false;
-	}), dep.end());
 
 	return dep;
 }
