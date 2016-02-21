@@ -96,6 +96,14 @@ void build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 		auto dep    = project.getDefaultDependencies(&ws, requiredProjects);
 		auto optDep = project.getDefaultOptionalDependencies(&ws, requiredProjects);
 
+		for (auto d : optDep) {
+			auto iter = std::find(dep.begin(), dep.end(), d);
+			while (iter != dep.end()) {
+				dep.erase(iter);
+				iter = std::find(dep.begin(), dep.end(), d);
+			}
+		}
+
 		project.setDependencies(std::move(dep));
 		project.setOptionalDependencies(std::move(optDep));
 	}

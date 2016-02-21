@@ -12,6 +12,8 @@ public:
 		int64_t lastChange {0};
 		std::vector<std::string> dependencies;
 		std::vector<std::string> optDependencies;
+		bool    hasChanged {false};
+
 
 		template <typename Node>
 		void serialize(Node& node) {

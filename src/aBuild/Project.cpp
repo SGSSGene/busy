@@ -38,27 +38,38 @@ auto Project::getDefaultDependencies(Workspace* _workspace, std::map<std::string
 	for (auto const& f : allFiles) {
 		auto currentTime = getFileStates().getFileModTime(f);
 		auto lastTime    = fileStates[f].lastChange;
-		if (lastTime == currentTime) {
+		if (lastTime == currentTime and not fileStates[f].hasChanged) {
 			for (auto const& file : fileStates[f].dependencies) {
 				filesOfInterest.insert(file);
 			}
 			continue;
 		}
 		fileStates[f].lastChange = currentTime;
+		fileStates[f].hasChanged = true;
 
 		std::ifstream ifs(f);
 		std::string line;
+
+		bool optionalSection = false;
+
 		while (std::getline(ifs, line)) {
 			auto parts = utils::explode(line, std::vector<std::string>{" ", "\t"});
-			if (parts.size() == 2 && parts[0] == "#include"
+			if (parts.size() == 1 && parts[0] == "#endif") {
+				optionalSection = false;
+			} else if (parts.size() == 2 && parts[0] == "#ifdef" && parts[1].substr(0, 7) == "ABUILD_") {
+				optionalSection = true;
+			} else if (not optionalSection
+			    && parts.size() == 2 && parts[0] == "#include"
 			    && parts[1].front() == '<' && parts[1].back() == '>') {
 
 				auto pos1 = parts[1].find("<")+1;
 				auto pos2 = parts[1].find(">")-pos1;
+
 				auto file = parts[1].substr(pos1, pos2);
 				filesOfInterest.insert(file);
 				fileStates[f].dependencies.push_back(file);
 			}
+
 		}
 	}
 
@@ -93,13 +104,14 @@ auto Project::getDefaultOptionalDependencies(Workspace* _workspace, std::map<std
 	for (auto const& f : allFiles) {
 		auto currentTime = getFileStates().getFileModTime(f);
 		auto lastTime    = fileStates[f].lastChange;
-		if (lastTime == currentTime) {
+		if (lastTime == currentTime and not fileStates[f].hasChanged) {
 			for (auto const& file : fileStates[f].optDependencies) {
 				filesOfInterest.insert(file);
 			}
 			continue;
 		}
 		fileStates[f].lastChange = currentTime;
+		fileStates[f].hasChanged = true;
 
 		std::ifstream ifs(f);
 		std::string line;
@@ -109,7 +121,7 @@ auto Project::getDefaultOptionalDependencies(Workspace* _workspace, std::map<std
 			auto parts = utils::explode(line, std::vector<std::string>{" ", "\t"});
 			if (parts.size() == 1 && parts[0] == "#endif") {
 				optionalSection = false;
-			} else if (parts.size() == 2 && parts[0] == "#ifdef") {
+			} else if (parts.size() == 2 && parts[0] == "#ifdef" && parts[1].substr(0, 7) == "ABUILD_") {
 				optionalSection = true;
 			} else if (optionalSection
 			    && parts.size() == 2 && parts[0] == "#include"
