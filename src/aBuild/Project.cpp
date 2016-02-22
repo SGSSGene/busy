@@ -33,7 +33,7 @@ auto Project::getDefaultTypeByName() const -> std::string {
 auto Project::getDefaultDependencies(Workspace* _workspace, std::map<std::string, Project> const& _projects) const -> Dependencies {
 	auto& fileStates = _workspace->accessConfigFile().accessAutoFileStates();
 	Dependencies dep;
-	auto allFiles = getAllFiles({".cpp", ".c", ".h"});
+	auto allFiles = getAllFiles({".cpp", ".c", ".h", ".hpp"});
 	std::set<std::string> filesOfInterest;
 	for (auto const& f : allFiles) {
 		auto currentTime = getFileStates().getFileModTime(f);
@@ -99,7 +99,7 @@ auto Project::getDefaultDependencies(Workspace* _workspace, std::map<std::string
 auto Project::getDefaultOptionalDependencies(Workspace* _workspace, std::map<std::string, Project> const& _projects) const -> Dependencies {
 	auto& fileStates = _workspace->accessConfigFile().accessAutoFileStates();
 	Dependencies dep;
-	auto allFiles = getAllFiles({".cpp", ".c", ".h"});
+	auto allFiles = getAllFiles({".cpp", ".c", ".h", ".hpp"});
 	std::set<std::string> filesOfInterest;
 	for (auto const& f : allFiles) {
 		auto currentTime = getFileStates().getFileModTime(f);
@@ -249,14 +249,14 @@ auto Project::getAllCFiles() -> std::vector<std::string>& {
 }
 auto Project::getAllHFiles() const -> std::vector<std::string> const& {
 	if (hFiles.empty()) {
-		hFiles = getAllFiles({".h"});
+		hFiles = getAllFiles({".h", ".hpp"});
 	}
 
 	return hFiles;
 }
 auto Project::getAllHFilesFlat() const -> std::vector<std::string> const& {
 	if (hFilesFlat.empty()) {
-		hFilesFlat = getAllFilesFlat({".h"});
+		hFilesFlat = getAllFilesFlat({".h", ".hpp"});
 		for (auto& s : getAllFilesFlatNoEnding()) {
 			hFilesFlat.emplace_back(std::move(s));
 		}
