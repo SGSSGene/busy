@@ -31,8 +31,10 @@ namespace commands {
 	void toolchain(std::string const& _toolchain);
 
 
-	std::map<std::string, aBuild::Toolchain> getAllToolchains(aBuild::Workspace const& ws);
-	std::map<std::string, aBuild::Installation> getAllInstallations(aBuild::Workspace const& ws);
+	auto getAllToolchains(aBuild::Workspace const& ws) -> std::map<std::string, aBuild::Toolchain>;
+	auto getAllFlavors(aBuild::Workspace const& ws) -> std::map<std::string, aBuild::Flavor>;
+
+	auto getAllInstallations(aBuild::Workspace const& ws) -> std::map<std::string, aBuild::Installation>;
 	void checkingMissingPackages  (aBuild::Workspace& ws);
 	void checkingNotNeededPackages(aBuild::Workspace& ws);
 	void checkingInvalidPackages  (aBuild::Workspace& ws);

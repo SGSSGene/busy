@@ -37,6 +37,10 @@ auto Package::getInstallations() const -> Installations const& {
 auto Package::getToolchains() const -> Toolchains const& {
 	return toolchains;
 }
+auto Package::getFlavors() const -> Flavors const& {
+	return flavors;
+}
+
 
 
 }

@@ -28,6 +28,7 @@ namespace {
 	auto swtNoConsole  = commonOptions::make_switch("noterminal",  "Doesn't use pretty output to display current progress");
 	auto swtVerbose    = commonOptions::make_switch("verbose",     "Shows more information while running");
 
+	auto optFlavor     = commonOptions::make_option("flavor", "",   "builds and sets given flavor for future builds (toolchain + buildMode)");
 	auto optJobCt      = commonOptions::make_option("j",       10, "changes the amount of jobs");
 
 //	auto optClone      = commonOptions::make_multi_option("clone", {}, "clones given git repository");
@@ -76,7 +77,6 @@ int main(int argc, char** argv) {
 			commonOptions::print();
 			return 0;
 		}
-
 		std::string relPath = ".";
 		if (not *cmdLsFiles) {
 			relPath = checkCwd();
@@ -93,6 +93,12 @@ int main(int argc, char** argv) {
 				   and utils::fileExists("aBuild.yaml")) {
 			std::cout << "found aBuild.json and aBuild.yaml, using aBuild.yaml." << std::endl;
 		}
+		if (*optFlavor != "") {
+			Workspace ws(".");
+			ws.accessConfigFile().setLastFlavor(*optFlavor);
+			ws.save();
+		}
+
 
 		if (*cmdDocu) {
 			commands::docu();

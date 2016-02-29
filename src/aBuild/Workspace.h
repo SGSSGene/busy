@@ -27,16 +27,19 @@ public:
 		std::string buildMode { "debug" };
 		std::string toolchain { "" };
 		uint64_t    lastCompileTime;
+		std::string mLastFlavor;
 
 		std::map<std::string, FileState> mAutoFileStates;
 
 	public:
 		auto getBuildMode() const -> std::string const&  { return buildMode; }
-		void setBuildMode(std::string const& _buildMode) { buildMode = _buildMode; }
+		void setBuildMode(std::string _buildMode)        { buildMode = std::move(_buildMode); }
 		auto getToolchain() const -> std::string const&  { return toolchain; }
-		void setToolchain(std::string const& _toolchain) { toolchain = _toolchain; }
+		void setToolchain(std::string _toolchain)        { toolchain = std::move(_toolchain); }
 		auto getLastCompileTime() const -> int64_t       { return lastCompileTime; }
 		void setLastCompileTime(int64_t _time)           { lastCompileTime = _time; }
+		auto getLastFlavor() const -> std::string        { return mLastFlavor; }
+		void setLastFlavor(std::string _flavor)          { mLastFlavor = std::move(_flavor); }
 
 		auto accessAutoFileStates() -> std::map<std::string, FileState>& { return mAutoFileStates; }
 
@@ -47,6 +50,7 @@ public:
 			node["toolchain"]       % toolchain;
 			node["lastCompileTime"] % lastCompileTime or 0ull;
 			node["autoFileStates"]  % mAutoFileStates;
+			node["lastFlavor"]      % mLastFlavor;
 		}
 	};
 private:

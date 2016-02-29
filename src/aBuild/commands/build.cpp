@@ -24,13 +24,29 @@ void build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 	Graph graph;
 
 	auto allToolchains = getAllToolchains(ws);
+	auto allFlavors    = getAllFlavors(ws);
 
 	Toolchain toolchain = allToolchains.rbegin()->second;
 	std::string toolchainName = ws.accessConfigFile().getToolchain();
+	std::string lastFlavor    = ws.accessConfigFile().getLastFlavor();
+
+	std::string buildMode = ws.accessConfigFile().getBuildMode();
+
 	if (allToolchains.find(toolchainName) != allToolchains.end()) {
 		toolchain = allToolchains.at(toolchainName);
 	}
+	// check if flavor has toolchain
+	if (allFlavors.find(lastFlavor) != allFlavors.end()) {
+		auto flavor = allFlavors.at(lastFlavor);
+		if (allToolchains.find(flavor.toolchain) != allToolchains.end()) {
+			if (flavor.buildMode == "release" || flavor.buildMode == "debug") {
+				buildMode = flavor.buildMode;
+				toolchain = allToolchains.at(flavor.toolchain);
+			}
+		}
+	}
 	ws.accessConfigFile().setToolchain(toolchain.getName());
+	ws.accessConfigFile().setBuildMode(buildMode);
 	ws.save();
 
 	auto timeSinceBegin = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch());

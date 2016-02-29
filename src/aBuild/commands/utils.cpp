@@ -7,7 +7,7 @@ using namespace aBuild;
 
 namespace commands {
 
-std::map<std::string, Toolchain> getAllToolchains(Workspace const& ws) {
+auto getAllToolchains(Workspace const& ws) -> std::map<std::string, Toolchain> {
 	std::map<std::string, Toolchain> retList;
 
 	std::map<std::string, Toolchain> searchPaths {
@@ -37,7 +37,18 @@ std::map<std::string, Toolchain> getAllToolchains(Workspace const& ws) {
 	}
 	return retList;
 }
-std::map<std::string, Installation> getAllInstallations(Workspace const& ws) {
+auto getAllFlavors(Workspace const& ws) -> std::map<std::string, Flavor> {
+	std::map<std::string, Flavor> retList;
+
+	for (auto const& package : ws.getAllValidPackages(true)) {
+		for (auto const& f : package.getFlavors()) {
+			retList[f.first] = f.second;
+		}
+	}
+	return retList;
+}
+
+auto getAllInstallations(Workspace const& ws) -> std::map<std::string, Installation> {
 	std::map<std::string, Installation> retList;
 	for (auto const& package : ws.getAllValidPackages(true)) {
 		for (auto const& in : package.getInstallations()) {

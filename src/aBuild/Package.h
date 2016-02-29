@@ -5,6 +5,7 @@
 #include "PackageURL.h"
 #include "Project.h"
 #include "Toolchain.h"
+#include "Flavor.h"
 
 namespace aBuild {
 
@@ -13,6 +14,7 @@ namespace aBuild {
 	using Installations   = std::vector<Installation>;
 	using Toolchains      = std::vector<Toolchain>;
 	using Overrides       = std::vector<Override>;
+	using Flavors         = std::map<std::string, Flavor>;
 
 	class Package {
 	private:
@@ -23,6 +25,7 @@ namespace aBuild {
 		Overrides       overrides;
 		Installations   installations;
 		Toolchains      toolchains;
+		Flavors         flavors;
 
 	public:
 		Package(PackageURL const& _url);
@@ -39,6 +42,7 @@ namespace aBuild {
 		auto getOverrides() const -> Overrides const&;
 		auto getInstallations() const -> Installations const&;
 		auto getToolchains() const -> Toolchains const&;
+		auto getFlavors() const -> Flavors const&;
 
 		template <typename Node>
 		void serialize(Node& node) {
@@ -48,6 +52,7 @@ namespace aBuild {
 			node["overrides"]       % overrides;
 			node["installations"]   % installations;
 			node["toolchains"]      % toolchains;
+			node["flavors"]         % flavors;
 			for (auto& p : projects) {
 				p.setPackagePath(url.getPath());
 			}
