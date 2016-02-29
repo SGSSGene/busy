@@ -45,10 +45,62 @@ void clang() {
 	};
 	std::list<std::string> fakeFiles;
 
+	auto requiredProjects = ws.getAllRequiredProjects();
+
+	auto packagesDir = utils::listDirs("packages", true);
+	for (auto& p : packagesDir) {
+		p = "packages/" + p;
+	}
+	packagesDir.push_back(".");
+
+	// find auto dependencies
+	std::vector<Project*> autoProjects;
+	for (auto const& pDir : packagesDir) {
+		if (not utils::fileExists(pDir + "/src")) continue;
+		// Find auto projects
+		auto projectDirs = utils::listDirs(pDir + "/src", true);
+		for (auto const& d : projectDirs) {
+			auto iter = requiredProjects.find(d);
+			if (iter == requiredProjects.end()) {
+				requiredProjects[d].set(d);
+				requiredProjects[d].setPackagePath(pDir);
+				requiredProjects[d].setAuto(true);
+			}
+
+			auto& project = requiredProjects.at(d);
+			if (project.getIgnore()) continue;
+			if (not project.getAuto()) continue;
+
+			autoProjects.push_back(&project);
+		}
+	}
+	for (auto p : autoProjects) {
+		auto& project = *p;
+
+		auto dep    = project.getDefaultDependencies(&ws, requiredProjects);
+		auto optDep = project.getDefaultOptionalDependencies(&ws, requiredProjects);
+
+		for (auto d : optDep) {
+			auto iter = std::find(dep.begin(), dep.end(), d);
+			while (iter != dep.end()) {
+				dep.erase(iter);
+				iter = std::find(dep.begin(), dep.end(), d);
+			}
+		}
+
+		project.setDependencies(std::move(dep));
+		project.setOptionalDependencies(std::move(optDep));
+	}
+	// save all the auto detected dependencies
+	ws.save();
+
+
 	// Create dependency tree
-	auto projects = ws.getAllRequiredProjects();
+	auto projects = requiredProjects;
 	for (auto& e  : projects) {
 		auto& project = e.second;
+		if (project.getIgnore()) continue;
+
 		// Adding linking
 		if (project.getType() == "library") {
 			graph.addNode(&project, linkingLibFunc);
