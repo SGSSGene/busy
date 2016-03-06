@@ -1,22 +1,21 @@
 #include "utils.h"
 
-#include <unistd.h>
-#include <sstream>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-
+#include <cerrno>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <dirent.h>
+#include <fcntl.h>
+#include <fstream>
+#include <iostream>
 #include <iterator>
+#include <libgen.h>
+#include <sstream>
+#include <string>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <dirent.h>
-#include <errno.h>
+#include <unistd.h>
 #include <vector>
-#include <string>
-#include <iostream>
-#include <fstream>
-#include <libgen.h>
 
 #include <process/Process.h>
 
@@ -266,6 +265,24 @@ namespace utils {
 		::sleep(_s);
 	}
 
+	AtomicWrite::AtomicWrite(std::string  _fileName)
+		: mFileName (std::move(_fileName))
+	{
+		mTempFileName = mFileName + ".tempXXXXXX";
+		std::vector<char> str(mTempFileName.size()+1);
+		memcpy(str.data(), &mTempFileName.at(0), mTempFileName.size()+1);
+		mktemp(str.data());
+		mTempFileName = str.data();
 
+	}
+	void AtomicWrite::close() {
+		int fd = open(mTempFileName.c_str(), O_APPEND);
+		fsync(fd);
+		::close(fd);
+		rename(mTempFileName.c_str(), mFileName.c_str());
+	}
+	auto AtomicWrite::getTempName() const -> std::string const& {
+		return mTempFileName;
+	}
 }
 

@@ -33,7 +33,10 @@ Workspace::~Workspace() {
 }
 
 void Workspace::save() {
-	serializer::yaml::write(path + ".aBuild/workspace.yaml", configFile);
+	std::string outFile = path + ".aBuild/workspace.yaml";
+	utils::AtomicWrite atomic(outFile);
+	serializer::yaml::write(atomic.getTempName(), configFile);
+	atomic.close();
 }
 
 auto Workspace::getAllMissingPackages() const -> std::vector<PackageURL> {

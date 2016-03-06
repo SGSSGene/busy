@@ -51,5 +51,15 @@ namespace utils {
 
 	void sleep(unsigned int _s);
 
+
+	class AtomicWrite {
+		std::string mFileName;
+		std::string mTempFileName;
+	public:
+		AtomicWrite(std::string  _fileName);
+		void close();
+		auto getTempName() const -> std::string const&;
+	};
+
 }
 #endif
