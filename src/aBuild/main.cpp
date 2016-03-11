@@ -148,7 +148,9 @@ int main(int argc, char** argv) {
 		} else if (*cmdClang) {
 			commands::clang();
 		} else {
-			commands::build(*cmdBuild, *swtVerbose, *swtNoConsole, *optJobCt);
+
+			auto success = commands::build(*cmdBuild, *swtVerbose, *swtNoConsole, *optJobCt);
+			if (not success) return EXIT_FAILURE;
 		}
 	} catch(std::runtime_error e) {
 		std::cerr<<"exception(runtime_error): " << e.what() << std::endl;

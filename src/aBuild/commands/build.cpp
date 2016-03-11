@@ -10,7 +10,7 @@ using namespace aBuild;
 
 namespace commands {
 
-void build(std::string const& rootProjectName, bool verbose, bool noconsole, int jobs) {
+bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int jobs) {
 	std::vector<Project const*> rootProjects;
 
 	Workspace ws(".");
@@ -212,11 +212,13 @@ void build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 	});
 	if (not success) {
 		std::cout<<"Build failed"<<std::endl;
+		return false;
 	} else {
 		std::cout<<"Build succeeded"<<std::endl;
 		ws.accessConfigFile().setLastCompileTime(timeSinceBegin.count());
 		ws.save();
 	}
+	return true;
 }
 
 }

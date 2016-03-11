@@ -12,7 +12,7 @@
 #include "estd.h"
 
 namespace commands {
-	void build(std::string const& rootProjectName, bool verbose = false, bool noconsole=false, int jobs = 10);
+	bool build(std::string const& rootProjectName, bool verbose = false, bool noconsole=false, int jobs = 10);
 	void clang();
 	void clean();
 	void cleanAll();
