@@ -12,7 +12,7 @@ void clang() {
 	Workspace ws(".");
 
 	checkingMissingPackages(ws);
-	checkingNotNeededPackages(ws);
+	//checkingNotNeededPackages(ws);
 	checkingInvalidPackages(ws);
 	checkingRequiredPackages(ws);
 
