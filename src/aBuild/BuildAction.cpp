@@ -263,7 +263,7 @@ auto BuildAction::getCompileCppFileFunc() -> std::function<bool(std::string*)> {
 		if (mConfigFile->getBuildMode() == "release") {
 			prog.push_back("-O3");
 		} else if (mConfigFile->getBuildMode() == "debug") {
-			prog.push_back("-ggdb");
+			prog.push_back("-g3");
 			prog.push_back("-O0");
 		}
 
@@ -375,7 +375,7 @@ auto BuildAction::getCompileCFileFunc() -> std::function<bool(std::string*)> {
 		if (mConfigFile->getBuildMode() == "release") {
 			prog.push_back("-O3");
 		} else if (mConfigFile->getBuildMode() == "debug") {
-			prog.push_back("-ggdb");
+			prog.push_back("-g3");
 			prog.push_back("-O0");
 		}
 
