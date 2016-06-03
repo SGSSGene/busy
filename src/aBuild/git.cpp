@@ -3,29 +3,34 @@
 #include <algorithm>
 #include <sstream>
 #include <process/Process.h>
+#include <stdlib.h>
 
 
 namespace git {
 
 void clone(std::string const& _cwd, std::string const& _url, std::string const& _commit, std::string const& _dir) {
+	setenv("LANGUAGE", "en_EN:en", 1);
 	process::Process p({"git", "clone", _url, "-b", _commit, _dir}, _cwd);
 	if (p.getStatus() != 0) {
 		throw std::runtime_error("error running git clone on " + _cwd);
 	}
 }
 void pull(std::string const& _cwd) {
+	setenv("LANGUAGE", "en_EN:en", 1);
 	process::Process p({"git", "pull"}, _cwd);
 	if (p.getStatus() != 0) {
 		throw std::runtime_error("error running git pull on " + _cwd);
 	}
 }
 void push(std::string const& _cwd) {
+	setenv("LANGUAGE", "en_EN:en", 1);
 	process::Process p({"git", "push"}, _cwd);
 	if (p.getStatus() != 0) {
 		throw std::runtime_error("error running git push on " + _cwd);
 	}
 }
 bool isDirty(std::string const& _cwd) {
+	setenv("LANGUAGE", "en_EN:en", 1);
 	process::Process p({"git", "status", "--porcelain"}, _cwd);
 
 	if (p.cout() == "" && p.cerr() == "") {
@@ -34,12 +39,14 @@ bool isDirty(std::string const& _cwd) {
 	return true;
 }
 void checkout(std::string const& _cwd, std::string const& _commit) {
+	setenv("LANGUAGE", "en_EN:en", 1);
 	process::Process p({"git", "checkout", _commit}, _cwd);
 	if (p.getStatus() != 0) {
 		throw std::runtime_error("error running git checkout on " + _cwd);
 	}
 }
 auto getBranch(std::string const& _cwd) -> std::string {
+	setenv("LANGUAGE", "en_EN:en", 1);
 	process::Process p({"git", "rev-parse", "--abbrev-ref", "HEAD"}, _cwd);
 	std::string branch = p.cout();
 	branch.pop_back();
@@ -47,6 +54,7 @@ auto getBranch(std::string const& _cwd) -> std::string {
 }
 
 int untrackedFiles(std::string const& _cwd) {
+	setenv("LANGUAGE", "en_EN:en", 1);
 	process::Process p({"git", "status", "--porcelain"}, _cwd);
 	auto const& s = p.cout();
 	auto lines = utils::explode(s, "\n");
@@ -60,6 +68,7 @@ int untrackedFiles(std::string const& _cwd) {
 }
 
 int changedFiles(std::string const& _cwd) {
+	setenv("LANGUAGE", "en_EN:en", 1);
 	process::Process p({"git", "status", "--porcelain"}, _cwd);
 	auto const& s = p.cout();
 	auto lines = utils::explode(s, "\n");
@@ -73,6 +82,7 @@ int changedFiles(std::string const& _cwd) {
 }
 
 int commitsAhead(std::string const& _cwd) {
+	setenv("LANGUAGE", "en_EN:en", 1);
 	process::Process p({"git", "status", "-u", "no"}, _cwd);
 	auto const& s = p.cout();
 	auto lines = utils::explode(s, "\n");
