@@ -9,11 +9,12 @@ void push() {
 	threadPool::ThreadPool<std::string> threadPool;
 	threadPool.spawnThread([&](std::string const& path) {
 		static std::mutex mutex;
+		auto message = git::push(path);
 		{
 			std::unique_lock<std::mutex> lock(mutex);
-			std::cout << "pushing " << path << std::endl;
+			std::cout << "pushed " << path << ": " << message << std::endl;
 		}
-		git::push(path);
+
 	}, 4);
 
 	auto allPackages = utils::listDirs("./packages", true);

@@ -4,6 +4,7 @@
 #include <sstream>
 #include <process/Process.h>
 #include <stdlib.h>
+#include <iostream>
 
 #define TERM_RED                        "\033[31m"
 #define TERM_GREEN                      "\033[32m"
@@ -34,14 +35,18 @@ auto pull(std::string const& _cwd) -> std::string {
 		auto pos2 = p.cout().find("\n", pos1);
 		return TERM_GREEN + p.cout().substr(pos1, pos2) + TERM_RESET;
 	}
-	return TERM_RED "no clue what happend" TERM_RESET+ p.cout();
+	return TERM_RED "no clue what happend" TERM_RESET + p.cerr() + p.cout();
 }
-void push(std::string const& _cwd) {
+auto push(std::string const& _cwd) -> std::string {
 	setenv("LANGUAGE", "en_EN:en", 1);
 	process::Process p({"git", "push"}, _cwd);
 	if (p.getStatus() != 0) {
 		throw std::runtime_error("error running git push on " + _cwd);
 	}
+	if (p.cerr() == "Everything up-to-date\n") {
+		return "Everything up-to-date";
+	}
+	return TERM_GREEN "pushed master" TERM_RESET;
 }
 bool isDirty(std::string const& _cwd) {
 	setenv("LANGUAGE", "en_EN:en", 1);
