@@ -5,7 +5,8 @@
 namespace git {
 
 void clone(std::string const& _cwd, std::string const& _url, std::string const& _commit, std::string const& _dir);
-void pull(std::string const& _cwd);
+
+auto pull(std::string const& _cwd) -> std::string;
 void push(std::string const& _cwd);
 bool isDirty(std::string const& _cwd);
 void checkout(std::string const& _cwd, std::string const& _commit);

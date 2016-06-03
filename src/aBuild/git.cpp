@@ -5,6 +5,10 @@
 #include <process/Process.h>
 #include <stdlib.h>
 
+#define TERM_RED                        "\033[31m"
+#define TERM_GREEN                      "\033[32m"
+#define TERM_RESET                      "\033[0m"
+
 
 namespace git {
 
@@ -15,12 +19,22 @@ void clone(std::string const& _cwd, std::string const& _url, std::string const& 
 		throw std::runtime_error("error running git clone on " + _cwd);
 	}
 }
-void pull(std::string const& _cwd) {
+
+auto pull(std::string const& _cwd) -> std::string {
 	setenv("LANGUAGE", "en_EN:en", 1);
-	process::Process p({"git", "pull"}, _cwd);
+	process::Process p({"git", "pull", "--rebase=false"}, _cwd);
 	if (p.getStatus() != 0) {
 		throw std::runtime_error("error running git pull on " + _cwd);
 	}
+	if (p.cout() == "Already up-to-date.\n") {
+		return "Already up-to-date";
+	}
+	if (p.cout().find("Updating ") != std::string::npos) {
+		auto pos1 = p.cout().find("Updating ");
+		auto pos2 = p.cout().find("\n", pos1);
+		return TERM_GREEN + p.cout().substr(pos1, pos2) + TERM_RESET;
+	}
+	return TERM_RED "no clue what happend" TERM_RESET+ p.cout();
 }
 void push(std::string const& _cwd) {
 	setenv("LANGUAGE", "en_EN:en", 1);

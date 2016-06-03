@@ -13,11 +13,12 @@ void pull() {
 			std::unique_lock<std::mutex> lock(mutex);
 			std::cout<<"ignore " << path << ": Dirty repository"<<std::endl;
 		} else {
+			auto message = git::pull(path);
 			{
 				std::unique_lock<std::mutex> lock(mutex);
-				std::cout << "pulling " << path << std::endl;
+				std::cout << "pulled " << path << ": " << message << std::endl;
 			}
-			git::pull(path);
+
 		}
 	}, 4);
 
