@@ -6,6 +6,11 @@
 #include "BuildAction.h"
 #include "FileStates.h"
 
+#define TERM_RED                        "\033[31m"
+#define TERM_GREEN                      "\033[32m"
+#define TERM_RESET                      "\033[0m"
+
+
 using namespace aBuild;
 
 namespace commands {
@@ -211,10 +216,10 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 		}
 	});
 	if (not success) {
-		std::cout<<"Build failed"<<std::endl;
+		std::cout << TERM_RED "Build failed" TERM_RESET << std::endl;
 		return false;
 	} else {
-		std::cout<<"Build succeeded"<<std::endl;
+		std::cout << TERM_GREEN "Build succeeded" TERM_RESET << std::endl;
 		ws.accessConfigFile().setLastCompileTime(timeSinceBegin.count());
 		ws.save();
 	}
