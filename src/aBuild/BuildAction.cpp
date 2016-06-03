@@ -104,6 +104,7 @@ auto BuildAction::getLinkingExecFunc() -> std::function<bool(Project*)> {
 		auto prog = mToolchain.getCppCompiler();
 		prog.push_back("-o");
 		prog.push_back(outputFile);
+		prog.push_back("-rdynamic");
 
 		bool _fileChanged = false;
 		if (not utils::fileExists(outputFile)) {
@@ -253,6 +254,7 @@ auto BuildAction::getCompileCppFileFunc() -> std::function<bool(std::string*)> {
 		prog.push_back("-Wall");
 		prog.push_back("-Wextra");
 		prog.push_back("-fmessage-length=0");
+		prog.push_back("-rdynamic");
 		prog.push_back("-fmax-errors=3");
 		prog.push_back("-c");
 		prog.push_back(inputFile);
@@ -366,6 +368,7 @@ auto BuildAction::getCompileCFileFunc() -> std::function<bool(std::string*)> {
 		prog.push_back("-Wextra");
 		prog.push_back("-fmessage-length=0");
 		prog.push_back("-fmax-errors=3");
+		prog.push_back("-rdynamic");
 		prog.push_back("-c");
 		prog.push_back(*f);
 		prog.push_back("-o");
