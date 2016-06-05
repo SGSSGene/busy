@@ -269,6 +269,7 @@ auto BuildAction::getCompileCppFileFunc() -> std::function<bool(std::string*)> {
 			prog.push_back("-O0");
 		}
 
+
 		// Get include dependencies
 		auto list = mGraph->getOutgoing<Project, std::string>(f, false);
 		auto iter = list.begin();
@@ -276,6 +277,11 @@ auto BuildAction::getCompileCppFileFunc() -> std::function<bool(std::string*)> {
 
 		for (auto const& e : getIncludeAndDefines(project)) {
 			prog.push_back(e);
+		}
+
+		// setting defines
+		for (auto const& d : project->getDefines()) {
+			prog.push_back("-D" + d);
 		}
 
 		lock.unlock();
@@ -388,6 +394,11 @@ auto BuildAction::getCompileCFileFunc() -> std::function<bool(std::string*)> {
 
 		for (auto const& e : getIncludeAndDefines(project)) {
 			prog.push_back(e);
+		}
+
+		// setting defines
+		for (auto const& d : project->getDefines()) {
+			prog.push_back("-D" + d);
 		}
 
 		lock.unlock();

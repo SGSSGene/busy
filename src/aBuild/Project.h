@@ -8,6 +8,7 @@ namespace aBuild {
 
 	using Dependencies = std::vector<std::string>;
 	using DepLibraries = std::vector<std::string>;
+	using Defines      = std::vector<std::string>;
 
 	struct ProjectLegacy {
 		std::vector<std::string> includes;
@@ -32,6 +33,7 @@ namespace aBuild {
 		Dependencies dependencies;
 		Dependencies optionalDependencies;
 		DepLibraries depLibraries;
+		Defines      defines;
 		bool         noWarnings;
 		bool         wholeArchive;
 		bool         mAuto;
@@ -61,6 +63,7 @@ namespace aBuild {
 			node["type"]                 % type                 or getDefaultTypeByName();
 			node["legacy"]               % legacy;
 			node["depLibraries"]         % depLibraries;
+			node["defines"]              % defines;
 			node["noWarnings"]           % noWarnings           or bool(false);
 			node["wholeArchive"]         % wholeArchive         or bool(false);
 			node["auto"]                 % mAuto                or bool(false);
@@ -107,6 +110,9 @@ namespace aBuild {
 		}
 		auto getDepLibraries() const -> DepLibraries const& {
 			return depLibraries;
+		}
+		auto getDefines() const -> Defines const& {
+			return defines;
 		}
 		bool getNoWarnings() const {
 			return noWarnings;
