@@ -1,6 +1,11 @@
 #include "commands.h"
 #include <threadPool/threadPool.h>
 #include <iostream>
+
+#define TERM_RED                        "\033[31m"
+#define TERM_GREEN                      "\033[32m"
+#define TERM_RESET                      "\033[0m"
+
 using namespace aBuild;
 
 namespace commands {
@@ -11,13 +16,14 @@ void pull() {
 		static std::mutex mutex;
 		if (git::isDirty(path)) {
 			std::unique_lock<std::mutex> lock(mutex);
-			std::cout<<"ignore " << path << ": Dirty repository"<<std::endl;
+			std::cout << TERM_RED "ignore " << path << ": Dirty repository" TERM_RESET << std::endl;
 		} else {
+			auto message = git::pull(path);
 			{
 				std::unique_lock<std::mutex> lock(mutex);
-				std::cout << "pulling " << path << std::endl;
+				std::cout << "pulled " << path << ": " << message << std::endl;
 			}
-			git::pull(path);
+
 		}
 	}, 4);
 

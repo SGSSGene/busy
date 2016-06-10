@@ -5,6 +5,10 @@ using namespace aBuild;
 
 namespace commands {
 
+#define TERM_RED                        "\033[31m"
+#define TERM_GREEN                      "\033[32m"
+#define TERM_RESET                      "\033[0m"
+
 
 void status(std::string _buildMode) {
 	Workspace ws(".");
@@ -56,7 +60,13 @@ void status(std::string _buildMode) {
 					for (int i = p.getName().size(); i < longestName; ++i) {
 						std::cout << " ";
 					}
-					std::cout << " - untracked: " << untracked << ", changed: " << changed << ", ahead: " << ahead << std::endl;
+
+					if (untracked > 0) std::cout << " - " TERM_RED "untracked: " << untracked << TERM_RESET;
+					else std::cout << " - untracked: " << untracked;
+					if (changed > 0) std::cout << ", " TERM_RED "changed: " << changed << TERM_RESET;
+					else std::cout << ", changed: " << changed;
+					if (ahead > 0) std::cout << ", " TERM_GREEN "ahead: " << ahead << TERM_RESET << std::endl;
+					else std::cout << ", ahead: " << ahead << std::endl;
 				} else {
 					std::cout << "  " << p.getName();
 					for (int i = p.getName().size(); i < longestName; ++i) {

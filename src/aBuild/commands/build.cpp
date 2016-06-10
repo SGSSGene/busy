@@ -6,7 +6,13 @@
 #include "BuildAction.h"
 #include "FileStates.h"
 
+#define TERM_RED                        "\033[31m"
+#define TERM_GREEN                      "\033[32m"
+#define TERM_RESET                      "\033[0m"
+
+
 using namespace aBuild;
+
 namespace commands {
 
 bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int jobs) {
@@ -24,6 +30,7 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 
 	auto allToolchains = getAllToolchains(ws);
 	auto allFlavors    = getAllFlavors(ws);
+
 	Toolchain toolchain = allToolchains.rbegin()->second;
 	std::string toolchainName = ws.accessConfigFile().getToolchain();
 	std::string lastFlavor    = ws.accessConfigFile().getLastFlavor();
@@ -48,7 +55,8 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 	ws.accessConfigFile().setBuildMode(buildMode);
 	ws.save();
 
-	auto timeSinceBegin = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()); 
+	auto timeSinceBegin = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch());
+
 
 	std::cout << "Using buildMode: " << ws.accessConfigFile().getBuildMode() << std::endl;
 	std::cout << "Using toolchain: " << ws.accessConfigFile().getToolchain() << std::endl;
@@ -213,11 +221,11 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 	std::chrono::duration<double> time_span = std::chrono::duration_cast<std::chrono::duration<double>>(endTime - startTime);
 
 	if (not success) {
-		std::cout<<std::endl<<"Build \033[31mfailed\033[0m";
+		std::cout<<std::endl<< TERM_RED "Build failed" TERM_RESET;
 		std::cout<< " after " << time_span.count() << " seconds." << std::endl;
 		return false;
 	} else {
-		std::cout<<std::endl<<"Build \033[32msucceeded\033[0m";
+		std::cout<<std::endl<< TERM_GREEN "Build \033[32msucceeded" TERM_RESET;
 		std::cout << " after " << time_span.count() << " seconds." << std::endl;
 		ws.accessConfigFile().setLastCompileTime(timeSinceBegin.count());
 		ws.save();
