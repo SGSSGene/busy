@@ -29,7 +29,7 @@ public:
 		uint64_t    lastCompileTime;
 		std::string mLastFlavor;
 
-		std::map<std::string, FileState> mAutoFileStates;
+		std::map<std::string, std::map<std::string, FileState>> mAutoFileStates;
 
 	public:
 		auto getBuildMode() const -> std::string const&  { return buildMode; }
@@ -41,7 +41,10 @@ public:
 		auto getLastFlavor() const -> std::string        { return mLastFlavor; }
 		void setLastFlavor(std::string _flavor)          { mLastFlavor = std::move(_flavor); }
 
-		auto accessAutoFileStates() -> std::map<std::string, FileState>& { return mAutoFileStates; }
+		auto accessAutoFileStates() -> std::map<std::string, FileState>& {
+			std::string key = buildMode + "/" + toolchain;
+			return mAutoFileStates[key];
+		}
 
 
 		template<typename Node>
