@@ -238,18 +238,21 @@ auto Project::getAllFilesFlatNoEnding() const -> std::vector<std::string> {
 auto Project::getAllCppFiles() -> std::vector<std::string>& {
 	if (cppFiles.empty()) {
 		cppFiles = getAllFiles({".cpp"});
+		std::sort(cppFiles.begin(), cppFiles.end());
 	}
 	return cppFiles;
 }
 auto Project::getAllCFiles() -> std::vector<std::string>& {
 	if (cFiles.empty()) {
 		cFiles = getAllFiles({".c"});
+		std::sort(cFiles.begin(), cFiles.end());
 	}
 	return cFiles;
 }
 auto Project::getAllHFiles() const -> std::vector<std::string> const& {
 	if (hFiles.empty()) {
 		hFiles = getAllFiles({".h", ".hpp"});
+		std::sort(hFiles.begin(), hFiles.end());
 	}
 
 	return hFiles;
@@ -260,6 +263,7 @@ auto Project::getAllHFilesFlat() const -> std::vector<std::string> const& {
 		for (auto& s : getAllFilesFlatNoEnding()) {
 			hFilesFlat.emplace_back(std::move(s));
 		}
+		std::sort(hFilesFlat.begin(), hFilesFlat.end());
 	}
 
 	return hFilesFlat;

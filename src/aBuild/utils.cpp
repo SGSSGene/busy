@@ -1,5 +1,6 @@
 #include "utils.h"
 
+#include <algorithm>
 #include <cerrno>
 #include <cstdio>
 #include <cstdlib>
@@ -85,7 +86,7 @@ namespace utils {
 	}
 
 
-	std::vector<std::string> listFiles(std::string const& _dir, bool recursive) {
+	auto listFiles(std::string const& _dir, bool recursive) -> std::vector<std::string> {
 		std::vector<std::string> entryList;
 
 		DIR* dir;
@@ -107,9 +108,10 @@ namespace utils {
 			}
 		}
 		closedir(dir);
+		std::sort(entryList.begin(), entryList.end());
 		return entryList;
 	}
-	std::vector<std::string> listDirs(std::string const& _dir, bool _ignoreParent) {
+	auto listDirs(std::string const& _dir, bool _ignoreParent) -> std::vector<std::string> {
 		std::vector<std::string> entryList;
 
 		DIR* dir;
@@ -117,6 +119,7 @@ namespace utils {
 		if((dir  = opendir(_dir.c_str())) == NULL) {
 			throw std::runtime_error("Couldn't open dir: " + _dir);
 		}
+
 
 		while ((dirEntry = readdir(dir)) != NULL) {
 			if (dirEntry->d_type & DT_DIR) {
@@ -127,6 +130,7 @@ namespace utils {
 			}
 		}
 		closedir(dir);
+		std::sort(entryList.begin(), entryList.end());
 		return entryList;
 	}
 	void impl_walkFiles(std::string const& _basedir, std::string const& _dir, std::function<void(std::string)> _func) {
@@ -271,10 +275,13 @@ namespace utils {
 		mTempFileName = mFileName + ".tempXXXXXX";
 		std::vector<char> str(mTempFileName.size()+1);
 		memcpy(str.data(), &mTempFileName.at(0), mTempFileName.size()+1);
-		mktemp(str.data());
+		mkstemp(str.data());
 		mTempFileName = str.data();
 
-	}
+
+
+
+}
 	void AtomicWrite::close() {
 		int fd = open(mTempFileName.c_str(), O_APPEND);
 		fsync(fd);
