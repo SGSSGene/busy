@@ -34,10 +34,7 @@ namespace aBuild {
 
 		auto getLinkingLibFunc()           -> std::function<bool(Project*)>;
 		auto getLinkingExecFunc()          -> std::function<bool(Project*)>;
-		auto getCompileCppFileFunc()       -> std::function<bool(std::string*)>;
-		auto getCompileCppFileFuncDep()    -> std::function<void(std::string*)>;
-		auto getCompileCFileFunc()         -> std::function<bool(std::string*)>;
-		auto getCompileCFileFuncDep()      -> std::function<void(std::string*)>;
+		auto getCompileFunc(std::string _std) -> std::function<bool(std::string*)>;
 		auto getCompileClangCompleteFunc() -> std::function<void(std::string*)>;
 	private:
 

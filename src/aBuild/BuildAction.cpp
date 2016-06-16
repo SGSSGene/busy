@@ -231,8 +231,8 @@ auto BuildAction::getLinkingExecFunc() -> std::function<bool(Project*)> {
 }
 
 
-auto BuildAction::getCompileCppFileFunc() -> std::function<bool(std::string*)> {
-	return [this](std::string* f) {
+auto BuildAction::getCompileFunc(std::string _std) -> std::function<bool(std::string*)> {
+	return [this, _std](std::string* f) {
 		std::unique_lock<std::mutex> lock(mMutex);
 
 		std::string inputFile  = *f;
@@ -250,12 +250,13 @@ auto BuildAction::getCompileCppFileFunc() -> std::function<bool(std::string*)> {
 
 		auto prog = mToolchain.getCppCompiler();
 
-		prog.push_back("-std=c++11");
+		prog.push_back("-std=" + _std);
 		prog.push_back("-Wall");
 		prog.push_back("-Wextra");
 		prog.push_back("-fmessage-length=0");
 		prog.push_back("-rdynamic");
 		prog.push_back("-fmax-errors=3");
+		prog.push_back("-MD");
 		prog.push_back("-c");
 		prog.push_back(inputFile);
 		prog.push_back("-o");
@@ -283,189 +284,25 @@ auto BuildAction::getCompileCppFileFunc() -> std::function<bool(std::string*)> {
 		for (auto const& d : project->getDefines()) {
 			prog.push_back("-D" + d);
 		}
-
 		lock.unlock();
-		return runProcess(prog, project->getNoWarnings());
-	};
-}
-auto BuildAction::getCompileCppFileFuncDep() -> std::function<void(std::string*)> {
-	return [this](std::string* f) {
-		std::unique_lock<std::mutex> lock(mMutex);
 
-		std::string inputFile  = *f;
-		std::string outputFile = mObjPath + *f + ".o";
-
-		auto changed = fileOrDependencyChanged(inputFile, outputFile);
-		// if nothing changed, no need to compile
-		getFileStates().setFileChanged(outputFile, changed);
-		getFileStates().setFileChanged(inputFile, changed);
-		if (not changed) {
-			return;
-		}
-
-		auto l = utils::explode(*f, "/");
-
-		auto prog = mToolchain.getCppCompiler();
+		bool success = runProcess(prog, project->getNoWarnings());
+		if (not success) return false;
 
 
-		prog.push_back("-std=c++11");
-
-		prog.push_back("-c");
-		prog.push_back(*f);
-		prog.push_back("-M");
-		prog.push_back("-MF");
-		prog.push_back("/dev/stdout");
-
-		utils::mkdir(mObjPath + utils::dirname(*f));
-
-		// Get include dependencies
-		Project* project = *mGraph->getOutgoing<Project, std::string>(f, false).begin();
-
-		for (auto const& e : getIncludeAndDefines(project)) {
-			prog.push_back(e);
-		}
-
-		if (mVerbose) {
-			for (auto const& s : prog) {
-				std::cout<<" "<<s;
-			}
-			std::cout<<std::endl;
-		}
-
-		lock.unlock();
-		process::Process p(prog);
-		if (p.getStatus() == 0) {
-			auto depFiles = utils::explode(p.cout(), std::vector<std::string> {"\n", " ", "\\"});
-
-			std::ofstream ofs(mObjPath + *f + ".d");
+		std::ifstream ifs(mObjPath + *f + ".d");
+		std::ofstream ofs(mObjPath + *f + ".dd");
+		for (std::string line; std::getline(ifs, line);) {
+			auto depFiles = utils::explode(line, std::vector<std::string> {" ", "\\"});
 			for (auto iter = ++depFiles.begin(); iter != depFiles.end(); ++iter) {
 				if (iter->length() > 0) {
 					ofs << *iter << std::endl;
 				}
 			}
 		}
+		return true;
 	};
 }
-
-auto BuildAction::getCompileCFileFunc() -> std::function<bool(std::string*)> {
-	return [this](std::string* f) {
-		std::unique_lock<std::mutex> lock(mMutex);
-
-		std::string inputFile  = *f;
-		std::string outputFile = mObjPath + *f + ".o";
-
-		auto changed = fileOrDependencyChanged(inputFile, outputFile);
-
-		// if nothing changed, no need to compile
-		getFileStates().setFileChanged(outputFile, changed);
-		getFileStates().setFileChanged(inputFile, changed);
-		if (not changed) {
-			return true;
-		}
-
-		auto l = utils::explode(*f, "/");
-
-		utils::mkdir(mObjPath + utils::dirname(*f));
-
-		auto prog = mToolchain.getCCompiler();
-
-		prog.push_back("-std=c11");
-		prog.push_back("-Wall");
-		prog.push_back("-Wextra");
-		prog.push_back("-fmessage-length=0");
-		prog.push_back("-fmax-errors=3");
-		prog.push_back("-rdynamic");
-		prog.push_back("-c");
-		prog.push_back(*f);
-		prog.push_back("-o");
-		prog.push_back(mObjPath + *f + ".o");
-
-		utils::mkdir(mObjPath + utils::dirname(*f));
-		if (mConfigFile->getBuildMode() == "release") {
-			prog.push_back("-O3");
-		} else if (mConfigFile->getBuildMode() == "debug") {
-			prog.push_back("-g3");
-			prog.push_back("-O0");
-		}
-
-
-		// Get include dependencies
-		Project* project = *mGraph->getOutgoing<Project, std::string>(f, false).begin();
-
-		for (auto const& e : getIncludeAndDefines(project)) {
-			prog.push_back(e);
-		}
-
-		// setting defines
-		for (auto const& d : project->getDefines()) {
-			prog.push_back("-D" + d);
-		}
-
-		lock.unlock();
-		return runProcess(prog, project->getNoWarnings());
-	};
-}
-
-auto BuildAction::getCompileCFileFuncDep() -> std::function<void(std::string*)> {
-	return [this](std::string* f) {
-		std::unique_lock<std::mutex> lock(mMutex);
-
-		std::string inputFile  = *f;
-		std::string outputFile = mObjPath + *f + ".o";
-
-		auto changed = fileOrDependencyChanged(inputFile, outputFile);
-		// if nothing changed, no need to compile
-		getFileStates().setFileChanged(outputFile, changed);
-		getFileStates().setFileChanged(inputFile, changed);
-		if (not changed) {
-			return;
-		}
-
-		auto l = utils::explode(*f, "/");
-
-		auto prog = mToolchain.getCppCompiler();
-
-
-		prog.push_back("-std=c11");
-
-		prog.push_back("-c");
-		prog.push_back(*f);
-		prog.push_back("-M");
-		prog.push_back("-MF");
-		prog.push_back("/dev/stdout");
-
-		utils::mkdir(mObjPath + utils::dirname(*f));
-
-		// Get include dependencies
-		Project* project = *mGraph->getOutgoing<Project, std::string>(f, false).begin();
-
-		for (auto const& e : getIncludeAndDefines(project)) {
-			prog.push_back(e);
-		}
-
-		if (mVerbose) {
-			for (auto const& s : prog) {
-				std::cout<<" "<<s;
-			}
-			std::cout<<std::endl;
-		}
-
-		lock.unlock();
-		process::Process p(prog);
-		if (p.getStatus() == 0) {
-			auto depFiles = utils::explode(p.cout(), std::vector<std::string> {"\n", " ", "\\"});
-
-			std::ofstream ofs(mObjPath + *f + ".d");
-			for (auto iter = ++depFiles.begin(); iter != depFiles.end(); ++iter) {
-				if (iter->length() > 0) {
-					ofs << *iter << std::endl;
-				}
-			}
-		}
-	};
-}
-
-
 auto BuildAction::getCompileClangCompleteFunc() -> std::function<void(std::string*)> {
 	return [this](std::string* f) {
 		std::unique_lock<std::mutex> lock(mMutex);
@@ -531,11 +368,11 @@ bool BuildAction::fileOrDependencyChanged(std::string const& _inputFile, std::st
 		return true;
 	}
 
-	if (not utils::fileExists(mObjPath + _inputFile + ".d")) {
+	if (not utils::fileExists(mObjPath + _inputFile + ".dd")) {
 		return true;
 	}
 
-	std::ifstream ifs(mObjPath + _inputFile + ".d");
+	std::ifstream ifs(mObjPath + _inputFile + ".dd");
 	for (std::string line; std::getline(ifs, line);) {
 		if (not utils::fileExists(line)) {
 			return true;

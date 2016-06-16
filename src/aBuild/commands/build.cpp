@@ -2,6 +2,7 @@
 
 #include <chrono>
 #include <iostream>
+#include <fstream>
 
 #include "BuildAction.h"
 #include "FileStates.h"
@@ -65,20 +66,16 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 
 	auto linkingLibFunc         = action->getLinkingLibFunc();
 	auto linkingExecFunc        = action->getLinkingExecFunc();
-	auto _compileFileCppFunc    = action->getCompileCppFileFunc();
-	auto _compileFileCppFuncDep = action->getCompileCppFileFuncDep();
-	auto _compileFileCFunc      = action->getCompileCFileFunc();
-	auto _compileFileCFuncDep   = action->getCompileCFileFuncDep();
+	auto _compileFileCppFunc    = action->getCompileFunc("c++11");
+	auto _compileFileCFunc      = action->getCompileFunc("c11");
 
 	std::function<bool(std::string*)> compileFileCppFunc = [&] (std::string* p){
-		bool error = _compileFileCppFunc(p);
-		_compileFileCppFuncDep(p);
-		return error;
+		bool success = _compileFileCppFunc(p);
+		return success;
 	};
 	std::function<bool(std::string*)> compileFileCFunc = [&] (std::string* p) {
-		bool error = _compileFileCFunc(p);
-		_compileFileCFuncDep(p);
-		return error;
+		bool success = _compileFileCFunc(p);
+		return success;
 	};
 
 	auto excludedProjects = ws.getExcludedProjects();
@@ -131,6 +128,7 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 	}
 	// save all the auto detected dependencies
 	ws.save();
+
 
 	// Create dependency tree
 	auto projects = requiredProjects;
