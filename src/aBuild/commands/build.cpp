@@ -4,6 +4,8 @@
 #include <iostream>
 #include <fstream>
 
+#include <serializer/serializer.h>
+
 #include "BuildAction.h"
 #include "FileStates.h"
 
@@ -65,15 +67,22 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 	std::unique_ptr<BuildAction> action { new BuildAction(&graph, verbose, &ws.accessConfigFile(), toolchain) };
 
 	auto linkingLibFunc         = action->getLinkingLibFunc();
-	auto linkingExecFunc        = action->getLinkingExecFunc();
+	auto linkingExecFunc        = action->getLinkingExecFunc(false);
+	auto _linkingSLibFunc       = action->getLinkingExecFunc(true);
 	auto _compileFileCppFunc    = action->getCompileFunc("c++11");
 	auto _compileFileCFunc      = action->getCompileFunc("c11");
 
-	std::function<bool(std::string*)> compileFileCppFunc = [&] (std::string* p){
+	std::function<bool(Project*)> linkingSLibFunc = [=] (Project* p) {
+		bool success = linkingLibFunc(p);
+		if (not success) return false;
+		return _linkingSLibFunc(p);
+	};
+
+	std::function<bool(std::string*)> compileFileCppFunc = [=] (std::string* p){
 		bool success = _compileFileCppFunc(p);
 		return success;
 	};
-	std::function<bool(std::string*)> compileFileCFunc = [&] (std::string* p) {
+	std::function<bool(std::string*)> compileFileCFunc = [=] (std::string* p) {
 		bool success = _compileFileCFunc(p);
 		return success;
 	};
@@ -86,6 +95,16 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 		p = "packages/" + p;
 	}
 	packagesDir.push_back(".");
+
+
+	// find all modules that are needed as shared
+	std::set<std::string> projectsNeededAsShared;
+	for (auto& e  : requiredProjects) {
+		// Check which projects are needed as shared libraries
+		for (auto const& l : e.second.getLinkAsShared()) {
+			projectsNeededAsShared.insert(l);
+		}
+	}
 
 	std::vector<Project*> autoProjects;
 
@@ -129,6 +148,8 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 	// save all the auto detected dependencies
 	ws.save();
 
+	// Read root Package name
+	auto rootPackageName = ws.getRootPackageName();
 
 	// Create dependency tree
 	auto projects = requiredProjects;
@@ -141,9 +162,23 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 			rootProjects.push_back(&project);
 		}
 
+
 		// Adding linking
 		if (project.getType() == "library") {
-			graph.addNode(&project, linkingLibFunc);
+			auto path = project.getPackagePath();
+			if (path.size() > 1) {
+				path.erase(path.begin(), path.begin()+9);
+			} else {
+				path = rootPackageName;
+			}
+			auto name = path + "/" + project.getName();
+			if (projectsNeededAsShared.count(name) > 0) {
+				graph.addNode(&project, linkingSLibFunc);
+			} else {
+				graph.addNode(&project, linkingLibFunc);
+			}
+
+
 		} else if (project.getType() == "executable") {
 			graph.addNode(&project,  linkingExecFunc);
 			if (rootProjectName == "" && excludedProjects.size() > 0) {
@@ -174,7 +209,17 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 			if (projects.find(key) == projects.end()) {
 				throw std::runtime_error("Project " + project.getName() + " has unknown dependency " + dep);
 			}
-			graph.addEdge(&projects.at(key), &project);
+			auto depName = dep;
+			if (dep.front() == '.') {
+				depName = rootPackageName + dep.substr(1);
+			}
+			auto const& las = project.getLinkAsShared();
+			if (std::find(las.begin(), las.end(), depName) == las.end()) {
+				graph.addEdge(&projects.at(key), &project);
+			} else {
+				graph.addEdge(&projects.at(key), &project);
+//				std::cout << "not added static link to...." << depName << std::endl;
+			}
 		}
 		// adding dependencies between optional projects
 		for (auto const& dep : project.getOptionalDependencies()) {
@@ -190,7 +235,6 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 			}
 		}
 	}
-
 
 	if (rootProjects.size() > 0) {
 		std::cout << "Compiling project(s): ";
@@ -214,7 +258,7 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 			std::cout << "working on job: "<< done << "/" << total << "/" << totaltotal << std::endl;
 		}
 	});
-	
+
 	std::chrono::high_resolution_clock::time_point endTime = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<double> time_span = std::chrono::duration_cast<std::chrono::duration<double>>(endTime - startTime);
 

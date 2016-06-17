@@ -78,6 +78,8 @@ public:
 
 	auto getExcludedProjects() const -> std::set<std::string>;
 
+	auto getRootPackageName() const -> std::string;
+
 private:
 	void createABuildFolder();
 	void createPackageFolder();

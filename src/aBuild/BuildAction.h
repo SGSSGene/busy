@@ -33,7 +33,7 @@ namespace aBuild {
 
 
 		auto getLinkingLibFunc()           -> std::function<bool(Project*)>;
-		auto getLinkingExecFunc()          -> std::function<bool(Project*)>;
+		auto getLinkingExecFunc(bool _shared = false) -> std::function<bool(Project*)>;
 		auto getCompileFunc(std::string _std) -> std::function<bool(std::string*)>;
 		auto getCompileClangCompleteFunc() -> std::function<void(std::string*)>;
 	private:

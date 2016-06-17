@@ -85,8 +85,8 @@ auto BuildAction::getLinkingLibFunc() -> std::function<bool(Project*)> {
 }
 
 
-auto BuildAction::getLinkingExecFunc() -> std::function<bool(Project*)> {
-	return [this](Project* _project) {
+auto BuildAction::getLinkingExecFunc(bool _shared) -> std::function<bool(Project*)> {
+	return [this, _shared](Project* _project) {
 		std::unique_lock<std::mutex> lock(mMutex);
 		std::string binPath  = mExecPath;
 		if (utils::isStartingWith(_project->getPackagePath(), "packages/")) {
@@ -97,14 +97,22 @@ auto BuildAction::getLinkingExecFunc() -> std::function<bool(Project*)> {
 		utils::mkdir(binPath);
 		utils::mkdir(testPath);
 
-		std::string outputFile = binPath+_project->getName();
-		if (utils::isStartingWith(_project->getName(), "test")) {
+		std::string outputFile = binPath + _project->getName();
+		if (_shared) {
+			outputFile = binPath + "lib" + _project->getName() + ".so";
+		} else if (utils::isStartingWith(_project->getName(), "test")) {
 			outputFile = testPath+_project->getName();
 		}
 		auto prog = mToolchain.getCppCompiler();
 		prog.push_back("-o");
 		prog.push_back(outputFile);
 		prog.push_back("-rdynamic");
+		if (_shared) {
+			prog.push_back("-shared");
+		}
+		prog.push_back("-L");
+		prog.push_back(binPath);
+		prog.push_back("-Wl,-rpath=" + binPath);
 
 		bool _fileChanged = false;
 		if (not utils::fileExists(outputFile)) {
@@ -127,6 +135,7 @@ auto BuildAction::getLinkingExecFunc() -> std::function<bool(Project*)> {
 			}
 		}
 		std::set<std::string> depLibraries;
+		std::set<std::string> depSharedLibraries;
 		// Set all depLibraries libraries
 		for (auto const& l : _project->getDepLibraries()) {
 			depLibraries.insert(l);
@@ -170,7 +179,7 @@ auto BuildAction::getLinkingExecFunc() -> std::function<bool(Project*)> {
 				auto outgoing = mGraph->getIngoing<Project, Project>(curProject, true);
 				for (auto const& p : outgoing) {
 					projectQueue.push(p);
-				
+
 					auto iter = std::find(orderedProjects.begin(), orderedProjects.end(), p);
 					if (iter != orderedProjects.end()) {
 						orderedProjects.erase(iter);
@@ -179,6 +188,8 @@ auto BuildAction::getLinkingExecFunc() -> std::function<bool(Project*)> {
 				}
 			}
 		}
+
+		auto asShared = _project->getLinkAsShared();
 		for (auto project : orderedProjects) {
 			// check if any this project or one of its dependencies is a wholeArchive
 			std::string lib = mLibPath + project->getName() + ".a";
@@ -198,7 +209,19 @@ auto BuildAction::getLinkingExecFunc() -> std::function<bool(Project*)> {
 			for (auto const& l : project->getDepLibraries()) {
 				depLibraries.insert(l);
 			}
-			dependencies.emplace_back(lib);
+
+			std::string packageName = "";
+			if (project->getPackagePath().size() > 2) {
+				packageName = project->getPackagePath().substr(9);
+			} else {
+				Workspace ws(".");
+				packageName = ws.getRootPackageName();
+			}
+			if (std::find(asShared.begin(), asShared.end(), packageName + "/" + project->getName()) == asShared.end()) {
+				dependencies.emplace_back(lib);
+			} else {
+				prog.push_back("-l" + project->getName());
+			}
 		}
 
 		for (auto const& s : dependencies) {
@@ -255,6 +278,7 @@ auto BuildAction::getCompileFunc(std::string _std) -> std::function<bool(std::st
 		prog.push_back("-Wextra");
 		prog.push_back("-fmessage-length=0");
 		prog.push_back("-rdynamic");
+		prog.push_back("-fPIC");
 		prog.push_back("-fmax-errors=3");
 		prog.push_back("-MD");
 		prog.push_back("-c");

@@ -73,6 +73,7 @@ auto Workspace::getAllValidPackages(bool _includingRoot) const -> std::vector<Pa
 			convertJsonToYaml(path2);
 			Package p {PackageURL()};
 			serializer::yaml::read(path2 + "/aBuild.yaml", p);
+
 			retList.push_back(std::move(p));
 		} catch (...) {}
 	}
@@ -197,6 +198,14 @@ auto Workspace::getExcludedProjects() const -> std::set<std::string> {
 		}
 	}
 	return retList;
+}
+
+
+auto Workspace::getRootPackageName() const -> std::string {
+	Package p {PackageURL()};
+	serializer::yaml::read("aBuild.yaml", p);
+	return p.getName();
+
 }
 
 

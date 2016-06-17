@@ -40,10 +40,14 @@ namespace aBuild {
 		bool         mAuto;
 		bool         mIgnore;
 		std::string  type;
+		std::vector<std::string> linkAsShared;
+
 		mutable std::vector<std::string> cppFiles;
 		mutable std::vector<std::string> cFiles;
 		mutable std::vector<std::string> hFiles;
 		mutable std::vector<std::string> hFilesFlat;
+
+		bool mNeedsSharedVersion { false };
 
 		ProjectLegacy legacy;
 
@@ -69,10 +73,18 @@ namespace aBuild {
 			node["wholeArchive"]         % wholeArchive         or bool(false);
 			node["auto"]                 % mAuto                or bool(false);
 			node["ignore"]               % mIgnore              or bool(false);
+			node["linkAsShared"]         % linkAsShared;
 		}
 		void set(std::string const& _name) {
 			path = _name;
 			type = getDefaultTypeByName();
+		}
+
+		void setNeedsSharedVersion() {
+			mNeedsSharedVersion = true;
+		}
+		bool getNeedsSharedVersion() const {
+			return mNeedsSharedVersion;
 		}
 
 		auto getType() const -> std::string const& {
@@ -106,7 +118,7 @@ namespace aBuild {
 		auto getDependencies() const -> Dependencies const& {
 			return dependencies;
 		}
-		auto getOptionalDependencies() const -> Dependencies const & {
+		auto getOptionalDependencies() const -> Dependencies const& {
 			return optionalDependencies;
 		}
 		auto getDepLibraries() const -> DepLibraries const& {
@@ -120,6 +132,9 @@ namespace aBuild {
 		}
 		bool getWholeArchive() const {
 			return wholeArchive;
+		}
+		auto getLinkAsShared() const -> std::vector<std::string> const& {
+			return linkAsShared;
 		}
 		void setAuto(bool _auto) {
 			mAuto = _auto;
