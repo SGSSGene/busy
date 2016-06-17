@@ -185,7 +185,7 @@ auto Project::getAllFiles(std::set<std::string> const& _ending) const -> std::ve
 	}
 	return files;
 }
-auto Project::getAllFilesFlat(std::set<std::string> const& _ending) const -> std::vector<std::string> {
+auto Project::getAllFilesFlat(std::set<std::string> const& _ending, bool noending) const -> std::vector<std::string> {
 	std::vector<std::string> files;
 
 	std::vector<std::tuple<std::string, std::string>> allPaths;
@@ -199,6 +199,10 @@ auto Project::getAllFilesFlat(std::set<std::string> const& _ending) const -> std
 
 		auto allFiles = utils::listFiles(std::get<0>(p), true);
 		for (auto const& f : allFiles) {
+			if (noending and f.find(".") == std::string::npos) {
+				files.push_back(std::get<1>(p) + f);
+				continue;
+			}
 			for (auto const& ending : _ending) {
 				if (utils::isEndingWith(f, ending)) {
 					files.push_back(std::get<1>(p) + f);
@@ -259,10 +263,7 @@ auto Project::getAllHFiles() const -> std::vector<std::string> const& {
 }
 auto Project::getAllHFilesFlat() const -> std::vector<std::string> const& {
 	if (hFilesFlat.empty()) {
-		hFilesFlat = getAllFilesFlat({".h", ".hpp"});
-		for (auto& s : getAllFilesFlatNoEnding()) {
-			hFilesFlat.emplace_back(std::move(s));
-		}
+		hFilesFlat = getAllFilesFlat({".h", ".hpp"}, true);
 		std::sort(hFilesFlat.begin(), hFilesFlat.end());
 	}
 

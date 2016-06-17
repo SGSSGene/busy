@@ -138,7 +138,7 @@ namespace aBuild {
 		auto getDefaultOptionalDependencies(Workspace* _workspace, std::map<std::string, Project> const& _projects) const -> Dependencies;
 
 		auto getAllFiles(std::set<std::string> const& _ending) const -> std::vector<std::string>;
-		auto getAllFilesFlat(std::set<std::string> const& _ending) const -> std::vector<std::string>;
+		auto getAllFilesFlat(std::set<std::string> const& _ending, bool noending = false) const -> std::vector<std::string>;
 		auto getAllFilesFlatNoEnding() const -> std::vector<std::string>;
 
 		auto getAllCppFiles() -> std::vector<std::string>&;

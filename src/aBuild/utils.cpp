@@ -78,9 +78,12 @@ namespace utils {
 		for (int i {0}; i < int(l.size()) -1; ++i) {
 			path += l[i] + "/";
 		}
-		std::string file = l[l.size()-1];
-		for (auto const& s : listDirs(path, true)) {
-			if (s == file) return true;
+		struct stat info;
+		
+		if(stat( path.c_str(), &info ) != 0) {
+			return false;
+		} else if(info.st_mode & S_IFDIR) {
+			return true;
 		}
 		return false;
 	}
@@ -159,9 +162,7 @@ namespace utils {
 		if (str.length() <= end.length()) {
 			return false;
 		}
-		std::string sub = str.substr(str.length() - end.length());
-
-		return sub == end;
+		return strncmp(str.c_str() + str.length() - end.length(), end.c_str(), end.length()) == 0;
 	}
 	bool isStartingWith(std::string const& str, std::string const& start) {
 		if (str.length() <= start.length()) {
@@ -275,7 +276,10 @@ namespace utils {
 		mTempFileName = mFileName + ".tempXXXXXX";
 		std::vector<char> str(mTempFileName.size()+1);
 		memcpy(str.data(), &mTempFileName.at(0), mTempFileName.size()+1);
-		mkstemp(str.data());
+		auto error = mkstemp(str.data());
+		if (error == -1) {
+			throw std::runtime_error(std::string("AtomicWrite doesn't work: ") + std::strerror(errno));
+		}
 		mTempFileName = str.data();
 
 
