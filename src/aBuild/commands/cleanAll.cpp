@@ -24,7 +24,7 @@ void cleanAll() {
 
 	auto files = utils::listFiles(".aBuild", false);
 	for (auto f : files) {
-		if (f != "workspace.json" && f != "workspace.yaml") {
+		if (f != "workspace.bin" && f != "workspace.yaml") {
 			utils::rm(".aBuild/" + f, false);
 		}
 	}

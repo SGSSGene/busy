@@ -26,7 +26,7 @@ public:
 	private:
 		std::string buildMode { "debug" };
 		std::string toolchain { "" };
-		uint64_t    lastCompileTime;
+		uint64_t    lastCompileTime {0};
 		std::string mLastFlavor;
 
 		std::map<std::string, std::map<std::string, FileState>> mAutoFileStates;
@@ -51,7 +51,7 @@ public:
 		void serialize(Node& node) {
 			node["buildMode"]       % buildMode or std::string("debug");
 			node["toolchain"]       % toolchain;
-			node["lastCompileTime"] % lastCompileTime or 0ull;
+			node["lastCompileTime"] % lastCompileTime or 0;
 			node["autoFileStates"]  % mAutoFileStates;
 			node["lastFlavor"]      % mLastFlavor;
 		}

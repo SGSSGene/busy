@@ -22,8 +22,8 @@ static void convertJsonToYaml(std::string const& _str) {
 Workspace::Workspace(std::string const& _path)
 	: path {_path + "/"} {
 
-	if (utils::fileExists(path + ".aBuild/workspace.yaml")) {
-		serializer::yaml::read(path + ".aBuild/workspace.yaml", configFile);
+	if (utils::fileExists(path + ".aBuild/workspace.bin")) {
+		serializer::binary::read(path + ".aBuild/workspace.bin", configFile);
 	}
 	createABuildFolder();
 	createPackageFolder();
@@ -33,9 +33,9 @@ Workspace::~Workspace() {
 }
 
 void Workspace::save() {
-	std::string outFile = path + ".aBuild/workspace.yaml";
+	std::string outFile = path + ".aBuild/workspace.bin";
 	utils::AtomicWrite atomic(outFile);
-	serializer::yaml::write(atomic.getTempName(), configFile);
+	serializer::binary::write(atomic.getTempName(), configFile);
 	atomic.close();
 }
 
