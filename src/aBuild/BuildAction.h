@@ -31,11 +31,10 @@ namespace aBuild {
 		BuildAction(Graph const* _graph, bool _verbose, Workspace::ConfigFile const* _configFile, Toolchain const& _toolchain);
 		bool runProcess(std::vector<std::string> const& prog, bool _noWarnings) const;
 
-
-		auto getLinkingLibFunc()           -> std::function<bool(Project*)>;
+		auto getLinkingLibFunc()                      -> std::function<bool(Project*)>;
 		auto getLinkingExecFunc(bool _shared = false) -> std::function<bool(Project*)>;
-		auto getCompileFunc(std::string _std) -> std::function<bool(std::string*)>;
-		auto getCompileClangCompleteFunc() -> std::function<void(std::string*)>;
+		auto getCompileFunc(std::string _std)         -> std::function<bool(std::string*)>;
+		auto getCompileClangCompleteFunc()            -> std::function<void(std::string*)>;
 	private:
 
 		auto getIncludeAndDefines(Project* project) const -> std::vector<std::string>;

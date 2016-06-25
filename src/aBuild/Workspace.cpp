@@ -6,6 +6,11 @@
 
 #include <iostream>
 
+namespace {
+	const std::string workspaceFile { ".aBuild/workspace.bin" };
+}
+
+
 namespace aBuild {
 
 static void convertJsonToYaml(std::string const& _str) {
@@ -22,8 +27,8 @@ static void convertJsonToYaml(std::string const& _str) {
 Workspace::Workspace(std::string const& _path)
 	: path {_path + "/"} {
 
-	if (utils::fileExists(path + ".aBuild/workspace.bin")) {
-		serializer::binary::read(path + ".aBuild/workspace.bin", configFile);
+	if (utils::fileExists(path + workspaceFile)) {
+		serializer::binary::read(path + workspaceFile, configFile);
 	}
 	createABuildFolder();
 	createPackageFolder();
@@ -33,7 +38,7 @@ Workspace::~Workspace() {
 }
 
 void Workspace::save() {
-	std::string outFile = path + ".aBuild/workspace.bin";
+	std::string outFile = path + workspaceFile;
 	utils::AtomicWrite atomic(outFile);
 	serializer::binary::write(atomic.getTempName(), configFile);
 	atomic.close();
