@@ -318,9 +318,9 @@ auto BuildAction::getCompileFunc(std::string _std) -> std::function<bool(std::st
 		std::ofstream ofs(mObjPath + *f + ".dd");
 		for (std::string line; std::getline(ifs, line);) {
 			auto depFiles = utils::explode(line, std::vector<std::string> {" ", "\\"});
-			for (auto iter = ++depFiles.begin(); iter != depFiles.end(); ++iter) {
-				if (iter->length() > 0) {
-					ofs << *iter << std::endl;
+			for (auto const& s : depFiles) {
+				if (s.length() > 0 && s.back() != ':') {
+					ofs << s << std::endl;
 				}
 			}
 		}
