@@ -17,8 +17,8 @@ void push() {
 
 	}, 4);
 
-	auto allPackages = utils::listDirs("./packages", true);
-	for (auto& p : allPackages) { p = "./packages/"+p; }
+	auto allPackages = utils::listDirs("./extRepositories", true);
+	for (auto& p : allPackages) { p = "./extRepositories/"+p; }
 	allPackages.push_back(".");
 
 	threadPool.queueContainer(allPackages);

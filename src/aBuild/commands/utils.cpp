@@ -78,7 +78,7 @@ void checkingMissingPackages(Workspace& ws) {
 		serializer::yaml::read(repoName + "/aBuild.yaml", package);
 		{
 			std::unique_lock<std::mutex> lock(mutex);
-			utils::mv(repoName, std::string("packages/") + package.getName());
+			utils::mv(repoName, std::string("extRepositories/") + package.getName());
 			auto missingPackages = ws.getAllMissingPackages();
 			for (auto m : missingPackages) {
 				if (queued.count(m) == 0) {

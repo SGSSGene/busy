@@ -23,7 +23,7 @@ namespace aBuild {
 			node["url"]    % url;
 			node["branch"] % branch or std::string("master");
 
-			path = "packages/"+getName();
+			path = "extRepositories/"+getName();
 		}
 	};
 

@@ -17,7 +17,7 @@ void git(std::vector<std::string> const& _options) {
 	auto validPackages = ws.getAllValidPackages();
 	for (auto const& p : validPackages) {
 		std::cout << "processing " << p.getName() << std::endl;
-		process::InteractiveProcess proc(call, "packages/" + p.getName());
+		process::InteractiveProcess proc(call, "extRepositories/" + p.getName());
 	}
 
 	std::cout << "processing " << "." << std::endl;

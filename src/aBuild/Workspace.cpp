@@ -48,7 +48,7 @@ auto Workspace::getAllMissingPackages() const -> std::vector<PackageURL> {
 	std::set<PackageURL> urlSet;
 
 	auto requiredPackages = getAllRequiredPackages();
-	auto allPackages      = utils::listDirs(path + "packages", true);
+	auto allPackages      = utils::listDirs(path + "extRepositories", true);
 
 	for (auto const& r : requiredPackages) {
 		bool found {false};
@@ -70,11 +70,11 @@ auto Workspace::getAllMissingPackages() const -> std::vector<PackageURL> {
 }
 auto Workspace::getAllValidPackages(bool _includingRoot) const -> std::vector<Package> {
 	std::vector<Package> retList;
-	// Reading package directory finding available packages
-	auto allPackages = utils::listDirs(path + "packages", true);
+	// Reading external repository directory finding available repositories
+	auto allPackages = utils::listDirs(path + "extRepositories", true);
 	for (auto const& s : allPackages) {
 		try {
-			std::string path2 = path + "packages/" + s;
+			std::string path2 = path + "extRepositories/" + s;
 			convertJsonToYaml(path2);
 			Package p {PackageURL()};
 			serializer::yaml::read(path2 + "/aBuild.yaml", p);
@@ -91,11 +91,11 @@ auto Workspace::getAllValidPackages(bool _includingRoot) const -> std::vector<Pa
 }
 auto Workspace::getAllInvalidPackages() const -> std::vector<std::string> {
 	std::vector<std::string> retList;
-	// Reading package directory finding available packages
-	auto allPackages = utils::listDirs(path + "packages", true);
+	// Reading repository directory finding available repositories
+	auto allPackages = utils::listDirs(path + "extRepositories", true);
 	for (auto const& s : allPackages) {
 		try {
-			std::string path2 = path + "packages/" + s;
+			std::string path2 = path + "extRepositories/" + s;
 			convertJsonToYaml(path2);
 			Package p {PackageURL()};
 			serializer::yaml::read(path2 + "/aBuild.yaml", p);
@@ -137,7 +137,7 @@ auto Workspace::getAllRequiredPackages() const -> std::vector<PackageURL> {
 }
 auto Workspace::getAllNotRequiredPackages() const -> std::vector<std::string> {
 	auto allRequired = getAllRequiredPackages();
-	auto allPackages = utils::listDirs(path + "packages", true);
+	auto allPackages = utils::listDirs(path + "extRepositories", true);
 
 	for (auto const& s : allRequired) {
 		PackageURL url {s};
@@ -216,13 +216,13 @@ auto Workspace::getRootPackageName() const -> std::string {
 
 
 void Workspace::createPackageFolder() {
-	// check if packages folder exists
-	if (not utils::fileExists(path + "packages")) {
-		utils::mkdir(path + "packages");
+	// check if repository folder exists
+	if (not utils::fileExists(path + "extRepositories")) {
+		utils::mkdir(path + "extRepositories");
 	}
 }
 void Workspace::createABuildFolder() {
-	// check if packages folder exists
+	// check if repository folder exists
 	if (not utils::fileExists(path + ".aBuild")) {
 		utils::mkdir(path + ".aBuild");
 	}

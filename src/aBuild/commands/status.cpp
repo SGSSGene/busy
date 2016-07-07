@@ -39,18 +39,18 @@ void status(std::string _buildMode) {
 			longestName = std::max(longestName, int(p.getName().size()));
 		}
 
-		std::cout << "Status of Packages: " << std::endl;
+		std::cout << "Status of external Repositories: " << std::endl;
 		for (auto const& p : validPackages) {
-			auto path = std::string("packages/") + p.getName();
-			if (&p == &validPackages.back()) { // last packages is always root
+			auto path = std::string("extRepositories/") + p.getName();
+			if (&p == &validPackages.back()) { // last repository is always root
 				path = "./.";
 			}
-			if (&p != &validPackages.back() and (not utils::dirExists("./packages") or not utils::dirExists(path))) {
+			if (&p != &validPackages.back() and (not utils::dirExists("./extRepositories") or not utils::dirExists(path))) {
 				std::cout << "  " << p.getName();
 				for (int i = p.getName().size(); i < longestName; ++i) {
 					std::cout << " ";
 				}
-				std::cout << " - package not cloned" << std::endl;
+				std::cout << " - repository not cloned" << std::endl;
 			} else {
 				auto untracked = git::untrackedFiles(path);
 				auto changed   = git::changedFiles(path);

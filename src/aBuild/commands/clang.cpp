@@ -47,9 +47,9 @@ void clang() {
 
 	auto requiredProjects = ws.getAllRequiredProjects();
 
-	auto packagesDir = utils::listDirs("packages", true);
+	auto packagesDir = utils::listDirs("extRepositories", true);
 	for (auto& p : packagesDir) {
-		p = "packages/" + p;
+		p = "extRepositories/" + p;
 	}
 	packagesDir.push_back(".");
 

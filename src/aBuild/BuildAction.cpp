@@ -89,7 +89,7 @@ auto BuildAction::getLinkingExecFunc(bool _shared) -> std::function<bool(Project
 	return [this, _shared](Project* _project) {
 		std::unique_lock<std::mutex> lock(mMutex);
 		std::string binPath  = mExecPath;
-		if (utils::isStartingWith(_project->getPackagePath(), "packages/")) {
+		if (utils::isStartingWith(_project->getPackagePath(), "extRepositories/")) {
 			auto l = utils::explode(_project->getPackagePath(), "/");
 			binPath = mExecPath + l[l.size()-1] + "/";
 		}

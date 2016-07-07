@@ -1,4 +1,5 @@
 .aBuild
 build
 packages
+extRepositories
 docu

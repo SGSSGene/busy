@@ -53,12 +53,12 @@ std::string checkCwd() {
 		relPath = relPath + "/..";
 		cwd = utils::cwd();
 		if (cwd == "/") {
-			throw std::runtime_error("this is not a aBuild packages/workspace");
+			throw std::runtime_error("this is not a aBuild repository/workspace");
 		}
 	}
 	auto dirs = utils::explode(cwd, "/");
 	if (dirs.size() > 1) {
-		if (dirs[dirs.size()-2] == "packages"
+		if (dirs[dirs.size()-2] == "extRepositories"
 		    and (utils::fileExists("../../aBuild.json")
 		         or utils::fileExists("../../aBuild.yaml"))) {
 			utils::cwd("../..");
