@@ -27,6 +27,7 @@ namespace commands {
 	void status(std::string _buildMode = "");
 	void quickFix();
 	int  listFiles(std::string const& _relPath);
+	void showDep(std::string const& rootProjectName);
 	void toolchains();
 	void toolchain(std::string const& _toolchain);
 

@@ -18,6 +18,7 @@ namespace {
 	auto cmdQF         = commonOptions::make_command("qf",            "Quickfixes aBuild.yaml");
 	auto cmdQuickFix   = commonOptions::make_command("quickfix",      "Quickfixes aBuild.yaml");
 	auto cmdRelPath    = commonOptions::make_command("showRelPath",   "Show the relative path to the root aBuild.yaml file");
+	auto cmdShowDep    = commonOptions::make_command("showDep","",    "Show projects that depends directory on the given project");
 	auto cmdStatus     = commonOptions::make_command("status",        "Shows current status of git repositories");
 	auto cmdTest       = commonOptions::make_command("test",          "Run all unittests");
 	auto cmdToolchain  = commonOptions::make_command("toolchain", "", "Changes current toolchain");
@@ -147,8 +148,9 @@ int main(int argc, char** argv) {
 			commands::toolchain(*cmdToolchain);
 		} else if (*cmdClang) {
 			commands::clang();
+		} else if (*cmdShowDep != "") {
+			commands::showDep(*cmdShowDep);
 		} else {
-
 			auto success = commands::build(*cmdBuild, *swtVerbose, *swtNoConsole, *optJobCt);
 			if (not success) return EXIT_FAILURE;
 		}
