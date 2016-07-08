@@ -56,7 +56,7 @@ auto Project::getDefaultDependencies(Workspace* _workspace, std::map<std::string
 			auto parts = utils::explode(line, std::vector<std::string>{" ", "\t"});
 			if (parts.size() == 1 && parts[0] == "#endif") {
 				optionalSection = false;
-			} else if (parts.size() == 2 && parts[0] == "#ifdef" && parts[1].substr(0, 7) == "ABUILD_") {
+			} else if (parts.size() == 2 && parts[0] == "#ifdef" && parts[1].substr(0, 7) == "BUSY_") {
 				optionalSection = true;
 			} else if (not optionalSection
 			    && parts.size() == 2 && parts[0] == "#include"
@@ -121,7 +121,7 @@ auto Project::getDefaultOptionalDependencies(Workspace* _workspace, std::map<std
 			auto parts = utils::explode(line, std::vector<std::string>{" ", "\t"});
 			if (parts.size() == 1 && parts[0] == "#endif") {
 				optionalSection = false;
-			} else if (parts.size() == 2 && parts[0] == "#ifdef" && parts[1].substr(0, 7) == "ABUILD_") {
+			} else if (parts.size() == 2 && parts[0] == "#ifdef" && parts[1].substr(0, 7) == "BUSY_") {
 				optionalSection = true;
 			} else if (optionalSection
 			    && parts.size() == 2 && parts[0] == "#include"
@@ -314,7 +314,7 @@ auto Project::getComDefines(std::set<Project*> const& _dependencies) const -> st
 
 	// Adding all defines of dependend libraries
 	for (auto const& project : _dependencies) {
-		std::string def = std::string("-DABUILD_");
+		std::string def = std::string("-DBUSY_");
 		for (auto const& c : project->getName()) {
 			if ((c >= 'A' and c <= 'Z')
 			    or (c >= 'a' and c <= 'z')
@@ -329,7 +329,7 @@ auto Project::getComDefines(std::set<Project*> const& _dependencies) const -> st
 
 	// Adding library itself to busy definition
 	{
-		std::string def = std::string("-DABUILD_");
+		std::string def = std::string("-DBUSY_");
 		for (auto const& c : getName()) {
 			if ((c >= 'A' and c <= 'Z')
 			    or (c >= 'a' and c <= 'z')
