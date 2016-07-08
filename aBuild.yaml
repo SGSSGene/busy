@@ -1,9 +1,0 @@
-name: aBuild
-extRepositories:
-  - url: git@cakeface.de:aBuild/Serializer
-  - url: git@cakeface.de:aBuild/CommonOptions
-  - url: git@cakeface.de:aBuild/ThreadPool
-projects:
-  - name: busy
-    type: executable
-
