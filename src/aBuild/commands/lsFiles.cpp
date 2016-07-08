@@ -32,7 +32,7 @@ void printLsFiles(std::string const& _prefix, std::string const& _cwd) {
 }
 
 int listFiles(std::string const& _relPath) {
-	if (not utils::fileExists("aBuild.yaml")) {
+	if (not utils::fileExists("busy.yaml")) {
 		return EXIT_FAILURE;
 	}
 

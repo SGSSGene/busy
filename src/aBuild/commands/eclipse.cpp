@@ -15,7 +15,7 @@ void eclipse() {
 	std::cout << "Generate .cproject and .project files" << std::endl;
 
 	Package package {PackageURL()};
-	serializer::yaml::read("aBuild.yaml", package);
+	serializer::yaml::read("busy.yaml", package);
 
 	Workspace ws(".");
 

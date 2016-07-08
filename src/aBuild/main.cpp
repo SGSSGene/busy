@@ -15,9 +15,9 @@ namespace {
 	auto cmdLsFiles    = commonOptions::make_command("ls-files",      "Print all files of these repositories");
 	auto cmdPull       = commonOptions::make_command("pull",          "Execute pull on all git repositories");
 	auto cmdPush       = commonOptions::make_command("push",          "Execute push on all git repositories");
-	auto cmdQF         = commonOptions::make_command("qf",            "Quickfixes aBuild.yaml");
-	auto cmdQuickFix   = commonOptions::make_command("quickfix",      "Quickfixes aBuild.yaml");
-	auto cmdRelPath    = commonOptions::make_command("showRelPath",   "Show the relative path to the root aBuild.yaml file");
+	auto cmdQF         = commonOptions::make_command("qf",            "Quickfixes busy.yaml");
+	auto cmdQuickFix   = commonOptions::make_command("quickfix",      "Quickfixes busy.yaml");
+	auto cmdRelPath    = commonOptions::make_command("showRelPath",   "Show the relative path to the root busy.yaml file");
 	auto cmdShowDep    = commonOptions::make_command("showDep","",    "Show projects that depends directory on the given project");
 	auto cmdStatus     = commonOptions::make_command("status",        "Shows current status of git repositories");
 	auto cmdTest       = commonOptions::make_command("test",          "Run all unittests");
@@ -47,8 +47,7 @@ using Action = std::function<void()>;
 std::string checkCwd() {
 	std::string relPath = ".";
 	auto cwd = utils::cwd();
-	while (cwd != "/" and not (utils::fileExists("aBuild.json")
-	                           or utils::fileExists("aBuild.yaml"))) {
+	while (cwd != "/" and not utils::fileExists("busy.yaml")) {
 		utils::cwd("..");
 		relPath = relPath + "/..";
 		cwd = utils::cwd();
@@ -59,8 +58,7 @@ std::string checkCwd() {
 	auto dirs = utils::explode(cwd, "/");
 	if (dirs.size() > 1) {
 		if (dirs[dirs.size()-2] == "extRepositories"
-		    and (utils::fileExists("../../aBuild.json")
-		         or utils::fileExists("../../aBuild.yaml"))) {
+		    and utils::fileExists("../../busy.yaml")) {
 			utils::cwd("../..");
 			relPath = relPath + "/../..";
 		}
@@ -83,17 +81,6 @@ int main(int argc, char** argv) {
 			relPath = checkCwd();
 		}
 
-		// converting yaml files to json files
-		if (utils::fileExists("aBuild.json")
-			and not utils::fileExists("aBuild.yaml")) {
-			Package package {PackageURL()};
-			std::cout << "found aBuild.json converting to aBuild.yaml" << std::endl;
-			serializer::json::read("aBuild.json", package);
-			serializer::yaml::write("aBuild.yaml", package);
-		} else if (utils::fileExists("aBuild.json")
-				   and utils::fileExists("aBuild.yaml")) {
-			std::cout << "found aBuild.json and aBuild.yaml, using aBuild.yaml." << std::endl;
-		}
 		if (*optFlavor != "") {
 			Workspace ws(".");
 			ws.accessConfigFile().setLastFlavor(*optFlavor);
