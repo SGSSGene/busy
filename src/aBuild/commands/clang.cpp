@@ -64,12 +64,12 @@ void clang() {
 			if (iter == requiredProjects.end()) {
 				requiredProjects[d].set(d);
 				requiredProjects[d].setPackagePath(pDir);
-				requiredProjects[d].setAuto(true);
+				requiredProjects[d].setAutoDependenciesDiscovery(true);
 			}
 
 			auto& project = requiredProjects.at(d);
 			if (project.getIgnore()) continue;
-			if (not project.getAuto()) continue;
+			if (not project.getAutoDependenciesDiscovery()) continue;
 
 			autoProjects.push_back(&project);
 		}

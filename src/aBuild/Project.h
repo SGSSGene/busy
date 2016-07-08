@@ -37,7 +37,7 @@ namespace aBuild {
 		Defines      defines;
 		bool         noWarnings;
 		bool         wholeArchive;
-		bool         mAuto;
+		bool         mAutoDependenciesDiscovery;
 		bool         mIgnore;
 		std::string  type;
 		std::vector<std::string> linkAsShared;
@@ -56,7 +56,7 @@ namespace aBuild {
 			: packagePath  { "." }
 			, noWarnings   { false }
 			, wholeArchive { false }
-			, mAuto        { false }
+			, mAutoDependenciesDiscovery { true  }
 			, mIgnore      { false }
 		{}
 
@@ -71,7 +71,7 @@ namespace aBuild {
 			node["defines"]              % defines;
 			node["noWarnings"]           % noWarnings           or bool(false);
 			node["wholeArchive"]         % wholeArchive         or bool(false);
-			node["auto"]                 % mAuto                or bool(false);
+			node["autoDependenciesDiscovery"] % mAutoDependenciesDiscovery or bool(true);
 			node["ignore"]               % mIgnore              or bool(false);
 			node["linkAsShared"]         % linkAsShared;
 		}
@@ -136,11 +136,11 @@ namespace aBuild {
 		auto getLinkAsShared() const -> std::vector<std::string> const& {
 			return linkAsShared;
 		}
-		void setAuto(bool _auto) {
-			mAuto = _auto;
+		void setAutoDependenciesDiscovery(bool _auto) {
+			mAutoDependenciesDiscovery = _auto;
 		}
-		bool getAuto() const {
-			return mAuto;
+		bool getAutoDependenciesDiscovery() const {
+			return mAutoDependenciesDiscovery;
 		}
 		bool getIgnore() const {
 			return mIgnore;
