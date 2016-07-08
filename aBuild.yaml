@@ -8,5 +8,6 @@ extRepositories:
   - url: git@cakeface.de:aBuild/CommonOptions
   - url: git@cakeface.de:aBuild/ThreadPool
 projects:
-  - type: executable
-    path: aBuild
+  - name: aBuild
+    type: executable
+

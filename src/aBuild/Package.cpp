@@ -17,8 +17,8 @@ auto Package::getURL() const -> PackageURL const& {
 	return url;
 }
 
-auto Package::getExtDependencies() const -> ExtDependencies const& {
-	return extDependencies;
+auto Package::getExtRepositories() const -> ExtRepositories const& {
+	return extRepositories;
 }
 auto Package::getProjects() const -> Projects const& {
 	return projects;

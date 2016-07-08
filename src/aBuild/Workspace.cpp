@@ -119,7 +119,7 @@ auto Workspace::getAllRequiredPackages() const -> std::vector<PackageURL> {
 	while(not openPackages.empty()) {
 		Package p = openPackages.back();
 		openPackages.pop_back();
-		for (auto const& p2 : p.getExtDependencies()) {
+		for (auto const& p2 : p.getExtRepositories()) {
 			if (estd::find(retList, p2) == retList.end()) {
 				retList.push_back(p2);
 

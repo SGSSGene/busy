@@ -62,7 +62,7 @@ namespace aBuild {
 
 		template<typename Node>
 		void serialize(Node& node) {
-			node["path"]                 % path;
+			node["name"]                 % path;
 			node["dependencies"]         % dependencies;
 			node["optionalDependencies"] % optionalDependencies;
 			node["type"]                 % type                 or getDefaultTypeByName();
