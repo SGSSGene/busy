@@ -310,7 +310,7 @@ auto Project::getComDefines(std::set<Project*> const& _dependencies) const -> st
 	std::vector<std::string> retList;
 
 	// Adding macro to indicate busy is being used
-	retList.push_back("-DABUILD");
+	retList.push_back("-DBUSY");
 
 	// Adding all defines of dependend libraries
 	for (auto const& project : _dependencies) {
