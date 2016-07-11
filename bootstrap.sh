@@ -1,12 +1,12 @@
 #!/bin/bash
 
 mkdir -p packages
-git clone git@cakeface.de:aBuild/Serializer      extRepositories/Serializer
-git clone git@cakeface.de:aBuild/Process         extRepositories/Process
-git clone git@cakeface.de:aBuild/jsoncpp         extRepositories/jsoncpp
-git clone git@cakeface.de:aBuild/CommonOptions   extRepositories/CommonOptions
-git clone git@cakeface.de:aBuild/ThreadPool      extRepositories/ThreadPool
-git clone git@cakeface.de:aBuild/yaml-cpp        extRepositories/yaml-cpp
+git clone git@github.com:SGSSGene/Serializer.git     extRepositories/Serializer
+git clone git@github.com:SGSSGene/Process.git        extRepositories/Process
+git clone git@github.com:SGSSGene/jsoncpp.git        extRepositories/jsoncpp
+git clone git@github.com:SGSSGene/CommonOptions.git  extRepositories/CommonOptions
+git clone git@github.com:SGSSGene/ThreadPool.git     extRepositories/ThreadPool
+git clone git@github.com:SGSSGene/yaml-cpp.git       extRepositories/yaml-cpp
 
 set -e
 
@@ -17,9 +17,9 @@ g++ -ggdb -O0 --std=c++11 \
 	-isystem extRepositories/ThreadPool/src \
 	-isystem extRepositories/yaml-cpp/include \
 	-isystem extRepositories/Process/src \
-	-I src/aBuild/ \
-	src/aBuild/*.cpp \
-	src/aBuild/commands/*.cpp \
+	-I src/busy/ \
+	src/busy/*.cpp \
+	src/busy/commands/*.cpp \
 	extRepositories/Serializer/src/serializer/binary/*.cpp \
 	extRepositories/Serializer/src/serializer/json/*.cpp \
 	extRepositories/Serializer/src/serializer/yaml/*.cpp \
@@ -30,10 +30,10 @@ g++ -ggdb -O0 --std=c++11 \
 	extRepositories/CommonOptions/src/commonOptions/*.cpp \
 	extRepositories/Process/src/process/*.cpp \
 	-lpthread \
-	-o aBuild
-./aBuild build aBuild
+	-o busy
+./busy build busy
 
 echo "run:"
-echo "$ sudo ./aBuild install"
-echo "or copy build/system-gcc-4.9/aBuild to /usr/bin"
+echo "$ sudo ./busy install"
+echo "or copy build/system-gcc-4.9/busy to /usr/bin"
 
