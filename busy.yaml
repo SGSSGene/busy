@@ -1,8 +1,8 @@
 name: aBuild
 extRepositories:
-  - url: git@cakeface.de:aBuild/Serializer
-  - url: git@cakeface.de:aBuild/CommonOptions
-  - url: git@cakeface.de:aBuild/ThreadPool
+  - url: git@github.com:SGSSGene/Serializer.git
+  - url: git@github.com:SGSSGene/CommonOptions.git
+  - url: git@github.com:SGSSGene/ThreadPool.git
 projects:
   - name: busy
     type: executable
