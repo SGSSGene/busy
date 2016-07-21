@@ -127,7 +127,7 @@ int main(int argc, char** argv) {
 			auto success = commands::build(*cmdBuild, *swtVerbose, *swtNoConsole, *optJobCt);
 			if (not success) return EXIT_FAILURE;
 		}
-	} catch(std::runtime_error e) {
+	} catch(std::runtime_error const& e) {
 		std::cerr<<"exception(runtime_error): " << e.what() << std::endl;
 		return EXIT_FAILURE;
 	} catch(std::exception const& e) {
