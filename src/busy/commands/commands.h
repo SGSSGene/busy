@@ -12,7 +12,9 @@
 #include "estd.h"
 
 namespace commands {
+
 	using namespace busy;
+
 	bool build(std::string const& rootProjectName, bool verbose = false, bool noconsole=false, int jobs = 10);
 	void clang();
 	void clean();
@@ -37,7 +39,7 @@ namespace commands {
 	auto getAllFlavors(Workspace const& ws) -> std::map<std::string, Flavor>;
 
 	auto getAllInstallations(Workspace const& ws) -> std::map<std::string, Installation>;
-	void checkingMissingPackages  (Workspace& ws);
+	void cloneMissingPackages  (Workspace const& ws);
 	void checkingNotNeededPackages(Workspace& ws);
 	void checkingInvalidPackages  (Workspace& ws);
 	void checkingRequiredPackages (Workspace& ws);

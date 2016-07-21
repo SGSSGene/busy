@@ -32,7 +32,7 @@ void status(std::string _buildMode) {
 	std::cout << "current buildmode: " << ws.accessConfigFile().getBuildMode() << std::endl;
 	std::cout << "current toolchain: " << ws.accessConfigFile().getToolchain() << std::endl;
 
-	auto validPackages = ws.getAllValidPackages(true);
+	auto validPackages = ws.getAllValidPackages();
 	if (validPackages.size() > 0) {
 		int longestName = 0;
 		for (auto const& p : validPackages) {
@@ -42,7 +42,7 @@ void status(std::string _buildMode) {
 		std::cout << "Status of external Repositories: " << std::endl;
 		for (auto const& p : validPackages) {
 			auto path = std::string("extRepositories/") + p.getName();
-			if (&p == &validPackages.back()) { // last repository is always root
+			if (&p == &validPackages.front()) { // first repository is always root
 				path = "./.";
 			}
 			if (&p != &validPackages.back() and (not utils::dirExists("./extRepositories") or not utils::dirExists(path))) {

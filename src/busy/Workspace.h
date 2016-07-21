@@ -69,7 +69,7 @@ public:
 	ConfigFile& accessConfigFile() { return configFile; }
 
 	auto getAllMissingPackages()     const -> std::vector<PackageURL>;
-	auto getAllValidPackages(bool _includingRoot = false) const -> std::vector<Package>;
+	auto getAllValidPackages()       const -> std::vector<Package>;
 	auto getAllInvalidPackages()     const -> std::vector<std::string>;
 	auto getAllRequiredPackages()    const -> std::vector<PackageURL>;
 	auto getAllNotRequiredPackages() const -> std::vector<std::string>;

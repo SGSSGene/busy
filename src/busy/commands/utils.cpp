@@ -30,7 +30,7 @@ auto getAllToolchains(Workspace const& ws) -> std::map<std::string, Toolchain> {
 		}
 	}
 
-	for (auto const& package : ws.getAllValidPackages(true)) {
+	for (auto const& package : ws.getAllValidPackages()) {
 		for (auto const& tc : package.getToolchains()) {
 			retList[tc.getName()] = tc;
 		}
@@ -40,7 +40,7 @@ auto getAllToolchains(Workspace const& ws) -> std::map<std::string, Toolchain> {
 auto getAllFlavors(Workspace const& ws) -> std::map<std::string, Flavor> {
 	std::map<std::string, Flavor> retList;
 
-	for (auto const& package : ws.getAllValidPackages(true)) {
+	for (auto const& package : ws.getAllValidPackages()) {
 		for (auto const& f : package.getFlavors()) {
 			retList[f.first] = f.second;
 		}
@@ -50,7 +50,7 @@ auto getAllFlavors(Workspace const& ws) -> std::map<std::string, Flavor> {
 
 auto getAllInstallations(Workspace const& ws) -> std::map<std::string, Installation> {
 	std::map<std::string, Installation> retList;
-	for (auto const& package : ws.getAllValidPackages(true)) {
+	for (auto const& package : ws.getAllValidPackages()) {
 		for (auto const& in : package.getInstallations()) {
 			retList[in.getName()] = in;
 		}
@@ -59,7 +59,7 @@ auto getAllInstallations(Workspace const& ws) -> std::map<std::string, Installat
 }
 
 
-void checkingMissingPackages(Workspace& ws) {
+void cloneMissingPackages(Workspace const& ws) {
 
 	std::set<PackageURL> queued;
 

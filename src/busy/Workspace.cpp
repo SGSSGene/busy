@@ -57,24 +57,25 @@ auto Workspace::getAllMissingPackages() const -> std::vector<PackageURL> {
 	}
 	return retList;
 }
-auto Workspace::getAllValidPackages(bool _includingRoot) const -> std::vector<Package> {
+auto Workspace::getAllValidPackages() const -> std::vector<Package> {
 	std::vector<Package> retList;
 	// Reading external repository directory finding available repositories
+	// results is something like {"CommonOptions", "Process", "SelfTest"}
 	auto allPackages = utils::listDirs(path + "extRepositories", true);
-	for (auto const& s : allPackages) {
-		try {
-			std::string path2 = path + "extRepositories/" + s;
-			Package p {PackageURL()};
-			serializer::yaml::read(path2 + "/busy.yaml", p);
 
-			retList.push_back(std::move(p));
-		} catch (...) {}
+	Package p {PackageURL()};
+	serializer::yaml::read("busy.yaml", p);
+	retList.emplace_back(std::move(p));
+
+	for (auto const& package : allPackages) {
+		try {
+			auto packagePath = path + "extRepositories/" + package;
+			Package p {PackageURL()};
+			serializer::yaml::read(packagePath + "/busy.yaml", p);
+			retList.emplace_back(std::move(p));
+		} catch(...) {}
 	}
-	if (_includingRoot) {
-		Package p {PackageURL()};
-		serializer::yaml::read("./busy.yaml", p);
-		retList.push_back(std::move(p));
-	}
+
 	return retList;
 }
 auto Workspace::getAllInvalidPackages() const -> std::vector<std::string> {

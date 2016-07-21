@@ -11,7 +11,7 @@ void clang() {
 
 	Workspace ws(".");
 
-	checkingMissingPackages(ws);
+	cloneMissingPackages(ws);
 	//checkingNotNeededPackages(ws);
 	checkingInvalidPackages(ws);
 	checkingRequiredPackages(ws);

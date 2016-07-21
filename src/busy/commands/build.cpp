@@ -23,7 +23,7 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 
 	Workspace ws(".");
 
-	checkingMissingPackages(ws);
+	cloneMissingPackages(ws);
 	//checkingNotNeededPackages(ws);
 	checkingInvalidPackages(ws);
 	checkingRequiredPackages(ws);

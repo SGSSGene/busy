@@ -20,8 +20,6 @@ void git(std::vector<std::string> const& _options) {
 		process::InteractiveProcess proc(call, "extRepositories/" + p.getName());
 	}
 
-	std::cout << "processing " << "." << std::endl;
-	process::InteractiveProcess proc(call, ".");
 }
 
 }
