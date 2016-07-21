@@ -13,7 +13,7 @@ Installation
 ============
 
 ```
-   git clone git@github.com:SGSSGene/busy.git
+   git clone https://github.com/SGSSGene/busy.git
    cd busy
    ./bootstrap.sh
    sudo cp busy /usr/bin
