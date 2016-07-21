@@ -11,7 +11,7 @@ namespace {
 }
 
 
-namespace aBuild {
+namespace busy {
 
 Workspace::Workspace(std::string const& _path)
 	: path {_path + "/"} {
@@ -19,7 +19,7 @@ Workspace::Workspace(std::string const& _path)
 	if (utils::fileExists(path + workspaceFile)) {
 		serializer::binary::read(path + workspaceFile, configFile);
 	}
-	createABuildFolder();
+	createBusyFolder();
 	createPackageFolder();
 }
 Workspace::~Workspace() {
@@ -202,7 +202,7 @@ void Workspace::createPackageFolder() {
 		utils::mkdir(path + "extRepositories");
 	}
 }
-void Workspace::createABuildFolder() {
+void Workspace::createBusyFolder() {
 	// check if repository folder exists
 	if (not utils::fileExists(path + ".busy")) {
 		utils::mkdir(path + ".busy");

@@ -13,7 +13,7 @@
 #define TERM_PURPLE                     "\033[35m"
 
 
-namespace aBuild {
+namespace busy {
 	class BuildAction {
 	private:
 		Graph const*                 mGraph;

@@ -1,6 +1,6 @@
 #include "Package.h"
 
-namespace aBuild {
+namespace busy {
 
 Package::Package(PackageURL const& _url)
 	: url {_url} {}

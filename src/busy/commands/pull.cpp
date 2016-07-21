@@ -6,7 +6,7 @@
 #define TERM_GREEN                      "\033[32m"
 #define TERM_RESET                      "\033[0m"
 
-using namespace aBuild;
+using namespace busy;
 
 namespace commands {
 

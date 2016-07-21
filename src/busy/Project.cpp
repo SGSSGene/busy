@@ -6,7 +6,7 @@
 #include <algorithm>
 #include <iostream>
 #include <fstream>
-namespace aBuild {
+namespace busy {
 
 void Project::quickFix() {
 //!TODO sometimes wrong dependencies get detected, this is bad

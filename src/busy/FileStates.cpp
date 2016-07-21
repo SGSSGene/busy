@@ -2,7 +2,7 @@
 
 #include "utils.h"
 
-namespace aBuild {
+namespace busy {
 
 auto FileStates::getFileModTime(std::string const& s) -> int64_t {
 	auto iter = mFileModTime.find(s);

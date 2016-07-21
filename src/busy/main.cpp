@@ -35,7 +35,7 @@ namespace {
 //	auto optClone      = commonOptions::make_multi_option("clone", {}, "clones given git repository");
 
 }
-using namespace aBuild;
+using namespace busy;
 
 using Action = std::function<void()>;
 

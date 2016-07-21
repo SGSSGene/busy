@@ -3,7 +3,7 @@
 
 #include <iostream>
 
-namespace aBuild {
+namespace busy {
 bool System::isInstalled() const {
 	if (type == "system") {
 		if (systems.count("ubuntu") > 0) {

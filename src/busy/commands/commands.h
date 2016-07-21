@@ -12,6 +12,7 @@
 #include "estd.h"
 
 namespace commands {
+	using namespace busy;
 	bool build(std::string const& rootProjectName, bool verbose = false, bool noconsole=false, int jobs = 10);
 	void clang();
 	void clean();
@@ -32,12 +33,12 @@ namespace commands {
 	void toolchain(std::string const& _toolchain);
 
 
-	auto getAllToolchains(aBuild::Workspace const& ws) -> std::map<std::string, aBuild::Toolchain>;
-	auto getAllFlavors(aBuild::Workspace const& ws) -> std::map<std::string, aBuild::Flavor>;
+	auto getAllToolchains(Workspace const& ws) -> std::map<std::string, Toolchain>;
+	auto getAllFlavors(Workspace const& ws) -> std::map<std::string, Flavor>;
 
-	auto getAllInstallations(aBuild::Workspace const& ws) -> std::map<std::string, aBuild::Installation>;
-	void checkingMissingPackages  (aBuild::Workspace& ws);
-	void checkingNotNeededPackages(aBuild::Workspace& ws);
-	void checkingInvalidPackages  (aBuild::Workspace& ws);
-	void checkingRequiredPackages (aBuild::Workspace& ws);
+	auto getAllInstallations(Workspace const& ws) -> std::map<std::string, Installation>;
+	void checkingMissingPackages  (Workspace& ws);
+	void checkingNotNeededPackages(Workspace& ws);
+	void checkingInvalidPackages  (Workspace& ws);
+	void checkingRequiredPackages (Workspace& ws);
 }

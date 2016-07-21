@@ -1,6 +1,6 @@
 #pragma once
 
-namespace aBuild {
+namespace busy {
 	struct Flavor {
 		std::string buildMode;
 		std::string toolchain;

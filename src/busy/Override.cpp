@@ -1,6 +1,6 @@
 #include "Override.h"
 
-namespace aBuild {
+namespace busy {
 
 auto Override::getProjectToOverride() const -> std::string const& {
 	return projectToOverride;

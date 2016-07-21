@@ -7,7 +7,7 @@
 #include "Toolchain.h"
 #include "Flavor.h"
 
-namespace aBuild {
+namespace busy {
 
 	using ExtRepositories = std::vector<PackageURL>;
 	using Projects        = std::vector<Project>;

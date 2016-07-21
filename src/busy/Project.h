@@ -4,7 +4,7 @@
 #include <serializer/serializer.h>
 #include "utils.h"
 
-namespace aBuild {
+namespace busy {
 	class Workspace;
 
 	using Dependencies = std::vector<std::string>;

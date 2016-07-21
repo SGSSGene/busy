@@ -2,7 +2,7 @@
 
 #include <serializer/serializer.h>
 
-namespace aBuild {
+namespace busy {
 
 class Installation;
 

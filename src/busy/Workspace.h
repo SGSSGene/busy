@@ -3,7 +3,7 @@
 #include "Package.h"
 #include <serializer/serializer.h>
 
-namespace aBuild {
+namespace busy {
 
 
 class Workspace {
@@ -81,7 +81,7 @@ public:
 	auto getRootPackageName() const -> std::string;
 
 private:
-	void createABuildFolder();
+	void createBusyFolder();
 	void createPackageFolder();
 };
 

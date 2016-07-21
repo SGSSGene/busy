@@ -14,7 +14,7 @@
 #define TERM_RESET                      "\033[0m"
 
 
-using namespace aBuild;
+using namespace busy;
 
 namespace commands {
 

@@ -2,7 +2,7 @@
 
 #include "utils.h"
 
-namespace aBuild {
+namespace busy {
 
 PackageURL::PackageURL()
 	: url {"_"}

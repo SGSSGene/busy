@@ -3,7 +3,7 @@
 #include <process/Process.h>
 #include "FileStates.h"
 
-namespace aBuild {
+namespace busy {
 
 BuildAction::BuildAction(Graph const* _graph, bool _verbose, Workspace::ConfigFile const* _configFile, Toolchain const& _toolchain)
 	: mGraph      {_graph}

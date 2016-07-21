@@ -4,7 +4,7 @@
 
 #include <iostream>
 
-namespace aBuild {
+namespace busy {
 
 bool Toolchain::isInstalled(std::map<std::string, Installation> const& installations) const {
 	for (auto const& i : getInstallations()) {
