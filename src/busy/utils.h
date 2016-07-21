@@ -27,8 +27,8 @@ namespace utils {
 	bool isEndingWith(std::string const& str, std::string const& end);
 	bool isStartingWith(std::string const& str, std::string const& start);
 
-	std::vector<std::string> explode(std::string const& _str, std::string const& _del);
-	std::vector<std::string> explode(std::string const& _str, std::vector<std::string> const& _del);
+	auto explode(std::string const& _str, std::string const& _del) -> std::vector<std::string>;
+	auto explode(std::string const& _str, std::vector<std::string> const& _del) -> std::vector<std::string>;
 
 	std::string runProcess(std::string const& _call);
 

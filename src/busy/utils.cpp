@@ -173,7 +173,7 @@ namespace utils {
 		return sub == start;
 	}
 
-	std::vector<std::string> explode(std::string const& _str, std::string const& _del) {
+	auto explode(std::string const& _str, std::string const& _del) -> std::vector<std::string> {
 		auto str = _str;
 		std::vector<std::string> retList;
 		while (str.length() > 0) {
@@ -191,7 +191,7 @@ namespace utils {
 		return retList;
 	}
 
-	std::vector<std::string> explode(std::string const& _str, std::vector<std::string> const& _del) {
+	auto explode(std::string const& _str, std::vector<std::string> const& _del) -> std::vector<std::string> {
 		auto str = _str;
 		std::vector<std::string> retList;
 		while (str.length() > 0) {

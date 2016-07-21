@@ -32,35 +32,7 @@ void install() {
 
 		std::cout<<"installing "<<f<<"; Error Code: ";
 		auto error = ::rename(oldFile.c_str(), newFile.c_str());
-		switch(errno) {
-		case EACCES:
-			std::cout<<"EACCES"<<std::endl;
-			break;
-		case EBUSY:
-			std::cout<<"EBUSY"<<std::endl;
-			break;
-		case ENOTEMPTY:
-			std::cout<<"ENOTEMPTY"<<std::endl;
-			break;
-		case EINVAL:
-			std::cout<<"EINVAL"<<std::endl;
-			break;
-		case EISDIR:
-			std::cout<<"EISDIR"<<std::endl;
-			break;
-		case EMLINK:
-			std::cout<<"EMLINK"<<std::endl;
-			break;
-		case ENOENT:
-			std::cout<<"ENOENT"<<std::endl;
-			break;
-		case ENOSPC:
-			std::cout<<"ENOSPC"<<std::endl;
-			break;
-		case EROFS:
-			std::cout<<"EROFS"<<std::endl;
-			break;
-		case EXDEV: // files are on different partitions
+		if (errno == EXDEV) {
 			std::vector<std::string> cp;
 			cp.push_back("cp");
 			cp.push_back(oldFile);
@@ -69,7 +41,7 @@ void install() {
 			error = p.getStatus();
 			break;
 		}
-		std::cout<<error<<std::endl;
+		std::cout << error << " " << strerror(errno) << std::endl;
 	}
 }
 
