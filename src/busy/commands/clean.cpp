@@ -10,7 +10,7 @@ void clean() {
 	Workspace ws(".");
 	auto toolchain = ws.accessConfigFile().getToolchain();
 	auto buildMode = ws.accessConfigFile().getBuildMode();
-	auto cleanAbuildPath = std::string("./.aBuild/") + toolchain + "/" + buildMode + "/";
+	auto cleanAbuildPath = std::string("./.busy/") + toolchain + "/" + buildMode + "/";
 	auto cleanBuildPath  = std::string("./build/") + toolchain + "/" + buildMode + "/";
 	auto& config = ws.accessConfigFile();
 	config.setLastCompileTime(0);

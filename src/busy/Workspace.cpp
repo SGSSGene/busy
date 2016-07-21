@@ -7,7 +7,7 @@
 #include <iostream>
 
 namespace {
-	const std::string workspaceFile { ".aBuild/workspace.bin" };
+	const std::string workspaceFile { ".busy/workspace.bin" };
 }
 
 
@@ -204,8 +204,8 @@ void Workspace::createPackageFolder() {
 }
 void Workspace::createABuildFolder() {
 	// check if repository folder exists
-	if (not utils::fileExists(path + ".aBuild")) {
-		utils::mkdir(path + ".aBuild");
+	if (not utils::fileExists(path + ".busy")) {
+		utils::mkdir(path + ".busy");
 	}
 }
 

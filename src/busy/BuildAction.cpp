@@ -11,7 +11,7 @@ BuildAction::BuildAction(Graph const* _graph, bool _verbose, Workspace::ConfigFi
 	, mConfigFile {_configFile}
 	, mToolchain  {_toolchain}
 {
-	mBuildPath = ".aBuild/" + mConfigFile->getToolchain() + "/" + mConfigFile->getBuildMode() + "/";
+	mBuildPath = ".busy/" + mConfigFile->getToolchain() + "/" + mConfigFile->getBuildMode() + "/";
 	mLibPath   = mBuildPath + "lib/";
 	mObjPath   = mBuildPath + "obj/";
 	mExecPath  = "build/" + mConfigFile->getToolchain() + "/" + mConfigFile->getBuildMode() + "/";

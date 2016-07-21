@@ -17,15 +17,15 @@ void cleanAll() {
 	config.accessAutoFileStates().clear();
 	ws.save();
 
-	auto dirs = utils::listDirs(".aBuild", true);
+	auto dirs = utils::listDirs(".busy", true);
 	for (auto d : dirs) {
-		utils::rm(".aBuild/" + d, true);
+		utils::rm(".busy/" + d, true);
 	}
 
-	auto files = utils::listFiles(".aBuild", false);
+	auto files = utils::listFiles(".busy", false);
 	for (auto f : files) {
 		if (f != "workspace.bin" && f != "workspace.yaml") {
-			utils::rm(".aBuild/" + f, false);
+			utils::rm(".busy/" + f, false);
 		}
 	}
 	std::cout << "clean all done" << std::endl;

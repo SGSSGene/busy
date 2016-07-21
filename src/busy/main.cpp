@@ -6,7 +6,7 @@ namespace {
 	auto cmdBuild      = commonOptions::make_command("build",     "", "builds a specific project");
 	auto cmdBuildMode  = commonOptions::make_command("buildMode", "", "Changes current buildmode to release or debug");
 	auto cmdClang      = commonOptions::make_command("clang",         "Generates a .clang_complete file");
-	auto cmdClean      = commonOptions::make_command("clean",         "Cleans current build and .aBuild directory");
+	auto cmdClean      = commonOptions::make_command("clean",         "Cleans current build and .busy directory");
 	auto cmdCleanAll   = commonOptions::make_command("cleanall",      "deletes all build files");
 	auto cmdDocu       = commonOptions::make_command("docu",          "Generates html docu");
 	auto cmdEclipse    = commonOptions::make_command("eclipse",       "Generate Eclipse .project and .cproject file");
@@ -41,7 +41,7 @@ using Action = std::function<void()>;
 
 /**
  * check current working dir, and changes, if this is very likely to be
- * the wrong one. idea is to always endup in the cwd where aBuild.json is
+ * the wrong one. idea is to always endup in the cwd where busy.yaml is
  * located
  */
 std::string checkCwd() {
@@ -52,7 +52,7 @@ std::string checkCwd() {
 		relPath = relPath + "/..";
 		cwd = utils::cwd();
 		if (cwd == "/") {
-			throw std::runtime_error("this is not a aBuild repository/workspace");
+			throw std::runtime_error("this is not a busy repository/workspace");
 		}
 	}
 	auto dirs = utils::explode(cwd, "/");

@@ -66,8 +66,8 @@ void checkingMissingPackages(Workspace& ws) {
 	std::mutex mutex;
 	threadPool::ThreadPool<PackageURL> threadPool;
 	threadPool.spawnThread([&](PackageURL const& url) {
-		utils::mkdir(".aBuild/tmp");
-		std::string repoName = std::string(".aBuild/tmp/repo_") + url.getName() + ".git";
+		utils::mkdir(".busy/tmp");
+		std::string repoName = std::string(".busy/tmp/repo_") + url.getName() + ".git";
 		utils::rm(repoName, true, true);
 		{
 			std::unique_lock<std::mutex> lock(mutex);
