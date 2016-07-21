@@ -5,6 +5,7 @@
 namespace busyConfig {
 
 	struct PackageURL {
+		std::string name;
 		std::string url;
 		std::string branch;
 
@@ -12,7 +13,11 @@ namespace busyConfig {
 		void serialize(Node& node) {
 			node["url"]    % url;
 			node["branch"] % branch or std::string("master");
+
+			generateNameFromURL();
 		}
+
+		void generateNameFromURL();
 	};
 
 }
