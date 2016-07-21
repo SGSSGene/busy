@@ -1,6 +1,6 @@
 #pragma once
 
-#include <serializer/serializer.h>
+#include <busyConfig/busyConfig.h>
 
 namespace busy {
 
@@ -10,6 +10,7 @@ namespace busy {
 		std::string branch;
 		std::string path;
 	public:
+		PackageURL(busyConfig::PackageURL const& _url);
 		PackageURL();
 		auto getName() const -> std::string;
 		auto getURL() const -> std::string const&;
@@ -17,14 +18,5 @@ namespace busy {
 		auto getPath() const -> std::string const&;
 		bool operator<(PackageURL const& _other) const;
 		bool operator==(PackageURL const& _other) const;
-
-		template<typename Node>
-		void serialize(Node& node) {
-			node["url"]    % url;
-			node["branch"] % branch or std::string("master");
-
-			path = "extRepositories/"+getName();
-		}
 	};
-
 }

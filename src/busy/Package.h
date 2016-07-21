@@ -7,6 +7,8 @@
 #include "Toolchain.h"
 #include "Flavor.h"
 
+#include <busyConfig/busyConfig.h>
+
 namespace busy {
 
 	using ExtRepositories = std::vector<PackageURL>;
@@ -28,6 +30,7 @@ namespace busy {
 		Flavors         flavors;
 
 	public:
+		Package(PackageURL const& _url, busyConfig::Package const& _package);
 		Package(PackageURL const& _url);
 
 		auto getName() const -> std::string const&;
@@ -43,20 +46,6 @@ namespace busy {
 		auto getInstallations() const -> Installations const&;
 		auto getToolchains() const -> Toolchains const&;
 		auto getFlavors() const -> Flavors const&;
-
-		template <typename Node>
-		void serialize(Node& node) {
-			node["name"]            % name;
-			node["extRepositories"] % extRepositories;
-			node["projects"]        % projects;
-			node["overrides"]       % overrides;
-			node["installations"]   % installations;
-			node["toolchains"]      % toolchains;
-			node["flavors"]         % flavors;
-			for (auto& p : projects) {
-				p.setPackagePath(url.getPath());
-			}
-		}
 	};
 
 	auto readPackage(std::string const& _path, PackageURL _url = PackageURL()) -> Package;

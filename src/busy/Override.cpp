@@ -2,6 +2,12 @@
 
 namespace busy {
 
+Override::Override(busyConfig::Override const& _override) {
+	projectToOverride     = _override.projectToOverride;
+	excludeFromToolchains = _override.excludeFromToolchains;
+}
+
+
 auto Override::getProjectToOverride() const -> std::string const& {
 	return projectToOverride;
 }

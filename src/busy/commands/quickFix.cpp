@@ -1,11 +1,13 @@
 #include "commands.h"
+#include <iostream>
 
 using namespace busy;
 
 namespace commands {
 
 void quickFix() {
-	Package package {PackageURL()};
+	std::cerr << "quick fix is not implemented\n";
+/*	Package package {PackageURL()};
 
 	if (utils::fileExists("busy.yaml")) {
 		package = readPackage(".");
@@ -34,7 +36,7 @@ void quickFix() {
 	for (auto& project : package.accessProjects()) {
 		project.quickFix();
 	}
-	serializer::yaml::write("busy.yaml", package);
+	serializer::yaml::write("busy.yaml", package);*/
 }
 
 

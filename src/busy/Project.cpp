@@ -8,6 +8,23 @@
 #include <fstream>
 namespace busy {
 
+Project::Project(busyConfig::Project const& _project) {
+	path                       = _project.name;
+	dependencies               = _project.dependencies;
+	optionalDependencies       = _project.optionalDependencies;
+	type                       = _project.type;
+	legacy                     = _project.legacy;
+	depLibraries               = _project.depLibraries;
+	defines                    = _project.defines;
+	noWarnings                 = _project.noWarnings;
+	wholeArchive               = _project.wholeArchive;
+	mAutoDependenciesDiscovery = _project.mAutoDependenciesDiscovery;
+	mIgnore                    = _project.mIgnore;
+	linkAsShared               = _project.linkAsShared;
+
+}
+
+
 void Project::quickFix() {
 //!TODO sometimes wrong dependencies get detected, this is bad
 /*	for (auto const& d : getDefaultDependencies()) {

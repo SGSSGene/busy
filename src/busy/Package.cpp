@@ -1,6 +1,37 @@
 #include "Package.h"
 
+#include <serializer/serializer.h>
+
 namespace busy {
+
+Package::Package(PackageURL const& _url, busyConfig::Package const& _package)
+	: url {_url}
+{
+	name = _package.name;
+	for (auto const& e : _package.extRepositories) {
+		extRepositories.emplace_back(e);
+	}
+	for (auto const& e : _package.projects) {
+		projects.emplace_back(e);
+	}
+	for (auto const& e : _package.overrides) {
+		overrides.emplace_back(e);
+	}
+	for (auto const& e : _package.installations) {
+		installations.emplace_back(e);
+
+	}
+	for (auto const& e : _package.toolchains) {
+		toolchains.emplace_back(e);
+	}
+	for (auto const& e : _package.flavors) {
+		flavors[e.first] = Flavor(e.second);
+	}
+	for (auto& p : projects) {
+		p.setPackagePath(url.getPath());
+	}
+}
+
 
 Package::Package(PackageURL const& _url)
 	: url {_url} {}
@@ -42,8 +73,9 @@ auto Package::getFlavors() const -> Flavors const& {
 }
 
 auto readPackage(std::string const& _path, PackageURL _url) -> Package {
-	Package package{_url};
-	serializer::yaml::read(_path + "/busy.yaml", package);
+	auto configPackage = busyConfig::readPackage(_path);
+
+	Package package{_url, configPackage};
 	return package;
 }
 

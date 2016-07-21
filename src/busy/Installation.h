@@ -1,7 +1,6 @@
 #pragma once
 
-#include <serializer/serializer.h>
-
+#include <busyConfig/busyConfig.h>
 namespace busy {
 
 class System {
@@ -10,12 +9,8 @@ private:
 	std::string type;
 	std::string url;
 public:
-	template<typename Node>
-	void serialize(Node& node) {
-		node["systems"] % systems;
-		node["type"]    % type;
-		node["url"]     % url;
-	}
+	System() {}
+	System(busyConfig::InstallationSystem const& _system);
 
 	auto getSystems() const -> std::set<std::string> const& {
 		return systems;
@@ -36,11 +31,8 @@ private:
 	std::string name;
 	std::vector<System> systems;
 public:
-	template<typename Node>
-	void serialize(Node& node) {
-		node["name"]    % name;
-		node["systems"] % systems;
-	}
+	Installation() {}
+	Installation(busyConfig::Installation const& _installation);
 
 	auto getName() const -> std::string const& {
 		return name;

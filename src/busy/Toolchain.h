@@ -1,6 +1,6 @@
 #pragma once
 
-#include <serializer/serializer.h>
+#include <busyConfig/busyConfig.h>
 
 namespace busy {
 
@@ -27,6 +27,7 @@ public:
 		, cppCompiler   { _cppCompiler }
 		, archivist     { _archivist } {
 	}
+	Toolchain(busyConfig::Toolchain const& _toolchain);
 	auto getName() const -> std::string const& {
 		return name;
 	}
@@ -47,16 +48,6 @@ public:
 	}
 	bool isInstalled(std::map<std::string, Installation> const& installations) const;
 	void install(std::map<std::string, Installation> const& installations) const;
-
-	template<typename Node>
-	void serialize(Node& node) {
-		node["name"]          % name;
-		node["ccompiler"]     % cCompiler;
-		node["cppcompiler"]   % cppCompiler;
-		node["archivist"]     % archivist;
-		node["installations"] % installations;
-	}
-
 };
 
 }

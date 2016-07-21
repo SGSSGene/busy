@@ -1,7 +1,6 @@
 #pragma once
 
-
-#include <serializer/serializer.h>
+#include <busyConfig/busyConfig.h>
 #include <busyUtils/busyUtils.h>
 
 namespace busy {
@@ -12,18 +11,17 @@ namespace busy {
 	using Defines      = std::vector<std::string>;
 
 	struct ProjectLegacy {
+		ProjectLegacy() {}
+		ProjectLegacy(busyConfig::ProjectLegacy _legacy) {
+			includes        = _legacy.includes;
+			systemIncludes  = _legacy.systemIncludes;
+			systemLibraries = _legacy.systemLibraries;
+			linkingOption   = _legacy.linkingOption;
+		}
 		std::vector<std::string> includes;
 		std::vector<std::string> systemIncludes;
 		std::vector<std::string> systemLibraries;
 		std::vector<std::string> linkingOption;
-
-		template<typename Node>
-		void serialize(Node& node) {
-			node["includes"]        % includes;
-			node["systemIncludes"]  % systemIncludes;
-			node["systemLibraries"] % systemLibraries;
-			node["linkingOption"]   % linkingOption;
-		}
 	};
 
 
@@ -52,6 +50,7 @@ namespace busy {
 		ProjectLegacy legacy;
 
 	public:
+		Project(busyConfig::Project const& _project);
 		Project()
 			: packagePath  { "." }
 			, noWarnings   { false }
@@ -60,21 +59,6 @@ namespace busy {
 			, mIgnore      { false }
 		{}
 
-		template<typename Node>
-		void serialize(Node& node) {
-			node["name"]                 % path;
-			node["dependencies"]         % dependencies;
-			node["optionalDependencies"] % optionalDependencies;
-			node["type"]                 % type                 or getDefaultTypeByName();
-			node["legacy"]               % legacy;
-			node["depLibraries"]         % depLibraries;
-			node["defines"]              % defines;
-			node["noWarnings"]           % noWarnings           or bool(false);
-			node["wholeArchive"]         % wholeArchive         or bool(false);
-			node["autoDependenciesDiscovery"] % mAutoDependenciesDiscovery or bool(true);
-			node["ignore"]               % mIgnore              or bool(false);
-			node["linkAsShared"]         % linkAsShared;
-		}
 		void set(std::string const& _name) {
 			path = _name;
 			type = getDefaultTypeByName();

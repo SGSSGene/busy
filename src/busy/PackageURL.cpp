@@ -8,6 +8,13 @@ PackageURL::PackageURL()
 	: url {"_"}
 	, path {"."} {
 }
+PackageURL::PackageURL(busyConfig::PackageURL const& _url) {
+	url    = _url.url;
+	branch = _url.branch;
+
+	path = "extRepositories/"+getName();
+}
+
 auto PackageURL::getName() const -> std::string {
 	auto name = url;
 	if (utils::isEndingWith(name, ".git")) {

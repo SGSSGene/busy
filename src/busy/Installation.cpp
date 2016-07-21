@@ -4,6 +4,13 @@
 #include <iostream>
 
 namespace busy {
+
+System::System(busyConfig::InstallationSystem const& _system) {
+	systems = _system.systems;
+	type    = _system.type;
+	url     = _system.url;
+}
+
 bool System::isInstalled() const {
 	if (type == "system") {
 		if (systems.count("ubuntu") > 0) {
@@ -22,6 +29,14 @@ void System::install() const {
 		}
 	}
 }
+
+Installation::Installation(busyConfig::Installation const& _installation) {
+	name = _installation.name;
+	for (auto const& e : _installation.systems) {
+		systems.emplace_back(e);
+	}
+}
+
 
 
 bool Installation::isInstalled() const {
