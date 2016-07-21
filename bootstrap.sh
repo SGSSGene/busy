@@ -1,11 +1,17 @@
 #!/bin/bash
 
 mkdir -p packages
+rm -rf extRepositories/Serializer
 git clone https://github.com/SGSSGene/Serializer.git     extRepositories/Serializer
+rm -rf extRepositories/Process
 git clone https://github.com/SGSSGene/Process.git        extRepositories/Process
+rm -rf extRepositories/jsoncpp
 git clone https://github.com/SGSSGene/jsoncpp.git        extRepositories/jsoncpp
+rm -rf extRepositories/CommonOptions
 git clone https://github.com/SGSSGene/CommonOptions.git  extRepositories/CommonOptions
+rm -rf extRepositories/ThreadPool
 git clone https://github.com/SGSSGene/ThreadPool.git     extRepositories/ThreadPool
+rm -rf extRepositories/yaml-cpp
 git clone https://github.com/SGSSGene/yaml-cpp.git       extRepositories/yaml-cpp
 
 set -e
