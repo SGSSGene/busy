@@ -1,15 +1,6 @@
 #pragma once
 
-#include "Workspace.h"
-
-#include <memory>
-#include <stdio.h>
-#include <future>
-#include <process/Process.h>
-
 #include "utils.h"
-#include "git.h"
-#include "estd.h"
 
 namespace commands {
 
@@ -32,14 +23,4 @@ namespace commands {
 	void showDep(std::string const& rootProjectName);
 	void toolchains();
 	void toolchain(std::string const& _toolchain);
-
-
-	auto getAllToolchains(Workspace const& ws) -> std::map<std::string, Toolchain>;
-	auto getAllFlavors(Workspace const& ws) -> std::map<std::string, Flavor>;
-
-	auto getAllInstallations(Workspace const& ws) -> std::map<std::string, Installation>;
-	void cloneMissingPackages  (Workspace const& ws);
-	void checkingNotNeededPackages(Workspace& ws);
-	void checkingInvalidPackages  (Workspace& ws);
-	void checkingRequiredPackages (Workspace& ws);
 }

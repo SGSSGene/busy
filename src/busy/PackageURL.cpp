@@ -1,6 +1,6 @@
 #include "PackageURL.h"
 
-#include "utils.h"
+#include <busyUtils/busyUtils.h>
 
 namespace busy {
 
