@@ -31,9 +31,6 @@ namespace {
 
 	auto optFlavor     = commonOptions::make_option("flavor", "",   "builds and sets given flavor for future builds (toolchain + buildMode)");
 	auto optJobCt      = commonOptions::make_option("j",       10, "changes the amount of jobs");
-
-//	auto optClone      = commonOptions::make_multi_option("clone", {}, "clones given git repository");
-
 }
 using namespace busy;
 
@@ -96,17 +93,6 @@ int main(int argc, char** argv) {
 			commands::clean();
 		} else if (*cmdCleanAll) {
 			commands::cleanAll();
-/*		} else if (optClone->size() == 2) {
-			commands::clone((*optClone)[0], (*optClone)[1] + "/");
-		} else if (optClone->size() == 1) {
-			std::string url  = (*optClone)[0];
-			std::string path = (*optClone)[0];
-			if (utils::isEndingWith(path, ".git")) {
-				for (int i {0}; i<4; ++i) path.pop_back();
-			}
-			auto l = utils::explode(path, "/");
-			path = l[l.size()-1];
-			commands::clone(url, path + "/");*/
 		} else if (cmdGit->size() > 0) {
 			commands::git(*cmdGit);
 		} else if (*cmdEclipse) {
