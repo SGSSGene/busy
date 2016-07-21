@@ -19,9 +19,7 @@ namespace busyConfig {
 	using Flavors         = std::map<std::string, Flavor>;
 
 	struct Package {
-	private:
 		std::string     name;
-		PackageURL      url;
 		ExtRepositories extRepositories;
 		Projects        projects;
 		Overrides       overrides;

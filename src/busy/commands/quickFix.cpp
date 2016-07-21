@@ -8,7 +8,7 @@ void quickFix() {
 	Package package {PackageURL()};
 
 	if (utils::fileExists("busy.yaml")) {
-		serializer::yaml::read("busy.yaml", package);
+		package = readPackage(".");
 	} else {
 		auto dir = utils::explode(utils::cwd(), "/");
 		std::string packageName = dir[dir.size()-1];

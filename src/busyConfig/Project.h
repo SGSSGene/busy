@@ -5,8 +5,7 @@
 
 namespace busyConfig {
 	using StringVector = std::vector<std::string>;
-	class Project {
-	public:
+	struct Project {
 		std::string   name;
 		StringVector  dependencies;
 		StringVector  optionalDependencies;
@@ -22,7 +21,7 @@ namespace busyConfig {
 
 		template <typename Node>
 		void serialize(Node& node) {
-			node["name"]                 % path;
+			node["name"]                 % name;
 			node["dependencies"]         % dependencies;
 			node["optionalDependencies"] % optionalDependencies;
 			node["type"]                 % type                 or getDefaultTypeByName();
@@ -35,5 +34,7 @@ namespace busyConfig {
 			node["ignore"]               % mIgnore              or bool(false);
 			node["linkAsShared"]         % linkAsShared;
 		}
-	}
+	private:
+		auto getDefaultTypeByName() const -> std::string;
+	};
 }

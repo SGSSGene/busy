@@ -14,8 +14,7 @@ void generatePart3(std::ostream& ost, std::string const& _projectName);
 void eclipse() {
 	std::cout << "Generate .cproject and .project files" << std::endl;
 
-	Package package {PackageURL()};
-	serializer::yaml::read("busy.yaml", package);
+	auto package = readPackage(".");
 
 	Workspace ws(".");
 

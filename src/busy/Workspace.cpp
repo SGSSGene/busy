@@ -63,15 +63,13 @@ auto Workspace::getAllValidPackages() const -> std::vector<Package> {
 	// results is something like {"CommonOptions", "Process", "SelfTest"}
 	auto allPackages = utils::listDirs(path + "extRepositories", true);
 
-	Package p {PackageURL()};
-	serializer::yaml::read("busy.yaml", p);
+	auto p = readPackage(".");
 	retList.emplace_back(std::move(p));
 
 	for (auto const& package : allPackages) {
 		try {
 			auto packagePath = path + "extRepositories/" + package;
-			Package p {PackageURL()};
-			serializer::yaml::read(packagePath + "/busy.yaml", p);
+			auto p = readPackage(packagePath);
 			retList.emplace_back(std::move(p));
 		} catch(...) {}
 	}
@@ -84,9 +82,8 @@ auto Workspace::getAllInvalidPackages() const -> std::vector<std::string> {
 	auto allPackages = utils::listDirs(path + "extRepositories", true);
 	for (auto const& s : allPackages) {
 		try {
-			std::string path2 = path + "extRepositories/" + s;
-			Package p {PackageURL()};
-			serializer::yaml::read(path2 + "/busy.yaml", p);
+			std::string packagePath = path + "extRepositories/" + s;
+			readPackage(packagePath);
 		} catch (...) {
 			retList.push_back(s);
 		}
@@ -99,9 +96,8 @@ auto Workspace::getAllRequiredPackages() const -> std::vector<PackageURL> {
 
 	std::vector<Package> openPackages;
 	{
-		Package p {PackageURL()};
-		serializer::yaml::read(path + "busy.yaml", p);
-		openPackages.push_back(std::move(p));
+		auto p = readPackage(path);
+		openPackages.emplace_back(std::move(p));
 	}
 	while(not openPackages.empty()) {
 		Package p = openPackages.back();
@@ -110,11 +106,10 @@ auto Workspace::getAllRequiredPackages() const -> std::vector<PackageURL> {
 			if (estd::find(retList, p2) == retList.end()) {
 				retList.push_back(p2);
 
-				PackageURL url{p2};
-				Package p {url};
 				try {
-					serializer::yaml::read(url.getPath() + "/busy.yaml", p);
-					openPackages.push_back(std::move(p));
+					PackageURL url{p2};
+					auto p = readPackage(url.getPath(), url);
+					openPackages.emplace_back(std::move(p));
 				} catch(...) {}
 			}
 		}
@@ -139,8 +134,7 @@ auto Workspace::getAllRequiredProjects()    const -> std::map<std::string, Proje
 
 	// Adding root package projects
 	{
-		Package p {PackageURL()};
-		serializer::yaml::read(path + "busy.yaml", p);
+		auto p = readPackage(path);
 
 		for (auto project : p.getProjects()) {
 			retList[project.getPath()] = project;
@@ -150,8 +144,7 @@ auto Workspace::getAllRequiredProjects()    const -> std::map<std::string, Proje
 	// Adding all dependent projects
 	auto required = getAllRequiredPackages();
 	for (auto url : required) {
-		Package package {url};
-		serializer::yaml::read(url.getPath() + "/busy.yaml", package);
+		auto package = readPackage(url.getPath(), url);
 		for (auto project : package.getProjects()) {
 			retList[project.getName()] = project;
 		}
@@ -162,8 +155,7 @@ auto Workspace::getExcludedProjects() const -> std::set<std::string> {
 	std::set<std::string> retList;
 	// Adding root package projects
 	{
-		Package p {PackageURL()};
-		serializer::yaml::read(path + "busy.yaml", p);
+		auto p = readPackage(path);
 		for (auto o : p.getOverrides()) {
 			auto chains = o.getExcludeFromToolchains();
 			if (std::find(chains.begin(), chains.end(), configFile.getToolchain()) != chains.end()) {
@@ -175,8 +167,7 @@ auto Workspace::getExcludedProjects() const -> std::set<std::string> {
 	// Adding all dependent projects
 	auto required = getAllRequiredPackages();
 	for (auto url : required) {
-		Package package {url};
-		serializer::yaml::read(url.getPath() + "/busy.yaml", package);
+		auto package = readPackage(url.getPath(), url);
 		for (auto o : package.getOverrides()) {
 			auto chains = o.getExcludeFromToolchains();
 			if (std::find(chains.begin(), chains.end(), configFile.getToolchain()) != chains.end()) {
@@ -189,8 +180,7 @@ auto Workspace::getExcludedProjects() const -> std::set<std::string> {
 
 
 auto Workspace::getRootPackageName() const -> std::string {
-	Package p {PackageURL()};
-	serializer::yaml::read("busy.yaml", p);
+	auto p = readPackage(".");
 	return p.getName();
 
 }

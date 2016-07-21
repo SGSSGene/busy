@@ -2,6 +2,7 @@
 #include <iostream>
 
 #include <threadPool/threadPool.h>
+#include <busyConfig/busyConfig.h>
 
 using namespace busy;
 
@@ -74,11 +75,11 @@ void cloneMissingPackages(Workspace const& ws) {
 			std::cout << "cloning " << url.getURL() << std::endl;
 		}
 		git::clone(".", url.getURL(), url.getBranch(), repoName);
-		Package package(url);
-		serializer::yaml::read(repoName + "/busy.yaml", package);
+
+		auto package = busyConfig::readPackage(repoName);
 		{
 			std::unique_lock<std::mutex> lock(mutex);
-			utils::mv(repoName, std::string("extRepositories/") + package.getName());
+			utils::mv(repoName, std::string("extRepositories/") + package.name);
 			auto missingPackages = ws.getAllMissingPackages();
 			for (auto m : missingPackages) {
 				if (queued.count(m) == 0) {

@@ -57,6 +57,8 @@ namespace busy {
 				p.setPackagePath(url.getPath());
 			}
 		}
-
 	};
+
+	auto readPackage(std::string const& _path, PackageURL _url = PackageURL()) -> Package;
+
 }

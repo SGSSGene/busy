@@ -41,6 +41,13 @@ auto Package::getFlavors() const -> Flavors const& {
 	return flavors;
 }
 
+auto readPackage(std::string const& _path, PackageURL _url) -> Package {
+	Package package{_url};
+	serializer::yaml::read(_path + "/busy.yaml", package);
+	return package;
+}
+
+
 
 
 }

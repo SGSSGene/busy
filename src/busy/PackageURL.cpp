@@ -14,6 +14,10 @@ auto PackageURL::getName() const -> std::string {
 		for (int i {0}; i<4; ++i) name.pop_back();
 	}
 	auto l = utils::explode(name, "/");
+	if (l.size() == 1) {
+		return l[0];
+	}
+
 	name = l[l.size()-1];
 	return name;
 }
