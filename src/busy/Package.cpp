@@ -73,9 +73,22 @@ auto Package::getFlavors() const -> Flavors const& {
 }
 
 auto readPackage(std::string const& _path, PackageURL _url) -> Package {
-	auto configPackage = busyConfig::readPackage(_path);
+	static std::map<std::string, busyConfig::Package> packages;
 
-	Package package{_url, configPackage};
+	auto path = _path;
+	if (path.size() > 2 && path.at(0) == '.' and path.at(1) == '/') {
+		path = _path.substr(2);
+	} else if (path.size() == 2 and path == "./") {
+		path = ".";
+	}
+
+
+	if (packages.find(path) == packages.end()) {
+		auto configPackage = busyConfig::readPackage(path);
+		packages[path] = configPackage;
+	}
+
+	Package package{_url, packages.at(path)};
 	return package;
 }
 
