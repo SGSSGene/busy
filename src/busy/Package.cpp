@@ -19,7 +19,6 @@ Package::Package(PackageURL const& _url, busyConfig::Package const& _package)
 	}
 	for (auto const& e : _package.installations) {
 		installations.emplace_back(e);
-
 	}
 	for (auto const& e : _package.toolchains) {
 		toolchains.emplace_back(e);
