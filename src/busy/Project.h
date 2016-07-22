@@ -45,6 +45,10 @@ namespace busy {
 		mutable std::vector<std::string> hFiles;
 		mutable std::vector<std::string> hFilesFlat;
 
+		mutable bool mCachedDependenciesValid {false};
+		mutable Dependencies mCachedDefaultDependencies;
+		mutable Dependencies mCachedOptionalDependencies;
+
 		bool mNeedsSharedVersion { false };
 
 		ProjectLegacy legacy;
@@ -133,6 +137,7 @@ namespace busy {
 		void quickFix();
 
 		auto getDefaultTypeByName() const -> std::string;
+		void getDefaultAndOptionalDependencies(Workspace* _workspace, std::map<std::string, Project> const& _project) const;
 		auto getDefaultDependencies(Workspace* _workspace, std::map<std::string, Project> const& _projects) const -> Dependencies;
 		auto getDefaultOptionalDependencies(Workspace* _workspace, std::map<std::string, Project> const& _projects) const -> Dependencies;
 

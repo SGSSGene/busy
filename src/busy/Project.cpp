@@ -47,17 +47,59 @@ auto Project::getDefaultTypeByName() const -> std::string {
 	return "library";
 }
 
+namespace {
+	void skipAllWhiteSpaces(char const*& str) {
+		while (*str != '\0' and (*str == '\t' or *str == ' ')) ++str;
+	}
+	bool checkIfMakroEndif(char const* str) {
+		skipAllWhiteSpaces(str);
+		return strncmp(str, "#endif", 6) == 0;
+	}
+	bool checkIfMakroIfAndBusy(char const* str) {
+		skipAllWhiteSpaces(str);
+		if (strncmp(str, "#if", 3) != 0) {
+			return false;
+		}
+		str += 3;
+		skipAllWhiteSpaces(str);
+		return strncmp(str, "BUSY_", 5) == 0;
+	}
+	bool checkIfMakroSystemInclude(char const* str) {
+		skipAllWhiteSpaces(str);
+		if (strncmp(str, "#include", 8) != 0) {
+			return false;
+		}
+		str += 8;
+		skipAllWhiteSpaces(str);
+		return *str == '<';
+	}
+}
+
 auto Project::getDefaultDependencies(Workspace* _workspace, std::map<std::string, Project> const& _projects) const -> Dependencies {
+	getDefaultAndOptionalDependencies(_workspace, _projects);
+	return mCachedDefaultDependencies;
+}
+auto Project::getDefaultOptionalDependencies(Workspace* _workspace, std::map<std::string, Project> const& _projects) const -> Dependencies {
+	getDefaultAndOptionalDependencies(_workspace, _projects);
+	return mCachedOptionalDependencies;
+}
+
+void Project::getDefaultAndOptionalDependencies(Workspace* _workspace, std::map<std::string, Project> const& _projects) const {
+	if (mCachedDependenciesValid) return;
+
 	auto& fileStates = _workspace->accessConfigFile().accessAutoFileStates();
 	Dependencies dep;
 	auto allFiles = getAllFiles({".cpp", ".c", ".h", ".hpp"});
-	std::set<std::string> filesOfInterest;
+	std::set<std::tuple<bool, std::string>> filesOfInterest;
 	for (auto const& f : allFiles) {
 		auto currentTime = getFileStates().getFileModTime(f);
 		auto lastTime    = fileStates[f].lastChange;
 		if (lastTime == currentTime and not fileStates[f].hasChanged) {
 			for (auto const& file : fileStates[f].dependencies) {
-				filesOfInterest.insert(file);
+				filesOfInterest.insert(std::make_tuple(false, file));
+			}
+			for (auto const& file : fileStates[f].optDependencies) {
+				filesOfInterest.insert(std::make_tuple(true, file));
 			}
 			continue;
 		}
@@ -70,27 +112,29 @@ auto Project::getDefaultDependencies(Workspace* _workspace, std::map<std::string
 		bool optionalSection = false;
 
 		while (std::getline(ifs, line)) {
-			auto parts = utils::explode(line, std::vector<std::string>{" ", "\t"});
-			if (parts.size() == 1 && parts[0] == "#endif") {
+			// check if it is '#endif'
+			if (checkIfMakroEndif(line.c_str())) {
 				optionalSection = false;
-			} else if (parts.size() == 2 && parts[0] == "#ifdef" && parts[1].substr(0, 5) == "BUSY_") {
+			} else if (checkIfMakroIfAndBusy(line.c_str())) {
 				optionalSection = true;
-			} else if (not optionalSection
-			    && parts.size() == 2 && parts[0] == "#include"
-			    && parts[1].front() == '<' && parts[1].back() == '>') {
+			} else if (checkIfMakroSystemInclude(line.c_str())) {
+				auto parts = utils::explode(line, std::vector<std::string>{" ", "\t"});
 
 				auto pos1 = parts[1].find("<")+1;
 				auto pos2 = parts[1].find(">")-pos1;
 
 				auto file = parts[1].substr(pos1, pos2);
-				filesOfInterest.insert(file);
+				filesOfInterest.insert(std::make_tuple(optionalSection, file));
 				fileStates[f].dependencies.push_back(file);
 			}
-
 		}
 	}
 
-	for (auto const& file : filesOfInterest) {
+	for (auto const& tuple : filesOfInterest) {
+		bool optional;
+		std::string file;
+		std::tie(optional, file) = tuple;
+
 		for (auto const& e : _projects) {
 			auto& project = e.second;
 			if (&project == this) continue;
@@ -100,81 +144,21 @@ auto Project::getDefaultDependencies(Workspace* _workspace, std::map<std::string
 					auto package = project.getPackagePath();
 					auto pList   = utils::explode(package, "/");
 					auto d       = pList.back() + "/" + project.getName();
+					
+					auto* dep = &mCachedDefaultDependencies;
+					if (optional) {
+						dep = &mCachedOptionalDependencies;
+					}
 
-					if (std::find(dep.begin(), dep.end(), d) == dep.end()) {
-						dep.emplace_back(d);
+					if (std::find(dep->begin(), dep->end(), d) == dep->end()) {
+						dep->emplace_back(d);
 					}
 					break;
 				}
 			}
 		}
 	}
-
-	return dep;
-}
-
-auto Project::getDefaultOptionalDependencies(Workspace* _workspace, std::map<std::string, Project> const& _projects) const -> Dependencies {
-	auto& fileStates = _workspace->accessConfigFile().accessAutoFileStates();
-	Dependencies dep;
-	auto allFiles = getAllFiles({".cpp", ".c", ".h", ".hpp"});
-	std::set<std::string> filesOfInterest;
-	for (auto const& f : allFiles) {
-		auto currentTime = getFileStates().getFileModTime(f);
-		auto lastTime    = fileStates[f].lastChange;
-		if (lastTime == currentTime and not fileStates[f].hasChanged) {
-			for (auto const& file : fileStates[f].optDependencies) {
-				filesOfInterest.insert(file);
-			}
-			continue;
-		}
-		fileStates[f].lastChange = currentTime;
-		fileStates[f].hasChanged = true;
-
-		std::ifstream ifs(f);
-		std::string line;
-		bool optionalSection = false;
-
-		while (std::getline(ifs, line)) {
-			auto parts = utils::explode(line, std::vector<std::string>{" ", "\t"});
-			if (parts.size() == 1 && parts[0] == "#endif") {
-				optionalSection = false;
-			} else if (parts.size() == 2 && parts[0] == "#ifdef" && parts[1].substr(0, 5) == "BUSY_") {
-				optionalSection = true;
-			} else if (optionalSection
-			    && parts.size() == 2 && parts[0] == "#include"
-			    && parts[1].front() == '<' && parts[1].back() == '>') {
-
-				auto pos1 = parts[1].find("<")+1;
-				auto pos2 = parts[1].find(">")-pos1;
-
-				auto file = parts[1].substr(pos1, pos2);
-				filesOfInterest.insert(file);
-				fileStates[f].optDependencies.push_back(file);
-			}
-
-		}
-	}
-
-	for (auto const& file : filesOfInterest) {
-		for (auto const& e : _projects) {
-			auto& project = e.second;
-			if (&project == this) continue;
-
-			for (auto const& h : project.getAllHFilesFlat()) {
-				if (file == h) {
-					auto package = project.getPackagePath();
-					auto pList   = utils::explode(package, "/");
-					auto d       = pList.back() + "/" + project.getName();
-					if (std::find(dep.begin(), dep.end(), d) == dep.end()) {
-						dep.emplace_back(d);
-					}
-					break;
-				}
-			}
-		}
-	}
-
-	return dep;
+	mCachedDependenciesValid = true;
 }
 
 
