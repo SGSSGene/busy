@@ -5,6 +5,8 @@
 
 namespace busy {
 	class Workspace;
+	class Package;
+	class NeoWorkspace;
 
 	using Dependencies = std::vector<std::string>;
 	using DepLibraries = std::vector<std::string>;
@@ -29,6 +31,8 @@ namespace busy {
 	private:
 		std::string  path;
 		std::string  packagePath;
+		std::string  mFullName;
+		bool         mHasConfigEntry { true };
 		Dependencies dependencies;
 		Dependencies optionalDependencies;
 		DepLibraries depLibraries;
@@ -39,6 +43,8 @@ namespace busy {
 		bool         mIgnore;
 		std::string  type;
 		std::vector<std::string> linkAsShared;
+		NeoWorkspace* mWorkspace {nullptr};
+
 
 		mutable std::vector<std::string> cppFiles;
 		mutable std::vector<std::string> cFiles;
@@ -63,9 +69,17 @@ namespace busy {
 			, mIgnore      { false }
 		{}
 
+		void setWorkspace(NeoWorkspace* _workspace);
+
 		void set(std::string const& _name) {
 			path = _name;
 			type = getDefaultTypeByName();
+		}
+		void setHasConfigEntry(bool _hasEntry) {
+			mHasConfigEntry = _hasEntry;
+		}
+		bool getHasConfigEntry() const {
+			return mHasConfigEntry;
 		}
 
 		void setNeedsSharedVersion() {
@@ -87,8 +101,17 @@ namespace busy {
 			if (l.size() == 0) throw std::runtime_error("project name is invalid: " + getPath());
 			return l[l.size()-1];
 		}
-		auto getPath() const -> std::string const& {
-			return path;
+		void setFullName(std::string const& _fullName) {
+			mFullName = _fullName;
+		}
+		auto getFullName() const -> std::string const& {
+			return mFullName;
+		}
+		auto getSourcePaths() const -> std::vector<std::string>;
+		auto getIncludePaths() const -> std::vector<std::string>;
+
+		auto getPath() const -> std::string {
+			return packagePath + "/src/" + path;
 		}
 		auto getPackagePath() const -> std::string const& {
 			return packagePath;
@@ -137,6 +160,8 @@ namespace busy {
 		void quickFix();
 
 		auto getDefaultTypeByName() const -> std::string;
+
+
 		void getDefaultAndOptionalDependencies(Workspace* _workspace, std::map<std::string, Project> const& _project) const;
 		auto getDefaultDependencies(Workspace* _workspace, std::map<std::string, Project> const& _projects) const -> Dependencies;
 		auto getDefaultOptionalDependencies(Workspace* _workspace, std::map<std::string, Project> const& _projects) const -> Dependencies;

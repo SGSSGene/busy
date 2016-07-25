@@ -21,6 +21,9 @@ Workspace::Workspace(std::string const& _path)
 	}
 	createBusyFolder();
 	createPackageFolder();
+
+	auto p = readPackage(".");
+	mRootPackageName = p.getName();
 }
 Workspace::~Workspace() {
 	save();
@@ -32,6 +35,26 @@ void Workspace::save() {
 	serializer::binary::write(atomic.getTempName(), configFile);
 	atomic.close();
 }
+auto Workspace::getAllPackageFolders() const -> std::vector<std::string> {
+	std::vector<std::string> folders;
+	folders.push_back(path);
+	for (auto const& f : utils::listDirs(path + "extRepositories", true)) {
+		folders.emplace_back(path + "extRepositories/" + f);
+	}
+	return folders;
+}
+auto Workspace::getAllPackages() const -> std::vector<Package> {
+	auto folders = getAllPackageFolders();
+
+	std::vector<Package> packages;
+	for (auto const& f : folders) {
+		auto package = readPackage(f);
+		packages.emplace_back(std::move(package));
+	}
+	return packages;
+}
+
+
 
 auto Workspace::getAllMissingPackages() const -> std::vector<PackageURL> {
 	std::set<PackageURL> urlSet;
@@ -180,9 +203,7 @@ auto Workspace::getExcludedProjects() const -> std::set<std::string> {
 
 
 auto Workspace::getRootPackageName() const -> std::string {
-	auto p = readPackage(".");
-	return p.getName();
-
+	return mRootPackageName;
 }
 
 
@@ -194,7 +215,7 @@ void Workspace::createPackageFolder() {
 	}
 }
 void Workspace::createBusyFolder() {
-	// check if repository folder exists
+	// check if .busy (build) folder exists
 	if (not utils::fileExists(path + ".busy")) {
 		utils::mkdir(path + ".busy");
 	}

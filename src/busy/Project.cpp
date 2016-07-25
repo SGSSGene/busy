@@ -1,6 +1,7 @@
 #include "Project.h"
 
 #include "Workspace.h"
+#include "Package.h"
 
 #include "FileStates.h"
 #include <algorithm>
@@ -24,6 +25,11 @@ Project::Project(busyConfig::Project const& _project) {
 
 }
 
+void Project::setWorkspace(NeoWorkspace* _workspace) {
+	mWorkspace = _workspace;
+}
+
+
 
 void Project::quickFix() {
 //!TODO sometimes wrong dependencies get detected, this is bad
@@ -33,6 +39,23 @@ void Project::quickFix() {
 		}
 	}*/
 	std::sort(dependencies.begin(), dependencies.end());
+}
+
+auto Project::getSourcePaths() const -> std::vector<std::string> {
+	std::vector<std::string> sourcePaths;
+	sourcePaths.emplace_back(getPath());
+	std::sort(sourcePaths.begin(), sourcePaths.end());
+	return sourcePaths;
+}
+auto Project::getIncludePaths() const -> std::vector<std::string> {
+	std::vector<std::string> includePaths;
+
+	includePaths.emplace_back(getPackagePath() + "/src/" + getName());
+	for (auto const& i : getLegacy().includes) {
+		includePaths.emplace_back(getPackagePath() + "/" + i + "/");
+	}
+	std::sort(includePaths.begin(), includePaths.end());
+	return includePaths;
 }
 
 
@@ -168,24 +191,17 @@ void Project::getDefaultAndOptionalDependencies(Workspace* _workspace, std::map<
 	mCachedDependenciesValid = true;
 }
 
-
 auto Project::getAllFiles(std::set<std::string> const& _ending) const -> std::vector<std::string> {
 	std::vector<std::string> files;
 
-	std::vector<std::string> allPaths;
-	allPaths.emplace_back(std::string("./") + getPackagePath() + "/src/" + getPath() + "/");
-	for (auto const& i : getLegacy().includes) {
-		allPaths.emplace_back(std::string("./") + getPackagePath() + "/" + i + "/");
-	}
-
-	for (auto const& p : allPaths) {
+	for (auto const& p : getIncludePaths()) {
 		if (not utils::dirExists(p)) continue;
 
 		auto allFiles = utils::listFiles(p, true);
 		for (auto const& f : allFiles) {
 			for (auto const& ending : _ending) {
 				if (utils::isEndingWith(f, ending)) {
-					files.push_back(p + f);
+					files.push_back(p + "/" + f);
 					break;
 				}
 			}

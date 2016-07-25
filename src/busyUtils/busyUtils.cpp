@@ -269,6 +269,18 @@ namespace utils {
 	void sleep(unsigned int _s) {
 		::sleep(_s);
 	}
+	bool validPackageName(std::string const& _str) {
+		if (_str.size() == 0) return false;
+		for (auto c : _str) {
+			if (not (c == '_' 
+				or (c >= 'a' and c <= 'z')
+				or (c >= 'A' and c <= 'Z')
+				or (c >= '0' and c <= '9')
+				or (c == '-'))) return false;
+		}
+		return true;
+	}
+
 
 	AtomicWrite::AtomicWrite(std::string  _fileName)
 		: mFileName (std::move(_fileName))

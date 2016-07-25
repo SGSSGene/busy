@@ -10,7 +10,8 @@ namespace {
 	auto cmdCleanAll   = commonOptions::make_command("cleanall",      "deletes all build files");
 	auto cmdDocu       = commonOptions::make_command("docu",          "Generates html docu");
 	auto cmdEclipse    = commonOptions::make_command("eclipse",       "Generate Eclipse .project and .cproject file");
-	auto cmdGit        = commonOptions::make_command("git", std::vector<std::string>{}, "executes given options on every repository (including root package)");
+	auto cmdGit        = commonOptions::make_command("git", std::vector<std::string>{},  "executes given options on every repository (including root package)");
+	auto cmdInfo       = commonOptions::make_command("info", std::vector<std::string>{}, "Infos about the current package and its dependencies");
 	auto cmdInstall    = commonOptions::make_command("install",       "Installs the script to the current target");
 	auto cmdLsFiles    = commonOptions::make_command("ls-files",      "Print all files of these repositories");
 	auto cmdPull       = commonOptions::make_command("pull",          "Execute pull on all git repositories");
@@ -49,7 +50,7 @@ std::string checkCwd() {
 		relPath = relPath + "/..";
 		cwd = utils::cwd();
 		if (cwd == "/") {
-			throw std::runtime_error("this is not a busy repository/workspace");
+			throw std::runtime_error("this is not a busy repository");
 		}
 	}
 	auto dirs = utils::explode(cwd, "/");
@@ -103,6 +104,8 @@ int main(int argc, char** argv) {
 			commands::push();
 		} else if (*cmdRelPath) {
 			std::cout<<relPath<<std::endl;
+		} else if (cmdInfo->size() > 0) {
+			commands::info(*cmdInfo);
 		} else if (*cmdInstall) {
 			commands::install();
 		} else if (*cmdQuickFix or *cmdQF) {

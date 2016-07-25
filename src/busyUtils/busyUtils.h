@@ -50,6 +50,8 @@ namespace utils {
 
 	void sleep(unsigned int _s);
 
+	bool validPackageName(std::string const& _str);
+
 
 	class AtomicWrite {
 		std::string mFileName;

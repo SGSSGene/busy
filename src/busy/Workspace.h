@@ -59,6 +59,7 @@ public:
 private:
 	std::string path;
 	ConfigFile  configFile;
+	std::string mRootPackageName;
 public:
 
 	Workspace(std::string const& _path);
@@ -67,6 +68,9 @@ public:
 	void save();
 
 	ConfigFile& accessConfigFile() { return configFile; }
+
+	auto getAllPackageFolders() const -> std::vector<std::string>;
+	auto getAllPackages() const -> std::vector<Package>;
 
 	auto getAllMissingPackages()     const -> std::vector<PackageURL>;
 	auto getAllValidPackages()       const -> std::vector<Package>;
@@ -79,7 +83,6 @@ public:
 	auto getExcludedProjects() const -> std::set<std::string>;
 
 	auto getRootPackageName() const -> std::string;
-
 private:
 	void createBusyFolder();
 	void createPackageFolder();
