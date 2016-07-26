@@ -111,6 +111,7 @@ namespace busy {
 	}
 
 	void NeoProject::discoverDependencies() {
+
 		// scan all files to detect dependencies
 		if (mAutoDependenciesDiscovery) {
 			for (auto s : {"cpp", "c", "incl"}) {
@@ -150,10 +151,18 @@ namespace busy {
 				} else if (checkIfMakroSystemInclude(line.c_str())) {
 					auto parts = utils::explode(line, std::vector<std::string>{" ", "\t"});
 
-					auto pos1 = parts[1].find("<")+1;
-					auto pos2 = parts[1].find(">")-pos1;
+					std::string includeFile;
+					if (parts.size() == 0) continue;
+					if (parts.size() == 1) {
+						includeFile = parts[0];
+					} else {
+						includeFile = parts[1];
+					}
 
-					auto file = parts[1].substr(pos1, pos2);
+					auto pos1 = includeFile.find("<")+1;
+					auto pos2 = includeFile.find(">")-pos1;
+
+					auto file = includeFile.substr(pos1, pos2);
 
 					if (optionalSection) {
 						includesOutsideOfThisProjectOptional.insert(file);
