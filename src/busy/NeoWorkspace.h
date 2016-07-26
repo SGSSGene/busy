@@ -21,6 +21,8 @@ public:
 	auto getPackage(std::string const& _name) -> NeoPackage&;
 	auto getProject(std::string const& _name) const -> NeoProject const&;
 
+	auto getProjectAndDependencies(std::string const& _name = "") const -> std::vector<NeoProject const*>;
+
 	auto getFileStat(std::string const& _file) -> NeoFileStat&;
 
 private:

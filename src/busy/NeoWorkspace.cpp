@@ -1,4 +1,6 @@
 #include "NeoWorkspace.h"
+
+#include <algorithm>
 #include <busyUtils/busyUtils.h>
 #include <iostream>
 #include <serializer/serializer.h>
@@ -33,6 +35,9 @@ NeoWorkspace::~NeoWorkspace() {
 	utils::AtomicWrite atomic(workspaceFile);
 	serializer::binary::write(atomic.getTempName(), mNeoFileStats);
 	atomic.close();
+
+	serializer::yaml::write(workspaceFile + ".yaml", mNeoFileStats);
+
 }
 
 auto NeoWorkspace::getPackageFolders() const -> std::vector<std::string> const& {
@@ -41,6 +46,7 @@ auto NeoWorkspace::getPackageFolders() const -> std::vector<std::string> const& 
 auto NeoWorkspace::getPackages() const -> std::list<NeoPackage> const& {
 	return mPackages;
 }
+
 bool NeoWorkspace::hasPackage(std::string const& _name) const {
 	for (auto const& package : mPackages) {
 		if (package.getName() == _name) {
@@ -91,6 +97,43 @@ auto NeoWorkspace::getProject(std::string const& _name) const -> NeoProject cons
 	}
 	return *matchList.at(0);
 }
+auto NeoWorkspace::getProjectAndDependencies(std::string const& _name) const -> std::vector<NeoProject const*> {
+	std::vector<NeoProject const*> retProjects;
+
+	auto const& packages = getPackages();
+	std::set<NeoProject const*> flagged;
+	std::vector<NeoProject const*> queued = retProjects;
+
+	if (_name == "") {
+		auto rootPackage = &packages.front();
+		for (auto const& project : rootPackage->getProjects()) {
+			if (project.getType() == "executable") {
+				queued.push_back(&project);
+				flagged.insert(&project);
+			}
+		}
+	} else {
+		queued.push_back(&getProject(_name));
+		flagged.insert(retProjects.front());
+	}
+	// Run through queue and get all dependencies
+	while (not queued.empty()) {
+		auto project = queued.back();
+		retProjects.push_back(project);
+		queued.pop_back();
+		for (auto depP : project->getDependencies()) {
+			if (flagged.count(depP) == 0) {
+				flagged.insert(depP);
+				queued.push_back(depP);
+			}
+		}
+	}
+	std::sort(retProjects.begin(), retProjects.end(), [](NeoProject const* p1, NeoProject const* p2) {
+		return p1->getFullName() < p2->getFullName();
+	});
+	return retProjects;
+}
+
 
 auto NeoWorkspace::getFileStat(std::string const& _file) -> NeoFileStat& {
 	return mNeoFileStats[_file];

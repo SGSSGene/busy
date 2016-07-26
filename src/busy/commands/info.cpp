@@ -109,6 +109,12 @@ void info(std::vector<std::string> str) {
 		printList("C++-Files:",     project.getCppFiles());
 		printList("Include-Files:", project.getIncludeFiles());*/
 //		printList("Defines:",       project.getDefines());
+	} else if (str.at(0) == "compile") {
+		auto projects = ws.getProjectAndDependencies();
+		std::cout << "compiling: " << std::endl;
+		for (auto const& project : projects) {
+			std::cout << project->getFullName() << " compile as " << project->getType() << std::endl;
+		}
 	}
 }
 }
