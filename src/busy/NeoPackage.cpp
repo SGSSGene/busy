@@ -56,14 +56,38 @@ namespace busy {
 
 			mExternalRepURLs.push_back({name, url.url, url.branch});
 		}
+
+		// loading Flavors
+		for (auto const& shared : configPackage.flavors) {
+			auto name = shared.first;
+			mFlavors[name].buildMode = shared.second.buildMode;
+			mFlavors[name].toolchain = shared.second.toolchain;
+			mFlavors[name].mLinkAsSharedAsStrings = shared.second.linkAsShared;
+		}
 	}
 	void NeoPackage::setupPackageDependencies() {
 		for (auto const& url : mExternalRepURLs) {
 			auto package = &mWorkspace->getPackage(url.name);
 			mExternalPackages.push_back(package);
 		}
-
+		for (auto& flavor : mFlavors) {
+			for (auto const& s : flavor.second.mLinkAsSharedAsStrings) {
+				flavor.second.mLinkAsShared.push_back(&mWorkspace->getProject(s));
+			}
+		}
+}
+	auto NeoPackage::getAllDependendPackages() -> std::vector<NeoPackage*> {
+		std::vector<NeoPackage*> packages = {this};
+		for (auto package : getExternalPackages()) {
+			for (auto p : package->getAllDependendPackages()) {
+				if (std::find(packages.begin(), packages.end(), p) == packages.end()) {
+					packages.push_back(p);
+				}
+			}
+		}
+		return packages;
 	}
+
 
 
 

@@ -1,6 +1,9 @@
 #pragma once
 
 #include "NeoProject.h"
+#include "NeoFlavor.h"
+#include "NeoToolchain.h"
+
 #include <list>
 #include <string>
 
@@ -24,6 +27,9 @@ namespace busy {
 		std::vector<NeoPackageURL> mExternalRepURLs;
 		std::vector<NeoPackage*>   mExternalPackages;
 
+		std::map<std::string, NeoFlavor>    mFlavors;
+		std::map<std::string, NeoToolchain> mToolchains;
+
 	public:
 
 		NeoPackage(std::string const& _path, NeoWorkspace* _workspace);
@@ -41,6 +47,10 @@ namespace busy {
 
 		auto getExternalPackageURLs() -> std::vector<NeoPackageURL> const& { return mExternalRepURLs; }
 		auto getExternalPackages() -> std::vector<NeoPackage*> const& { return mExternalPackages; }
+		auto getAllDependendPackages() -> std::vector<NeoPackage*>;
+
+		auto getFlavors() const -> std::map<std::string, NeoFlavor> const& { return mFlavors; }
+		auto getToolchains() const -> std::map<std::string, NeoToolchain> const& { return mToolchains; }
 
 		auto getProject(std::string const& _name) const -> NeoProject const&;
 	};

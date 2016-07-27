@@ -83,9 +83,10 @@ namespace busy {
 	}
 
 	void NeoProject::discoverSourceFiles() {
-		mSourceFiles["cpp"] = {};
-		mSourceFiles["c"]   = {};
-		mSourceFiles["incl"]   = {};
+		mSourceFiles["cpp"]       = {};
+		mSourceFiles["c"]         = {};
+		mSourceFiles["incl"]      = {};
+		mSourceFiles["incl-flat"] = {};
 		// Discover cpp and c files
 		auto sourcePaths = getSourcePaths();
 		sourcePaths[0] += "/" + getName();
@@ -105,6 +106,11 @@ namespace busy {
 			for (auto const& f : utils::listFiles(dir, true)) {
 				if (utils::isEndingWith(f, ".h") or utils::isEndingWith(f, ".hpp")) {
 					mSourceFiles["incl"].push_back(dir + "/" + f);
+					if (&dir == &includePaths[0]) {
+						mSourceFiles["incl-flat"].push_back(getName() + "/" + f);
+					} else {
+						mSourceFiles["incl-flat"].push_back(f);
+					}
 				}
 			}
 		}
@@ -132,6 +138,8 @@ namespace busy {
 		// If file modification time has changed, rescan it
 		auto modTime = utils::getFileModificationTime(_file);
 		if (modTime != fileStat.mFileDiscovery.lastChange) {
+
+
 			std::ifstream ifs(_file);
 			std::string line;
 
@@ -174,15 +182,19 @@ namespace busy {
 			}
 
 			// Check all found #include<...> statements, and check if these refer to a known project
+			auto packages = mPackage->getAllDependendPackages();
+			packages.push_back(mPackage);
 			for (auto const& file : includesOutsideOfThisProject) {
 				bool found = false;
-				for (auto const& package : mPackage->getExternalPackages()) {
+				for (auto const& package : packages) {
 					for (NeoProject const& project : package->getProjects()) {
-						auto fileToCheck = project.getPath() + "/" + file;
-						for (auto const& include : project.getIncludeFiles()) {
+						auto fileToCheck = file;
+						for (auto const& include : project.getIncludeFilesFlat()) {
 							if (fileToCheck == include) {
 								if (std::find(mDependencies.begin(), mDependencies.end(), &project) == mDependencies.end()) {
-									dependenciesAsString.insert(project.getFullName());
+									if (getFullName() != project.getFullName()) {
+										dependenciesAsString.insert(project.getFullName());
+									}
 								}
 								found = true;
 								break;

@@ -23,15 +23,22 @@ public:
 
 	auto getProjectAndDependencies(std::string const& _name = "") const -> std::vector<NeoProject const*>;
 
+	auto getFlavors() const -> std::map<std::string, NeoFlavor const*>;
+	auto getToolchains() const -> std::map<std::string, NeoToolchain const*>;
+
 	auto getFileStat(std::string const& _file) -> NeoFileStat&;
 
 private:
 	void loadPackageFolders();
 	void loadPackages();
 
+	void discoverSystemToolchains();
+
 private:
 	std::vector<std::string> mPackageFolders;
 	std::list<NeoPackage>    mPackages;
+
+	std::map<std::string, NeoToolchain> mSystemToolchains;
 
 	std::map<std::string, NeoFileStat> mNeoFileStats;
 

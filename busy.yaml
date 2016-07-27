@@ -7,3 +7,9 @@ projects:
   - name: busy
     type: executable
 
+flavors:
+  default:
+    buildMode: debug
+    toolchain: system-gcc
+    linkAsShared:
+      - CommonOptions/commonOptions

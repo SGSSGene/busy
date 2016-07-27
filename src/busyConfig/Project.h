@@ -32,7 +32,7 @@ namespace busyConfig {
 			node["wholeArchive"]         % wholeArchive         or bool(false);
 			node["autoDependenciesDiscovery"] % mAutoDependenciesDiscovery or bool(true);
 			node["ignore"]               % mIgnore              or bool(false);
-			node["linkAsShared"]         % linkAsShared;
+			node["linkAsShared"]         % linkAsShared; // !TODO remove it is depricated
 		}
 	private:
 		auto getDefaultTypeByName() const -> std::string;

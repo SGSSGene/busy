@@ -110,11 +110,122 @@ void info(std::vector<std::string> str) {
 		printList("Include-Files:", project.getIncludeFiles());*/
 //		printList("Defines:",       project.getDefines());
 	} else if (str.at(0) == "compile") {
-		auto projects = ws.getProjectAndDependencies();
-		std::cout << "compiling: " << std::endl;
-		for (auto const& project : projects) {
-			std::cout << project->getFullName() << " compile as " << project->getType() << std::endl;
+		std::cout << "available toolchains: " << std::endl;
+		for (auto const& toolchain : ws.getToolchains()) {
+			std::cout << "  - " << toolchain.first << std::endl;
 		}
+		std::cout << "picking system-gccc as toolchain" << std::endl;
+		auto toolchain = ws.getToolchains().at("system-gcc");
+
+		std::cout << "available flavors: " << std::endl;
+		for (auto const& flavor : ws.getFlavors()) {
+			std::cout << "  - " << flavor.first << std::endl;
+		}
+		std::cout << "picking busy/default flavor" << std::endl;
+
+		auto flavor = ws.getFlavors().at("busy/default");
+
+		auto projects = ws.getProjectAndDependencies(str.size() > 1?str.at(1):"");
+/*		std::cout << "compiling: " << std::endl;
+		for (auto const& project : projects) {
+			std::string type = project->getType();
+			if (flavor->isShared(project)) {
+				type = "shared library";
+			}
+			std::cout << project->getFullName() << " compile as " << type << std::endl;
+		}*/
+
+		struct Job {
+			std::string name;
+			std::function<void()> mAction;
+			std::vector<std::string> mDependendOnOtherJobs;
+			std::vector<Job*>        mDependendOnThisJob;
+		};
+		std::map<std::string, Job> mAllJobs;
+		// create list of all changes
+		for (auto const& project : projects) {
+			// adding the project/linking itself as jobs
+			{
+				auto& job = mAllJobs[project->getFullName()];
+				job.mAction = [=] {
+					std::cout << "link: " << project->getFullName() << std::endl;
+				};
+				// adding source files as dependencies
+				for (auto file : project->getCppFiles()) {
+					job.mDependendOnOtherJobs.push_back(file);
+				}
+				for (auto file : project->getCFiles()) {
+					job.mDependendOnOtherJobs.push_back(file);
+				}
+				//!TODO not ready yet
+				// if this is an executable or shared library add other libraries as dependency
+				for (auto depProject : project->getDependencies()) {
+					job.mDependendOnOtherJobs.push_back(depProject->getFullName());
+				}
+			}
+			// adding source files as jobs
+			for (auto file : project->getCppFiles()) {
+				auto& job = mAllJobs[file];
+				job.mAction = [=] {
+					std::cout << "compiling cpp file: " << file << std::endl;
+				};
+			}
+			for (auto file : project->getCFiles()) {
+				auto& job = mAllJobs[file];
+				job.mAction = [=] {
+					std::cout << "compiling c file: " << file << std::endl;
+				};
+			}
+		}
+		// run over all jobs and set their names
+		for (auto& job : mAllJobs) {
+			job.second.name = job.first;
+		}
+		// run over all jobs and set mDependendOnThisJob variable
+		for (auto& job1 : mAllJobs) {
+			for (auto const& job2AsString : job1.second.mDependendOnOtherJobs) {
+				auto& job2 = mAllJobs[job2AsString];
+				job2.mDependendOnThisJob.push_back(&job1.second);
+				std::cout << job1.first << " -> " << job2AsString << std::endl;
+			}
+		}
+		std::vector<Job*> queuedJobs;
+		for (auto& j : mAllJobs) {
+			if (j.second.mDependendOnOtherJobs.size() == 0) {
+				queuedJobs.push_back(&j.second);
+			}
+		}
+		int jobCount = 0;
+		while (not queuedJobs.empty()) {
+			auto job = queuedJobs.back();
+			queuedJobs.pop_back();
+			job->mAction();
+			for (auto otherJob : job->mDependendOnThisJob) {
+				auto iter = std::find(otherJob->mDependendOnOtherJobs.begin(), otherJob->mDependendOnOtherJobs.end(), job->name);
+				otherJob->mDependendOnOtherJobs.erase(iter);
+				if (otherJob->mDependendOnOtherJobs.empty()) {
+					queuedJobs.push_back(otherJob);
+				}
+			}
+			jobCount += 1;
+		}
+		std::cout << "jobs done: " << jobCount << std::endl;
+		std::cout << "jobs didn't finished:" << std::endl;
+		for (auto& j : mAllJobs) {
+			if (j.second.mDependendOnOtherJobs.size() != 0) {
+				std::cout << "  - " << j.first << std::endl;
+				for (auto& j2 : j.second.mDependendOnOtherJobs) {
+					std::cout << "      * " << j2 << std::endl;
+				}
+			}
+		}
+
+		int cppCount = 0;
+		for (auto const& project : projects) {
+			cppCount += project->getCppFiles().size();
+		}
+
+		std::cout << "jobs: " << cppCount << " + " << projects.size() << " = " << cppCount + projects.size() << std::endl;
 	}
 }
 }
