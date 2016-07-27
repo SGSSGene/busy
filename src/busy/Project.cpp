@@ -120,10 +120,17 @@ void Project::getDefaultAndOptionalDependencies(Workspace* _workspace, std::map<
 			} else if (checkIfMakroSystemInclude(line.c_str())) {
 				auto parts = utils::explode(line, std::vector<std::string>{" ", "\t"});
 
-				auto pos1 = parts[1].find("<")+1;
-				auto pos2 = parts[1].find(">")-pos1;
+				std::string include;
+				if (parts.size() == 1) {
+					include = parts[0];
+				} else {
+					include = parts[1];
+				}
 
-				auto file = parts[1].substr(pos1, pos2);
+				auto pos1 = include.find("<")+1;
+				auto pos2 = include.find(">")-pos1;
+
+				auto file = include.substr(pos1, pos2);
 				filesOfInterest.insert(std::make_tuple(optionalSection, file));
 				fileStates[f].dependencies.push_back(file);
 			}
