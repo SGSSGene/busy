@@ -116,6 +116,26 @@ namespace busy {
 		}
 	}
 
+	auto NeoProject::getIncludeAndDependendPaths() const -> std::vector<std::string> {
+		auto includePaths = getIncludePaths();
+		for (auto dep : mDependencies) {
+			for (auto& p : dep->getIncludeAndDependendPaths()) {
+				includePaths.emplace_back(std::move(p));
+			}
+		}
+		return includePaths;
+	}
+	auto NeoProject::getSystemIncludeAndDependendPaths() const -> std::vector<std::string> {
+		auto includePaths = getSystemIncludePaths();
+		for (auto dep : mDependencies) {
+			for (auto& p : dep->getSystemIncludeAndDependendPaths()) {
+				includePaths.emplace_back(std::move(p));
+			}
+		}
+		return includePaths;
+	}
+
+
 	void NeoProject::discoverDependencies() {
 
 		// scan all files to detect dependencies

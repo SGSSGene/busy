@@ -254,7 +254,7 @@ namespace utils {
 			throw std::runtime_error("chdir to "+_string+" from "+cwd()+" failed");
 		}
 	}
-	std::string sanitize(std::string const& _s) {
+	auto sanitize(std::string const& _s) -> std::string {
 		std::string r;
 		for (char c : _s) {
 			if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {

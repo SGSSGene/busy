@@ -16,6 +16,14 @@ namespace busy {
 			}
 		} mFileDiscovery;
 
+		struct {
+			int64_t lastChange;
+			template <typename Node>
+			void serialize(Node& node) {
+				node["lastChange"] % lastChange;
+			}
+		} mFileCompile;
+
 		NeoFileStat() {
 			mFileDiscovery.lastChange = 0;
 		}
@@ -23,6 +31,7 @@ namespace busy {
 		template <typename Node>
 		void serialize(Node& node) {
 			node["fileDiscovery"] % mFileDiscovery;
+			node["fileCompile"]   % mFileCompile;
 		}
 	};
 }

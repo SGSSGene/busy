@@ -27,7 +27,6 @@ public:
 	auto getToolchains() const -> std::map<std::string, NeoToolchain const*>;
 
 	auto getFileStat(std::string const& _file) -> NeoFileStat&;
-
 private:
 	void loadPackageFolders();
 	void loadPackages();

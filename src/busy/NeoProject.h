@@ -46,6 +46,9 @@ namespace busy {
 		auto getIncludeFiles() const -> std::vector<std::string> const& { return mSourceFiles.at("incl"); }
 		auto getIncludeFilesFlat() const -> std::vector<std::string> const& { return mSourceFiles.at("incl-flat"); }
 
+		auto getIncludeAndDependendPaths() const -> std::vector<std::string>;
+		auto getSystemIncludeAndDependendPaths() const -> std::vector<std::string>;
+
 	private:
 		void discoverSourceFiles();
 	public:

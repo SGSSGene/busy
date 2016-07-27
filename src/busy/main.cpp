@@ -1,6 +1,9 @@
 
 #include <commonOptions/commonOptions.h>
 #include "commands/commands.h"
+#include <sys/sysinfo.h>
+#include <stdio.h>
+
 
 namespace {
 	auto cmdBuild      = commonOptions::make_command("build",     "", "builds a specific project");
@@ -31,7 +34,7 @@ namespace {
 	auto swtVerbose    = commonOptions::make_switch("verbose",     "Shows more information while running");
 
 	auto optFlavor     = commonOptions::make_option("flavor", "",   "builds and sets given flavor for future builds (toolchain + buildMode)");
-	auto optJobCt      = commonOptions::make_option("j",       10, "changes the amount of jobs");
+	auto optJobCt      = commonOptions::make_option("j",        0,  "change the amount of jobs, 0 will autodetect good size");
 }
 using namespace busy;
 
@@ -85,6 +88,17 @@ int main(int argc, char** argv) {
 			ws.save();
 		}
 
+		// setting good thread amount
+		if (*optJobCt == 0) {
+			struct sysinfo memInfo;
+			sysinfo (&memInfo);
+			int nprocs      = std::thread::hardware_concurrency();
+			int memoryInGig = memInfo.totalram / 1000 / 1000 / 1000;
+
+			int count = std::min(nprocs, memoryInGig);
+			std::cout << "setting jobs to " << count << std::endl;
+			optJobCt.setValue(count);
+		}
 
 		if (*cmdDocu) {
 			commands::docu();

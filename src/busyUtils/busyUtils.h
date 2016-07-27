@@ -46,7 +46,7 @@ namespace utils {
 		}
 	};
 
-	std::string sanitize(std::string const& _s);
+	auto sanitize(std::string const& _s) -> std::string;
 
 	void sleep(unsigned int _s);
 
