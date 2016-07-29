@@ -254,6 +254,21 @@ namespace utils {
 			throw std::runtime_error("chdir to "+_string+" from "+cwd()+" failed");
 		}
 	}
+
+
+	void convertDFileToDDFile(std::string const& _inFile, std::string const& _outFile) {
+		std::ifstream ifs(_inFile);
+		std::ofstream ofs(_outFile);
+		for (std::string line; std::getline(ifs, line);) {
+			auto depFiles = explode(line, std::vector<std::string> {" ", "\\"});
+			for (auto const& s : depFiles) {
+				if (s.length() > 0 && s.back() != ':') {
+					ofs << s << std::endl;
+				}
+			}
+		}
+	}
+
 	auto sanitize(std::string const& _s) -> std::string {
 		std::string r;
 		for (char c : _s) {
@@ -265,6 +280,20 @@ namespace utils {
 		}
 		return r;
 	}
+
+	auto sanitizeForMakro(std::string name) -> std::string {
+		for (auto& c : name) {
+			if ((c >= 'A' and c <= 'Z')
+				or (c >= 'a' and c <= 'z')
+				or (c >= '0' and c <= '9')) {
+				c = std::toupper(c);
+			} else {
+				c = '_';
+			}
+		}
+		return name;
+	}
+
 
 	void sleep(unsigned int _s) {
 		::sleep(_s);

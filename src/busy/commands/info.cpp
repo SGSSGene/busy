@@ -160,8 +160,7 @@ void info(std::vector<std::string> str) {
 			}
 			std::cout << std::endl;
 		});
-
-		visitor.visit();
+		visitor.visit(1);
 	}
 }
 }

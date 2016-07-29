@@ -23,6 +23,6 @@ namespace busy {
 		void setCppVisitor(CppVisitor _cppVisitor) { mCppVisitor = _cppVisitor; }
 		void setCVisitor(CVisitor _cVisitor) { mCVisitor = _cVisitor; }
 		void setProjectVisitor(ProjectVisitor _projectVisitor) { mProjectVisitor = _projectVisitor; }
-		void visit();
+		void visit(int _threads);
 	};
 }

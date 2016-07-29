@@ -96,7 +96,9 @@ int main(int argc, char** argv) {
 			int memoryInGig = memInfo.totalram / 1000 / 1000 / 1000;
 
 			int count = std::min(nprocs, memoryInGig);
-			std::cout << "setting jobs to " << count << std::endl;
+			if (*swtVerbose) {
+				std::cout << "setting jobs to " << count << std::endl;
+			}
 			optJobCt.setValue(count);
 		}
 

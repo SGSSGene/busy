@@ -46,7 +46,10 @@ namespace utils {
 		}
 	};
 
+	void convertDFileToDDFile(std::string const& _inFile, std::string const& _outFile);
+
 	auto sanitize(std::string const& _s) -> std::string;
+	auto sanitizeForMakro(std::string str) -> std::string;
 
 	void sleep(unsigned int _s);
 

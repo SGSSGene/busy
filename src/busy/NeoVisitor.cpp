@@ -3,21 +3,22 @@
 #include "NeoWorkspace.h"
 
 #include <iostream>
+#include <threadPool/threadPool.h>
 
 namespace busy {
 	NeoVisitor::NeoVisitor(NeoWorkspace& _workspace, std::string const& _name)
-		: mWorkspace {_workspace}
+		: mWorkspace (_workspace)
 		, mTarget    {_name}
 	{
-		setCppVisitor([] (NeoProject const*, std::string const& _file) {
+		setCppVisitor([] (NeoProject const*, std::string const&) {
 		});
-		setCVisitor([] (NeoProject const*, std::string const& _file) {
+		setCVisitor([] (NeoProject const*, std::string const&) {
 		});
-		setProjectVisitor([] (NeoProject const* _project) {
+		setProjectVisitor([] (NeoProject const*) {
 		});
 	}
 
-	void NeoVisitor::visit() {
+	void NeoVisitor::visit(int _jobs) {
 		auto projects = mWorkspace.getProjectAndDependencies(mTarget);
 
 		struct Job {
@@ -73,42 +74,29 @@ namespace busy {
 				job2.mDependendOnThisJob.push_back(&job1.second);
 			}
 		}
-		std::vector<Job*> queuedJobs;
-		for (auto& j : mAllJobs) {
-			if (j.second.mDependendOnOtherJobs.size() == 0) {
-				queuedJobs.push_back(&j.second);
-			}
-		}
-		int jobCount = 0;
-		while (not queuedJobs.empty()) {
-			auto job = queuedJobs.back();
-			queuedJobs.pop_back();
-			job->mAction();
-			for (auto otherJob : job->mDependendOnThisJob) {
-				auto iter = std::find(otherJob->mDependendOnOtherJobs.begin(), otherJob->mDependendOnOtherJobs.end(), job->name);
+		std::mutex mMutex;
+		threadPool::ThreadPool<Job*> threadPool;
+		threadPool.spawnThread([&] (Job* _job) {
+			_job->mAction();
+			std::lock_guard<std::mutex> lock(mMutex);
+			for (auto otherJob : _job->mDependendOnThisJob) {
+				auto iter = std::find(otherJob->mDependendOnOtherJobs.begin(), otherJob->mDependendOnOtherJobs.end(), _job->name);
 				otherJob->mDependendOnOtherJobs.erase(iter);
 				if (otherJob->mDependendOnOtherJobs.empty()) {
-					queuedJobs.push_back(otherJob);
+					threadPool.queue(otherJob);
 				}
 			}
-			jobCount += 1;
-		}
-		std::cout << "jobs done: " << jobCount << std::endl;
-		std::cout << "jobs didn't finished:" << std::endl;
-		for (auto& j : mAllJobs) {
-			if (j.second.mDependendOnOtherJobs.size() != 0) {
-				std::cout << "  - " << j.first << std::endl;
-				for (auto& j2 : j.second.mDependendOnOtherJobs) {
-					std::cout << "      * " << j2 << std::endl;
+		}, _jobs);
+
+		{
+			std::lock_guard<std::mutex> lock(mMutex);
+			for (auto& j : mAllJobs) {
+				if (j.second.mDependendOnOtherJobs.size() == 0) {
+					threadPool.queue(&j.second);
 				}
 			}
 		}
-
-		int cppCount = 0;
-		for (auto const& project : projects) {
-			cppCount += project->getCppFiles().size();
-		}
-
-		std::cout << "jobs: " << cppCount << " + " << projects.size() << " = " << cppCount + projects.size() << std::endl;
+		threadPool.wait();
+		//!TODO missing cycle detection
 	}
 }

@@ -47,6 +47,7 @@ namespace busy {
 		mType           = _project.type;
 		mWholeArchive   = _project.wholeArchive;
 		mAutoDependenciesDiscovery = _project.mAutoDependenciesDiscovery;
+		mSystemLibraries = _project.depLibraries;
 
 		for (auto s : _project.dependencies) {
 			mDependenciesAsString.insert(s);
@@ -59,6 +60,12 @@ namespace busy {
 		}
 		for (auto const& f : _project.legacy.systemIncludes) {
 			mSystemIncludePaths.emplace_back(f);
+		}
+		for (auto const& f : _project.legacy.systemLibraries) {
+			mSystemLibrariesPaths.push_back(f);
+		}
+		for (auto const& f : _project.legacy.linkingOption) {
+			mLinkingOptions.push_back(f);
 		}
 		discoverSourceFiles();
 	}
@@ -82,6 +89,67 @@ namespace busy {
 		return mPackage->getName() + "/" + getName();
 	}
 
+	auto NeoProject::getDependenciesRecursive() const -> std::vector<NeoProject const*> {
+		auto retList = getDependencies();
+		for (auto const& project : getDependencies()) {
+			for (auto p : project->getDependenciesRecursive()) {
+				retList.push_back(p);
+			}
+		}
+		std::map<NeoProject const*, int> entryCount;
+		for (auto entry : retList) {
+			entryCount[entry] += 1;
+		}
+		retList.erase(std::remove_if(retList.begin(), retList.end(), [&entryCount] (NeoProject const* p) {
+			entryCount[p] -= 1;
+			return entryCount[p] > 0;
+		}), retList.end());
+
+		return retList;
+	}
+
+	auto NeoProject::getSystemLibrariesPathsRecursive() const -> std::vector<std::string> {
+		auto retList = getSystemLibrariesPaths();
+		for (auto const& project : getDependencies()) {
+			for (auto p : project->getSystemLibrariesPathsRecursive()) {
+				retList.push_back(p);
+			}
+		}
+
+		std::map<std::string, int> entryCount;
+		for (auto entry : retList) {
+			entryCount[entry] += 1;
+		}
+		retList.erase(std::remove_if(retList.begin(), retList.end(), [&entryCount] (std::string p) {
+			entryCount[p] -= 1;
+			return entryCount[p] > 0;
+		}), retList.end());
+
+		return retList;
+	}
+
+	auto NeoProject::getLinkingOptionsRecursive() const -> std::vector<std::string> {
+		auto retList = getLinkingOptions();
+		for (auto const& project : getDependencies()) {
+			for (auto p : project->getLinkingOptionsRecursive()) {
+				retList.push_back(p);
+			}
+		}
+
+		std::map<std::string, int> entryCount;
+		for (auto entry : retList) {
+			entryCount[entry] += 1;
+		}
+		retList.erase(std::remove_if(retList.begin(), retList.end(), [&entryCount] (std::string p) {
+			entryCount[p] -= 1;
+			return entryCount[p] > 0;
+		}), retList.end());
+
+		return retList;
+	}
+
+
+
 	void NeoProject::discoverSourceFiles() {
 		mSourceFiles["cpp"]       = {};
 		mSourceFiles["c"]         = {};
@@ -104,13 +172,11 @@ namespace busy {
 		includePaths[0] += "/" + getName();
 		for (auto const& dir : includePaths) {
 			for (auto const& f : utils::listFiles(dir, true)) {
-				if (utils::isEndingWith(f, ".h") or utils::isEndingWith(f, ".hpp")) {
-					mSourceFiles["incl"].push_back(dir + "/" + f);
-					if (&dir == &includePaths[0]) {
-						mSourceFiles["incl-flat"].push_back(getName() + "/" + f);
-					} else {
-						mSourceFiles["incl-flat"].push_back(f);
-					}
+				mSourceFiles["incl"].push_back(dir + "/" + f);
+				if (&dir == &includePaths[0]) {
+					mSourceFiles["incl-flat"].push_back(getName() + "/" + f);
+				} else {
+					mSourceFiles["incl-flat"].push_back(f);
 				}
 			}
 		}
@@ -118,11 +184,7 @@ namespace busy {
 
 	auto NeoProject::getIncludeAndDependendPaths() const -> std::vector<std::string> {
 		auto includePaths = getIncludePaths();
-		for (auto dep : mDependencies) {
-			for (auto& p : dep->getIncludeAndDependendPaths()) {
-				includePaths.emplace_back(std::move(p));
-			}
-		}
+		includePaths.push_back(includePaths.front() + "/" + getName());
 		return includePaths;
 	}
 	auto NeoProject::getSystemIncludeAndDependendPaths() const -> std::vector<std::string> {
@@ -132,9 +194,13 @@ namespace busy {
 				includePaths.emplace_back(std::move(p));
 			}
 		}
+		for (auto dep : mDependencies) {
+			for (auto& p : dep->getIncludeAndDependendPaths()) {
+				includePaths.emplace_back(std::move(p));
+			}
+		}
 		return includePaths;
 	}
-
 
 	void NeoProject::discoverDependencies() {
 

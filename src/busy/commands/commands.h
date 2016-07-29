@@ -6,7 +6,7 @@ namespace commands {
 
 	using namespace busy;
 
-	bool build(std::string const& rootProjectName, bool verbose = false, bool noconsole=false, int jobs = 10);
+	bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int jobs);
 	void clang();
 	void clean();
 	void cleanAll();

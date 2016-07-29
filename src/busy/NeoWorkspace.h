@@ -2,6 +2,7 @@
 
 #include "NeoFileStat.h"
 #include "NeoPackage.h"
+#include "NeoVisitor.h"
 #include <list>
 #include <string>
 #include <vector>

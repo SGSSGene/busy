@@ -23,6 +23,9 @@ namespace busy {
 		std::set<std::string>    mDependenciesAsString;
 		std::vector<NeoProject const*> mDependencies;
 		std::map<std::string, std::vector<std::string>> mSourceFiles;
+		std::vector<std::string> mSystemLibraries;
+		std::vector<std::string> mSystemLibrariesPaths;
+		std::vector<std::string> mLinkingOptions;
 	public:
 		// Constructed from config file
 		NeoProject(busyConfig::Project const& _project, NeoPackage* _package);
@@ -41,10 +44,16 @@ namespace busy {
 		auto getIncludePaths() const -> std::vector<std::string> const& { return mIncludePaths; }
 		auto getSystemIncludePaths() const -> std::vector<std::string> const& { return mSystemIncludePaths; }
 		auto getDependencies() const -> std::vector<NeoProject const*> const& { return mDependencies; }
+		auto getDependenciesRecursive() const -> std::vector<NeoProject const*>;
 		auto getCFiles() const -> std::vector<std::string> const& { return mSourceFiles.at("c"); }
 		auto getCppFiles() const -> std::vector<std::string> const& { return mSourceFiles.at("cpp"); }
 		auto getIncludeFiles() const -> std::vector<std::string> const& { return mSourceFiles.at("incl"); }
 		auto getIncludeFilesFlat() const -> std::vector<std::string> const& { return mSourceFiles.at("incl-flat"); }
+		auto getSystemLibraries() const -> std::vector<std::string> const& { return mSystemLibraries; }
+		auto getSystemLibrariesPaths() const -> std::vector<std::string> const& { return mSystemLibrariesPaths; }
+		auto getLinkingOptions() const -> std::vector<std::string> const& { return mLinkingOptions; }
+		auto getSystemLibrariesPathsRecursive() const -> std::vector<std::string>;
+		auto getLinkingOptionsRecursive() const -> std::vector<std::string>;
 
 		auto getIncludeAndDependendPaths() const -> std::vector<std::string>;
 		auto getSystemIncludeAndDependendPaths() const -> std::vector<std::string>;
