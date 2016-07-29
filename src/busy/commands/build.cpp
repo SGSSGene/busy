@@ -16,9 +16,23 @@ using namespace busy;
 
 namespace commands {
 
+namespace {
+	auto getDependenciesFromFile(std::string const& _file) -> std::vector<std::string> {
+		std::vector<std::string> depFiles;
+
+		std::ifstream ifs(_file);
+		for (std::string line; std::getline(ifs, line);) {
+			depFiles.emplace_back(std::move(line));
+		}
+		return depFiles;
+	}
+}
+
 //!TODO missing avoid of recompiling, already compiled files
 
 bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int jobs) {
+
+	std::chrono::high_resolution_clock::time_point startTime = std::chrono::high_resolution_clock::now();
 	Workspace ws;
 
 	auto toolchainName = ws.getSelectedToolchain();
@@ -35,11 +49,42 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 	Visitor visitor(ws, rootProjectName);
 	std::mutex printMutex;
 
+	// create all needed path
+	{
+		std::set<std::string> neededPath;
+		for (auto const& project : ws.getProjectAndDependencies(rootProjectName)) {
+			for (auto file : project->getCppFiles()) {
+				neededPath.insert(utils::dirname(buildPath + "/" + file));
+			}
+			for (auto file : project->getCFiles()) {
+				neededPath.insert(utils::dirname(buildPath + "/" + file));
+			}
+			std::string outputFile = outPath + "/" + project->getName();
+			if (project->getIsUnitTest()) {
+				outputFile = outPath + "/tests/" + project->getFullName();
+			} else if (project->getIsExample()) {
+				outputFile = outPath + "/examples/" + project->getFullName();
+			}
+			neededPath.insert(utils::dirname(outputFile));
+		}
+
+		for (auto const& s : neededPath) {
+			if (not utils::fileExists(s)) {
+				utils::mkdir(s);
+			}
+		}
+	}
+
+	// check if certain files exists
+	//std::
+	
+
 	bool success = true;
 
 	visitor.setStatisticUpdateCallback([&] (int done, int total) {
+		std::lock_guard<std::mutex> lock(printMutex);
 		if (not noconsole) {
-				std::cout << "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b";
+			std::cout << "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b";
 			std::cout << "working on job: " << done << "/" << total << std::flush;
 
 			if (done == total) {
@@ -51,9 +96,32 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 
 	});
 
+	std::set<Project const*> needsRecompile;
 	visitor.setCppVisitor([&] (Project const* _project, std::string const& _file) {
-		std::string buildFilePath = utils::dirname(buildPath + "/" + _file);
-		utils::mkdir(buildFilePath);
+		std::string outputFile = buildPath + "/" + _file + ".o";
+
+		// Check file dependencies
+		bool recompile = false;
+		if (not utils::fileExists(buildPath + "/" + _file + ".dd")) {
+			recompile = true;
+		} else {
+			auto outputFileDate = utils::getFileModificationTime(outputFile);
+			for (auto const& file : getDependenciesFromFile(buildPath + "/" + _file + ".dd")) {
+				if (not utils::fileExists(file)) {
+					recompile = true;
+					break;
+				}
+				if (utils::getFileModificationTime(file) > outputFileDate) {
+					recompile = true;
+					break;
+				}
+			}
+		}
+		if (not recompile) {
+			return;
+		}
+		needsRecompile.insert(_project);
+
 		std::vector<std::string> options = toolchain->cppCompiler;
 		options.push_back("-std=c++11");
 		//!TODO shouldnt be default argument
@@ -67,7 +135,7 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 		options.push_back("-c");
 		options.push_back(_file);
 		options.push_back("-o");
-		options.push_back(buildPath + "/" + _file+".o");
+		options.push_back(outputFile);
 		options.push_back("-g3");
 		options.push_back("-O0");
 		//!ENDTODO
@@ -110,8 +178,29 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 	});
 
 	visitor.setCVisitor([&] (Project const* _project, std::string const& _file) {
-		std::string buildFilePath = utils::dirname(buildPath + "/" + _file);
-		utils::mkdir(buildFilePath);
+
+		std::string outputFile = buildPath + "/" + _file + ".o";
+
+		// Check file dependencies
+		bool recompile = false;
+		if (not utils::fileExists(buildPath + "/" + _file + ".dd")) {
+			recompile = true;
+		} else for (auto const& file : getDependenciesFromFile(buildPath + "/" + _file + ".dd")) {
+			auto outputFileDate = utils::getFileModificationTime(outputFile);
+			if (not utils::fileExists(file)) {
+				recompile = true;
+				break;
+			}
+			if (utils::getFileModificationTime(file) > outputFileDate) {
+				recompile = true;
+				break;
+			}
+		}
+		if (not recompile) {
+			return;
+		}
+		needsRecompile.insert(_project);
+
 		std::vector<std::string> options = toolchain->cCompiler;
 		options.push_back("-std=c11");
 		//!TODO shouldnt be default argument
@@ -125,9 +214,13 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 		options.push_back("-c");
 		options.push_back(_file);
 		options.push_back("-o");
-		options.push_back(buildPath + "/" + _file+".o");
-		options.push_back("-g3");
-		options.push_back("-O0");
+		options.push_back(outputFile);
+		if (buildModeName == "release") {
+			options.push_back("-O3");
+		} else if (buildModeName == "debug") {
+			options.push_back("-g3");
+			options.push_back("-O0");
+		}
 		//!ENDTODO
 		options.push_back("-DBUSY");
 		options.push_back("-DBUSY_" + utils::sanitizeForMakro(_project->getName()));
@@ -160,11 +253,24 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 
 
 	auto linkLibrary = [&] (Project const* _project) {
+
+		std::string outputFile = buildPath + "/" + _project->getFullName() + ".a";
+
+		// Check file dependencies
+		bool recompile = false;
+
+		if (needsRecompile.count(_project) > 0) {
+			recompile = true;
+		} else if (not utils::fileExists(outputFile)) {
+			recompile = true;
+		}
+		if (not recompile) {
+			return;
+		}
+
 		std::vector<std::string> options = toolchain->archivist;
 		options.push_back("rcs");
 
-		std::string buildFilePath = utils::dirname(buildPath + "/" + _project->getFullName() + ".a");
-		utils::mkdir(buildFilePath);
 		options.push_back(buildPath + "/" + _project->getFullName() + ".a");
 		for (auto file : _project->getCppFiles()) {
 			auto objFile = buildPath + "/" + file + ".o";
@@ -199,25 +305,33 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 		}
 	};
 	auto linkExecutable = [&] (Project const* _project) {
-		std::string buildFilePath = utils::dirname(buildPath + "/" + _project->getFullName());
-		utils::mkdir(buildFilePath);
-		utils::mkdir(utils::dirname(outPath + "/tests/" + _project->getFullName()));
-		utils::mkdir(utils::dirname(outPath + "/examples/" + _project->getFullName()));
-		utils::mkdir(utils::dirname(outPath + "/" + _project->getName()));
+		std::string outputFile = outPath + "/" + _project->getName();
+		if (_project->getIsUnitTest()) {
+			outputFile = outPath + "/tests/" + _project->getFullName();
+		} else if (_project->getIsExample()) {
+			outputFile = outPath + "/examples/" + _project->getFullName();
+		}
+
+		// Check file dependencies
+		bool recompile = false;
+
+		if (needsRecompile.count(_project) > 0) {
+			recompile = true;
+		} else if (not utils::fileExists(outputFile)) {
+			recompile = true;
+		}
+		if (not recompile) {
+			return;
+		}
+
 
 		std::vector<std::string> options = toolchain->cppCompiler;
 		//!TODO shouldnt be default argument
 		options.push_back("-rdynamic");
 		//!ENDTODO
 		options.push_back("-o");
+		options.push_back(outputFile);
 
-		if (_project->getIsUnitTest()) {
-			options.push_back(outPath + "/tests/" + _project->getFullName());
-		} else if (_project->getIsExample()) {
-			options.push_back(outPath + "/examples/" + _project->getName());
-		} else {
-			options.push_back(outPath + "/" + _project->getName());
-		}
 		for (auto file : _project->getCppFiles()) {
 			auto objFile = buildPath + "/" + file + ".o";
 			options.push_back(objFile);
@@ -285,7 +399,6 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 		}
 	});
 
-	std::chrono::high_resolution_clock::time_point startTime = std::chrono::high_resolution_clock::now();
 	visitor.visit(jobs);
 
 	std::chrono::high_resolution_clock::time_point endTime = std::chrono::high_resolution_clock::now();

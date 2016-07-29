@@ -67,7 +67,8 @@ namespace utils {
 		return ::utils::basename(_file);
 	}
 	bool fileExists(std::string const& _file) {
-		return std::ifstream(_file).good();
+		struct stat buffer;
+		return (stat (_file.c_str(), &buffer) == 0);
 	}
 	bool dirExists(std::string const& _file) {
 		auto l = utils::explode(_file, "/");
