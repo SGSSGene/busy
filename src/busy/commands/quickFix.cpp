@@ -1,8 +1,6 @@
 #include "commands.h"
 #include <iostream>
 
-using namespace busy;
-
 namespace commands {
 
 void quickFix() {

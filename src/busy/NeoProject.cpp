@@ -88,6 +88,13 @@ namespace busy {
 	auto NeoProject::getFullName() const -> std::string {
 		return mPackage->getName() + "/" + getName();
 	}
+	bool NeoProject::getIsUnitTest() const {
+		return utils::isStartingWith(mName, "test");
+	}
+	bool NeoProject::getIsExample() const {
+		return utils::isStartingWith(mName, "example") or utils::isStartingWith(mName, "demo");
+	}
+
 
 	auto NeoProject::getDependenciesRecursive() const -> std::vector<NeoProject const*> {
 		auto retList = getDependencies();

@@ -1,8 +1,10 @@
 
-#include <commonOptions/commonOptions.h>
 #include "commands/commands.h"
+
+#include <busyUtils/busyUtils.h>
+#include <commonOptions/commonOptions.h>
+#include <cstdio>
 #include <sys/sysinfo.h>
-#include <stdio.h>
 
 
 namespace {
@@ -36,8 +38,6 @@ namespace {
 	auto optFlavor     = commonOptions::make_option("flavor", "",   "builds and sets given flavor for future builds (toolchain + buildMode)");
 	auto optJobCt      = commonOptions::make_option("j",        0,  "change the amount of jobs, 0 will autodetect good size");
 }
-using namespace busy;
-
 using Action = std::function<void()>;
 
 /**
@@ -45,7 +45,7 @@ using Action = std::function<void()>;
  * the wrong one. idea is to always endup in the cwd where busy.yaml is
  * located
  */
-std::string checkCwd() {
+auto checkCwd() -> std::string {
 	std::string relPath = ".";
 	auto cwd = utils::cwd();
 	while (cwd != "/" and not utils::fileExists("busy.yaml")) {
@@ -83,9 +83,7 @@ int main(int argc, char** argv) {
 		}
 
 		if (*optFlavor != "") {
-			Workspace ws(".");
-			ws.accessConfigFile().setLastFlavor(*optFlavor);
-			ws.save();
+			std::cout << "setting flavor is broken" << std::endl;
 		}
 
 		// setting good thread amount

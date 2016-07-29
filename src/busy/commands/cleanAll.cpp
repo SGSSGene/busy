@@ -1,4 +1,7 @@
 #include "commands.h"
+
+#include "NeoWorkspace.h"
+#include <busyUtils/busyUtils.h>
 #include <iostream>
 
 
@@ -10,12 +13,7 @@ void cleanAll() {
 	utils::rm("./build", true);
 	utils::mkdir("./build");
 
-	Workspace ws(".");
-	auto& config = ws.accessConfigFile();
-
-	config.setLastCompileTime(0);
-	config.accessAutoFileStates().clear();
-	ws.save();
+	//!TODO reset lastCompileTime
 
 	auto dirs = utils::listDirs(".busy", true);
 	for (auto d : dirs) {
@@ -24,7 +22,7 @@ void cleanAll() {
 
 	auto files = utils::listFiles(".busy", false);
 	for (auto f : files) {
-		if (f != "workspace.bin" && f != "workspace.yaml") {
+		if (f != "workspace.bin") {
 			utils::rm(".busy/" + f, false);
 		}
 	}

@@ -1,11 +1,12 @@
 #include "commands.h"
 
 #include "NeoWorkspace.h"
+#include <busyUtils/busyUtils.h>
 #include <chrono>
 #include <fstream>
 #include <iostream>
+#include <mutex>
 #include <process/Process.h>
-#include <serializer/serializer.h>
 
 #define TERM_RED                        "\033[31m"
 #define TERM_GREEN                      "\033[32m"
@@ -38,9 +39,7 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 
 	visitor.setStatisticUpdateCallback([&] (int done, int total) {
 		if (not noconsole) {
-//			if (done != 1) {
 				std::cout << "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b";
-//			}
 			std::cout << "working on job: " << done << "/" << total << std::flush;
 
 			if (done == total) {
@@ -202,14 +201,20 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 	auto linkExecutable = [&] (NeoProject const* _project) {
 		std::string buildFilePath = utils::dirname(buildPath + "/" + _project->getFullName());
 		utils::mkdir(buildFilePath);
-		utils::mkdir(utils::dirname(outPath + "/" + _project->getFullName()));
+		utils::mkdir(utils::dirname(outPath + "/tests/" + _project->getFullName()));
+		utils::mkdir(utils::dirname(outPath + "/" + _project->getName()));
 
 		std::vector<std::string> options = toolchain->cppCompiler;
 		//!TODO shouldnt be default argument
 		options.push_back("-rdynamic");
 		//!ENDTODO
 		options.push_back("-o");
-		options.push_back(outPath + "/" + _project->getFullName());
+
+		if (_project->getIsUnitTest()) {
+			options.push_back(outPath + "/tests/" + _project->getFullName());
+		} else if (_project->getIsExample()) {
+			options.push_back(outPath + "/" + _project->getName());
+		}
 		for (auto file : _project->getCppFiles()) {
 			auto objFile = buildPath + "/" + file + ".o";
 			options.push_back(objFile);

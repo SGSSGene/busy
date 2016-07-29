@@ -1,4 +1,6 @@
 #include "commands.h"
+
+#include "NeoWorkspace.h"
 #include <iostream>
 
 using namespace busy;
@@ -6,25 +8,17 @@ using namespace busy;
 namespace commands {
 
 void toolchain(std::string const& _toolchain) {
-	Workspace ws(".");
-	auto toolchains    = getAllToolchains(ws);
-	auto installations = getAllInstallations(ws);
+	NeoWorkspace ws;
 
-	if (toolchains.find(_toolchain) != toolchains.end()) {
-		if (not toolchains.at(_toolchain).isInstalled(installations)) {
-			std::cout << "Toolchain is not installed." << std::endl;
-			std::cout << "trying to install..." << std::endl;
-			toolchains.at(_toolchain).install(installations);
-			if (not toolchains.at(_toolchain).isInstalled(installations)) {
-				return;
-			}
+	auto toolchains = ws.getToolchains();
 
-		}
-		ws.accessConfigFile().setToolchain(_toolchain);
-		std::cout << "Set toolchain to " << _toolchain << std::endl;
+	auto iter = toolchains.find(_toolchain);
+	if (iter == toolchains.end()) {
+		std::cout << "Toolchain not found" << std::endl;
 		return;
 	}
-	std::cout << "Setting toolchain failed" << std::endl;
+
+	std::cout << "found toolchain: " << _toolchain << " but this function is not implemented yet" << std::endl;
 }
 
 }

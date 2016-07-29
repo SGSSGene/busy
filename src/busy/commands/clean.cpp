@@ -1,4 +1,7 @@
 #include "commands.h"
+
+#include "NeoWorkspace.h"
+#include <busyUtils/busyUtils.h>
 #include <iostream>
 
 
@@ -7,15 +10,14 @@ using namespace busy;
 namespace commands {
 
 void clean() {
-	Workspace ws(".");
-	auto toolchain = ws.accessConfigFile().getToolchain();
-	auto buildMode = ws.accessConfigFile().getBuildMode();
+	NeoWorkspace ws;
+	auto toolchain = ws.getSelectedToolchain();
+	auto buildMode = ws.getSelectedBuildMode();
+
 	auto cleanBusyPath  = std::string("./.busy/") + toolchain + "/" + buildMode + "/";
 	auto cleanBuildPath = std::string("./build/") + toolchain + "/" + buildMode + "/";
-	auto& config = ws.accessConfigFile();
-	config.setLastCompileTime(0);
-	config.accessAutoFileStates().clear();
-	ws.save();
+
+	//!TODO reset lastCompileTime
 
 	if (utils::fileExists(cleanBusyPath)) {
 		utils::rm(cleanBusyPath, true);

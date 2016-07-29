@@ -1,4 +1,9 @@
 #include "commands.h"
+
+#include "NeoWorkspace.h"
+#include "git.h"
+
+#include <busyUtils/busyUtils.h>
 #include <iostream>
 
 using namespace busy;
@@ -11,28 +16,12 @@ namespace commands {
 
 
 void status(std::string _buildMode) {
-	Workspace ws(".");
-	if (_buildMode != "") {
-		if (_buildMode == "release" || _buildMode == "debug") {
-			ws.accessConfigFile().setBuildMode(_buildMode);
-		} else {
-			throw "only \"release\" and \"debug\" are valid buildMode arguments";
-		}
-	}
+	NeoWorkspace ws;
 
-	auto allToolchains = getAllToolchains(ws);
+	std::cout << "current buildmode: " << ws.getSelectedBuildMode() << std::endl;
+	std::cout << "current toolchain: " << ws.getSelectedToolchain() << std::endl;
 
-	Toolchain toolchain = allToolchains.rbegin()->second;
-	std::string toolchainName = ws.accessConfigFile().getToolchain();
-	if (allToolchains.find(toolchainName) != allToolchains.end()) {
-		toolchain = allToolchains.at(toolchainName);
-	}
-	ws.accessConfigFile().setToolchain(toolchain.getName());
-
-	std::cout << "current buildmode: " << ws.accessConfigFile().getBuildMode() << std::endl;
-	std::cout << "current toolchain: " << ws.accessConfigFile().getToolchain() << std::endl;
-
-	auto validPackages = ws.getAllValidPackages();
+	auto validPackages = ws.getPackages();
 	if (validPackages.size() > 0) {
 		int longestName = 0;
 		for (auto const& p : validPackages) {
@@ -78,24 +67,6 @@ void status(std::string _buildMode) {
 			}
 		}
 	}
-
-
-	auto missingPackages = ws.getAllMissingPackages();
-	if (missingPackages.size() > 0) {
-		std::cout << "\nPackages not cloned yet:" << std::endl;
-		for (auto const& p : missingPackages) {
-			std::cout << "  " << p.getName() << std::endl;
-		}
-	}
-
-	auto invalidPackages = ws.getAllInvalidPackages();
-	if (invalidPackages.size() > 0) {
-		std::cout << "\nPackages are not valid:" << std::endl;
-		for (auto const& p : invalidPackages) {
-			std::cout << "  " << p << std::endl;
-		}
-	}
-
 }
 
 }

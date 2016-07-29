@@ -1,11 +1,9 @@
 #pragma once
 
-#include "utils.h"
+#include <string>
+#include <vector>
 
 namespace commands {
-
-	using namespace busy;
-
 	bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int jobs);
 	void clang();
 	void clean();

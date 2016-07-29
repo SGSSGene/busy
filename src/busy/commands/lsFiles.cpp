@@ -1,11 +1,16 @@
 #include "commands.h"
+
+#include "NeoWorkspace.h"
+#include <busyUtils/busyUtils.h>
 #include <iostream>
+#include <process/Process.h>
 
 using namespace busy;
 
 namespace commands {
 
-std::set<std::string> getLsFiles(std::string const& _cwd) {
+namespace {
+auto getLsFiles(std::string const& _cwd) -> std::set<std::string> {
 	utils::Cwd cwd(_cwd);
 	process::Process p1 ({"git", "ls-files"});
 	process::Process p2 ({"git", "ls-files", "-o", "--exclude-standard"});
@@ -29,6 +34,7 @@ void printLsFiles(std::string const& _prefix, std::string const& _cwd) {
 			std::cout << _prefix <<_cwd << "/" << s << std::endl;
 		}
 	}
+}
 }
 
 int listFiles(std::string const& _relPath) {

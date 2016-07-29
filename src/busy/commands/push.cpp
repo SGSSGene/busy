@@ -1,7 +1,9 @@
 #include "commands.h"
+
+#include "git.h"
+#include <busyUtils/busyUtils.h>
 #include <iostream>
 #include <threadPool/threadPool.h>
-using namespace busy;
 
 namespace commands {
 

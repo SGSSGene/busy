@@ -1,4 +1,7 @@
 #include "commands.h"
+
+#include "NeoWorkspace.h"
+#include <fstream>
 #include <iostream>
 
 using namespace busy;
@@ -14,98 +17,29 @@ void generatePart3(std::ostream& ost, std::string const& _projectName);
 void eclipse() {
 	std::cout << "Generate .cproject and .project files" << std::endl;
 
-	auto package = readPackage(".");
+	NeoWorkspace ws;
 
-	Workspace ws(".");
-
+	NeoProject const* rootProject {nullptr};
+	for (auto project : ws.getProjectAndDependencies()) {
+		if (project->getIsExample()) continue;
+		if (project->getIsUnitTest()) continue;
+		rootProject = project;
+		break;
+	}
+	if (rootProject == nullptr) {
+		throw std::runtime_error("Couldn't find any executable (that is not a test or example)");
+	}
 
 	std::set<std::string> includePaths;
-//	auto const& allProjects = ws.getAllRequiredProjects();
-	auto requiredProjects = ws.getAllRequiredProjects();
-
-	auto packagesDir = utils::listDirs("extRepositories", true);
-	for (auto& p : packagesDir) {
-		p = "extRepositories/" + p;
-	}
-	packagesDir.push_back(".");
-
-	// find auto dependencies
-	std::vector<Project*> autoProjects;
-	for (auto const& pDir : packagesDir) {
-		if (not utils::fileExists(pDir + "/src")) continue;
-		// Find auto projects
-		auto projectDirs = utils::listDirs(pDir + "/src", true);
-		for (auto const& d : projectDirs) {
-			auto iter = requiredProjects.find(d);
-			if (iter == requiredProjects.end()) {
-				requiredProjects[d].set(d);
-				requiredProjects[d].setPackagePath(pDir);
-				requiredProjects[d].setAutoDependenciesDiscovery(true);
-			}
-
-			auto& project = requiredProjects.at(d);
-			if (project.getIgnore()) continue;
-			if (not project.getAutoDependenciesDiscovery()) continue;
-
-			autoProjects.push_back(&project);
-		}
-	}
-	for (auto p : autoProjects) {
-		auto& project = *p;
-
-		auto dep    = project.getDefaultDependencies(&ws, requiredProjects);
-		auto optDep = project.getDefaultOptionalDependencies(&ws, requiredProjects);
-
-		for (auto d : optDep) {
-			auto iter = std::find(dep.begin(), dep.end(), d);
-			while (iter != dep.end()) {
-				dep.erase(iter);
-				iter = std::find(dep.begin(), dep.end(), d);
-			}
-		}
-
-		project.setDependencies(std::move(dep));
-		project.setOptionalDependencies(std::move(optDep));
-	}
-	// save all the auto detected dependencies
-	ws.save();
-
-
-	// Create dependency tree
-	//auto projects = requiredProjectso
-	//	auto const& allProjects = ws.getAllRequiredProjects();
-	//auto const& allProjects = autoProjects;
-	std::map<std::string, Project> allProjects = requiredProjects;
-/*	for (auto& p : autoProjects) {
-		allProjects[p->getName()] = p;
-	}*/
-
-
-
-	for (auto p : allProjects) {
-		for (auto d : p.second.getDependencies()) {
-			auto parts = utils::explode(d, "/");
-			std::string baseName = "";
-			if (parts[0] != package.getName()) {
-				baseName = "extRepositories/" + parts[0] + "/";
-			}
-			includePaths.insert(baseName + "src/" + parts[1]);
-
-			for (auto const& i : allProjects.at(parts[1]).getLegacy().includes) {
-				includePaths.insert(baseName + i);
-			}
-		}
-	}
-
-	for (auto p : includePaths) {
-		std::cout<<p<<std::endl;
+	for (auto p : rootProject->getIncludeAndDependendPaths()) {
+		includePaths.insert(p);
 	}
 
 	std::ofstream cproject(".cproject");
-	generatePart1(cproject, includePaths, package.getName());
+	generatePart1(cproject, includePaths, rootProject->getName());
 
 	std::ofstream project(".project");
-	generatePart3(project, package.getName());
+	generatePart3(project, rootProject->getName());
 
 	std::cout << "Done" << std::endl;
 }

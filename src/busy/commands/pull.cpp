@@ -1,12 +1,13 @@
 #include "commands.h"
-#include <threadPool/threadPool.h>
+
+#include "git.h"
+#include <busyUtils/busyUtils.h>
 #include <iostream>
+#include <threadPool/threadPool.h>
 
 #define TERM_RED                        "\033[31m"
 #define TERM_GREEN                      "\033[32m"
 #define TERM_RESET                      "\033[0m"
-
-using namespace busy;
 
 namespace commands {
 

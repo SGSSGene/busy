@@ -38,6 +38,8 @@ namespace busy {
 		auto getPath() const -> std::string const& { return mPath; }
 		bool getHasConfigEntry() const { return mHasConfigEntry; }
 		auto getType() const -> std::string const& { return mType; }
+		bool getIsUnitTest() const;
+		bool getIsExample() const;
 		bool getWholeArchive() const { return mWholeArchive; }
 		bool getAutoDependenciesDiscovery() const { return mAutoDependenciesDiscovery; }
 		auto getSourcePaths() const -> std::vector<std::string> const& { return mSourcePaths; }
