@@ -1,6 +1,6 @@
 #include "commands.h"
 
-#include "NeoWorkspace.h"
+#include "Workspace.h"
 #include <fstream>
 #include <iostream>
 
@@ -17,9 +17,9 @@ void generatePart3(std::ostream& ost, std::string const& _projectName);
 void eclipse() {
 	std::cout << "Generate .cproject and .project files" << std::endl;
 
-	NeoWorkspace ws;
+	Workspace ws;
 
-	NeoProject const* rootProject {nullptr};
+	Project const* rootProject {nullptr};
 	for (auto project : ws.getProjectAndDependencies()) {
 		if (project->getIsExample()) continue;
 		if (project->getIsUnitTest()) continue;

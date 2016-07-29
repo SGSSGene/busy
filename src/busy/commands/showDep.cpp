@@ -1,6 +1,6 @@
 #include "commands.h"
 
-#include "NeoWorkspace.h"
+#include "Workspace.h"
 #include <chrono>
 #include <iostream>
 #include <fstream>

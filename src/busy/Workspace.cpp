@@ -1,4 +1,4 @@
-#include "NeoWorkspace.h"
+#include "Workspace.h"
 
 #include <algorithm>
 #include <busyUtils/busyUtils.h>
@@ -11,11 +11,11 @@ namespace busy {
 namespace {
 	std::string extRepPath { "./extRepositories" };
 	std::string busyPath   { "./.busy" };
-	std::string workspaceFile { ".busy/neoworkspace.bin" };
+	std::string workspaceFile { ".busy/Workspace.bin" };
 
 }
 
-NeoWorkspace::NeoWorkspace() {
+Workspace::Workspace() {
 	// check if certain folders exists
 	for (std::string s : {extRepPath , busyPath}) {
 		if (not utils::fileExists(s)) {
@@ -24,7 +24,7 @@ NeoWorkspace::NeoWorkspace() {
 	}
 
 	if (utils::fileExists(workspaceFile)) {
-		serializer::binary::read(workspaceFile, mNeoFileStats);
+		serializer::binary::read(workspaceFile, mFileStats);
 	}
 
 
@@ -32,23 +32,23 @@ NeoWorkspace::NeoWorkspace() {
 	loadPackages();
 	discoverSystemToolchains();
 }
-NeoWorkspace::~NeoWorkspace() {
+Workspace::~Workspace() {
 	utils::AtomicWrite atomic(workspaceFile);
-	serializer::binary::write(atomic.getTempName(), mNeoFileStats);
+	serializer::binary::write(atomic.getTempName(), mFileStats);
 	atomic.close();
 
-	serializer::yaml::write(workspaceFile + ".yaml", mNeoFileStats);
+	serializer::yaml::write(workspaceFile + ".yaml", mFileStats);
 
 }
 
-auto NeoWorkspace::getPackageFolders() const -> std::vector<std::string> const& {
+auto Workspace::getPackageFolders() const -> std::vector<std::string> const& {
 	return mPackageFolders;
 }
-auto NeoWorkspace::getPackages() const -> std::list<NeoPackage> const& {
+auto Workspace::getPackages() const -> std::list<Package> const& {
 	return mPackages;
 }
 
-bool NeoWorkspace::hasPackage(std::string const& _name) const {
+bool Workspace::hasPackage(std::string const& _name) const {
 	for (auto const& package : mPackages) {
 		if (package.getName() == _name) {
 			return true;
@@ -57,10 +57,10 @@ bool NeoWorkspace::hasPackage(std::string const& _name) const {
 	return false;
 }
 
-auto NeoWorkspace::getPackage(std::string const& _name) const -> NeoPackage const& {
-	return const_cast<NeoWorkspace*>(this)->getPackage(_name);
+auto Workspace::getPackage(std::string const& _name) const -> Package const& {
+	return const_cast<Workspace*>(this)->getPackage(_name);
 }
-auto NeoWorkspace::getPackage(std::string const& _name) -> NeoPackage& {
+auto Workspace::getPackage(std::string const& _name) -> Package& {
 	for (auto& package : mPackages) {
 		if (package.getName() == _name) {
 			return package;
@@ -69,7 +69,7 @@ auto NeoWorkspace::getPackage(std::string const& _name) -> NeoPackage& {
 	throw std::runtime_error("Couldn't find packages with name: " + _name);
 }
 
-auto NeoWorkspace::getProject(std::string const& _name) const -> NeoProject const& {
+auto Workspace::getProject(std::string const& _name) const -> Project const& {
 	auto parts = utils::explode(_name, "/");
 	if (parts.size() > 2) {
 		throw std::runtime_error("given invalid full project name: " + _name + ". It should look like this Package/Project");
@@ -78,7 +78,7 @@ auto NeoWorkspace::getProject(std::string const& _name) const -> NeoProject cons
 		return package.getProject(parts[1]);
 	}
 
-	std::vector<NeoProject const*> matchList;
+	std::vector<Project const*> matchList;
 	for (auto const& package : mPackages) {
 		for (auto const& project : package.getProjects()) {
 			if (project.getName () == _name) {
@@ -98,11 +98,11 @@ auto NeoWorkspace::getProject(std::string const& _name) const -> NeoProject cons
 	}
 	return *matchList.at(0);
 }
-auto NeoWorkspace::getProjectAndDependencies(std::string const& _name) const -> std::vector<NeoProject const*> {
-	std::vector<NeoProject const*> retProjects;
+auto Workspace::getProjectAndDependencies(std::string const& _name) const -> std::vector<Project const*> {
+	std::vector<Project const*> retProjects;
 
-	std::set<NeoProject const*> flagged;
-	std::vector<NeoProject const*> queued = retProjects;
+	std::set<Project const*> flagged;
+	std::vector<Project const*> queued = retProjects;
 
 	if (_name == "") {
 		for (auto const& package : getPackages()) {
@@ -129,13 +129,13 @@ auto NeoWorkspace::getProjectAndDependencies(std::string const& _name) const -> 
 			}
 		}
 	}
-	std::sort(retProjects.begin(), retProjects.end(), [](NeoProject const* p1, NeoProject const* p2) {
+	std::sort(retProjects.begin(), retProjects.end(), [](Project const* p1, Project const* p2) {
 		return p1->getFullName() < p2->getFullName();
 	});
 	return retProjects;
 }
-auto NeoWorkspace::getFlavors() const -> std::map<std::string, NeoFlavor const*> {
-	std::map<std::string, NeoFlavor const*> retMap;
+auto Workspace::getFlavors() const -> std::map<std::string, Flavor const*> {
+	std::map<std::string, Flavor const*> retMap;
 
 	for (auto const& package : mPackages) {
 		for (auto const& flavor : package.getFlavors()) {
@@ -144,8 +144,8 @@ auto NeoWorkspace::getFlavors() const -> std::map<std::string, NeoFlavor const*>
 	}
 	return retMap;
 }
-auto NeoWorkspace::getToolchains() const -> std::map<std::string, NeoToolchain const*> {
-	std::map<std::string, NeoToolchain const*> retMap;
+auto Workspace::getToolchains() const -> std::map<std::string, Toolchain const*> {
+	std::map<std::string, Toolchain const*> retMap;
 	for (auto const& toolchain : mSystemToolchains) {
 		retMap[toolchain.first] = &toolchain.second;
 	}
@@ -157,25 +157,25 @@ auto NeoWorkspace::getToolchains() const -> std::map<std::string, NeoToolchain c
 	return retMap;
 }
 
-auto NeoWorkspace::getSelectedToolchain() const -> std::string {
+auto Workspace::getSelectedToolchain() const -> std::string {
 	return "system-gcc";
 }
-auto NeoWorkspace::getSelectedBuildMode() const -> std::string {
+auto Workspace::getSelectedBuildMode() const -> std::string {
 	return "debug";
 }
 
 
-auto NeoWorkspace::getFileStat(std::string const& _file) -> NeoFileStat& {
-	return mNeoFileStats[_file];
+auto Workspace::getFileStat(std::string const& _file) -> FileStat& {
+	return mFileStats[_file];
 }
 
-void NeoWorkspace::loadPackageFolders() {
+void Workspace::loadPackageFolders() {
 	mPackageFolders.emplace_back("./");
 	for (auto const& f : utils::listDirs(extRepPath, true)) {
 		mPackageFolders.emplace_back(extRepPath + "/" + f);
 	}
 }
-void NeoWorkspace::loadPackages() {
+void Workspace::loadPackages() {
 	auto const& folders = getPackageFolders();
 
 	for (auto const& f : folders) {
@@ -191,8 +191,8 @@ void NeoWorkspace::loadPackages() {
 	}
 }
 
-void NeoWorkspace::discoverSystemToolchains() {
-	std::map<std::string, std::pair<std::string, NeoToolchain>> searchPaths {
+void Workspace::discoverSystemToolchains() {
+	std::map<std::string, std::pair<std::string, Toolchain>> searchPaths {
 	     {"/usr/bin/gcc",       {"system-gcc",       {{"gcc"},       {"g++"},         {"ar"}}}},
 	     {"/usr/bin/gcc-5.3",   {"system-gcc-5.3",   {{"gcc-5.3"},   {"g++-5.3"},     {"ar"}}}},
 	     {"/usr/bin/gcc-5.2",   {"system-gcc-5.2",   {{"gcc-5.2"},   {"g++-5.2"},     {"ar"}}}},

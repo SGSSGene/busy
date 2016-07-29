@@ -1,7 +1,7 @@
 #include "commands.h"
 
-#include "NeoVisitor.h"
-#include "NeoWorkspace.h"
+#include "Visitor.h"
+#include "Workspace.h"
 
 #include <iostream>
 
@@ -75,7 +75,7 @@ void printList(std::string const& _title, std::vector<T> const& _list, std::func
 
 void info(std::vector<std::string> str) {
 
-	NeoWorkspace ws;
+	Workspace ws;
 
 	if (str.at(0) == "packageFolders" && str.size() == 1) {
 		std::cout << "PackageFolders: " << std::endl;
@@ -116,7 +116,7 @@ void info(std::vector<std::string> str) {
 		std::cout << "has entry in busy.yaml: " << std::boolalpha << project.getHasConfigEntry() << std::endl;
 		std::cout << "link whole archive: " << project.getWholeArchive() << std::endl;
 		std::cout << "auto dependency discovery: " << project.getAutoDependenciesDiscovery() << std::endl;
-		printList<NeoProject const*>("Dependencies:",  project.getDependencies(), [] (NeoProject const* const& p) { std::cout << p->getFullName(); });
+		printList<Project const*>("Dependencies:",  project.getDependencies(), [] (Project const* const& p) { std::cout << p->getFullName(); });
 		printList("Source Paths:",  project.getSourcePaths());
 		printList("Include Paths:", project.getIncludePaths());
 		printList("System Include Paths:", project.getSystemIncludePaths());

@@ -1,22 +1,22 @@
-#include "NeoVisitor.h"
+#include "Visitor.h"
 
-#include "NeoWorkspace.h"
+#include "Workspace.h"
 
 #include <iostream>
 #include <threadPool/threadPool.h>
 
 namespace busy {
-	NeoVisitor::NeoVisitor(NeoWorkspace& _workspace, std::string const& _name)
+	Visitor::Visitor(Workspace& _workspace, std::string const& _name)
 		: mWorkspace (_workspace)
 		, mTarget    {_name}
 	{
-		setCppVisitor([] (NeoProject const*, std::string const&) {});
-		setCVisitor([] (NeoProject const*, std::string const&) {});
-		setProjectVisitor([] (NeoProject const*) {});
+		setCppVisitor([] (Project const*, std::string const&) {});
+		setCVisitor([] (Project const*, std::string const&) {});
+		setProjectVisitor([] (Project const*) {});
 		setStatisticUpdateCallback([] (int, int) {});
 	}
 
-	void NeoVisitor::visit(int _jobs) {
+	void Visitor::visit(int _jobs) {
 		auto projects = mWorkspace.getProjectAndDependencies(mTarget);
 
 		struct Job {

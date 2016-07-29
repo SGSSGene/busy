@@ -1,6 +1,6 @@
-#include "NeoProject.h"
-#include "NeoPackage.h"
-#include "NeoWorkspace.h"
+#include "Project.h"
+#include "Package.h"
+#include "Workspace.h"
 
 #include <algorithm>
 #include <busyUtils/busyUtils.h>
@@ -38,7 +38,7 @@ namespace {
 
 
 namespace busy {
-	NeoProject::NeoProject(busyConfig::Project const& _project, NeoPackage* _package)
+	Project::Project(busyConfig::Project const& _project, Package* _package)
 		: mPackage { _package }
 	{
 		mPath           = mPackage->getPath() + "/src";
@@ -70,7 +70,7 @@ namespace busy {
 		discoverSourceFiles();
 	}
 
-	NeoProject::NeoProject(std::string const& _name, NeoPackage* _package)
+	Project::Project(std::string const& _name, Package* _package)
 		: mPackage { _package }
 	{
 		mPath = mPackage->getPath() + "/src";
@@ -85,29 +85,29 @@ namespace busy {
 		discoverSourceFiles();
 	}
 
-	auto NeoProject::getFullName() const -> std::string {
+	auto Project::getFullName() const -> std::string {
 		return mPackage->getName() + "/" + getName();
 	}
-	bool NeoProject::getIsUnitTest() const {
+	bool Project::getIsUnitTest() const {
 		return utils::isStartingWith(mName, "test");
 	}
-	bool NeoProject::getIsExample() const {
+	bool Project::getIsExample() const {
 		return utils::isStartingWith(mName, "example") or utils::isStartingWith(mName, "demo");
 	}
 
 
-	auto NeoProject::getDependenciesRecursive() const -> std::vector<NeoProject const*> {
+	auto Project::getDependenciesRecursive() const -> std::vector<Project const*> {
 		auto retList = getDependencies();
 		for (auto const& project : getDependencies()) {
 			for (auto p : project->getDependenciesRecursive()) {
 				retList.push_back(p);
 			}
 		}
-		std::map<NeoProject const*, int> entryCount;
+		std::map<Project const*, int> entryCount;
 		for (auto entry : retList) {
 			entryCount[entry] += 1;
 		}
-		retList.erase(std::remove_if(retList.begin(), retList.end(), [&entryCount] (NeoProject const* p) {
+		retList.erase(std::remove_if(retList.begin(), retList.end(), [&entryCount] (Project const* p) {
 			entryCount[p] -= 1;
 			return entryCount[p] > 0;
 		}), retList.end());
@@ -115,7 +115,7 @@ namespace busy {
 		return retList;
 	}
 
-	auto NeoProject::getSystemLibrariesPathsRecursive() const -> std::vector<std::string> {
+	auto Project::getSystemLibrariesPathsRecursive() const -> std::vector<std::string> {
 		auto retList = getSystemLibrariesPaths();
 		for (auto const& project : getDependencies()) {
 			for (auto p : project->getSystemLibrariesPathsRecursive()) {
@@ -135,7 +135,7 @@ namespace busy {
 		return retList;
 	}
 
-	auto NeoProject::getLinkingOptionsRecursive() const -> std::vector<std::string> {
+	auto Project::getLinkingOptionsRecursive() const -> std::vector<std::string> {
 		auto retList = getLinkingOptions();
 		for (auto const& project : getDependencies()) {
 			for (auto p : project->getLinkingOptionsRecursive()) {
@@ -157,7 +157,7 @@ namespace busy {
 
 
 
-	void NeoProject::discoverSourceFiles() {
+	void Project::discoverSourceFiles() {
 		mSourceFiles["cpp"]       = {};
 		mSourceFiles["c"]         = {};
 		mSourceFiles["incl"]      = {};
@@ -189,12 +189,12 @@ namespace busy {
 		}
 	}
 
-	auto NeoProject::getIncludeAndDependendPaths() const -> std::vector<std::string> {
+	auto Project::getIncludeAndDependendPaths() const -> std::vector<std::string> {
 		auto includePaths = getIncludePaths();
 		includePaths.push_back(includePaths.front() + "/" + getName());
 		return includePaths;
 	}
-	auto NeoProject::getSystemIncludeAndDependendPaths() const -> std::vector<std::string> {
+	auto Project::getSystemIncludeAndDependendPaths() const -> std::vector<std::string> {
 		auto includePaths = getSystemIncludePaths();
 		for (auto dep : mDependencies) {
 			for (auto& p : dep->getSystemIncludeAndDependendPaths()) {
@@ -209,7 +209,7 @@ namespace busy {
 		return includePaths;
 	}
 
-	void NeoProject::discoverDependencies() {
+	void Project::discoverDependencies() {
 
 		// scan all files to detect dependencies
 		if (mAutoDependenciesDiscovery) {
@@ -223,7 +223,7 @@ namespace busy {
 			mDependencies.push_back(&mPackage->getWorkspace()->getProject(d));
 		}
 	}
-	void NeoProject::discoverDependenciesInFile(std::string const& _file) {
+	void Project::discoverDependenciesInFile(std::string const& _file) {
 		// First check if this file is cached
 		auto& fileStat = mPackage->getWorkspace()->getFileStat(_file);
 
@@ -280,7 +280,7 @@ namespace busy {
 			for (auto const& file : includesOutsideOfThisProject) {
 				bool found = false;
 				for (auto const& package : packages) {
-					for (NeoProject const& project : package->getProjects()) {
+					for (Project const& project : package->getProjects()) {
 						auto fileToCheck = file;
 						for (auto const& include : project.getIncludeFilesFlat()) {
 							if (fileToCheck == include) {
@@ -304,7 +304,7 @@ namespace busy {
 			for (auto const& file : includesOutsideOfThisProjectOptional) {
 				bool found = false;
 				for (auto const& package : mPackage->getWorkspace()->getPackages()) {
-					for (NeoProject const& project : package.getProjects()) {
+					for (Project const& project : package.getProjects()) {
 						auto fileToCheck = project.getPath() + "/" + file;
 						for (auto const& include : project.getIncludeFiles()) {
 							if (fileToCheck == include) {

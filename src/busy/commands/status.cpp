@@ -1,6 +1,6 @@
 #include "commands.h"
 
-#include "NeoWorkspace.h"
+#include "Workspace.h"
 #include "git.h"
 
 #include <busyUtils/busyUtils.h>
@@ -16,7 +16,7 @@ namespace commands {
 
 
 void status(std::string _buildMode) {
-	NeoWorkspace ws;
+	Workspace ws;
 
 	std::cout << "current buildmode: " << ws.getSelectedBuildMode() << std::endl;
 	std::cout << "current toolchain: " << ws.getSelectedToolchain() << std::endl;

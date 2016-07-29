@@ -1,6 +1,6 @@
 #include "commands.h"
 
-#include "NeoWorkspace.h"
+#include "Workspace.h"
 #include <busyUtils/busyUtils.h>
 #include <iostream>
 #include <process/Process.h>

@@ -4,16 +4,16 @@
 #include <string>
 
 namespace busy {
-	class NeoWorkspace;
-	class NeoProject;
+	class Workspace;
+	class Project;
 
-	class NeoVisitor {
-		using CppVisitor      = std::function<void(NeoProject const* _project, std::string const& _file)>;
-		using CVisitor        = std::function<void(NeoProject const* _project, std::string const& _file)>;
-		using ProjectVisitor  = std::function<void(NeoProject const* _project)>;
+	class Visitor {
+		using CppVisitor      = std::function<void(Project const* _project, std::string const& _file)>;
+		using CVisitor        = std::function<void(Project const* _project, std::string const& _file)>;
+		using ProjectVisitor  = std::function<void(Project const* _project)>;
 		using StatisticUpdate = std::function<void(int _done, int _total)>;
 
-		NeoWorkspace& mWorkspace;
+		Workspace& mWorkspace;
 		std::string   mTarget;
 
 		CppVisitor      mCppVisitor;
@@ -21,7 +21,7 @@ namespace busy {
 		ProjectVisitor  mProjectVisitor;
 		StatisticUpdate mStatisticUpdate;
 	public:
-		NeoVisitor(NeoWorkspace& _ws, std::string const& _name);
+		Visitor(Workspace& _ws, std::string const& _name);
 		void setCppVisitor(CppVisitor _cppVisitor) { mCppVisitor = _cppVisitor; }
 		void setCVisitor(CVisitor _cVisitor) { mCVisitor = _cVisitor; }
 		void setProjectVisitor(ProjectVisitor _projectVisitor) { mProjectVisitor = _projectVisitor; }

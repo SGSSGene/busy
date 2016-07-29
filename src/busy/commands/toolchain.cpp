@@ -1,6 +1,6 @@
 #include "commands.h"
 
-#include "NeoWorkspace.h"
+#include "Workspace.h"
 #include <iostream>
 
 using namespace busy;
@@ -8,7 +8,7 @@ using namespace busy;
 namespace commands {
 
 void toolchain(std::string const& _toolchain) {
-	NeoWorkspace ws;
+	Workspace ws;
 
 	auto toolchains = ws.getToolchains();
 

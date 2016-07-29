@@ -1,6 +1,6 @@
 #include "commands.h"
 
-#include "NeoWorkspace.h"
+#include "Workspace.h"
 #include <iostream>
 
 using namespace busy;
@@ -9,7 +9,7 @@ namespace commands {
 
 
 void toolchains() {
-	NeoWorkspace ws;
+	Workspace ws;
 	auto toolchains    = ws.getToolchains();
 
 	int longestString = 0;

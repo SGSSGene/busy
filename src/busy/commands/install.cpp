@@ -1,6 +1,6 @@
 #include "commands.h"
 
-#include "NeoWorkspace.h"
+#include "Workspace.h"
 #include <busyUtils/busyUtils.h>
 #include <cstring>
 #include <errno.h>
@@ -13,7 +13,7 @@ using namespace busy;
 namespace commands {
 
 void install() {
-	NeoWorkspace ws;
+	Workspace ws;
 
 	auto toolchainName = ws.getSelectedToolchain();
 	auto buildModeName = ws.getSelectedBuildMode();

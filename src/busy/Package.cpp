@@ -1,12 +1,12 @@
-#include "NeoPackage.h"
+#include "Package.h"
 
-#include "NeoWorkspace.h"
+#include "Workspace.h"
 #include <algorithm>
 #include <busyConfig/busyConfig.h>
 #include <busyUtils/busyUtils.h>
 
 namespace busy {
-	NeoPackage::NeoPackage(std::string const& _path, NeoWorkspace* _workspace)
+	Package::Package(std::string const& _path, Workspace* _workspace)
 		: mWorkspace(_workspace)
 	{
 		// set path
@@ -65,7 +65,7 @@ namespace busy {
 			mFlavors[name].mLinkAsSharedAsStrings = shared.second.linkAsShared;
 		}
 	}
-	void NeoPackage::setupPackageDependencies() {
+	void Package::setupPackageDependencies() {
 		for (auto const& url : mExternalRepURLs) {
 			auto package = &mWorkspace->getPackage(url.name);
 			mExternalPackages.push_back(package);
@@ -76,8 +76,8 @@ namespace busy {
 			}
 		}
 }
-	auto NeoPackage::getAllDependendPackages() -> std::vector<NeoPackage*> {
-		std::vector<NeoPackage*> packages = {this};
+	auto Package::getAllDependendPackages() -> std::vector<Package*> {
+		std::vector<Package*> packages = {this};
 		for (auto package : getExternalPackages()) {
 			for (auto p : package->getAllDependendPackages()) {
 				if (std::find(packages.begin(), packages.end(), p) == packages.end()) {
@@ -91,7 +91,7 @@ namespace busy {
 
 
 
-	auto NeoPackage::getProject(std::string const& _name) const -> NeoProject const& {
+	auto Package::getProject(std::string const& _name) const -> Project const& {
 		for (auto const& project : mProjects) {
 			if (project.getName() == _name) {
 				return project;

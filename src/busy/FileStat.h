@@ -4,7 +4,7 @@
 #include <string>
 
 namespace busy {
-	struct NeoFileStat {
+	struct FileStat {
 		struct {
 			int64_t lastChange;
 			std::set<std::string> dependenciesAsString;
@@ -24,7 +24,7 @@ namespace busy {
 			}
 		} mFileCompile;
 
-		NeoFileStat() {
+		FileStat() {
 			mFileDiscovery.lastChange = 0;
 		}
 

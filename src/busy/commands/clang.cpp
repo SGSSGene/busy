@@ -3,17 +3,17 @@
 #include <fstream>
 #include <iostream>
 
-#include "NeoWorkspace.h"
+#include "Workspace.h"
 
 using namespace busy;
 
 namespace commands {
 
 void clang() {
-	NeoWorkspace ws;
+	Workspace ws;
 	std::ofstream ofs(".clang_complete");
-	NeoVisitor visitor(ws, "");
-	visitor.setProjectVisitor([&ofs] (NeoProject const* _project) {
+	Visitor visitor(ws, "");
+	visitor.setProjectVisitor([&ofs] (Project const* _project) {
 		std::vector<std::string> options;
 		options.push_back("-std=c++11");
 		options.push_back("-DBUSY");

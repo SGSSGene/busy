@@ -1,6 +1,6 @@
 #include "commands.h"
 
-#include "NeoWorkspace.h"
+#include "Workspace.h"
 #include <iostream>
 #include <process/Process.h>
 
@@ -14,7 +14,7 @@ void git(std::vector<std::string> const& _options) {
 		call.push_back(o);
 	}
 
-	NeoWorkspace ws;
+	Workspace ws;
 	auto validPackages = ws.getPackages();
 	for (auto const& p : validPackages) {
 		std::cout << "processing " << p.getName() << std::endl;

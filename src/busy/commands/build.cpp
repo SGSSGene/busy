@@ -1,6 +1,6 @@
 #include "commands.h"
 
-#include "NeoWorkspace.h"
+#include "Workspace.h"
 #include <busyUtils/busyUtils.h>
 #include <chrono>
 #include <fstream>
@@ -19,7 +19,7 @@ namespace commands {
 //!TODO missing avoid of recompiling, already compiled files
 
 bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int jobs) {
-	NeoWorkspace ws;
+	Workspace ws;
 
 	auto toolchainName = ws.getSelectedToolchain();
 	auto buildModeName = ws.getSelectedBuildMode();
@@ -32,7 +32,7 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 
 	auto toolchain = ws.getToolchains().at(toolchainName);
 
-	NeoVisitor visitor(ws, rootProjectName);
+	Visitor visitor(ws, rootProjectName);
 	std::mutex printMutex;
 
 	bool success = true;
@@ -51,7 +51,7 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 
 	});
 
-	visitor.setCppVisitor([&] (NeoProject const* _project, std::string const& _file) {
+	visitor.setCppVisitor([&] (Project const* _project, std::string const& _file) {
 		std::string buildFilePath = utils::dirname(buildPath + "/" + _file);
 		utils::mkdir(buildFilePath);
 		std::vector<std::string> options = toolchain->cppCompiler;
@@ -109,7 +109,7 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 		}
 	});
 
-	visitor.setCVisitor([&] (NeoProject const* _project, std::string const& _file) {
+	visitor.setCVisitor([&] (Project const* _project, std::string const& _file) {
 		std::string buildFilePath = utils::dirname(buildPath + "/" + _file);
 		utils::mkdir(buildFilePath);
 		std::vector<std::string> options = toolchain->cCompiler;
@@ -159,7 +159,7 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 	});
 
 
-	auto linkLibrary = [&] (NeoProject const* _project) {
+	auto linkLibrary = [&] (Project const* _project) {
 		std::vector<std::string> options = toolchain->archivist;
 		options.push_back("rcs");
 
@@ -198,10 +198,11 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 			std::cerr << proc.cerr() << std::endl;
 		}
 	};
-	auto linkExecutable = [&] (NeoProject const* _project) {
+	auto linkExecutable = [&] (Project const* _project) {
 		std::string buildFilePath = utils::dirname(buildPath + "/" + _project->getFullName());
 		utils::mkdir(buildFilePath);
 		utils::mkdir(utils::dirname(outPath + "/tests/" + _project->getFullName()));
+		utils::mkdir(utils::dirname(outPath + "/examples/" + _project->getFullName()));
 		utils::mkdir(utils::dirname(outPath + "/" + _project->getName()));
 
 		std::vector<std::string> options = toolchain->cppCompiler;
@@ -213,6 +214,8 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 		if (_project->getIsUnitTest()) {
 			options.push_back(outPath + "/tests/" + _project->getFullName());
 		} else if (_project->getIsExample()) {
+			options.push_back(outPath + "/examples/" + _project->getName());
+		} else {
 			options.push_back(outPath + "/" + _project->getName());
 		}
 		for (auto file : _project->getCppFiles()) {
@@ -271,7 +274,7 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 			std::cerr << proc.cerr() << std::endl;
 		}
 	};
-	visitor.setProjectVisitor([linkLibrary, linkExecutable, &printMutex] (NeoProject const* _project) {
+	visitor.setProjectVisitor([linkLibrary, linkExecutable, &printMutex] (Project const* _project) {
 		if (_project->getType() == "library") {
 			linkLibrary(_project);
 		} else if (_project->getType() == "executable") {

@@ -3,11 +3,11 @@
 #include <busyConfig/busyConfig.h>
 
 namespace busy {
-	class NeoPackage;
+	class Package;
 
-	class NeoProject {
+	class Project {
 	private:
-		NeoPackage* mPackage;
+		Package* mPackage;
 
 		std::string mName;
 		std::string mPath;
@@ -21,17 +21,17 @@ namespace busy {
 		std::vector<std::string> mIncludePaths;
 		std::vector<std::string> mSystemIncludePaths;
 		std::set<std::string>    mDependenciesAsString;
-		std::vector<NeoProject const*> mDependencies;
+		std::vector<Project const*> mDependencies;
 		std::map<std::string, std::vector<std::string>> mSourceFiles;
 		std::vector<std::string> mSystemLibraries;
 		std::vector<std::string> mSystemLibrariesPaths;
 		std::vector<std::string> mLinkingOptions;
 	public:
 		// Constructed from config file
-		NeoProject(busyConfig::Project const& _project, NeoPackage* _package);
+		Project(busyConfig::Project const& _project, Package* _package);
 
 		// Constructed from folder
-		NeoProject(std::string const& _name, NeoPackage* _package);
+		Project(std::string const& _name, Package* _package);
 
 		auto getName() const -> std::string const& { return mName; }
 		auto getFullName() const -> std::string;
@@ -45,8 +45,8 @@ namespace busy {
 		auto getSourcePaths() const -> std::vector<std::string> const& { return mSourcePaths; }
 		auto getIncludePaths() const -> std::vector<std::string> const& { return mIncludePaths; }
 		auto getSystemIncludePaths() const -> std::vector<std::string> const& { return mSystemIncludePaths; }
-		auto getDependencies() const -> std::vector<NeoProject const*> const& { return mDependencies; }
-		auto getDependenciesRecursive() const -> std::vector<NeoProject const*>;
+		auto getDependencies() const -> std::vector<Project const*> const& { return mDependencies; }
+		auto getDependenciesRecursive() const -> std::vector<Project const*>;
 		auto getCFiles() const -> std::vector<std::string> const& { return mSourceFiles.at("c"); }
 		auto getCppFiles() const -> std::vector<std::string> const& { return mSourceFiles.at("cpp"); }
 		auto getIncludeFiles() const -> std::vector<std::string> const& { return mSourceFiles.at("incl"); }
