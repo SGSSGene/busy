@@ -27,6 +27,9 @@ public:
 	auto getFlavors() const -> std::map<std::string, NeoFlavor const*>;
 	auto getToolchains() const -> std::map<std::string, NeoToolchain const*>;
 
+	auto getSelectedToolchain() const -> std::string;
+	auto getSelectedBuildMode() const -> std::string;
+
 	auto getFileStat(std::string const& _file) -> NeoFileStat&;
 private:
 	void loadPackageFolders();

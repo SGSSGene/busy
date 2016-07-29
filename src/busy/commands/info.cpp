@@ -124,43 +124,6 @@ void info(std::vector<std::string> str) {
 		printList("C++-Files:",     project.getCppFiles());
 		printList("Include-Files:", project.getIncludeFiles());*/
 //		printList("Defines:",       project.getDefines());
-	} else if (str.at(0) == "compile") {
-		std::cout << "available toolchains: " << std::endl;
-		for (auto const& toolchain : ws.getToolchains()) {
-			std::cout << "  - " << toolchain.first << std::endl;
-		}
-		std::cout << "picking system-gccc as toolchain" << std::endl;
-		auto toolchain = ws.getToolchains().at("system-gcc");
-
-		std::cout << "available flavors: " << std::endl;
-		for (auto const& flavor : ws.getFlavors()) {
-			std::cout << "  - " << flavor.first << std::endl;
-		}
-		std::cout << "picking busy/default flavor" << std::endl;
-
-		auto flavor = ws.getFlavors().at("busy/default");
-
-		NeoVisitor visitor(ws, str.size() > 1 ? str.at(1):"");
-		visitor.setProjectVisitor([] (NeoProject const* _project) {
-			std::vector<std::string> options;
-			options.push_back("-std=c++11");
-			options.push_back("-DBUSY");
-			options.push_back("-DBUSY_" + sanitize(_project->getName()));
-			for (auto depP : _project->getDependencies()) {
-				options.push_back("-DBUSY_" + sanitize(depP->getName()));
-			}
-			for (auto path : _project->getIncludeAndDependendPaths()) {
-				options.push_back("-I " + path);
-			}
-			for (auto path : _project->getSystemIncludeAndDependendPaths()) {
-				options.push_back("-isystem " + path);
-			}
-			for (auto const& o : options) {
-				std::cout << o << " ";
-			}
-			std::cout << std::endl;
-		});
-		visitor.visit(1);
 	}
 }
 }

@@ -1,38 +1,58 @@
 #include "commands.h"
 
-#include <chrono>
-#include <iostream>
-#include <fstream>
-
-#include <serializer/serializer.h>
-#include <process/Process.h>
-
 #include "NeoWorkspace.h"
-
-#include "BuildAction.h"
-#include "FileStates.h"
+#include <chrono>
+#include <fstream>
+#include <iostream>
+#include <process/Process.h>
+#include <serializer/serializer.h>
 
 #define TERM_RED                        "\033[31m"
 #define TERM_GREEN                      "\033[32m"
 #define TERM_RESET                      "\033[0m"
 
-
 using namespace busy;
 
 namespace commands {
 
+//!TODO missing avoid of recompiling, already compiled files
+
 bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int jobs) {
 	NeoWorkspace ws;
 
-	std::string toolchainName = "system-gcc";
-	auto toolchain = ws.getToolchains().at(toolchainName);
+	auto toolchainName = ws.getSelectedToolchain();
+	auto buildModeName = ws.getSelectedBuildMode();
 
+	std::string buildPath = ".busy/neo/" + toolchainName + "/" + buildModeName + "/";
+	std::string outPath   = "build/neo/" + toolchainName + "/" + buildModeName + "/";
+
+	std::cout << "Using buildMode: " << buildModeName << std::endl;
+	std::cout << "Using toolchain: " << toolchainName << std::endl;
+
+	auto toolchain = ws.getToolchains().at(toolchainName);
 
 	NeoVisitor visitor(ws, rootProjectName);
 	std::mutex printMutex;
 
-	visitor.setCppVisitor([toolchain, &printMutex, &toolchainName, verbose] (NeoProject const* _project, std::string const& _file) {
-		std::string buildPath = ".busy/neo/" + toolchainName;
+	bool success = true;
+
+	visitor.setStatisticUpdateCallback([&] (int done, int total) {
+		if (not noconsole) {
+//			if (done != 1) {
+				std::cout << "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b";
+//			}
+			std::cout << "working on job: " << done << "/" << total << std::flush;
+
+			if (done == total) {
+				std::cout << std::endl;
+			}
+		} else if (done == total) {
+			std::cout << "working on job: "<< done << "/" << total << std::endl;
+		}
+
+	});
+
+	visitor.setCppVisitor([&] (NeoProject const* _project, std::string const& _file) {
 		std::string buildFilePath = utils::dirname(buildPath + "/" + _file);
 		utils::mkdir(buildFilePath);
 		std::vector<std::string> options = toolchain->cppCompiler;
@@ -90,8 +110,7 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 		}
 	});
 
-	visitor.setCVisitor([toolchain, &printMutex, &toolchainName, verbose] (NeoProject const* _project, std::string const& _file) {
-		std::string buildPath = ".busy/neo/" + toolchainName;
+	visitor.setCVisitor([&] (NeoProject const* _project, std::string const& _file) {
 		std::string buildFilePath = utils::dirname(buildPath + "/" + _file);
 		utils::mkdir(buildFilePath);
 		std::vector<std::string> options = toolchain->cCompiler;
@@ -141,11 +160,10 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 	});
 
 
-	auto linkLibrary = [toolchain, &printMutex, &toolchainName, verbose] (NeoProject const* _project) {
+	auto linkLibrary = [&] (NeoProject const* _project) {
 		std::vector<std::string> options = toolchain->archivist;
 		options.push_back("rcs");
 
-		std::string buildPath = ".busy/neo/" + toolchainName;
 		std::string buildFilePath = utils::dirname(buildPath + "/" + _project->getFullName() + ".a");
 		utils::mkdir(buildFilePath);
 		options.push_back(buildPath + "/" + _project->getFullName() + ".a");
@@ -181,17 +199,17 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 			std::cerr << proc.cerr() << std::endl;
 		}
 	};
-	auto linkExecutable = [toolchain, &printMutex, &toolchainName, verbose] (NeoProject const* _project) {
-		std::string buildPath = ".busy/neo/" + toolchainName;
+	auto linkExecutable = [&] (NeoProject const* _project) {
 		std::string buildFilePath = utils::dirname(buildPath + "/" + _project->getFullName());
 		utils::mkdir(buildFilePath);
+		utils::mkdir(utils::dirname(outPath + "/" + _project->getFullName()));
 
 		std::vector<std::string> options = toolchain->cppCompiler;
 		//!TODO shouldnt be default argument
 		options.push_back("-rdynamic");
 		//!ENDTODO
 		options.push_back("-o");
-		options.push_back(buildPath + "/" + _project->getFullName());
+		options.push_back(outPath + "/" + _project->getFullName());
 		for (auto file : _project->getCppFiles()) {
 			auto objFile = buildPath + "/" + file + ".o";
 			options.push_back(objFile);
@@ -259,7 +277,21 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 		}
 	});
 
+	std::chrono::high_resolution_clock::time_point startTime = std::chrono::high_resolution_clock::now();
 	visitor.visit(jobs);
-	return true;
+
+	std::chrono::high_resolution_clock::time_point endTime = std::chrono::high_resolution_clock::now();
+	std::chrono::duration<double> time_span = std::chrono::duration_cast<std::chrono::duration<double>>(endTime - startTime);
+
+
+
+	if (not success) {
+		std::cout<<std::endl<< TERM_RED "Build failed" TERM_RESET;
+	} else {
+		std::cout<<std::endl<< TERM_GREEN "Build \033[32msucceeded" TERM_RESET;
+	}
+
+	std::cout<< " after " << time_span.count() << " seconds." << std::endl;
+	return success;
 }
 }

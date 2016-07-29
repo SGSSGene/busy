@@ -10,12 +10,10 @@ namespace busy {
 		: mWorkspace (_workspace)
 		, mTarget    {_name}
 	{
-		setCppVisitor([] (NeoProject const*, std::string const&) {
-		});
-		setCVisitor([] (NeoProject const*, std::string const&) {
-		});
-		setProjectVisitor([] (NeoProject const*) {
-		});
+		setCppVisitor([] (NeoProject const*, std::string const&) {});
+		setCVisitor([] (NeoProject const*, std::string const&) {});
+		setProjectVisitor([] (NeoProject const*) {});
+		setStatisticUpdateCallback([] (int, int) {});
 	}
 
 	void NeoVisitor::visit(int _jobs) {
@@ -74,9 +72,16 @@ namespace busy {
 				job2.mDependendOnThisJob.push_back(&job1.second);
 			}
 		}
+		auto maxJobs = int(mAllJobs.size());
+		int doneJobs = 0;
 		std::mutex mMutex;
 		threadPool::ThreadPool<Job*> threadPool;
 		threadPool.spawnThread([&] (Job* _job) {
+			{
+				std::lock_guard<std::mutex> lock(mMutex);
+				mStatisticUpdate(doneJobs, maxJobs);
+				doneJobs += 1;
+			}
 			_job->mAction();
 			std::lock_guard<std::mutex> lock(mMutex);
 			for (auto otherJob : _job->mDependendOnThisJob) {
@@ -97,6 +102,12 @@ namespace busy {
 			}
 		}
 		threadPool.wait();
+		{
+			std::lock_guard<std::mutex> lock(mMutex);
+			mStatisticUpdate(doneJobs, maxJobs);
+			doneJobs += 1;
+		}
+
 		//!TODO missing cycle detection
 	}
 }

@@ -157,6 +157,12 @@ auto NeoWorkspace::getToolchains() const -> std::map<std::string, NeoToolchain c
 	return retMap;
 }
 
+auto NeoWorkspace::getSelectedToolchain() const -> std::string {
+	return "system-gcc";
+}
+auto NeoWorkspace::getSelectedBuildMode() const -> std::string {
+	return "debug";
+}
 
 
 auto NeoWorkspace::getFileStat(std::string const& _file) -> NeoFileStat& {
