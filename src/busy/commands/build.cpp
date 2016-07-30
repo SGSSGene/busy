@@ -28,8 +28,6 @@ namespace {
 	}
 }
 
-//!TODO missing avoid of recompiling, already compiled files
-
 bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int jobs) {
 
 	std::chrono::high_resolution_clock::time_point startTime = std::chrono::high_resolution_clock::now();
@@ -48,6 +46,8 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 
 	Visitor visitor(ws, rootProjectName);
 	std::mutex printMutex;
+
+	bool errorDetected = false;
 
 	// create all needed path
 	{
@@ -75,14 +75,9 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 		}
 	}
 
-	// check if certain files exists
-	//std::
-	
-
-	bool success = true;
-
 	visitor.setStatisticUpdateCallback([&] (int done, int total) {
 		std::lock_guard<std::mutex> lock(printMutex);
+		if (errorDetected) return;
 		if (not noconsole) {
 			std::cout << "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b";
 			std::cout << "working on job: " << done << "/" << total << std::flush;
@@ -98,6 +93,7 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 
 	std::set<Project const*> needsRecompile;
 	visitor.setCppVisitor([&] (Project const* _project, std::string const& _file) {
+		if (errorDetected) return;
 		std::string outputFile = buildPath + "/" + _file + ".o";
 
 		// Check file dependencies
@@ -155,6 +151,7 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 
 		if (verbose) {
 			std::lock_guard<std::mutex> lock(printMutex);
+			std::cout << std::endl;
 			for (auto const& o : options) {
 				std::cout << o << " ";
 			}
@@ -165,19 +162,24 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 		if (not compileError) {
 			utils::convertDFileToDDFile(buildPath + "/" + _file + ".d", buildPath + "/" + _file + ".dd");
 		} else {
-			std::lock_guard<std::mutex> lock(printMutex);
-			for (auto const& o : options) {
-				std::cout << o << " ";
-			}
-			std::cout << std::endl;
+			if (not errorDetected) {
+				std::lock_guard<std::mutex> lock(printMutex);
+				errorDetected = true;
 
-			std::cout << proc.cout() << std::endl;
-			std::cerr << proc.cerr() << std::endl;
-			std::cout << "status: " << proc.getStatus() << std::endl;
+				std::cout << std::endl;
+				for (auto const& o : options) {
+					std::cout << o << " ";
+				}
+				std::cout << std::endl;
+
+				std::cout << proc.cout() << std::endl;
+				std::cerr << proc.cerr() << std::endl;
+			}
 		}
 	});
 
 	visitor.setCVisitor([&] (Project const* _project, std::string const& _file) {
+		if (errorDetected) return;
 
 		std::string outputFile = buildPath + "/" + _file + ".o";
 
@@ -235,25 +237,37 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 			options.push_back("-isystem");
 			options.push_back(path);
 		}
-		process::Process proc(options);
-		std::lock_guard<std::mutex> lock(printMutex);
-		if (proc.getStatus() == 0) {
-			utils::convertDFileToDDFile(buildPath + "/" + _file + ".d", buildPath + "/" + _file + ".dd");
-		} else {
+
+		if (verbose) {
+			std::lock_guard<std::mutex> lock(printMutex);
+			std::cout << std::endl;
 			for (auto const& o : options) {
 				std::cout << o << " ";
 			}
 			std::cout << std::endl;
-			std::cout << "status: " << proc.getStatus() << std::endl;
+		}
+		process::Process proc(options);
+		if (proc.getStatus() == 0) {
+			utils::convertDFileToDDFile(buildPath + "/" + _file + ".d", buildPath + "/" + _file + ".dd");
+		} else {
+			std::lock_guard<std::mutex> lock(printMutex);
+			if (not errorDetected) {
+				errorDetected = true;
 
-			std::cout << proc.cout() << std::endl;
-			std::cerr << proc.cerr() << std::endl;
+				std::cout << std::endl;
+				for (auto const& o : options) {
+					std::cout << o << " ";
+				}
+				std::cout << std::endl;
+
+				std::cout << proc.cout() << std::endl;
+				std::cerr << proc.cerr() << std::endl;
+			}
 		}
 	});
 
 
 	auto linkLibrary = [&] (Project const* _project) {
-
 		std::string outputFile = buildPath + "/" + _project->getFullName() + ".a";
 
 		// Check file dependencies
@@ -282,6 +296,7 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 		}
 		if (verbose) {
 			std::lock_guard<std::mutex> lock(printMutex);
+			std::cout << std::endl;
 			for (auto const& o : options) {
 				std::cout << o << " ";
 			}
@@ -293,15 +308,18 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 		bool compileError = proc.getStatus() != 0;
 		if (compileError) {
 			std::lock_guard<std::mutex> lock(printMutex);
+			if (not errorDetected) {
+				errorDetected = true;
 
-			for (auto const& o : options) {
-				std::cout << o << " ";
+				std::cout << std::endl;
+				for (auto const& o : options) {
+					std::cout << o << " ";
+				}
+				std::cout << std::endl;
+
+				std::cout << proc.cout() << std::endl;
+				std::cerr << proc.cerr() << std::endl;
 			}
-			std::cout << std::endl;
-			std::cout << "status: " << proc.getStatus() << std::endl;
-
-			std::cout << proc.cout() << std::endl;
-			std::cerr << proc.cerr() << std::endl;
 		}
 	};
 	auto linkExecutable = [&] (Project const* _project) {
@@ -366,6 +384,7 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 
 		if (verbose) {
 			std::lock_guard<std::mutex> lock(printMutex);
+			std::cout << std::endl;
 			for (auto const& o : options) {
 				std::cout << o << " ";
 			}
@@ -377,24 +396,30 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 		bool compileError = proc.getStatus() != 0;
 		if (compileError) {
 			std::lock_guard<std::mutex> lock(printMutex);
-			for (auto const& o : options) {
-				std::cout << o << " ";
+			if (not errorDetected) {
+				errorDetected = true;
+
+				std::cout << std::endl;
+				for (auto const& o : options) {
+					std::cout << o << " ";
+				}
+				std::cout << std::endl;
+
+				std::cout << proc.cout() << std::endl;
+				std::cerr << proc.cerr() << std::endl;
 			}
-			std::cout << std::endl;
-
-			std::cout << "status: " << proc.getStatus() << std::endl;
-
-			std::cout << proc.cout() << std::endl;
-			std::cerr << proc.cerr() << std::endl;
 		}
 	};
-	visitor.setProjectVisitor([linkLibrary, linkExecutable, &printMutex] (Project const* _project) {
+	visitor.setProjectVisitor([&] (Project const* _project) {
+		if (errorDetected) return;
+
 		if (_project->getType() == "library") {
 			linkLibrary(_project);
 		} else if (_project->getType() == "executable") {
 			linkExecutable(_project);
 		} else {
 			std::lock_guard<std::mutex> lock(printMutex);
+			errorDetected = true;
 			std::cout << "unknown type: " << _project->getType();
 		}
 	});
@@ -406,13 +431,13 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 
 
 
-	if (not success) {
+	if (errorDetected) {
 		std::cout<<std::endl<< TERM_RED "Build failed" TERM_RESET;
 	} else {
 		std::cout<<std::endl<< TERM_GREEN "Build \033[32msucceeded" TERM_RESET;
 	}
 
 	std::cout<< " after " << time_span.count() << " seconds." << std::endl;
-	return success;
+	return not errorDetected;
 }
 }

@@ -38,7 +38,6 @@ Workspace::~Workspace() {
 	atomic.close();
 
 	serializer::yaml::write(workspaceFile + ".yaml", mFileStats);
-
 }
 
 auto Workspace::getPackageFolders() const -> std::vector<std::string> const& {
