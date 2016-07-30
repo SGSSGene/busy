@@ -3,6 +3,9 @@
 #include "Workspace.h"
 #include <iostream>
 
+#define TERM_GREEN                      "\033[32m"
+#define TERM_RESET                      "\033[0m"
+
 using namespace busy;
 
 namespace commands {
@@ -10,15 +13,9 @@ namespace commands {
 void toolchain(std::string const& _toolchain) {
 	Workspace ws;
 
-	auto toolchains = ws.getToolchains();
-
-	auto iter = toolchains.find(_toolchain);
-	if (iter == toolchains.end()) {
-		std::cout << "Toolchain not found" << std::endl;
-		return;
-	}
-
-	std::cout << "found toolchain: " << _toolchain << " but this function is not implemented yet" << std::endl;
+	ws.setSelectedToolchain(_toolchain);
+	std::cout << "current buildMode: " << ws.getSelectedBuildMode() << std::endl;
+	std::cout << "current toolchain: " TERM_GREEN << ws.getSelectedToolchain() << TERM_RESET << std::endl;
 }
 
 }

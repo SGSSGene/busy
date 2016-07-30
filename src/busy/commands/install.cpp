@@ -18,7 +18,7 @@ void install() {
 	auto toolchainName = ws.getSelectedToolchain();
 	auto buildModeName = ws.getSelectedBuildMode();
 
-	auto buildPath = "./build/neo/" + toolchainName + "/" + buildModeName + "/";
+	auto buildPath = "./build/" + toolchainName + "/" + buildModeName + "/";
 
 	for (auto project : ws.getProjectAndDependencies()) {
 		if (project->getType() != "executable") continue;

@@ -36,8 +36,8 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 	auto toolchainName = ws.getSelectedToolchain();
 	auto buildModeName = ws.getSelectedBuildMode();
 
-	std::string buildPath = ".busy/neo/" + toolchainName + "/" + buildModeName;
-	std::string outPath   = "build/neo/" + toolchainName + "/" + buildModeName;
+	std::string buildPath = ".busy/" + toolchainName + "/" + buildModeName;
+	std::string outPath   = "build/" + toolchainName + "/" + buildModeName;
 
 	std::cout << "Using buildMode: " << buildModeName << std::endl;
 	std::cout << "Using toolchain: " << toolchainName << std::endl;

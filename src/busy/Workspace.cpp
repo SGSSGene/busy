@@ -11,7 +11,7 @@ namespace busy {
 namespace {
 	std::string extRepPath { "./extRepositories" };
 	std::string busyPath   { "./.busy" };
-	std::string workspaceFile { ".busy/Workspace.bin" };
+	std::string workspaceFile { ".busy/workspace.bin" };
 
 }
 
@@ -24,7 +24,7 @@ Workspace::Workspace() {
 	}
 
 	if (utils::fileExists(workspaceFile)) {
-		serializer::binary::read(workspaceFile, mFileStats);
+		serializer::binary::read(workspaceFile, mConfig);
 	}
 
 
@@ -34,10 +34,10 @@ Workspace::Workspace() {
 }
 Workspace::~Workspace() {
 	utils::AtomicWrite atomic(workspaceFile);
-	serializer::binary::write(atomic.getTempName(), mFileStats);
+	serializer::binary::write(atomic.getTempName(), mConfig);
 	atomic.close();
 
-	serializer::yaml::write(workspaceFile + ".yaml", mFileStats);
+	serializer::yaml::write(workspaceFile + ".yaml", mConfig);
 }
 
 auto Workspace::getPackageFolders() const -> std::vector<std::string> const& {
@@ -155,17 +155,52 @@ auto Workspace::getToolchains() const -> std::map<std::string, Toolchain const*>
 	}
 	return retMap;
 }
+auto Workspace::getBuildModes() const -> std::vector<std::string> {
+	return {"debug", "release"};
+}
+
 
 auto Workspace::getSelectedToolchain() const -> std::string {
-	return "system-gcc";
+	auto value = mConfig.mToolchainName;
+
+	auto toolchains = getToolchains();
+	auto iter = toolchains.find(value);
+	if (iter == toolchains.end()) {
+		return "system-gcc";
+	}
+	return iter->first;
 }
 auto Workspace::getSelectedBuildMode() const -> std::string {
-	return "debug";
+	auto modes = getBuildModes();
+	auto iter = std::find(modes.begin(), modes.end(), mConfig.mBuildModeName);
+	if (iter == modes.end()) {
+		return getBuildModes().front();
+	}
+	return *iter;
 }
+
+void Workspace::setSelectedToolchain(std::string const& _toolchainName) {
+	auto toolchains = getToolchains();
+	auto iter = toolchains.find(_toolchainName);
+	if (iter == toolchains.end()) {
+		throw std::runtime_error("Can not set toolchain to " + _toolchainName);
+	}
+	mConfig.mToolchainName = _toolchainName;
+
+}
+void Workspace::setSelectedBuildMode(std::string const& _buildMode) {
+	auto modes = getBuildModes();
+	auto iter = std::find(modes.begin(), modes.end(), _buildMode);
+	if (iter == modes.end()) {
+		throw std::runtime_error("Can not set build mode to " + _buildMode);
+	}
+	mConfig.mBuildModeName = _buildMode;
+}
+
 
 
 auto Workspace::getFileStat(std::string const& _file) -> FileStat& {
-	return mFileStats[_file];
+	return mConfig.mFileStats[_file];
 }
 
 void Workspace::loadPackageFolders() {

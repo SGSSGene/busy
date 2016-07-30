@@ -16,7 +16,8 @@ namespace commands {
 	void push();
 	void info(std::vector<std::string> str);
 	void install();
-	void status(std::string _buildMode = "");
+	void status();
+	void buildMode(std::string const& _buildMode);
 	void quickFix();
 	int  listFiles(std::string const& _relPath);
 	void showDep(std::string const& rootProjectName);

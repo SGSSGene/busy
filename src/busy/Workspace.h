@@ -1,11 +1,9 @@
 #pragma once
 
-#include "FileStat.h"
 #include "Package.h"
 #include "Visitor.h"
+#include "WorkspaceConfig.h"
 #include <list>
-#include <string>
-#include <vector>
 
 namespace busy {
 
@@ -26,9 +24,13 @@ public:
 
 	auto getFlavors() const -> std::map<std::string, Flavor const*>;
 	auto getToolchains() const -> std::map<std::string, Toolchain const*>;
+	auto getBuildModes() const -> std::vector<std::string>;
 
 	auto getSelectedToolchain() const -> std::string;
 	auto getSelectedBuildMode() const -> std::string;
+
+	void setSelectedToolchain(std::string const& _toolchainName);
+	void setSelectedBuildMode(std::string const& _buildMode);
 
 	auto getFileStat(std::string const& _file) -> FileStat&;
 private:
@@ -43,8 +45,7 @@ private:
 
 	std::map<std::string, Toolchain> mSystemToolchains;
 
-	std::map<std::string, FileStat> mFileStats;
-
+	WorkspaceConfig mConfig;
 };
 
 }

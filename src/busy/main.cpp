@@ -127,7 +127,7 @@ int main(int argc, char** argv) {
 		} else if (*cmdStatus) {
 			commands::status();
 		} else if (*cmdBuildMode != "") {
-			commands::status(*cmdBuildMode);
+			commands::buildMode(*cmdBuildMode);
 		} else if (*cmdLsFiles) {
 			int exitCode = commands::listFiles(relPath + "/");
 			exit(exitCode);

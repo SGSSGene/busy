@@ -15,7 +15,7 @@ namespace commands {
 #define TERM_RESET                      "\033[0m"
 
 
-void status(std::string _buildMode) {
+void status() {
 	Workspace ws;
 
 	std::cout << "current buildmode: " << ws.getSelectedBuildMode() << std::endl;
