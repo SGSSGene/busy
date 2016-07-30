@@ -68,6 +68,8 @@ namespace busy {
 			mLinkingOptions.push_back(f);
 		}
 		discoverSourceFiles();
+		
+		mIsHeaderOnly = (getCppFiles().size() == 0 && getCFiles().size() == 0);
 	}
 
 	Project::Project(std::string const& _name, Package* _package)
@@ -83,6 +85,7 @@ namespace busy {
 		mIncludePaths.emplace_back(mPackage->getPath() + "/src");
 
 		discoverSourceFiles();
+		mIsHeaderOnly = (getCppFiles().size() == 0 && getCFiles().size() == 0);
 	}
 
 	auto Project::getFullName() const -> std::string {
@@ -155,8 +158,6 @@ namespace busy {
 		return retList;
 	}
 
-
-
 	void Project::discoverSourceFiles() {
 		mSourceFiles["cpp"]       = {};
 		mSourceFiles["c"]         = {};
@@ -196,14 +197,21 @@ namespace busy {
 	}
 	auto Project::getSystemIncludeAndDependendPaths() const -> std::vector<std::string> {
 		auto includePaths = getSystemIncludePaths();
-		for (auto dep : mDependencies) {
-			for (auto& p : dep->getSystemIncludeAndDependendPaths()) {
-				includePaths.emplace_back(std::move(p));
+
+		std::set<std::string> alreadyAdded;
+
+		for (auto dep : getDependenciesRecursive()) {
+			for (auto& p : dep->getSystemIncludePaths()) {
+				if (alreadyAdded.count(p) == 0) {
+					alreadyAdded.insert(p);
+					includePaths.emplace_back(std::move(p));
+				}
 			}
-		}
-		for (auto dep : mDependencies) {
-			for (auto& p : dep->getIncludeAndDependendPaths()) {
-				includePaths.emplace_back(std::move(p));
+			for (auto& p : dep->getIncludePaths()) {
+				if (alreadyAdded.count(p) == 0) {
+					alreadyAdded.insert(p);
+					includePaths.emplace_back(std::move(p));
+				}
 			}
 		}
 		return includePaths;

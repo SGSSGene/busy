@@ -36,8 +36,8 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 	auto toolchainName = ws.getSelectedToolchain();
 	auto buildModeName = ws.getSelectedBuildMode();
 
-	std::string buildPath = ".busy/neo/" + toolchainName + "/" + buildModeName + "/";
-	std::string outPath   = "build/neo/" + toolchainName + "/" + buildModeName + "/";
+	std::string buildPath = ".busy/neo/" + toolchainName + "/" + buildModeName;
+	std::string outPath   = "build/neo/" + toolchainName + "/" + buildModeName;
 
 	std::cout << "Using buildMode: " << buildModeName << std::endl;
 	std::cout << "Using toolchain: " << toolchainName << std::endl;
@@ -53,12 +53,18 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 	{
 		std::set<std::string> neededPath;
 		for (auto const& project : ws.getProjectAndDependencies(rootProjectName)) {
+			// paths for .o and .d files
 			for (auto file : project->getCppFiles()) {
 				neededPath.insert(utils::dirname(buildPath + "/" + file));
 			}
 			for (auto file : project->getCFiles()) {
 				neededPath.insert(utils::dirname(buildPath + "/" + file));
 			}
+
+			// paths for .a files
+			neededPath.insert(utils::dirname(buildPath + "/" + project->getFullName()));
+
+			// paths for executables
 			std::string outputFile = outPath + "/" + project->getName();
 			if (project->getIsUnitTest()) {
 				outputFile = outPath + "/tests/" + project->getFullName();
@@ -116,7 +122,10 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 		if (not recompile) {
 			return;
 		}
-		needsRecompile.insert(_project);
+		{
+			std::lock_guard<std::mutex> lock(printMutex);
+			needsRecompile.insert(_project);
+		}
 
 		std::vector<std::string> options = toolchain->cppCompiler;
 		options.push_back("-std=c++11");
@@ -201,7 +210,10 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 		if (not recompile) {
 			return;
 		}
-		needsRecompile.insert(_project);
+		{
+			std::lock_guard<std::mutex> lock(printMutex);
+			needsRecompile.insert(_project);
+		}
 
 		std::vector<std::string> options = toolchain->cCompiler;
 		options.push_back("-std=c11");
@@ -272,15 +284,21 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 
 		// Check file dependencies
 		bool recompile = false;
+		{
+			std::lock_guard<std::mutex> lock(printMutex);
+			if (needsRecompile.count(_project) > 0) {
+				recompile = true;
+			} else if (not utils::fileExists(outputFile)) {
+				recompile = true;
+			}
+			if (not recompile) {
+				return;
+			}
 
-		if (needsRecompile.count(_project) > 0) {
-			recompile = true;
-		} else if (not utils::fileExists(outputFile)) {
-			recompile = true;
+			if (_project->getIsHeaderOnly()) return;
+			needsRecompile.insert(_project);
 		}
-		if (not recompile) {
-			return;
-		}
+
 
 		std::vector<std::string> options = toolchain->archivist;
 		options.push_back("rcs");
@@ -332,15 +350,25 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 
 		// Check file dependencies
 		bool recompile = false;
+		{
+			std::lock_guard<std::mutex> lock(printMutex);
+			if (needsRecompile.count(_project) > 0) {
+				recompile = true;
+			} else if (not utils::fileExists(outputFile)) {
+				recompile = true;
+			} else {
+				for (auto project : _project->getDependenciesRecursive()) {
+					if (needsRecompile.count(project) > 0) {
+						recompile = true;
+						break;
+					}
+				}
+			}
+			if (not recompile) {
+				return;
+			}
+		}
 
-		if (needsRecompile.count(_project) > 0) {
-			recompile = true;
-		} else if (not utils::fileExists(outputFile)) {
-			recompile = true;
-		}
-		if (not recompile) {
-			return;
-		}
 
 
 		std::vector<std::string> options = toolchain->cppCompiler;
@@ -355,6 +383,7 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 			options.push_back(objFile);
 		}
 		for (auto project : _project->getDependenciesRecursive()) {
+			if (project->getIsHeaderOnly()) continue;
 			if (project->getWholeArchive()) {
 				options.push_back("-Wl,--whole-archive");
 			}

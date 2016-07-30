@@ -16,6 +16,7 @@ namespace busy {
 		bool        mHasConfigEntry {false};
 		bool        mWholeArchive {false};
 		bool        mAutoDependenciesDiscovery {true};
+		bool        mIsHeaderOnly {false};
 
 		std::vector<std::string> mSourcePaths;
 		std::vector<std::string> mIncludePaths;
@@ -56,6 +57,8 @@ namespace busy {
 		auto getLinkingOptions() const -> std::vector<std::string> const& { return mLinkingOptions; }
 		auto getSystemLibrariesPathsRecursive() const -> std::vector<std::string>;
 		auto getLinkingOptionsRecursive() const -> std::vector<std::string>;
+
+		bool getIsHeaderOnly() const { return mIsHeaderOnly; }
 
 		auto getIncludeAndDependendPaths() const -> std::vector<std::string>;
 		auto getSystemIncludeAndDependendPaths() const -> std::vector<std::string>;
