@@ -13,7 +13,7 @@ using namespace busy;
 namespace commands {
 
 void install() {
-	Workspace ws;
+	Workspace ws(true);
 
 	auto toolchainName = ws.getSelectedToolchain();
 	auto buildModeName = ws.getSelectedBuildMode();
@@ -33,7 +33,11 @@ void install() {
 
 		std::cout << "installing " << file << "; Error Code: ";
 		auto error = ::rename(oldFile.c_str(), newFile.c_str());
-		std::cout << error << " " << strerror(errno) << std::endl;
+		if (error == 0) {
+			std::cout << error << " " << strerror(0) << std::endl;
+		} else {
+			std::cout << errno << " " << strerror(errno) << std::endl;
+		}
 
 		if (errno == EXDEV) {
 			std::cout << "trying to copy: " << std::endl;

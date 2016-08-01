@@ -9,7 +9,7 @@ namespace busy {
 
 class Workspace final {
 public:
-	Workspace();
+	Workspace(bool _noSaving = false);
 	~Workspace();
 
 	auto getPackageFolders() const -> std::vector<std::string> const&;
@@ -50,6 +50,8 @@ private:
 	std::map<std::string, Toolchain> mSystemToolchains;
 
 	WorkspaceConfig mConfig;
+
+	bool mNoSaving { false };
 };
 
 }

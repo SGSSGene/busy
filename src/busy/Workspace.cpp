@@ -15,7 +15,9 @@ namespace {
 
 }
 
-Workspace::Workspace() {
+Workspace::Workspace(bool _noSaving)
+	: mNoSaving { _noSaving }
+{
 	// check if certain folders exists
 	for (std::string s : {extRepPath , busyPath}) {
 		if (not utils::fileExists(s)) {
@@ -33,11 +35,13 @@ Workspace::Workspace() {
 	discoverSystemToolchains();
 }
 Workspace::~Workspace() {
-	utils::AtomicWrite atomic(workspaceFile);
-	serializer::binary::write(atomic.getTempName(), mConfig);
-	atomic.close();
+	if (not mNoSaving) {
+		utils::AtomicWrite atomic(workspaceFile);
+		serializer::binary::write(atomic.getTempName(), mConfig);
+		atomic.close();
 
-//	serializer::yaml::write(workspaceFile + ".yaml", mConfig);
+	//	serializer::yaml::write(workspaceFile + ".yaml", mConfig);
+	}
 }
 
 auto Workspace::getPackageFolders() const -> std::vector<std::string> const& {
