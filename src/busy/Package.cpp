@@ -72,6 +72,16 @@ namespace busy {
 			mToolchains[name].cCompiler   = toolchain.cCompiler;
 			mToolchains[name].archivist   = toolchain.archivist;
 		}
+
+		// loading Overrides
+		for (auto const& o : configPackage.overrides) {
+			Override over;
+			over.project = o.projectToOverride;
+			for (auto const& t : o.excludeFromToolchains) {
+				over.toolchains.insert(t);
+			}
+			mOverrides.push_back(over);
+		}
 	}
 	void Package::setupPackageDependencies() {
 		for (auto const& url : mExternalRepURLs) {

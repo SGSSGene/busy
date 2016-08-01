@@ -27,7 +27,7 @@ namespace busy {
 		};
 		std::map<std::string, Job> mAllJobs;
 		// create list of all changes
-		for (auto const& project : projects) {
+		for (auto project : projects) {
 			// adding the project/linking itself as jobs
 			{
 				auto& job = mAllJobs[project->getFullName()];
@@ -44,7 +44,11 @@ namespace busy {
 				//!TODO not ready yet
 				// if this is an executable or shared library add other libraries as dependency
 				for (auto depProject : project->getDependencies()) {
-					job.mDependendOnOtherJobs.push_back(depProject->getFullName());
+					auto iter = std::find(projects.begin(), projects.end(), depProject);
+
+					if (iter != projects.end()) {
+						job.mDependendOnOtherJobs.push_back(depProject->getFullName());
+					}
 				}
 			}
 			// adding source files as jobs

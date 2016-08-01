@@ -48,7 +48,7 @@ namespace busy {
 		auto getIncludePaths() const -> std::vector<std::string> const& { return mIncludePaths; }
 		auto getSystemIncludePaths() const -> std::vector<std::string> const& { return mSystemIncludePaths; }
 		auto getDependencies() const -> std::vector<Project const*> const& { return mDependencies; }
-		auto getDependenciesRecursive() const -> std::vector<Project const*>;
+		auto getDependenciesRecursive(std::set<Project const*> const& _ignoreProject = {}) const -> std::vector<Project const*>;
 		auto getCFiles() const -> std::vector<std::string> const& { return mSourceFiles.at("c"); }
 		auto getCppFiles() const -> std::vector<std::string> const& { return mSourceFiles.at("cpp"); }
 		auto getCppAndCFiles() const -> std::vector<std::string>;

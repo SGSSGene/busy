@@ -33,6 +33,8 @@ public:
 	void setSelectedBuildMode(std::string const& _buildMode);
 
 	auto getFileStat(std::string const& _file) -> FileStat&;
+
+	auto getExcludedProjects(std::string const& _toolchain) const -> std::set<Project const*>;
 private:
 	void loadPackageFolders();
 	void loadPackages();
@@ -41,7 +43,7 @@ private:
 
 private:
 	std::vector<std::string> mPackageFolders;
-	std::list<Package>    mPackages;
+	std::list<Package>       mPackages;
 
 	std::map<std::string, Toolchain> mSystemToolchains;
 

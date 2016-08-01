@@ -98,6 +98,8 @@ auto Workspace::getProject(std::string const& _name) const -> Project const& {
 	return *matchList.at(0);
 }
 auto Workspace::getProjectAndDependencies(std::string const& _name) const -> std::vector<Project const*> {
+	auto ignoreProjects = getExcludedProjects(getSelectedToolchain());
+
 	std::vector<Project const*> retProjects;
 
 	std::set<Project const*> flagged;
@@ -106,7 +108,7 @@ auto Workspace::getProjectAndDependencies(std::string const& _name) const -> std
 	if (_name == "") {
 		for (auto const& package : getPackages()) {
 			for (auto const& project : package.getProjects()) {
-				if (project.getType() == "executable") {
+				if (project.getType() == "executable" and ignoreProjects.count(&project) == 0) {
 					queued.push_back(&project);
 					flagged.insert(&project);
 				}
@@ -122,7 +124,7 @@ auto Workspace::getProjectAndDependencies(std::string const& _name) const -> std
 		retProjects.push_back(project);
 		queued.pop_back();
 		for (auto depP : project->getDependencies()) {
-			if (flagged.count(depP) == 0) {
+			if (flagged.count(depP) == 0 && ignoreProjects.count(depP) == 0) {
 				flagged.insert(depP);
 				queued.push_back(depP);
 			}
@@ -202,6 +204,18 @@ void Workspace::setSelectedBuildMode(std::string const& _buildMode) {
 auto Workspace::getFileStat(std::string const& _file) -> FileStat& {
 	return mConfig.mFileStats[_file];
 }
+auto Workspace::getExcludedProjects(std::string const& _toolchain) const -> std::set<Project const*> {
+	std::set<Project const*> projects;
+	for (auto const& package : mPackages) {
+		for (auto const& over : package.getOverrides()) {
+			if (over.toolchains.count(_toolchain) > 0) {
+				projects.insert(&getProject(over.project));
+			}
+		}
+	}
+	return projects;
+}
+
 
 void Workspace::loadPackageFolders() {
 	mPackageFolders.emplace_back("./");

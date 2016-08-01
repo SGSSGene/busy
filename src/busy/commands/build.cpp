@@ -52,6 +52,8 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 	auto toolchainName = ws.getSelectedToolchain();
 	auto buildModeName = ws.getSelectedBuildMode();
 
+	auto ignoreProjects = ws.getExcludedProjects(toolchainName);
+
 	std::string buildPath = ".busy/" + toolchainName + "/" + buildModeName;
 	std::string outPath   = "build/" + toolchainName + "/" + buildModeName;
 
@@ -169,7 +171,7 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 		//!ENDTODO
 		options.push_back("-DBUSY");
 		options.push_back("-DBUSY_" + utils::sanitizeForMakro(_project->getName()));
-		for (auto depP : _project->getDependenciesRecursive()) {
+		for (auto depP : _project->getDependenciesRecursive(ignoreProjects)) {
 			options.push_back("-DBUSY_" + utils::sanitizeForMakro(depP->getName()));
 		}
 		for (auto path : _project->getIncludeAndDependendPaths()) {
@@ -262,7 +264,7 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 		//!ENDTODO
 		options.push_back("-DBUSY");
 		options.push_back("-DBUSY_" + utils::sanitizeForMakro(_project->getName()));
-		for (auto depP : _project->getDependenciesRecursive()) {
+		for (auto depP : _project->getDependenciesRecursive(ignoreProjects)) {
 			options.push_back("-DBUSY_" + utils::sanitizeForMakro(depP->getName()));
 		}
 		for (auto path : _project->getIncludeAndDependendPaths()) {
@@ -437,7 +439,7 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 			} else if (not utils::fileExists(outputFile)) {
 				recompile = true;
 			} else {
-				for (auto project : _project->getDependenciesRecursive()) {
+				for (auto project : _project->getDependenciesRecursive(ignoreProjects)) {
 					if (needsRecompile.count(project) > 0) {
 						recompile = true;
 						break;
@@ -462,7 +464,7 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 			auto objFile = buildPath + "/" + file + ".o";
 			options.push_back(objFile);
 		}
-		for (auto project : _project->getDependenciesRecursive()) {
+		for (auto project : _project->getDependenciesRecursive(ignoreProjects)) {
 			if (project->getIsHeaderOnly()) continue;
 
 			if (not project->getIsSingleFileProjects()) {
@@ -495,7 +497,7 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 		for (auto dep : _project->getSystemLibraries()) {
 			options.push_back("-l"+dep);
 		}
-		for (auto project : _project->getDependenciesRecursive()) {
+		for (auto project : _project->getDependenciesRecursive(ignoreProjects)) {
 			for (auto dep : project->getSystemLibraries()) {
 				options.push_back("-l"+dep);
 			}

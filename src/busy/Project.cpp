@@ -108,10 +108,16 @@ namespace busy {
 
 
 
-	auto Project::getDependenciesRecursive() const -> std::vector<Project const*> {
-		auto retList = getDependencies();
-		for (auto const& project : getDependencies()) {
-			for (auto p : project->getDependenciesRecursive()) {
+	auto Project::getDependenciesRecursive(std::set<Project const*> const& _ignoreProject) const -> std::vector<Project const*> {
+		std::vector<Project const*> retList;
+		for (auto dep : getDependencies()) {
+			if (_ignoreProject.count(dep) == 0) {
+				retList.push_back(dep);
+			}
+		}
+		auto iterateList = retList;
+		for (auto const& project : iterateList) {
+			for (auto p : project->getDependenciesRecursive(_ignoreProject)) {
 				retList.push_back(p);
 			}
 		}

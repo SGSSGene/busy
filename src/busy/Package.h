@@ -1,7 +1,8 @@
 #pragma once
 
-#include "Project.h"
 #include "Flavor.h"
+#include "Override.h"
+#include "Project.h"
 #include "Toolchain.h"
 
 #include <list>
@@ -29,6 +30,7 @@ namespace busy {
 
 		std::map<std::string, Flavor>    mFlavors;
 		std::map<std::string, Toolchain> mToolchains;
+		Overrides                        mOverrides;
 
 	public:
 
@@ -53,5 +55,6 @@ namespace busy {
 		auto getToolchains() const -> std::map<std::string, Toolchain> const& { return mToolchains; }
 
 		auto getProject(std::string const& _name) const -> Project const&;
+		auto getOverrides() const -> Overrides const& { return mOverrides; }
 	};
 }
