@@ -18,6 +18,7 @@ namespace busyConfig {
 		bool          mAutoDependenciesDiscovery { true };
 		bool          mIgnore      { false };
 		StringVector  linkAsShared;
+		bool          mSingleFileProjects {false};
 
 		template <typename Node>
 		void serialize(Node& node) {
@@ -32,7 +33,8 @@ namespace busyConfig {
 			node["wholeArchive"]         % wholeArchive         or bool(false);
 			node["autoDependenciesDiscovery"] % mAutoDependenciesDiscovery or bool(true);
 			node["ignore"]               % mIgnore              or bool(false);
-			node["linkAsShared"]         % linkAsShared; // !TODO remove it is depricated
+			node["linkAsShared"]         % linkAsShared; // !TODO remove it is deprecated
+			node["singleFileProjects"]   % mSingleFileProjects or bool(false);
 		}
 	private:
 		auto getDefaultTypeByName() const -> std::string;

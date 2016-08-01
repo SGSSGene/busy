@@ -17,6 +17,7 @@ namespace busy {
 		bool        mWholeArchive {false};
 		bool        mAutoDependenciesDiscovery {true};
 		bool        mIsHeaderOnly {false};
+		bool        mSingleFileProjects {false}; // Indicates that each .c/.cpp file should be treated as a project/library
 
 		std::vector<std::string> mSourcePaths;
 		std::vector<std::string> mIncludePaths;
@@ -50,6 +51,7 @@ namespace busy {
 		auto getDependenciesRecursive() const -> std::vector<Project const*>;
 		auto getCFiles() const -> std::vector<std::string> const& { return mSourceFiles.at("c"); }
 		auto getCppFiles() const -> std::vector<std::string> const& { return mSourceFiles.at("cpp"); }
+		auto getCppAndCFiles() const -> std::vector<std::string>;
 		auto getIncludeFiles() const -> std::vector<std::string> const& { return mSourceFiles.at("incl"); }
 		auto getIncludeFilesFlat() const -> std::vector<std::string> const& { return mSourceFiles.at("incl-flat"); }
 		auto getSystemLibraries() const -> std::vector<std::string> const& { return mSystemLibraries; }
@@ -59,6 +61,7 @@ namespace busy {
 		auto getLinkingOptionsRecursive() const -> std::vector<std::string>;
 
 		bool getIsHeaderOnly() const { return mIsHeaderOnly; }
+		bool getIsSingleFileProjects() const { return mSingleFileProjects; }
 
 		auto getIncludeAndDependendPaths() const -> std::vector<std::string>;
 		auto getSystemIncludeAndDependendPaths() const -> std::vector<std::string>;

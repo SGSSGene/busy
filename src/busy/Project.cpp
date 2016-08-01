@@ -48,6 +48,7 @@ namespace busy {
 		mWholeArchive   = _project.wholeArchive;
 		mAutoDependenciesDiscovery = _project.mAutoDependenciesDiscovery;
 		mSystemLibraries = _project.depLibraries;
+		mSingleFileProjects = _project.mSingleFileProjects;
 
 		for (auto s : _project.dependencies) {
 			mDependenciesAsString.insert(s);
@@ -97,6 +98,14 @@ namespace busy {
 	bool Project::getIsExample() const {
 		return utils::isStartingWith(mName, "example") or utils::isStartingWith(mName, "demo");
 	}
+	auto Project::getCppAndCFiles() const -> std::vector<std::string> {
+		auto cppFiles = getCppFiles();
+		for (auto const& f : getCFiles()) {
+			cppFiles.push_back(f);
+		}
+		return cppFiles;
+	}
+
 
 
 	auto Project::getDependenciesRecursive() const -> std::vector<Project const*> {
