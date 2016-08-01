@@ -64,6 +64,14 @@ namespace busy {
 			mFlavors[name].toolchain = shared.second.toolchain;
 			mFlavors[name].mLinkAsSharedAsStrings = shared.second.linkAsShared;
 		}
+
+		// loading toolchains
+		for (auto const& toolchain : configPackage.toolchains) {
+			auto name = toolchain.name;
+			mToolchains[name].cppCompiler = toolchain.cppCompiler;
+			mToolchains[name].cCompiler   = toolchain.cCompiler;
+			mToolchains[name].archivist   = toolchain.archivist;
+		}
 	}
 	void Package::setupPackageDependencies() {
 		for (auto const& url : mExternalRepURLs) {

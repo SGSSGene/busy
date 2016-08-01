@@ -6,6 +6,7 @@
 #include <cstdio>
 #include <sys/sysinfo.h>
 
+#define TERM_RESET                      "\033[0m"
 
 namespace {
 	auto cmdBuild      = commonOptions::make_command("build",     "", "builds a specific project");
@@ -68,8 +69,8 @@ auto checkCwd() -> std::string {
 }
 
 int main(int argc, char** argv) {
+	std::cout << TERM_RESET;
 	try {
-
 		if (not commonOptions::parse(argc, argv)) {
 			commonOptions::print();
 			return 0;

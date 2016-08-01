@@ -37,7 +37,7 @@ Workspace::~Workspace() {
 	serializer::binary::write(atomic.getTempName(), mConfig);
 	atomic.close();
 
-	serializer::yaml::write(workspaceFile + ".yaml", mConfig);
+//	serializer::yaml::write(workspaceFile + ".yaml", mConfig);
 }
 
 auto Workspace::getPackageFolders() const -> std::vector<std::string> const& {

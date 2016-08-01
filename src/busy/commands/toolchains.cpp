@@ -27,7 +27,6 @@ void toolchains() {
 		for (int i (e.first.length()); i < longestString; ++i) {
 			std::cout << " ";
 		}
-		std::cout << " (auto-generated)";
 		std::cout << std::endl;
 		if (e.first == ws.getSelectedToolchain()) {
 			std::cout << TERM_RESET;
