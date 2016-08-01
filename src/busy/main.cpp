@@ -1,5 +1,6 @@
 
 #include "commands/commands.h"
+#include "Workspace.h"
 
 #include <busyUtils/busyUtils.h>
 #include <commonOptions/commonOptions.h>
@@ -16,6 +17,7 @@ namespace {
 	auto cmdCleanAll   = commonOptions::make_command("cleanall",      "deletes all build files");
 	auto cmdDocu       = commonOptions::make_command("docu",          "Generates html docu");
 	auto cmdEclipse    = commonOptions::make_command("eclipse",       "Generate Eclipse .project and .cproject file");
+	auto cmdFlavors    = commonOptions::make_command("flavors",       "list all available flavors");
 	auto cmdGit        = commonOptions::make_command("git", std::vector<std::string>{},  "executes given options on every repository (including root package)");
 	auto cmdInfo       = commonOptions::make_command("info", std::vector<std::string>{}, "Infos about the current package and its dependencies");
 	auto cmdInstall    = commonOptions::make_command("install",       "Installs the script to the current target");
@@ -84,7 +86,8 @@ int main(int argc, char** argv) {
 		}
 
 		if (*optFlavor != "") {
-			std::cout << "setting flavor is broken" << std::endl;
+			busy::Workspace ws;
+			ws.setFlavor(*optFlavor);
 		}
 
 		// setting good thread amount
@@ -113,6 +116,8 @@ int main(int argc, char** argv) {
 			commands::git(*cmdGit);
 		} else if (*cmdEclipse) {
 			commands::eclipse();
+		} else if (*cmdFlavors) {
+			commands::flavors();
 		} else if (*cmdPull) {
 			commands::pull();
 		} else if (*cmdPush) {

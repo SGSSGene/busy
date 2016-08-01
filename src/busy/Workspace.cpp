@@ -199,6 +199,36 @@ void Workspace::setSelectedBuildMode(std::string const& _buildMode) {
 	mConfig.mBuildModeName = _buildMode;
 }
 
+void Workspace::setFlavor(std::string const& _flavor) {
+	// search for direct match
+	for (auto flavor : getFlavors()) {
+		if (flavor.first == _flavor) {
+			setSelectedToolchain(flavor.second->toolchain);
+			setSelectedBuildMode(flavor.second->buildMode);
+			std::cout << "applying flavor " << _flavor << std::endl;
+			return;
+		}
+	}
+
+	// if no direct match was found, try indirect match (by leaving out the package name
+	std::vector<Flavor const*> matches;
+	for (auto flavor : getFlavors()) {
+		auto parts = utils::explode(flavor.first, "/");
+		if (parts[parts.size()-1] == _flavor) {
+			matches.push_back(flavor.second);
+		}
+	}
+	if (matches.size() == 0) {
+		throw std::runtime_error("flavor " + _flavor + " is unknown");
+	}
+	if (matches.size() > 1) {
+		throw std::runtime_error("flavor " + _flavor + " is ambigious");
+	}
+	setSelectedToolchain(matches.at(0)->toolchain);
+	setSelectedBuildMode(matches.at(0)->buildMode);
+}
+
+
 
 
 auto Workspace::getFileStat(std::string const& _file) -> FileStat& {

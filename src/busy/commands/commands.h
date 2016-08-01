@@ -10,6 +10,7 @@ namespace commands {
 	void cleanAll();
 	void docu();
 	void eclipse();
+	void flavors();
 	void git(std::vector<std::string> const& _options);
 	void test();
 	void pull();

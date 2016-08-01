@@ -32,6 +32,8 @@ public:
 	void setSelectedToolchain(std::string const& _toolchainName);
 	void setSelectedBuildMode(std::string const& _buildMode);
 
+	void setFlavor(std::string const& _flavor);
+
 	auto getFileStat(std::string const& _file) -> FileStat&;
 
 	auto getExcludedProjects(std::string const& _toolchain) const -> std::set<Project const*>;
