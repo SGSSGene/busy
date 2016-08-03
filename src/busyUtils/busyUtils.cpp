@@ -39,14 +39,14 @@ namespace utils {
 		call.push_back(_dir);
 		process::Process p(call);
 		if (p.getStatus() != 0) {
-			throw std::runtime_error("error running rm");
+			throw std::runtime_error("error running rm: " + p.cerr() + p.cout());
 		}
 	}
 	void mv(std::string const& _src, std::string const& _dest) {
 		std::vector<std::string> call ({"mv", _src, _dest});
 		process::Process p(call);
 		if (p.getStatus() != 0) {
-			throw std::runtime_error("error running rm");
+			throw std::runtime_error("error running mv: " + p.cerr() + p.cout());
 		}
 	}
 

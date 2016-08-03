@@ -7,12 +7,60 @@
 #include <iostream>
 #include <mutex>
 #include <process/Process.h>
+#include <serializer/serializer.h>
+#include "git.h"
+
+
+namespace {
+	std::string workspaceFile { ".busy/workspace.bin" };
+}
 
 #define TERM_RED                        "\033[31m"
 #define TERM_GREEN                      "\033[32m"
 #define TERM_RESET                      "\033[0m"
 
 using namespace busy;
+
+
+static void cloningExtRepositories(busyConfig::PackageURL url) {
+	utils::mkdir(".busy/tmp");
+	std::string repoName = std::string(".busy/tmp/repo_") + url.name + ".git";
+	if (utils::fileExists(repoName)) {
+		utils::rm(repoName, true, true);
+	}
+	std::cout << "cloning " << url.url << std::endl;
+	git::clone(".", url.url, url.branch, repoName);
+	auto configPackage = busyConfig::readPackage(repoName);
+	utils::mv(repoName, std::string("extRepositories/") + url.name);
+}
+
+static void checkMissingDependencies() {
+
+	std::queue<busyConfig::PackageURL> queue;
+
+	// read config file, set all other data
+	auto configPackage = busyConfig::readPackage(".");
+	for (auto x : configPackage.extRepositories) {
+		queue.push(x);
+	}
+
+	if (not utils::fileExists("extRepositories")) {
+		utils::mkdir("extRepositories");
+	}
+
+	while (not queue.empty()) {
+		auto element = queue.front();
+		queue.pop();
+
+		if (not utils::fileExists("extRepositories/" + element.name + "/busy.yaml")) {
+			cloningExtRepositories(element);
+		}
+		auto config = busyConfig::readPackage("extRepositories/" + element.name);
+		for (auto x : config.extRepositories) {
+			queue.push(x);
+		}
+	}
+}
 
 static auto convertStaticToShared(std::string _shared) -> std::string {
 	// adding "lib" into the name
@@ -45,6 +93,8 @@ namespace {
 }
 
 bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int jobs) {
+
+	checkMissingDependencies();
 
 	std::chrono::high_resolution_clock::time_point startTime = std::chrono::high_resolution_clock::now();
 	Workspace ws;

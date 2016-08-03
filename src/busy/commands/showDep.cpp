@@ -14,7 +14,7 @@ using namespace busy;
 
 namespace commands {
 
-void showDep(std::string const& rootProjectName) {
+void showDep(std::string const&) {
 	std::cout << "not implemented" << std::endl;
 }
 
