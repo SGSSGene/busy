@@ -71,7 +71,6 @@ auto checkCwd() -> std::string {
 }
 
 int main(int argc, char** argv) {
-	std::cout << TERM_RESET;
 	try {
 		if (not commonOptions::parse(argc, argv)) {
 			commonOptions::print();
@@ -80,6 +79,11 @@ int main(int argc, char** argv) {
 			commonOptions::print();
 			return 0;
 		}
+
+		if (not *swtNoConsole) {
+			std::cout << TERM_RESET;
+		}
+
 		std::string relPath = ".";
 		if (not *cmdLsFiles) {
 			relPath = checkCwd();
