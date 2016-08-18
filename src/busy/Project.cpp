@@ -243,7 +243,9 @@ namespace busy {
 			}
 		}
 		for (auto const& d : mDependenciesAsString) {
-			mDependencies.push_back(&mPackage->getWorkspace()->getProject(d));
+			if (mPackage->getWorkspace()->hasProject(d)) {
+				mDependencies.push_back(&mPackage->getWorkspace()->getProject(d));
+			}
 		}
 	}
 	void Project::discoverDependenciesInFile(std::string const& _file) {

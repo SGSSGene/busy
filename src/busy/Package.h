@@ -54,6 +54,7 @@ namespace busy {
 		auto getFlavors() const -> std::map<std::string, Flavor> const& { return mFlavors; }
 		auto getToolchains() const -> std::map<std::string, Toolchain> const& { return mToolchains; }
 
+		bool hasProject(std::string const& _name) const;
 		auto getProject(std::string const& _name) const -> Project const&;
 		auto getOverrides() const -> Overrides const& { return mOverrides; }
 	};

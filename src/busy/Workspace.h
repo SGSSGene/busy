@@ -18,6 +18,8 @@ public:
 	bool hasPackage(std::string const& _name) const;
 	auto getPackage(std::string const& _name) const -> Package const&;
 	auto getPackage(std::string const& _name) -> Package&;
+
+	bool hasProject(std::string const& _name) const;
 	auto getProject(std::string const& _name) const -> Project const&;
 
 	auto getProjectAndDependencies(std::string const& _name = "") const -> std::vector<Project const*>;

@@ -107,7 +107,14 @@ namespace busy {
 	}
 
 
-
+	bool Package::hasProject(std::string const& _name) const {
+		for (auto const& project : mProjects) {
+			if (project.getName() == _name) {
+				return true;
+			}
+		}
+		return false;
+	}
 
 	auto Package::getProject(std::string const& _name) const -> Project const& {
 		for (auto const& project : mProjects) {

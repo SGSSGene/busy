@@ -71,6 +71,27 @@ auto Workspace::getPackage(std::string const& _name) -> Package& {
 	}
 	throw std::runtime_error("Couldn't find packages with name: " + _name);
 }
+bool Workspace::hasProject(std::string const& _name) const {
+	auto parts = utils::explode(_name, "/");
+	if (parts.size() > 2) {
+		throw std::runtime_error("given invalid full project name: " + _name + ". It should look like this Package/Project");
+	} else if (parts.size() == 2) {
+		if (not hasPackage(parts[0])) {
+			return false;
+		}
+		auto const& package = getPackage(parts[0]);
+		return package.hasProject(parts[1]);
+	}
+
+	for (auto const& package : mPackages) {
+		for (auto const& project : package.getProjects()) {
+			if (project.getName () == _name) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
 
 auto Workspace::getProject(std::string const& _name) const -> Project const& {
 	auto parts = utils::explode(_name, "/");
