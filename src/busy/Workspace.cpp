@@ -183,7 +183,7 @@ auto Workspace::getToolchains() const -> std::map<std::string, Toolchain const*>
 	return retMap;
 }
 auto Workspace::getBuildModes() const -> std::vector<std::string> {
-	return {"debug", "release"};
+	return {"debug", "release", "release_with_symbols"};
 }
 
 

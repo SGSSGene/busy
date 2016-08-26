@@ -218,9 +218,12 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 		options.push_back(outputFile);
 		if (buildModeName == "release") {
 			options.push_back("-O3");
-		} else if (buildModeName == "debug") {
+		} else if (buildModeName == "release_with_symbols") {
+			options.push_back("-O3");
 			options.push_back("-g3");
+		} else if (buildModeName == "debug") {
 			options.push_back("-O0");
+			options.push_back("-g3");
 		}
 		//!ENDTODO
 		options.push_back("-DBUSY");
@@ -311,6 +314,9 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 		options.push_back(outputFile);
 		if (buildModeName == "release") {
 			options.push_back("-O3");
+		} else if (buildModeName == "release_with_symbols") {
+			options.push_back("-O3");
+			options.push_back("-g3");
 		} else if (buildModeName == "debug") {
 			options.push_back("-g3");
 			options.push_back("-O0");
