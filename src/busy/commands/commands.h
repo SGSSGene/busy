@@ -10,7 +10,7 @@ namespace commands {
 	void cleanAll();
 	void docu();
 	void eclipse();
-	void flavors();
+	void flavors(bool _isTerminal);
 	void git(std::vector<std::string> const& _options);
 	void test();
 	void pull();
@@ -21,7 +21,8 @@ namespace commands {
 	void buildMode(std::string const& _buildMode);
 	void quickFix();
 	int  listFiles(std::string const& _relPath);
+	void listProjects();
 	void showDep(std::string const& rootProjectName);
-	void toolchains();
+	void toolchains(bool _isTerminal);
 	void toolchain(std::string const& _toolchain);
 }

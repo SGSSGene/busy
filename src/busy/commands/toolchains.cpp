@@ -10,10 +10,16 @@ using namespace busy;
 
 namespace commands {
 
-void toolchains() {
+void toolchains(bool _isTerminal) {
 	Workspace ws;
 	auto toolchains    = ws.getToolchains();
 
+	std::string green = TERM_GREEN;
+	std::string reset = TERM_RESET;
+	if (not _isTerminal) {
+		green = "";
+		reset = "";
+	}
 	int longestString = 0;
 	for (auto const& e : toolchains) {
 		longestString = std::max(longestString, int(e.first.length()));
@@ -21,7 +27,7 @@ void toolchains() {
 
 	for (auto const& e : toolchains) {
 		if (e.first == ws.getSelectedToolchain()) {
-			std::cout << TERM_GREEN;
+			std::cout << green;
 		}
 		std::cout << e.first;
 		for (int i (e.first.length()); i < longestString; ++i) {
@@ -29,7 +35,7 @@ void toolchains() {
 		}
 		std::cout << std::endl;
 		if (e.first == ws.getSelectedToolchain()) {
-			std::cout << TERM_RESET;
+			std::cout << reset;
 		}
 
 	}

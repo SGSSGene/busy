@@ -10,9 +10,16 @@ using namespace busy;
 
 namespace commands {
 
-void flavors() {
+void flavors(bool _isTerminal) {
 	Workspace ws;
 	auto flavors = ws.getFlavors();
+
+	std::string green = TERM_GREEN;
+	std::string reset = TERM_RESET;
+
+	if (not _isTerminal) {
+		green = reset = "";
+	}
 
 	int longestString = 0;
 	for (auto const& e : flavors) {
@@ -24,7 +31,7 @@ void flavors() {
 			and e.second->toolchain == ws.getSelectedToolchain());
 
 		if (match) {
-			std::cout << TERM_GREEN;
+			std::cout << green;
 		}
 		std::cout << e.first;
 		for (int i (e.first.length()); i < longestString; ++i) {
@@ -32,7 +39,7 @@ void flavors() {
 		}
 		std::cout << std::endl;
 		if (match) {
-			std::cout << TERM_RESET;
+			std::cout << reset;
 		}
 
 	}
