@@ -216,8 +216,12 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 		options.push_back(_file);
 		options.push_back("-o");
 		options.push_back(outputFile);
-		options.push_back("-g3");
-		options.push_back("-O0");
+		if (buildModeName == "release") {
+			options.push_back("-O3");
+		} else if (buildModeName == "debug") {
+			options.push_back("-g3");
+			options.push_back("-O0");
+		}
 		//!ENDTODO
 		options.push_back("-DBUSY");
 		options.push_back("-DBUSY_" + utils::sanitizeForMakro(_project->getName()));
