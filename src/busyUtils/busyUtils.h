@@ -55,6 +55,8 @@ namespace utils {
 
 	bool validPackageName(std::string const& _str);
 
+	auto getDate() -> std::string;
+
 
 	class AtomicWrite {
 		std::string mFileName;

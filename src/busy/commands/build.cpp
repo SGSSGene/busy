@@ -1,14 +1,16 @@
 #include "commands.h"
 
 #include "Workspace.h"
+#include "git.h"
+#include <algorithm>
 #include <busyUtils/busyUtils.h>
 #include <chrono>
 #include <fstream>
 #include <iostream>
+#include <locale>
 #include <mutex>
 #include <process/Process.h>
 #include <serializer/serializer.h>
-#include "git.h"
 
 
 namespace {
@@ -154,6 +156,37 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 		}
 	}
 
+	// create version files
+	{
+		utils::mkdir(".busy/helper-include/busy-version");
+		std::ofstream versionFile(".busy/helper-include/busy-version/version.h");
+		versionFile << "#pragma once" << std::endl;
+		for (auto const& package : ws.getPackages()) {
+		//	std::cout << package.getName() << " found at " << package.getPath() << std::endl;
+			auto branch = git::getBranch(package.getPath());
+			auto hash   = git::getCurrentHash(package.getPath());
+			bool dirty  = git::isDirty(package.getPath(), true);
+			auto name   = package.getName();
+			auto date   = utils::getDate();
+			hash = hash.substr(0, 8);
+
+			std::transform(name.begin(), name.end(), name.begin(), [](char c) { return std::toupper(c); });
+
+
+			std::string versionName = "VERSION_" + name;
+			std::string version     = hash;
+			if (dirty) {
+				version = version + "_dirty";
+			}
+			auto userName = git::getConfig(package.getPath(), "user.name");
+			version = branch + "-" + version + " build on " + date + " by " + userName;
+
+			versionFile << "#define " << versionName << " " << "\"" << version << "\"" << std::endl;
+		}
+	}
+
+
+
 	visitor.setStatisticUpdateCallback([&] (int done, int total) {
 		std::lock_guard<std::mutex> lock(printMutex);
 		if (errorDetected) return;
@@ -231,6 +264,8 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 		for (auto depP : _project->getDependenciesRecursive(ignoreProjects)) {
 			options.push_back("-DBUSY_" + utils::sanitizeForMakro(depP->getName()));
 		}
+		options.push_back("-isystem");
+		options.push_back(".busy/helper-include");
 		for (auto path : _project->getIncludeAndDependendPaths()) {
 			options.push_back("-I");
 			options.push_back(path);

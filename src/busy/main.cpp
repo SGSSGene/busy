@@ -1,6 +1,7 @@
 
 #include "commands/commands.h"
 #include "Workspace.h"
+#include "version.h"
 
 #include <busyUtils/busyUtils.h>
 #include <commonOptions/commonOptions.h>
@@ -38,6 +39,7 @@ namespace {
 	auto swtHelp       = commonOptions::make_switch("help",        "Shows some inforamation about this program");
 	auto swtNoConsole  = commonOptions::make_switch("noterminal",  "Doesn't use pretty output to display current progress");
 	auto swtVerbose    = commonOptions::make_switch("verbose",     "Shows more information while running");
+	auto swtVersion    = commonOptions::make_switch("version",     "Shows version");
 
 	auto optFlavor     = commonOptions::make_option("flavor", "",   "builds and sets given flavor for future builds (toolchain + buildMode)");
 	auto optJobCt      = commonOptions::make_option("j",        0,  "change the amount of jobs, 0 will autodetect good size");
@@ -75,10 +77,14 @@ int main(int argc, char** argv) {
 	try {
 		if (not commonOptions::parse(argc, argv)) {
 			commonOptions::print();
-			return 0;
+			return EXIT_SUCCESS;
 		} else if (*swtHelp) {
 			commonOptions::print();
-			return 0;
+			return EXIT_SUCCESS;
+		}
+		if (*swtVersion) {
+			std::cout << busy::version() << std::endl;
+			return EXIT_SUCCESS;
 		}
 
 		if (not *swtNoConsole) {

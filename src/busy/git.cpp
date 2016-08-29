@@ -48,11 +48,24 @@ auto push(std::string const& _cwd) -> std::string {
 	}
 	return TERM_GREEN "pushed master" TERM_RESET;
 }
-bool isDirty(std::string const& _cwd) {
+bool isDirty(std::string const& _cwd, bool _ignoreUntrackedFiles) {
 	setenv("LANGUAGE", "en_EN:en", 1);
 	process::Process p({"git", "status", "--porcelain"}, _cwd);
 
-	if (p.cout() == "" && p.cerr() == "") {
+	auto cout = p.cout();
+	bool notUntracked = false;
+	if (_ignoreUntrackedFiles) {
+		auto lines = utils::explode(cout, "\n");
+		for (auto const& l : lines) {
+			if (not utils::isStartingWith(l, "?? ")) {
+				notUntracked = true;
+				break;
+			}
+		}
+	} else {
+		notUntracked = cout != "";
+	}
+	if (not notUntracked && p.cerr() == "") {
 		return false;
 	}
 	return true;
@@ -71,6 +84,23 @@ auto getBranch(std::string const& _cwd) -> std::string {
 	branch.pop_back();
 	return branch;
 }
+auto getCurrentHash(std::string const& _cwd) -> std::string {
+	setenv("LANGUAGE", "en_EN:en", 1);
+	process::Process p({"git", "rev-parse", "HEAD"}, _cwd);
+	std::string branch = p.cout();
+	branch.pop_back();
+	return branch;
+}
+auto getConfig(std::string const& _cwd, std::string const& _option) -> std::string {
+	setenv("LANGUAGE", "en_EN:en", 1);
+	process::Process p({"git", "config", _option}, _cwd);
+	std::string branch = p.cout();
+	branch.pop_back();
+	return branch;
+
+}
+
+
 
 int untrackedFiles(std::string const& _cwd) {
 	setenv("LANGUAGE", "en_EN:en", 1);

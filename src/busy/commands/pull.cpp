@@ -15,7 +15,7 @@ void pull() {
 	threadPool::ThreadPool<std::string> threadPool;
 	threadPool.spawnThread([&](std::string const& path) {
 		static std::mutex mutex;
-		if (git::isDirty(path)) {
+		if (git::isDirty(path, true)) {
 			std::unique_lock<std::mutex> lock(mutex);
 			std::cout << TERM_RED "ignore " << path << ": Dirty repository" TERM_RESET << std::endl;
 		} else {

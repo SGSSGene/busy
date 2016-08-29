@@ -310,6 +310,16 @@ namespace utils {
 		}
 		return true;
 	}
+	auto getDate() -> std::string {
+		process::Process p({"date", "+%Y%m%d-%H%M"});
+		if (p.getStatus() != 0) {
+			throw std::runtime_error("error running date: " + p.cerr());
+		}
+		auto out = p.cout();
+		out.pop_back();
+		return out;
+	}
+
 
 
 	AtomicWrite::AtomicWrite(std::string  _fileName)
