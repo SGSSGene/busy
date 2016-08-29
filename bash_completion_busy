@@ -1,0 +1,19 @@
+_busy()
+{
+	local cur=${COMP_WORDS[COMP_CWORD]}
+	local prev=${COMP_WORDS[COMP_CWORD-1]}
+	if [ "$prev" = "toolchain" ]; then
+		COMPREPLY=( $(compgen -W "`busy toolchains --noterminal`" -- $cur) )
+	elif [ "$prev" = "build" ]; then
+		COMPREPLY=( $(compgen -W "`busy ls-projects --noterminal`" -- $cur) )
+	elif [ "$prev" = "buildMode" ]; then
+		COMPREPLY=( $(compgen -W "debug release release_with_symbols" -- $cur) )
+	elif [ "$prev" = "--flavor" ]; then
+		COMPREPLY=( $(compgen -W "`busy flavors --noterminal`" -- $cur) )
+	elif [ -z "$cur" ]; then
+		COMPREPLY=( $(compgen -W "`busy --help --noterminal | grep -v - | cut -d ' ' -f 1`" -- $cur) )
+	else
+		COMPREPLY=( $(compgen -W "`busy --help --noterminal | cut -d ' ' -f 1`" -- $cur) )
+	fi
+}
+complete -F _busy busy
