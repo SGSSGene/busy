@@ -94,9 +94,11 @@ auto getCurrentHash(std::string const& _cwd) -> std::string {
 auto getConfig(std::string const& _cwd, std::string const& _option) -> std::string {
 	setenv("LANGUAGE", "en_EN:en", 1);
 	process::Process p({"git", "config", _option}, _cwd);
-	std::string branch = p.cout();
-	branch.pop_back();
-	return branch;
+	std::string value = p.cout();
+	if (not value.empty()) {
+		value.pop_back();
+	}
+	return value;
 
 }
 

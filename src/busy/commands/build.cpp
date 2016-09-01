@@ -179,6 +179,9 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 				version = version + "_dirty";
 			}
 			auto userName = git::getConfig(package.getPath(), "user.name");
+			if (userName == "") {
+				userName = "UnknownUser";
+			}
 			version = branch + "-" + version + " build on " + date + " by " + userName;
 
 			versionFile << "#define " << versionName << " " << "\"" << version << "\"" << std::endl;
