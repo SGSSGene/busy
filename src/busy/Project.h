@@ -65,6 +65,7 @@ namespace busy {
 
 		auto getIncludeAndDependendPaths() const -> std::vector<std::string>;
 		auto getSystemIncludeAndDependendPaths() const -> std::vector<std::string>;
+		auto getLegacySystemIncludeAndDependendPaths() const -> std::vector<std::string>;
 
 	private:
 		void discoverSourceFiles();

@@ -275,6 +275,16 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 			options.push_back(path);
 		}
 
+		for (auto const& p : toolchain->cppCompiler.postOptions) {
+			options.push_back(p);
+		}
+		for (auto path : _project->getLegacySystemIncludeAndDependendPaths()) {
+			options.push_back("-isystem");
+			options.push_back(path);
+		}
+
+
+
 		if (verbose) {
 			std::lock_guard<std::mutex> lock(printMutex);
 			std::cout << std::endl;
@@ -282,9 +292,6 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 				std::cout << o << " ";
 			}
 			std::cout << std::endl;
-		}
-		for (auto const& p : toolchain->cppCompiler.postOptions) {
-			options.push_back(p);
 		}
 
 		process::Process proc(options);
@@ -374,6 +381,14 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 			options.push_back("-isystem");
 			options.push_back(path);
 		}
+		for (auto const& p : toolchain->cCompiler.postOptions) {
+			options.push_back(p);
+		}
+		for (auto path : _project->getLegacySystemIncludeAndDependendPaths()) {
+			options.push_back("-isystem");
+			options.push_back(path);
+		}
+
 
 		if (verbose) {
 			std::lock_guard<std::mutex> lock(printMutex);
@@ -382,10 +397,6 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 				std::cout << o << " ";
 			}
 			std::cout << std::endl;
-		}
-
-		for (auto const& p : toolchain->cCompiler.postOptions) {
-			options.push_back(p);
 		}
 
 		process::Process proc(options);
@@ -613,11 +624,15 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 				options.push_back("-l"+dep);
 			}
 		}
-		for (auto linking : _project->getSystemLibrariesPathsRecursive()) {
-			options.push_back("-L");
-			options.push_back(linking);
+		for (auto const& p : toolchain->cppCompiler.postOptions) {
+			options.push_back(p);
 		}
 		for (auto linking : _project->getLinkingOptionsRecursive()) {
+			options.push_back(linking);
+		}
+
+		for (auto linking : _project->getSystemLibrariesPathsRecursive()) {
+			options.push_back("-L");
 			options.push_back(linking);
 		}
 
@@ -630,10 +645,6 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 				std::cout << o << " ";
 			}
 			std::cout << std::endl;
-		}
-
-		for (auto const& p : toolchain->cppCompiler.postOptions) {
-			options.push_back(p);
 		}
 
 

@@ -211,6 +211,21 @@ namespace busy {
 		return includePaths;
 	}
 	auto Project::getSystemIncludeAndDependendPaths() const -> std::vector<std::string> {
+		std::vector<std::string> includePaths;
+
+		std::set<std::string> alreadyAdded;
+
+		for (auto dep : getDependenciesRecursive()) {
+			for (auto& p : dep->getIncludePaths()) {
+				if (alreadyAdded.count(p) == 0) {
+					alreadyAdded.insert(p);
+					includePaths.emplace_back(std::move(p));
+				}
+			}
+		}
+		return includePaths;
+	}
+	auto Project::getLegacySystemIncludeAndDependendPaths() const -> std::vector<std::string> {
 		auto includePaths = getSystemIncludePaths();
 
 		std::set<std::string> alreadyAdded;
@@ -222,15 +237,10 @@ namespace busy {
 					includePaths.emplace_back(std::move(p));
 				}
 			}
-			for (auto& p : dep->getIncludePaths()) {
-				if (alreadyAdded.count(p) == 0) {
-					alreadyAdded.insert(p);
-					includePaths.emplace_back(std::move(p));
-				}
-			}
 		}
 		return includePaths;
 	}
+
 
 	void Project::discoverDependencies() {
 
