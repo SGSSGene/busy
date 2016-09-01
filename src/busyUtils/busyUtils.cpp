@@ -93,6 +93,11 @@ namespace utils {
 	auto listFiles(std::string const& _dir, bool recursive) -> std::vector<std::string> {
 		std::vector<std::string> entryList;
 
+		if (not fileExists(_dir)) {
+			return entryList;
+		}
+
+
 		DIR* dir;
 		struct dirent* dirEntry;
 		if((dir  = opendir(_dir.c_str())) == NULL) {
