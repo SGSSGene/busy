@@ -1,0 +1,10 @@
+#pragma once
+#define VERSION_BUSY          "bootstrap-build"
+#define VERSION_COMMONOPTIONS "bootstrap-build"
+#define VERSION_PROCESS       "bootstrap-build"
+#define VERSION_SELFTEST      "bootstrap-build"
+#define VERSION_SERIALIZER    "bootstrap-build"
+#define VERSION_THREADPOOL    "bootstrap-build"
+#define VERSION_GTEST         "bootstrap-build"
+#define VERSION_JSONCPP       "bootstrap-build"
+#define VERSION_YAML-CPP      "bootstrap-build"

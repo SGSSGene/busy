@@ -1,6 +1,9 @@
 #!/bin/bash
 
-mkdir -p packages
+rm -rf .busy
+rm -rf ./build
+
+mkdir -p extRepositories
 rm -rf extRepositories/Serializer
 git clone https://github.com/SGSSGene/Serializer.git     extRepositories/Serializer
 rm -rf extRepositories/Process
@@ -23,6 +26,7 @@ g++ -ggdb -O0 --std=c++11 \
 	-isystem extRepositories/ThreadPool/src \
 	-isystem extRepositories/yaml-cpp/include \
 	-isystem extRepositories/Process/src \
+	-isystem helper \
 	-isystem src \
 	-I src/busy/ \
 	src/busy/*.cpp \
