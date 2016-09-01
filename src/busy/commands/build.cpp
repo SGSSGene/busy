@@ -235,7 +235,7 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 			fileWasRecompiled.insert(_file);
 		}
 
-		std::vector<std::string> options = toolchain->cppCompiler;
+		std::vector<std::string> options = toolchain->cppCompiler.command;
 		options.push_back("-std=c++11");
 		//!TODO shouldnt be default argument
 		options.push_back("-Wall");
@@ -283,6 +283,10 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 			}
 			std::cout << std::endl;
 		}
+		for (auto const& p : toolchain->cppCompiler.postOptions) {
+			options.push_back(p);
+		}
+
 		process::Process proc(options);
 		bool compileError = proc.getStatus() != 0;
 		if (not compileError) {
@@ -333,7 +337,7 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 			fileWasRecompiled.insert(_file);
 		}
 
-		std::vector<std::string> options = toolchain->cCompiler;
+		std::vector<std::string> options = toolchain->cCompiler.command;
 		options.push_back("-std=c11");
 		//!TODO shouldnt be default argument
 		options.push_back("-Wall");
@@ -379,6 +383,11 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 			}
 			std::cout << std::endl;
 		}
+
+		for (auto const& p : toolchain->cCompiler.postOptions) {
+			options.push_back(p);
+		}
+
 		process::Process proc(options);
 		if (proc.getStatus() == 0) {
 			utils::convertDFileToDDFile(buildPath + "/" + _file + ".d", buildPath + "/" + _file + ".dd");
@@ -420,7 +429,7 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 			needsRecompile.insert(_project);
 		}
 
-		std::vector<std::string> options = toolchain->archivist;
+		std::vector<std::string> options = toolchain->archivist.command;
 		options.push_back("rcs");
 
 		options.push_back(buildPath + "/" + _project->getFullName() + ".a");
@@ -440,6 +449,10 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 			}
 			std::cout << std::endl;
 		}
+		for (auto const& p : toolchain->archivist.postOptions) {
+			options.push_back(p);
+		}
+
 
 		process::Process proc(options);
 
@@ -491,12 +504,17 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 				needsRecompile.insert(_project);
 			}
 
-			std::vector<std::string> options = toolchain->cppCompiler;
+			std::vector<std::string> options = toolchain->cppCompiler.command;
 			options.push_back("-rdynamic");
 			options.push_back("-shared");
 			options.push_back("-o");
 			options.push_back(outputFile);
 			options.push_back(buildPath + "/" + f + ".o");
+
+			for (auto const& p : toolchain->cppCompiler.postOptions) {
+				options.push_back(p);
+			}
+
 			process::Process proc(options);
 			bool compileError = proc.getStatus() != 0;
 			if (compileError) {
@@ -546,9 +564,7 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 			}
 		}
 
-
-
-		std::vector<std::string> options = toolchain->cppCompiler;
+		std::vector<std::string> options = toolchain->cppCompiler.command;
 		//!TODO shouldnt be default argument
 		options.push_back("-rdynamic");
 		//!ENDTODO
@@ -615,6 +631,11 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 			}
 			std::cout << std::endl;
 		}
+
+		for (auto const& p : toolchain->cppCompiler.postOptions) {
+			options.push_back(p);
+		}
+
 
 		process::Process proc(options);
 

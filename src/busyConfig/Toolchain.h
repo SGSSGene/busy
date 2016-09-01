@@ -8,10 +8,23 @@ namespace busyConfig {
 	struct Toolchain {
 		std::string name;
 
-		std::vector<std::string> cCompiler;
-		std::vector<std::string> cppCompiler;
-		std::vector<std::string> archivist;
+		struct Command {
+			std::vector<std::string> command;
+			std::vector<std::string> postOptions;
+
+			template <typename Node>
+			void serialize(Node& node) {
+				node["command"]     % command;
+				node["postOptions"] % postOptions;
+			}
+		};
+
+
+		Command cCompiler;
+		Command cppCompiler;
+		Command archivist;
 		std::vector<std::string> installations;
+
 
 		template <typename Node>
 		void serialize(Node& node) {

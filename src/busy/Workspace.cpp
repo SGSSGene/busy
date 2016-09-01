@@ -296,23 +296,34 @@ void Workspace::loadPackages() {
 
 void Workspace::discoverSystemToolchains() {
 	std::map<std::string, std::pair<std::string, Toolchain>> searchPaths {
-	     {"/usr/bin/gcc",       {"system-gcc",       {{"gcc"},       {"g++"},         {"ar"}}}},
-	     {"/usr/bin/gcc-5.3",   {"system-gcc-5.3",   {{"gcc-5.3"},   {"g++-5.3"},     {"ar"}}}},
-	     {"/usr/bin/gcc-5.2",   {"system-gcc-5.2",   {{"gcc-5.2"},   {"g++-5.2"},     {"ar"}}}},
-	     {"/usr/bin/gcc-5.1",   {"system-gcc-5.1",   {{"gcc-5.1"},   {"g++-5.1"},     {"ar"}}}},
-	     {"/usr/bin/gcc-5.0",   {"system-gcc-5.0",   {{"gcc-5.0"},   {"g++-5.0"},     {"ar"}}}},
-	     {"/usr/bin/gcc-4.9",   {"system-gcc-4.9",   {{"gcc-4.9"},   {"g++-4.9"},     {"ar"}}}},
-	     {"/usr/bin/gcc-4.8",   {"system-gcc-4.8",   {{"gcc-4.8"},   {"g++-4.8"},     {"ar"}}}},
-	     {"/usr/bin/gcc-4.7",   {"system-gcc-4.7",   {{"gcc-4.7"},   {"g++-4.7"},     {"ar"}}}},
-	     {"/usr/bin/clang",     {"system-clang",     {{"clang"},     {"clang++"},     {"ar"}}}},
-	     {"/usr/bin/clang-3.6", {"system-clang-3.6", {{"clang-3.6"}, {"clang++-3.6"}, {"ar"}}}},
-	     {"/usr/bin/clang-3.8", {"system-clang-3.8", {{"clang-3.8"}, {"clang++-3.8"}, {"ar"}}}},
+	     {"/usr/bin/gcc",       {"system-gcc",       {{{"gcc"}, {}},       {{"g++"}, {}},         {{"ar"}, {}}}}},
+	     {"/usr/bin/gcc-5.3",   {"system-gcc-5.3",   {{{"gcc-5.3"}, {}},   {{"g++-5.3"}, {}},     {{"ar"}, {}}}}},
+	     {"/usr/bin/gcc-5.2",   {"system-gcc-5.2",   {{{"gcc-5.2"}, {}},   {{"g++-5.2"}, {}},     {{"ar"}, {}}}}},
+	     {"/usr/bin/gcc-5.1",   {"system-gcc-5.1",   {{{"gcc-5.1"}, {}},   {{"g++-5.1"}, {}},     {{"ar"}, {}}}}},
+	     {"/usr/bin/gcc-5.0",   {"system-gcc-5.0",   {{{"gcc-5.0"}, {}},   {{"g++-5.0"}, {}},     {{"ar"}, {}}}}},
+	     {"/usr/bin/gcc-4.9",   {"system-gcc-4.9",   {{{"gcc-4.9"}, {}},   {{"g++-4.9"}, {}},     {{"ar"}, {}}}}},
+	     {"/usr/bin/gcc-4.8",   {"system-gcc-4.8",   {{{"gcc-4.8"}, {}},   {{"g++-4.8"}, {}},     {{"ar"}, {}}}}},
+	     {"/usr/bin/gcc-4.7",   {"system-gcc-4.7",   {{{"gcc-4.7"}, {}},   {{"g++-4.7"}, {}},     {{"ar"}, {}}}}},
+	     {"/usr/bin/clang",     {"system-clang",     {{{"clang"}, {}},     {{"clang++"}, {}},     {{"ar"}, {}}}}},
+	     {"/usr/bin/clang-3.6", {"system-clang-3.6", {{{"clang-3.6"}, {}}, {{"clang++-3.6"}, {}}, {{"ar"}, {}}}}},
+	     {"/usr/bin/clang-3.8", {"system-clang-3.8", {{{"clang-3.8"}, {}}, {{"clang++-3.8"}, {}}, {{"ar"}, {}}}}},
 	     };
-
 	for (auto const& p : searchPaths) {
 		if (utils::fileExists(p.first)) {
 			mSystemToolchains[p.second.first] = p.second.second;
 		}
+	}
+	// check /usr/share/busy/toolchains
+	std::string resources = "/usr/share/busy/toolchains";
+	if (utils::fileExists(resources)) {
+		utils::walkFiles(resources, [&](std::string _file) {
+			auto package = busyConfig::readPackage(resources);
+			for (auto configToolchain : package.toolchains) {
+				Toolchain toolchain;
+				toolchain = configToolchain;
+				mSystemToolchains[configToolchain.name] = toolchain;
+			}
+		});
 	}
 }
 

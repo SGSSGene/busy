@@ -67,10 +67,7 @@ namespace busy {
 
 		// loading toolchains
 		for (auto const& toolchain : configPackage.toolchains) {
-			auto name = toolchain.name;
-			mToolchains[name].cppCompiler = toolchain.cppCompiler;
-			mToolchains[name].cCompiler   = toolchain.cCompiler;
-			mToolchains[name].archivist   = toolchain.archivist;
+			mToolchains[toolchain.name] = toolchain;
 		}
 
 		// loading Overrides
