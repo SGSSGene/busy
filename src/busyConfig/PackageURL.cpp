@@ -14,6 +14,12 @@ namespace busyConfig {
 		} else {
 			name = l[l.size()-1];
 		}
+		l = utils::explode(name, ":");
+		if (l.size() == 1) {
+			name = l[0];
+		} else {
+			name = l[l.size()-1];
+		}
 	}
 
 }
