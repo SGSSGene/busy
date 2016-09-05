@@ -54,6 +54,12 @@ namespace busy {
 			}
 			name = l[l.size()-1];
 
+			l = utils::explode(name, ":");
+			if (l .size() == 1) {
+			 name = l[0];
+			}
+			name = l[l.size()-1];
+
 			mExternalRepURLs.push_back({name, url.url, url.branch});
 		}
 
