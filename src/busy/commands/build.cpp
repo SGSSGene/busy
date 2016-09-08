@@ -262,10 +262,14 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 			options.push_back("-g3");
 		}
 		//!ENDTODO
-		options.push_back("-DBUSY");
-		options.push_back("-DBUSY_" + utils::sanitizeForMakro(_project->getName()));
+		options.push_back("-DBUSY=BUSY");
+		{
+			std::string busyString = "BUSY_" + utils::sanitizeForMakro(_project->getName());
+			options.push_back("-D" + busyString + "=" + busyString);
+		}
 		for (auto depP : _project->getDependenciesRecursive(ignoreProjects)) {
-			options.push_back("-DBUSY_" + utils::sanitizeForMakro(depP->getName()));
+			std::string busyString = "BUSY_" + utils::sanitizeForMakro(depP->getName());
+			options.push_back("-D" + busyString + "=" + busyString);
 		}
 		options.push_back("-isystem");
 		options.push_back(".busy/helper-include");
@@ -371,10 +375,14 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 			options.push_back("-O0");
 		}
 		//!ENDTODO
-		options.push_back("-DBUSY");
-		options.push_back("-DBUSY_" + utils::sanitizeForMakro(_project->getName()));
+		options.push_back("-DBUSY=BUSY");
+		{
+			std::string busyString = "BUSY_" + utils::sanitizeForMakro(_project->getName());
+			options.push_back("-D" + busyString + "=" + busyString);
+		}
 		for (auto depP : _project->getDependenciesRecursive(ignoreProjects)) {
-			options.push_back("-DBUSY_" + utils::sanitizeForMakro(depP->getName()));
+			std::string busyString = "BUSY_" + utils::sanitizeForMakro(depP->getName());
+			options.push_back("-D" + busyString + "=" + busyString);
 		}
 		for (auto path : _project->getIncludeAndDependendPaths()) {
 			options.push_back("-I");
