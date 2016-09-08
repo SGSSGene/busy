@@ -78,9 +78,9 @@ namespace busy {
 	{
 		mPath = mPackage->getPath() + "/src";
 		mName = _name;
-		if (utils::isStartingWith(mName, "test")) {
+		if (getIsUnitTest() or getIsExample()) {
 			mType = "executable";
-		}
+		} 
 
 		mSourcePaths.emplace_back(mPackage->getPath() + "/src");
 		mIncludePaths.emplace_back(mPackage->getPath() + "/src");
