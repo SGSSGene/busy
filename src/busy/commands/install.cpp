@@ -21,7 +21,7 @@ void install() {
 	auto buildPath = "./build/" + toolchainName + "/" + buildModeName + "/";
 
 	for (auto project : ws.getProjectAndDependencies()) {
-		if (project->getType() != "executable") continue;
+		if (project->getType() != Project::Type::Executable) continue;
 		if (project->getIsUnitTest()) continue;
 		if (project->getIsExample()) continue;
 

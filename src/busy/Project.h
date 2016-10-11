@@ -6,12 +6,18 @@ namespace busy {
 	class Package;
 
 	class Project {
+	public:
+		enum class Type {
+			Executable,
+			StaticLibrary
+		};
 	private:
 		Package* mPackage;
 
 		std::string mName;
 		std::string mPath;
-		std::string mType {"library"};
+
+		Type        mType {Type::StaticLibrary};
 
 		bool        mHasConfigEntry {false};
 		bool        mWholeArchive {false};
@@ -39,7 +45,7 @@ namespace busy {
 		auto getFullName() const -> std::string;
 		auto getPath() const -> std::string const& { return mPath; }
 		bool getHasConfigEntry() const { return mHasConfigEntry; }
-		auto getType() const -> std::string const& { return mType; }
+		auto getType() const -> Type { return mType; }
 		bool getIsUnitTest() const;
 		bool getIsExample() const;
 		bool getWholeArchive() const { return mWholeArchive; }
@@ -75,4 +81,11 @@ namespace busy {
 		void discoverDependenciesInFile(std::string const& _file);
 
 	};
+	inline auto to_string(Project::Type type) -> std::string {
+		switch (type) {
+		case Project::Type::Executable: return "executable";
+		case Project::Type::StaticLibrary: return "staticLibrary";
+		}
+	}
+
 }

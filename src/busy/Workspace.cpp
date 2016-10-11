@@ -133,7 +133,7 @@ auto Workspace::getProjectAndDependencies(std::string const& _name) const -> std
 	if (_name == "") {
 		for (auto const& package : getPackages()) {
 			for (auto const& project : package.getProjects()) {
-				if (project.getType() == "executable" and ignoreProjects.count(&project) == 0) {
+				if (project.getType() == Project::Type::Executable and ignoreProjects.count(&project) == 0) {
 					queued.push_back(&project);
 					flagged.insert(&project);
 				}

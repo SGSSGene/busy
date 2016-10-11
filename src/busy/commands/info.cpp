@@ -112,7 +112,7 @@ void info(std::vector<std::string> str) {
 		auto const& project = ws.getProject(str.at(1));
 		std::cout << "Project: " << project.getFullName() << std::endl;
 
-		std::cout << "Type: " << project.getType() << std::endl;
+		std::cout << "Type: " << to_string(project.getType()) << std::endl;
 		std::cout << "has entry in busy.yaml: " << std::boolalpha << project.getHasConfigEntry() << std::endl;
 		std::cout << "link whole archive: " << project.getWholeArchive() << std::endl;
 		std::cout << "auto dependency discovery: " << project.getAutoDependenciesDiscovery() << std::endl;

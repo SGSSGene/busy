@@ -44,7 +44,15 @@ namespace busy {
 		mPath           = mPackage->getPath() + "/src";
 		mName           = _project.name;
 		mHasConfigEntry = true;
-		mType           = _project.type;
+		if (_project.type == "executable") {
+			mType = Type::Executable;
+		} else if (_project.type == "library"
+		           or _project.type == "staticLibrary") {
+			mType = Type::StaticLibrary;
+		} else {
+			//!TODO list all possible types
+			throw std::runtime_error("Unknown project type: " + _project.type + " must be of the type \"(executable, library, staticLibrary, sharedLibrary...\"");
+		}
 		mWholeArchive   = _project.wholeArchive;
 		mAutoDependenciesDiscovery = _project.mAutoDependenciesDiscovery;
 		mSystemLibraries = _project.depLibraries;
@@ -79,8 +87,8 @@ namespace busy {
 		mPath = mPackage->getPath() + "/src";
 		mName = _name;
 		if (getIsUnitTest() or getIsExample()) {
-			mType = "executable";
-		} 
+			mType = Type::Executable;
+		}
 
 		mSourcePaths.emplace_back(mPackage->getPath() + "/src");
 		mIncludePaths.emplace_back(mPackage->getPath() + "/src");
