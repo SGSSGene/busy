@@ -4,6 +4,7 @@
 #include <busyUtils/busyUtils.h>
 #include <iostream>
 #include <serializer/serializer.h>
+#include <process/Process.h>
 
 
 namespace busy {
@@ -28,7 +29,6 @@ Workspace::Workspace(bool _noSaving)
 	if (utils::fileExists(workspaceFile)) {
 		serializer::binary::read(workspaceFile, mConfig);
 	}
-
 
 	loadPackageFolders();
 	loadPackages();
@@ -294,34 +294,70 @@ void Workspace::loadPackages() {
 	}
 }
 
-void Workspace::discoverSystemToolchains() {
-	std::map<std::string, std::pair<std::string, Toolchain>> searchPaths {
-	     {"/usr/bin/gcc",       {"system-gcc",       {{{"gcc"}, {}},       {{"g++"}, {}},         {{"ar"}, {}}}}},
-	     {"/usr/bin/gcc-5.3",   {"system-gcc-5.3",   {{{"gcc-5.3"}, {}},   {{"g++-5.3"}, {}},     {{"ar"}, {}}}}},
-	     {"/usr/bin/gcc-5.2",   {"system-gcc-5.2",   {{{"gcc-5.2"}, {}},   {{"g++-5.2"}, {}},     {{"ar"}, {}}}}},
-	     {"/usr/bin/gcc-5.1",   {"system-gcc-5.1",   {{{"gcc-5.1"}, {}},   {{"g++-5.1"}, {}},     {{"ar"}, {}}}}},
-	     {"/usr/bin/gcc-5.0",   {"system-gcc-5.0",   {{{"gcc-5.0"}, {}},   {{"g++-5.0"}, {}},     {{"ar"}, {}}}}},
-	     {"/usr/bin/gcc-4.9",   {"system-gcc-4.9",   {{{"gcc-4.9"}, {}},   {{"g++-4.9"}, {}},     {{"ar"}, {}}}}},
-	     {"/usr/bin/gcc-4.8",   {"system-gcc-4.8",   {{{"gcc-4.8"}, {}},   {{"g++-4.8"}, {}},     {{"ar"}, {}}}}},
-	     {"/usr/bin/gcc-4.7",   {"system-gcc-4.7",   {{{"gcc-4.7"}, {}},   {{"g++-4.7"}, {}},     {{"ar"}, {}}}}},
-	     {"/usr/bin/clang",     {"system-clang",     {{{"clang"}, {}},     {{"clang++"}, {}},     {{"ar"}, {}}}}},
-	     {"/usr/bin/clang-3.6", {"system-clang-3.6", {{{"clang-3.6"}, {}}, {{"clang++-3.6"}, {}}, {{"ar"}, {}}}}},
-	     {"/usr/bin/clang-3.8", {"system-clang-3.8", {{{"clang-3.8"}, {}}, {{"clang++-3.8"}, {}}, {{"ar"}, {}}}}},
-	     };
-	for (auto const& p : searchPaths) {
-		if (utils::fileExists(p.first)) {
-			mSystemToolchains[p.second.first] = p.second.second;
+namespace {
+auto retrieveGccVersion(std::vector<std::string> const& _command) -> std::string {
+	auto commandIter = _command.end();
+	// find first gcc
+	for (auto iter = _command.begin(); iter != _command.end(); ++iter) {
+		if (iter->find("gcc") != std::string::npos
+		    or iter->find("g++" ) != std::string::npos) {
+			commandIter = iter;
+			break;
 		}
 	}
+	// if no gcc found, throw exception
+	if (commandIter == _command.end()) {
+		throw std::runtime_error("unknown compiler");
+	}
+
+	process::Process p({*commandIter, "--version"});
+	auto output = p.cout();
+	auto line    = utils::explode(output, "\n").at(0);
+	auto version = utils::explode(utils::explode(line, ")").at(1), " ").at(0);
+	auto versionParts = utils::explode(version, ".");
+	auto realVersion = versionParts.at(0) + "." + versionParts.at(1);
+	return realVersion;
+}
+}
+
+void Workspace::discoverSystemToolchains() {
+	// setup toolchains plus fallback toolchain
+	std::map<std::string, std::pair<std::string, Toolchain>> searchPaths {
+	     {"/usr/bin/gcc",       {"default-gcc", {"", false,
+	                                             {{"gcc", "-std=c11",   "-Wall", "-Wextra", "-fmessage-length=0", "-fPIC", "-rdynamic", "-MD"}, {}},
+	                                             {{"g++", "-std=c++11", "-Wall", "-Wextra", "-fmessage-length=0", "-fPIC", "-rdynamic", "-MD"}, {}},
+	                                             {{"ar"}, {}}
+	                                            }
+	                            }
+	     }
+	};
+	for (auto const& p : searchPaths) {
+		mSystemToolchains[p.second.first] = p.second.second;
+	}
+
 	// check /usr/share/busy/toolchains
 	std::string resources = "/usr/share/busy/toolchains";
+
 	if (utils::fileExists(resources)) {
 		utils::walkFiles(resources, [&](std::string _file) {
-			auto package = busyConfig::readPackage(resources);
+			if (not utils::isEndingWith(_file, ".yaml")) return;
+			if (utils::isStartingWith(_file, ".")) return;
+
+			busyConfig::Package package;
+			serializer::yaml::read(resources + "/" + _file , package);
 			for (auto configToolchain : package.toolchains) {
-				Toolchain toolchain;
-				toolchain = configToolchain;
-				mSystemToolchains[configToolchain.name] = toolchain;
+				// Check version
+				try {
+					auto version     = configToolchain.version;
+					if (configToolchain.type == "gcc") {
+						auto realVersion = retrieveGccVersion(configToolchain.cCompiler.command);
+						if (realVersion != version) continue;
+					} else {
+						std::cerr << "unknown toolchain type: " + configToolchain.type << std::endl;
+					}
+					mSystemToolchains[configToolchain.name] = configToolchain;
+				} catch (...) {}
+
 			}
 		});
 	}

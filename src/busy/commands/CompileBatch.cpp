@@ -260,13 +260,6 @@ auto CompileBatch::generateFlags(Project const* _project, std::string const& _fi
 	std::vector<std::string> options;
 
 	//!TODO shouldnt be default argument
-	options.push_back("-Wall");
-	options.push_back("-Wextra");
-	options.push_back("-fmessage-length=0");
-	options.push_back("-fPIC");
-	options.push_back("-rdynamic");
-	options.push_back("-fmax-errors=3");
-	options.push_back("-MD");
 	options.push_back("-c");
 	options.push_back(_file);
 	options.push_back("-o");
