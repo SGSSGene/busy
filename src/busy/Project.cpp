@@ -100,6 +100,10 @@ namespace busy {
 	auto Project::getFullName() const -> std::string {
 		return mPackage->getName() + "/" + getName();
 	}
+	auto Project::getFullName(std::string const& _inter) const -> std::string {
+		return mPackage->getName() + "/" + _inter + getName();
+	}
+
 	bool Project::getIsUnitTest() const {
 		return utils::isStartingWith(mName, "test");
 	}
@@ -114,6 +118,25 @@ namespace busy {
 		return cppFiles;
 	}
 
+
+	auto Project::getDependenciesOnlyStatic(std::set<Project const*> const& _ignoreProject) const -> std::vector<Project const*> {
+		std::vector<Project const*> retList;
+		for (auto dep : getDependencies()) {
+			if (_ignoreProject.count(dep) > 0) continue;
+			if (dep->getType() != Project::Type::StaticLibrary) continue;
+			retList.push_back(dep);
+		}
+		return retList;
+	}
+	auto Project::getDependenciesOnlyShared(std::set<Project const*> const& _ignoreProject) const -> std::vector<Project const*> {
+		std::vector<Project const*> retList;
+		for (auto dep : getDependencies()) {
+			if (_ignoreProject.count(dep) > 0) continue;
+			if (dep->getType() != Project::Type::SharedLibrary) continue;
+			retList.push_back(dep);
+		}
+		return retList;
+	}
 
 
 	auto Project::getDependenciesRecursive(std::set<Project const*> const& _ignoreProject) const -> std::vector<Project const*> {
@@ -140,6 +163,63 @@ namespace busy {
 
 		return retList;
 	}
+	auto Project::getDependenciesRecursiveOnlyStatic(std::set<Project const*> const& _ignoreProject) const -> std::vector<Project const*> {
+		std::vector<Project const*> retList = getDependenciesOnlyStatic(_ignoreProject);
+		auto iterateList = retList;
+		for (auto const& project : iterateList) {
+			for (auto p : project->getDependenciesRecursiveOnlyStatic(_ignoreProject)) {
+				retList.push_back(p);
+			}
+		}
+		std::map<Project const*, int> entryCount;
+		for (auto entry : retList) {
+			entryCount[entry] += 1;
+		}
+		retList.erase(std::remove_if(retList.begin(), retList.end(), [&entryCount] (Project const* p) {
+			entryCount[p] -= 1;
+			return entryCount[p] > 0;
+		}), retList.end());
+
+		return retList;
+	}
+	auto Project::getDependenciesRecursiveOnlyShared(std::set<Project const*> const& _ignoreProject) const -> std::vector<Project const*> {
+		std::vector<Project const*> retList = getDependenciesRecursive(_ignoreProject);
+
+		retList.erase(std::remove_if(retList.begin(), retList.end(), [] (Project const* p) {
+			return p->getType() != Project::Type::SharedLibrary;
+		}), retList.end());
+
+		return retList;
+	}
+	auto Project::getDependenciesRecursiveOnlyStaticNotOverShared(std::set<Project const*> const& _ignoreProject) const -> std::vector<Project const*> {
+		auto retList = getDependenciesRecursiveOnlyStatic(_ignoreProject);
+		auto shared  = getDependenciesRecursiveOnlyStaticOverShared(_ignoreProject);
+
+
+		retList.erase(std::remove_if(retList.begin(), retList.end(), [&] (Project const* p) {
+			for (auto const & s : shared) {
+				if (s == p) return true;
+			}
+			return false;
+		}), retList.end());
+		return retList;
+	}
+	auto Project::getDependenciesRecursiveOnlyStaticOverShared(std::set<Project const*> const& _ignoreProject) const -> std::vector<Project const*> {
+		std::vector<Project const*> retList;
+		auto allShared = getDependenciesRecursiveOnlyShared(_ignoreProject);
+
+		for (auto const& shared : allShared) {
+			for (auto const & p : shared->getDependenciesRecursive(_ignoreProject)) {
+				if (p->getType() == Project::Type::StaticLibrary) {
+					retList.push_back(p);
+				}
+			}
+		}
+		return retList;
+	}
+
+
+
 
 	auto Project::getSystemLibrariesPathsRecursive() const -> std::vector<std::string> {
 		auto retList = getSystemLibrariesPaths();
@@ -251,7 +331,6 @@ namespace busy {
 
 
 	void Project::discoverDependencies() {
-
 		// scan all files to detect dependencies
 		if (mAutoDependenciesDiscovery) {
 			for (auto s : {"cpp", "c", "incl"}) {

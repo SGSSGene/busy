@@ -65,42 +65,17 @@ void checkMissingDependencies() {
 	}
 }
 
-auto convertStaticToShared(std::string _shared) -> std::string {
-	// adding "lib" into the name
-	{
-		auto pos = _shared.find_last_of('/') + 1;
-		auto part0 = _shared.substr(0, pos);
-		auto part1 = _shared.substr(pos);
-		_shared = part0 + "lib" + part1;
-	}
-	// replacing .a with .so ending
-	{
-		_shared.pop_back(); _shared.pop_back();
-		_shared = _shared + "so";
-	}
-	return _shared;
-}
-
-
 }
 
 namespace commands {
 
 using namespace busy::commands;
 
-namespace {
-	auto getDependenciesFromFile(std::string const& _file) -> std::vector<std::string> {
-		std::vector<std::string> depFiles;
-
-		std::ifstream ifs(_file);
-		for (std::string line; std::getline(ifs, line);) {
-			depFiles.emplace_back(std::move(line));
-		}
-		return depFiles;
+bool build(std::string const& _rootProjectName, bool verbose, bool noconsole, int jobs) {
+	std::string rootProjectName = "";
+	if (_rootProjectName != "true") {
+		rootProjectName = _rootProjectName;
 	}
-}
-
-bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int jobs) {
 
 	checkMissingDependencies();
 
@@ -140,11 +115,11 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 
 	visitor.setStatisticUpdateCallback(build.getStatisticUpdateCallback());
 	visitor.setCppVisitor([&] (Project const* _project, std::string const& _file) {
-		return compileBatch.compileCpp(_project, _file);
+		compileBatch.compileCpp(_project, _file);
 	});
 
 	visitor.setCVisitor([&] (Project const* _project, std::string const& _file) {
-		return compileBatch.compileC(_project, _file);
+		compileBatch.compileC(_project, _file);
 	});
 
 	visitor.setProjectVisitor([&] (Project const* _project) {
@@ -152,6 +127,9 @@ bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int
 		switch (_project->getType()) {
 		case Project::Type::StaticLibrary:
 			compileBatch.linkStaticLibrary(_project);
+			break;
+		case Project::Type::SharedLibrary:
+			compileBatch.linkSharedLibrary(_project);
 			break;
 		case Project::Type::Executable:
 			compileBatch.linkExecutable(_project);

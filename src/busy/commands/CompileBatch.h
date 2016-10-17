@@ -39,7 +39,9 @@ public:
 	void compileC(Project const* _project, std::string const& _file);
 	void linkStaticLibrary(Project const* _project);
 	void linkExecutable(Project const* _project);
+	void linkSharedLibrary(Project const* _project);
 private:
+	void compile(Project const* _project, std::string const& _file, std::vector<std::string> _options);
 	bool checkNeedsRecompile(std::string const& _file, std::string const& outputFile);
 	void insertProjectAndFile(Project const* _project, std::string const& _file);
 	auto generateFlags(Project const* _project, std::string const& _file, std::string const& outputFile) -> std::vector<std::string>;

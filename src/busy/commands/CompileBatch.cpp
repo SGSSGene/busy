@@ -24,58 +24,11 @@ namespace busy {
 namespace commands {
 
 void CompileBatch::compileCpp(Project const* _project, std::string const& _file) {
-	if (errorDetected) return;
-
-	std::string outputFile = buildPath + "/" + _file + ".o";
-
-	// Check file dependencies
-	if (not checkNeedsRecompile(_file, outputFile)) {
-		return;
-	}
-
-	// marking _file as recompiled and mark _project to be recompiled
-	insertProjectAndFile(_project, _file);
-
-	std::vector<std::string> options = toolchain->cppCompiler.command;
-	options.push_back("-std=c++11");
-	for (auto& o : generateFlags(_project, _file, outputFile)) {
-		options.push_back(o);
-	}
-	for (auto& d : generateDefines(_project)) {
-		options.emplace_back(std::move(d));
-	}
-	for (auto& i : generateIncludes(_project)) {
-		options.emplace_back(std::move(i));
-	}
-	compile(options, _file);
+	compile(_project, _file, toolchain->cppCompiler.command);
 }
 
 void CompileBatch::compileC(Project const* _project, std::string const& _file) {
-	if (errorDetected) return;
-
-	std::string outputFile = buildPath + "/" + _file + ".o";
-
-	// Check file dependencies
-	if (not checkNeedsRecompile(_file, outputFile)) {
-		return;
-	}
-
-	// marking _file as recompiled and mark _project to be recompiled
-	insertProjectAndFile(_project, _file);
-
-	std::vector<std::string> options = toolchain->cCompiler.command;
-	options.push_back("-std=c11");
-	for (auto& o : generateFlags(_project, _file, outputFile)) {
-		options.push_back(o);
-	}
-	for (auto& d : generateDefines(_project)) {
-		options.emplace_back(std::move(d));
-	}
-	for (auto& i : generateIncludes(_project)) {
-		options.emplace_back(std::move(i));
-	}
-
-	compile(options, _file);
+	compile(_project, _file, toolchain->cCompiler.command);
 }
 void CompileBatch::linkStaticLibrary(Project const* _project) {
 	std::string outputFile = buildPath + "/" + _project->getFullName() + ".a";
@@ -125,6 +78,110 @@ void CompileBatch::linkStaticLibrary(Project const* _project) {
 		printError(options, proc);
 	}
 }
+void CompileBatch::linkSharedLibrary(Project const* _project) {
+	std::string outputFile = buildPath + "/" + _project->getFullName("lib") + ".so";
+
+	// Check file dependencies
+	bool recompile = false;
+	{
+		std::lock_guard<std::mutex> lock(printMutex);
+		if (needsRecompile.count(_project) > 0) {
+			recompile = true;
+		} else if (not utils::fileExists(outputFile)) {
+			recompile = true;
+		}
+		if (not recompile) {
+			return;
+		} else {
+			for (auto _project : _project->getDependenciesRecursiveOnlyStaticNotOverShared(ignoreProjects)) {
+				if (needsRecompile.count(_project) > 0) {
+					recompile = true;
+					break;
+				}
+			}
+		}
+		if (not recompile) {
+			return;
+		}
+	}
+
+
+	std::vector<std::string> options = toolchain->cppCompiler.command;
+	//!TODO shouldnt be default argument
+	options.push_back("-rdynamic");
+	options.push_back("-shared");
+	//!ENDTODO
+	options.push_back("-o");
+	options.push_back(outputFile);
+
+	for (auto file : objectFilesForLinking(_project, buildPath)) {
+		options.push_back(file);
+	}
+
+	// add static libraries
+	for (auto project : _project->getDependenciesRecursiveOnlyStaticNotOverShared(ignoreProjects)) {
+		if (project->getIsHeaderOnly()) continue;
+		if (true) {
+//		if (project->getWholeArchive()) {
+			options.push_back("-Wl,--whole-archive");
+		}
+		options.push_back(buildPath + "/" + project->getFullName() + ".a");
+		if (true) {
+//		if (project->getWholeArchive()) {
+			options.push_back("-Wl,--no-whole-archive");
+		}
+	}
+	// add shared libraries
+	for (auto project : _project->getDependenciesRecursiveOnlyShared(ignoreProjects)) {
+		if (project->getIsHeaderOnly()) continue;
+
+		std::string fullPath = buildPath + "/" + project->getFullName();
+		fullPath = fullPath.substr(0, fullPath.find_last_of("/"));
+
+		options.push_back("-L");
+		options.push_back(fullPath);
+		options.push_back("-l"+project->getName());
+	}
+
+
+	for (auto dep : _project->getSystemLibraries()) {
+		options.push_back("-l"+dep);
+	}
+	for (auto project : _project->getDependenciesRecursiveOnlyStaticNotOverShared(ignoreProjects)) {
+		for (auto dep : project->getSystemLibraries()) {
+			options.push_back("-l"+dep);
+		}
+	}
+/*	for (auto project : _project->getDependenciesRecursiveOnlyShared(ignoreProjects)) {
+		for (auto dep : project->getSystemLibraries()) {
+			options.push_back("-l"+dep);
+		}
+	}*/
+
+	for (auto const& p : toolchain->cppCompiler.postOptions) {
+		options.push_back(p);
+	}
+	for (auto linking : _project->getLinkingOptionsRecursive()) {
+		options.push_back(linking);
+	}
+
+	for (auto project : _project->getDependenciesRecursiveOnlyStaticNotOverShared(ignoreProjects)) {
+		for (auto linking : project->getSystemLibrariesPaths()) {
+			options.push_back("-L");
+			options.push_back(linking);
+		}
+	}
+
+	printVerboseCmd(options);
+
+	process::Process proc(options);
+
+	bool compileError = proc.getStatus() != 0;
+	if (compileError) {
+		printError(options, proc);
+	}
+}
+
 void CompileBatch::linkExecutable(Project const* _project) {
 	std::string outputFile = outPath + "/" + _project->getName();
 	if (_project->getIsUnitTest()) {
@@ -169,44 +226,43 @@ void CompileBatch::linkExecutable(Project const* _project) {
 		options.push_back(file);
 	}
 
-	for (auto project : _project->getDependenciesRecursive(ignoreProjects)) {
+	// add static libraries
+	for (auto project : _project->getDependenciesRecursiveOnlyStaticNotOverShared(ignoreProjects)) {
 		if (project->getIsHeaderOnly()) continue;
 
-		if (not project->getIsSingleFileProjects()) {
-			if (project->getWholeArchive()) {
-				options.push_back("-Wl,--whole-archive");
-			}
-			options.push_back(buildPath + "/" + project->getFullName() + ".a");
-			if (project->getWholeArchive()) {
-				options.push_back("-Wl,--no-whole-archive");
-			}
-		} else {
-/*			for (auto f : project->getCppAndCFiles()) {
-				auto outputFile = buildPath + "/" + f + ".a";
-				outputFile = convertStaticToShared(outputFile);
-				options.push_back("-L");
-				options.push_back(utils::dirname(outputFile));
-			if (project->getWholeArchive()) {
-				options.push_back("-Wl,--whole-archive");
-			}
-				options.push_back("-l" + utils::_basename(f));
-			if (project->getWholeArchive()) {
-				options.push_back("-Wl,--no-whole-archive");
-			}
-
-				options.push_back("-Wl,-rpath=" + utils::dirname(outputFile));
-			}*/
+		if (project->getWholeArchive()) {
+			options.push_back("-Wl,--whole-archive");
 		}
+		options.push_back(buildPath + "/" + project->getFullName() + ".a");
+		if (project->getWholeArchive()) {
+			options.push_back("-Wl,--no-whole-archive");
+		}
+	}
+	// add shared libraries
+	for (auto project : _project->getDependenciesRecursiveOnlyShared(ignoreProjects)) {
+		if (project->getIsHeaderOnly()) continue;
+
+		std::string fullPath = buildPath + "/" + project->getFullName();
+		fullPath = fullPath.substr(0, fullPath.find_last_of("/"));
+
+		options.push_back("-L");
+		options.push_back(fullPath);
+		options.push_back("-l"+project->getName());
 	}
 
 	for (auto dep : _project->getSystemLibraries()) {
 		options.push_back("-l"+dep);
 	}
-	for (auto project : _project->getDependenciesRecursive(ignoreProjects)) {
+	for (auto project : _project->getDependenciesRecursiveOnlyStaticNotOverShared(ignoreProjects)) {
 		for (auto dep : project->getSystemLibraries()) {
 			options.push_back("-l"+dep);
 		}
 	}
+/*	for (auto project : _project->getDependenciesRecursiveOnlyShared(ignoreProjects)) {
+		for (auto dep : project->getSystemLibraries()) {
+			options.push_back("-l"+dep);
+		}
+	}*/
 	for (auto const& p : toolchain->cppCompiler.postOptions) {
 		options.push_back(p);
 	}
@@ -214,9 +270,11 @@ void CompileBatch::linkExecutable(Project const* _project) {
 		options.push_back(linking);
 	}
 
-	for (auto linking : _project->getSystemLibrariesPathsRecursive()) {
-		options.push_back("-L");
-		options.push_back(linking);
+	for (auto project : _project->getDependenciesRecursiveOnlyStaticNotOverShared(ignoreProjects)) {
+		for (auto linking : project->getSystemLibrariesPaths()) {
+			options.push_back("-L");
+			options.push_back(linking);
+		}
 	}
 
 
@@ -229,6 +287,33 @@ void CompileBatch::linkExecutable(Project const* _project) {
 		printError(options, proc);
 	}
 }
+
+void CompileBatch::compile(Project const* _project, std::string const& _file, std::vector<std::string> _options) {
+	if (errorDetected) return;
+
+	std::string outputFile = buildPath + "/" + _file + ".o";
+
+	// Check file dependencies
+	if (not checkNeedsRecompile(_file, outputFile)) {
+		return;
+	}
+
+	// marking _file as recompiled and mark _project to be recompiled
+	insertProjectAndFile(_project, _file);
+
+	for (auto& o : generateFlags(_project, _file, outputFile)) {
+		_options.push_back(o);
+	}
+	for (auto& d : generateDefines(_project)) {
+		_options.emplace_back(std::move(d));
+	}
+	for (auto& i : generateIncludes(_project)) {
+		_options.emplace_back(std::move(i));
+	}
+	compile(_options, _file);
+}
+
+
 
 
 bool CompileBatch::checkNeedsRecompile(std::string const& _file, std::string const& outputFile) {

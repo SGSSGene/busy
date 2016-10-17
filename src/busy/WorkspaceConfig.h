@@ -7,15 +7,17 @@
 
 namespace busy {
 	struct WorkspaceConfig {
-		std::map<std::string, FileStat> mFileStats;
-		std::string                     mToolchainName;
-		std::string                     mBuildModeName;
+		std::map<std::string, FileStat>    mFileStats;
+		std::string                        mToolchainName;
+		std::string                        mBuildModeName;
+		std::vector<std::string>           mStaticAsShared;
 
 		template <typename Node>
 		void serialize(Node& node) {
-			node["fileStats"]     % mFileStats;
-			node["toolchainName"] % mToolchainName;
-			node["buildModeName"] % mBuildModeName;
+			node["fileStats"]      % mFileStats;
+			node["toolchainName"]  % mToolchainName;
+			node["buildModeName"]  % mBuildModeName;
+			node["staticAsShared"] % mStaticAsShared;
 		}
 	};
 }

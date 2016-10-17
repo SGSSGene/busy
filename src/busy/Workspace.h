@@ -21,6 +21,7 @@ public:
 
 	bool hasProject(std::string const& _name) const;
 	auto getProject(std::string const& _name) const -> Project const&;
+	auto getProject(std::string const& _name) -> Project&;
 
 	auto getProjectAndDependencies(std::string const& _name = "") const -> std::vector<Project const*>;
 
@@ -39,12 +40,15 @@ public:
 	auto getFileStat(std::string const& _file) -> FileStat&;
 
 	auto getExcludedProjects(std::string const& _toolchain) const -> std::set<Project const*>;
+
+	void markProjectAsShared(std::string const& _name);
 private:
 	void loadPackageFolders();
 	void loadPackages();
 
 	void discoverSystemToolchains();
 
+	auto getSharedProjects() -> std::set<Project*>;
 private:
 	std::vector<std::string> mPackageFolders;
 	std::list<Package>       mPackages;

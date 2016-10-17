@@ -17,6 +17,8 @@ namespace busy {
 	}
 
 	void Visitor::visit(int _jobs) {
+		mWorkspace.markProjectAsShared(mTarget);
+
 		auto projects = mWorkspace.getProjectAndDependencies(mTarget);
 
 		struct Job {

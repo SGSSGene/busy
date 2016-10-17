@@ -66,9 +66,10 @@ namespace busy {
 		// loading Flavors
 		for (auto const& shared : configPackage.flavors) {
 			auto name = shared.first;
-			mFlavors[name].buildMode = shared.second.buildMode;
-			mFlavors[name].toolchain = shared.second.toolchain;
-			mFlavors[name].mLinkAsSharedAsStrings = shared.second.linkAsShared;
+			mFlavors[name].name          = configPackage.name + "/" + name;
+			mFlavors[name].buildMode     = shared.second.buildMode;
+			mFlavors[name].toolchain     = shared.second.toolchain;
+			mFlavors[name].mLinkAsShared = shared.second.linkAsShared;
 		}
 
 		// loading toolchains
@@ -91,12 +92,13 @@ namespace busy {
 			auto package = &mWorkspace->getPackage(url.name);
 			mExternalPackages.push_back(package);
 		}
-		for (auto& flavor : mFlavors) {
+/*		for (auto& flavor : mFlavors) {
 			for (auto const& s : flavor.second.mLinkAsSharedAsStrings) {
 				flavor.second.mLinkAsShared.push_back(&mWorkspace->getProject(s));
 			}
-		}
-}
+		}*/
+	}
+
 	auto Package::getAllDependendPackages() -> std::vector<Package*> {
 		std::vector<Package*> packages = {this};
 		for (auto package : getExternalPackages()) {

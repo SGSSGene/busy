@@ -40,7 +40,7 @@ Workspace::~Workspace() {
 		serializer::binary::write(atomic.getTempName(), mConfig);
 		atomic.close();
 
-	//	serializer::yaml::write(workspaceFile + ".yaml", mConfig);
+//		serializer::yaml::write(workspaceFile + ".yaml", mConfig);
 	}
 }
 
@@ -122,6 +122,11 @@ auto Workspace::getProject(std::string const& _name) const -> Project const& {
 	}
 	return *matchList.at(0);
 }
+auto Workspace::getProject(std::string const& _name) -> Project& {
+	Project const& p = ((Workspace const*)(this))->getProject(_name);
+	return const_cast<Project&>(p);
+}
+
 auto Workspace::getProjectAndDependencies(std::string const& _name) const -> std::vector<Project const*> {
 	auto ignoreProjects = getExcludedProjects(getSelectedToolchain());
 
@@ -226,31 +231,38 @@ void Workspace::setSelectedBuildMode(std::string const& _buildMode) {
 
 void Workspace::setFlavor(std::string const& _flavor) {
 	// search for direct match
-	for (auto flavor : getFlavors()) {
+	Flavor const* flavorPtr = nullptr;
+	for (auto const& flavor : getFlavors()) {
 		if (flavor.first == _flavor) {
-			setSelectedToolchain(flavor.second->toolchain);
-			setSelectedBuildMode(flavor.second->buildMode);
-			std::cout << "applying flavor " << _flavor << std::endl;
-			return;
+			flavorPtr = flavor.second;
+			break;
 		}
 	}
 
 	// if no direct match was found, try indirect match (by leaving out the package name
-	std::vector<Flavor const*> matches;
-	for (auto flavor : getFlavors()) {
-		auto parts = utils::explode(flavor.first, "/");
-		if (parts[parts.size()-1] == _flavor) {
-			matches.push_back(flavor.second);
+	if (flavorPtr == nullptr) {
+		std::vector<Flavor const*> matches;
+		for (auto flavor : getFlavors()) {
+			auto parts = utils::explode(flavor.first, "/");
+			if (parts[parts.size()-1] == _flavor) {
+				matches.push_back(flavor.second);
+			}
 		}
+		if (matches.size() == 0) {
+			throw std::runtime_error("flavor " + _flavor + " is unknown");
+		}
+		if (matches.size() > 1) {
+			throw std::runtime_error("flavor " + _flavor + " is ambigious");
+		}
+		flavorPtr = matches.at(0);
 	}
-	if (matches.size() == 0) {
-		throw std::runtime_error("flavor " + _flavor + " is unknown");
+	setSelectedToolchain(flavorPtr->toolchain);
+	setSelectedBuildMode(flavorPtr->buildMode);
+	mConfig.mStaticAsShared.clear();
+	for (auto const& s : flavorPtr->mLinkAsShared) {
+		mConfig.mStaticAsShared.push_back(s);
 	}
-	if (matches.size() > 1) {
-		throw std::runtime_error("flavor " + _flavor + " is ambigious");
-	}
-	setSelectedToolchain(matches.at(0)->toolchain);
-	setSelectedBuildMode(matches.at(0)->buildMode);
+	std::cout << "Applying flavor " << flavorPtr->name << "\n";
 }
 
 
@@ -270,6 +282,21 @@ auto Workspace::getExcludedProjects(std::string const& _toolchain) const -> std:
 	}
 	return projects;
 }
+void Workspace::markProjectAsShared(std::string const& _name) {
+	for (auto p : getSharedProjects()) {
+		if (p->getType() != Project::Type::StaticLibrary) continue;
+		p->setType(Project::Type::SharedLibrary);
+	}
+}
+
+auto Workspace::getSharedProjects() -> std::set<Project*> {
+	std::set<Project*> projects;
+	for (auto const& s : mConfig.mStaticAsShared) {
+		projects.insert(&getProject(s));
+	}
+	return projects;
+}
+
 
 
 void Workspace::loadPackageFolders() {
@@ -311,6 +338,7 @@ auto retrieveGccVersion(std::vector<std::string> const& _command) -> std::string
 	}
 
 	process::Process p({*commandIter, "--version"});
+	if (p.getStatus() != 0) return "";
 	auto output = p.cout();
 	auto line    = utils::explode(output, "\n").at(0);
 	auto version = utils::explode(utils::explode(line, ")").at(1), " ").at(0);

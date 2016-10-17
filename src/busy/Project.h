@@ -9,7 +9,8 @@ namespace busy {
 	public:
 		enum class Type {
 			Executable,
-			StaticLibrary
+			StaticLibrary,
+			SharedLibrary
 		};
 	private:
 		Package* mPackage;
@@ -41,8 +42,10 @@ namespace busy {
 		// Constructed from folder
 		Project(std::string const& _name, Package* _package);
 
+
 		auto getName() const -> std::string const& { return mName; }
 		auto getFullName() const -> std::string;
+		auto getFullName(std::string const& _inter) const -> std::string;
 		auto getPath() const -> std::string const& { return mPath; }
 		bool getHasConfigEntry() const { return mHasConfigEntry; }
 		auto getType() const -> Type { return mType; }
@@ -54,7 +57,13 @@ namespace busy {
 		auto getIncludePaths() const -> std::vector<std::string> const& { return mIncludePaths; }
 		auto getSystemIncludePaths() const -> std::vector<std::string> const& { return mSystemIncludePaths; }
 		auto getDependencies() const -> std::vector<Project const*> const& { return mDependencies; }
+		auto getDependenciesOnlyStatic(std::set<Project const*> const& _ignoreProject = {}) const -> std::vector<Project const*>;
+		auto getDependenciesOnlyShared(std::set<Project const*> const& _ignoreProject = {}) const -> std::vector<Project const*>;
 		auto getDependenciesRecursive(std::set<Project const*> const& _ignoreProject = {}) const -> std::vector<Project const*>;
+		auto getDependenciesRecursiveOnlyStatic(std::set<Project const*> const& _ignoreProject = {}) const -> std::vector<Project const*>;
+		auto getDependenciesRecursiveOnlyShared(std::set<Project const*> const& _ignoreProject = {}) const -> std::vector<Project const*>;
+		auto getDependenciesRecursiveOnlyStaticNotOverShared(std::set<Project const*> const& _ignoreProject = {}) const -> std::vector<Project const*>;
+		auto getDependenciesRecursiveOnlyStaticOverShared(std::set<Project const*> const& _ignoreProject = {}) const -> std::vector<Project const*>;
 		auto getCFiles() const -> std::vector<std::string> const& { return mSourceFiles.at("c"); }
 		auto getCppFiles() const -> std::vector<std::string> const& { return mSourceFiles.at("cpp"); }
 		auto getCppAndCFiles() const -> std::vector<std::string>;
@@ -72,6 +81,8 @@ namespace busy {
 		auto getIncludeAndDependendPaths() const -> std::vector<std::string>;
 		auto getSystemIncludeAndDependendPaths() const -> std::vector<std::string>;
 		auto getLegacySystemIncludeAndDependendPaths() const -> std::vector<std::string>;
+
+		void setType(Type _type) { mType = _type; }
 
 	private:
 		void discoverSourceFiles();
