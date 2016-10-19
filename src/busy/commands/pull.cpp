@@ -1,7 +1,9 @@
 #include "commands.h"
 
 #include "git.h"
+#include "git-annex.h"
 #include <busyUtils/busyUtils.h>
+#include <busyConfig/busyConfig.h>
 #include <iostream>
 #include <threadPool/threadPool.h>
 
@@ -19,12 +21,16 @@ void pull() {
 			std::unique_lock<std::mutex> lock(mutex);
 			std::cout << TERM_RED "ignore " << path << ": Dirty repository" TERM_RESET << std::endl;
 		} else {
-			auto message = git::pull(path);
-			{
+			auto package = busyConfig::readPackage(path);
+			if (not package.gitAnnex) {
+				auto message = git::pull(path);
 				std::unique_lock<std::mutex> lock(mutex);
 				std::cout << "pulled " << path << ": " << message << std::endl;
+			} else {
+				auto message = git::annex::sync(path);
+				std::unique_lock<std::mutex> lock(mutex);
+				std::cout << "pulled (git annex sync)" << path << ": " << message << std::endl;
 			}
-
 		}
 	}, 4);
 

@@ -20,6 +20,7 @@ namespace busyConfig {
 
 	struct Package {
 		std::string     name;
+		bool            gitAnnex;
 		ExtRepositories extRepositories;
 		Projects        projects;
 		Overrides       overrides;
@@ -30,6 +31,7 @@ namespace busyConfig {
 		template <typename Node>
 		void serialize(Node& node) {
 			node["name"]            % name;
+			node["git-annex"]       % gitAnnex;
 			node["extRepositories"] % extRepositories;
 			node["projects"]        % projects;
 			node["overrides"]       % overrides;

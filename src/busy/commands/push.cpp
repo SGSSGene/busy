@@ -1,7 +1,9 @@
 #include "commands.h"
 
 #include "git.h"
+#include "git-annex.h"
 #include <busyUtils/busyUtils.h>
+#include <busyConfig/busyConfig.h>
 #include <iostream>
 #include <threadPool/threadPool.h>
 
@@ -11,12 +13,17 @@ void push() {
 	threadPool::ThreadPool<std::string> threadPool;
 	threadPool.spawnThread([&](std::string const& path) {
 		static std::mutex mutex;
-		auto message = git::push(path);
-		{
+
+		auto package = busyConfig::readPackage(path);
+		if (not package.gitAnnex) {
+			auto message = git::push(path);
 			std::unique_lock<std::mutex> lock(mutex);
 			std::cout << "pushed " << path << ": " << message << std::endl;
+		} else {
+			auto message = git::annex::sync_content(path);
+			std::unique_lock<std::mutex> lock(mutex);
+			std::cout << "pushed (git annex sync --content) " << path << ": " << message << std::endl;
 		}
-
 	}, 4);
 
 	auto allPackages = utils::listDirs("./extRepositories", true);
