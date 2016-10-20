@@ -77,12 +77,11 @@ int main(int argc, char** argv) {
 	try {
 		if (not commonOptions::parse(argc, argv)) {
 			commonOptions::print();
-			return EXIT_SUCCESS;
+			return EXIT_FAILURE;
 		} else if (*swtHelp) {
 			commonOptions::print();
 			return EXIT_SUCCESS;
-		}
-		if (*swtVersion) {
+		} else if (*swtVersion) {
 			std::cout << busy::version() << std::endl;
 			return EXIT_SUCCESS;
 		}
