@@ -21,28 +21,33 @@ void flavors(bool _isTerminal) {
 		green = reset = "";
 	}
 
-	int longestString = 0;
+	std::map<std::string, int> matches;
 	for (auto const& e : flavors) {
-		longestString = std::max(longestString, int(e.first.length()));
+		matches[e.first] += 1;
+
+		if (e.second->buildMode == ws.getSelectedBuildMode()
+			and e.second->toolchain == ws.getSelectedToolchain()) {
+			matches[e.first] = 0;
+		}
+
+		auto pos = e.first.find("/");
+		auto second = e.first.substr(pos+1);
+		matches[second] += 1;
 	}
 
-	for (auto const& e : flavors) {
-		bool match = (e.second->buildMode == ws.getSelectedBuildMode()
-			and e.second->toolchain == ws.getSelectedToolchain());
+	for (auto const& e : matches) {
+		if (e.second > 1) continue;
+
+		bool match = e.second == 0;
 
 		if (match) {
 			std::cout << green;
 		}
 		std::cout << e.first;
-		for (int i (e.first.length()); i < longestString; ++i) {
-			std::cout << " ";
-		}
 		std::cout << std::endl;
 		if (match) {
 			std::cout << reset;
 		}
-
 	}
 }
-
 }
