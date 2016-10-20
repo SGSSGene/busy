@@ -96,6 +96,7 @@ namespace busy {
 		switch (type) {
 		case Project::Type::Executable: return "executable";
 		case Project::Type::StaticLibrary: return "staticLibrary";
+		case Project::Type::SharedLibrary: return "sharedLibrary";
 		}
 	}
 
