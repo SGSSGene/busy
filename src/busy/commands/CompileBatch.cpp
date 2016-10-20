@@ -317,19 +317,25 @@ void CompileBatch::compile(Project const* _project, std::string const& _file, st
 
 
 bool CompileBatch::checkNeedsRecompile(std::string const& _file, std::string const& outputFile) {
+
 	// Check file dependencies
 	bool recompile = false;
-	if (not utils::fileExists(buildPath + "/" + _file + ".dd")) {
+	auto outputFileDate = utils::getFileModificationTime(outputFile);
+	auto ddFile = buildPath + "/" + _file + ".dd";
+	if (not utils::fileExists(ddFile)) {
 		recompile = true;
-	} else for (auto const& file : getDependenciesFromFile(buildPath + "/" + _file + ".dd")) {
-		auto outputFileDate = utils::getFileModificationTime(outputFile);
-		if (not utils::fileExists(file)) {
-			recompile = true;
-			break;
-		}
-		if (utils::getFileModificationTime(file) > outputFileDate) {
-			recompile = true;
-			break;
+	} else if (utils::getFileModificationTime(_file) > outputFileDate) {
+		recompile = true;
+	} else {
+		for (auto const& file : getDependenciesFromFile(ddFile)) {
+			if (not utils::fileExists(file)) {
+				recompile = true;
+				break;
+			}
+			if (utils::getFileModificationTime(file) > outputFileDate) {
+				recompile = true;
+				break;
+			}
 		}
 	}
 	return recompile;
