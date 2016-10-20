@@ -117,7 +117,11 @@ int main(int argc, char** argv) {
 			int nprocs      = std::thread::hardware_concurrency();
 			int memoryInGig = memInfo.totalram / 1000 / 1000 / 1000;
 
-			int count = std::min(nprocs, memoryInGig);
+			//min 2gib of ram + excluding
+			//max one process per 1 gib of ram and
+			//max one process per core
+
+			int count = std::min(nprocs, memoryInGig + 2);
 			if (*swtVerbose) {
 				std::cout << "setting jobs to " << count << std::endl;
 			}
