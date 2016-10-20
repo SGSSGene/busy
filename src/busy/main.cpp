@@ -86,6 +86,16 @@ int main(int argc, char** argv) {
 			return EXIT_SUCCESS;
 		}
 
+		auto unmatched = commonOptions::getUnmatchedParameters();
+		if (unmatched.size() > 0) {
+			std::cout << "Unknown option(s):\n";
+			for (auto const e : unmatched) {
+				std::cout << e << "\n";
+			}
+			return EXIT_FAILURE;
+		}
+
+
 		if (not *swtNoConsole) {
 			std::cout << TERM_RESET;
 		}
