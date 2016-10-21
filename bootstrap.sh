@@ -19,6 +19,20 @@ git clone https://github.com/SGSSGene/yaml-cpp.git       extRepositories/yaml-cp
 
 set -e
 
+mkdir -p busy-helper/busy-version
+echo "
+#pragma once
+#define VERSION_BUSY          \"bootstrap-build\"
+#define VERSION_COMMONOPTIONS \"bootstrap-build\"
+#define VERSION_PROCESS       \"bootstrap-build\"
+#define VERSION_SELFTEST      \"bootstrap-build\"
+#define VERSION_SERIALIZER    \"bootstrap-build\"
+#define VERSION_THREADPOOL    \"bootstrap-build\"
+#define VERSION_GTEST         \"bootstrap-build\"
+#define VERSION_JSONCPP       \"bootstrap-build\"
+#define VERSION_YAML-CPP      \"bootstrap-build\"
+" > busy-helper/busy-version/version.h
+
 g++ -ggdb -O0 --std=c++11 \
 	-isystem extRepositories/Serializer/src/ \
 	-isystem extRepositories/jsoncpp/include \
@@ -26,7 +40,7 @@ g++ -ggdb -O0 --std=c++11 \
 	-isystem extRepositories/ThreadPool/src \
 	-isystem extRepositories/yaml-cpp/include \
 	-isystem extRepositories/Process/src \
-	-isystem helper \
+	-isystem busy-helper \
 	-isystem src \
 	-I src/busy/ \
 	src/busy/*.cpp \
@@ -44,6 +58,7 @@ g++ -ggdb -O0 --std=c++11 \
 	extRepositories/Process/src/process/*.cpp \
 	-lpthread \
 	-o busy
+rm -rf busy-helper
 ./busy build busy
 
 echo "run:"
