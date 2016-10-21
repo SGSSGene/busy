@@ -6,7 +6,6 @@ extRepositories:
 projects:
   - name: busy
     type: executable
-
 flavors:
   default:
     buildMode: debug

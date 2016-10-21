@@ -93,8 +93,8 @@ void CompileBatch::linkSharedLibrary(Project const* _project) {
 		if (not recompile) {
 			return;
 		} else {
-			for (auto _project : _project->getDependenciesRecursiveOnlyStaticNotOverShared(ignoreProjects)) {
-				if (needsRecompile.count(_project) > 0) {
+			for (auto _p : _project->getDependenciesRecursiveOnlyStaticNotOverShared(ignoreProjects)) {
+				if (needsRecompile.count(_p) > 0) {
 					recompile = true;
 					break;
 				}
@@ -202,8 +202,8 @@ void CompileBatch::linkExecutable(Project const* _project) {
 		if (not recompile) {
 			return;
 		} else {
-			for (auto _project : _project->getDependenciesRecursive(ignoreProjects)) {
-				if (needsRecompile.count(_project) > 0) {
+			for (auto _p : _project->getDependenciesRecursive(ignoreProjects)) {
+				if (needsRecompile.count(_p) > 0) {
 					recompile = true;
 					break;
 				}
