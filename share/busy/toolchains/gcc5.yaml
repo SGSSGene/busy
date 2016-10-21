@@ -1,0 +1,109 @@
+toolchains:
+  - name: system-gcc-5.1
+    type: gcc
+    version: 5.1
+    ccompiler:
+      command: [/usr/bin/gcc-5.1, -std=c11,   -fdiagnostics-color=always, -Wall, -Wextra, -fmessage-length=0, -fPIC, -rdynamic, -fmax-errors=3, -MD]
+    cppcompiler:
+      command: [/usr/bin/g++-5.1, -std=c++11,   -fdiagnostics-color=always, -Wall, -Wextra, -fmessage-length=0, -fPIC, -rdynamic, -fmax-errors=3, -MD]
+    archivist:
+      command: [/usr/bin/ar]
+  - name: system-gcc-5
+    type: gcc
+    version: 5.1
+    ccompiler:
+      command: [/usr/bin/gcc-5, -std=c11,   -fdiagnostics-color=always, -Wall, -Wextra, -fmessage-length=0, -fPIC, -rdynamic, -fmax-errors=3, -MD]
+    cppcompiler:
+      command: [/usr/bin/g++-5, -std=c++11,   -fdiagnostics-color=always, -Wall, -Wextra, -fmessage-length=0, -fPIC, -rdynamic, -fmax-errors=3, -MD]
+    archivist:
+      command: [/usr/bin/ar]
+  - name: system-gcc
+    type: gcc
+    version: 5.1
+    ccompiler:
+      command: [/usr/bin/gcc, -std=c11,   -fdiagnostics-color=always, -Wall, -Wextra, -fmessage-length=0, -fPIC, -rdynamic, -fmax-errors=3, -MD]
+    cppcompiler:
+      command: [/usr/bin/g++, -std=c++11,   -fdiagnostics-color=always, -Wall, -Wextra, -fmessage-length=0, -fPIC, -rdynamic, -fmax-errors=3, -MD]
+    archivist:
+      command: [/usr/bin/ar]
+  - name: system-gcc-5.2
+    type: gcc
+    version: 5.2
+    ccompiler:
+      command: [/usr/bin/gcc-5.2, -std=c11,   -fdiagnostics-color=always, -Wall, -Wextra, -fmessage-length=0, -fPIC, -rdynamic, -fmax-errors=3, -MD]
+    cppcompiler:
+      command: [/usr/bin/g++-5.2, -std=c++11,   -fdiagnostics-color=always, -Wall, -Wextra, -fmessage-length=0, -fPIC, -rdynamic, -fmax-errors=3, -MD]
+    archivist:
+      command: [/usr/bin/ar]
+  - name: system-gcc-5
+    type: gcc
+    version: 5.2
+    ccompiler:
+      command: [/usr/bin/gcc-5, -std=c11,   -fdiagnostics-color=always, -Wall, -Wextra, -fmessage-length=0, -fPIC, -rdynamic, -fmax-errors=3, -MD]
+    cppcompiler:
+      command: [/usr/bin/g++-5, -std=c++11,   -fdiagnostics-color=always, -Wall, -Wextra, -fmessage-length=0, -fPIC, -rdynamic, -fmax-errors=3, -MD]
+    archivist:
+      command: [/usr/bin/ar]
+  - name: system-gcc
+    type: gcc
+    version: 5.2
+    ccompiler:
+      command: [/usr/bin/gcc, -std=c11,   -fdiagnostics-color=always, -Wall, -Wextra, -fmessage-length=0, -fPIC, -rdynamic, -fmax-errors=3, -MD]
+    cppcompiler:
+      command: [/usr/bin/g++, -std=c++11,   -fdiagnostics-color=always, -Wall, -Wextra, -fmessage-length=0, -fPIC, -rdynamic, -fmax-errors=3, -MD]
+    archivist:
+      command: [/usr/bin/ar]
+  - name: system-gcc-5.3
+    type: gcc
+    version: 5.3
+    ccompiler:
+      command: [/usr/bin/gcc-5.3, -std=c11,   -fdiagnostics-color=always, -Wall, -Wextra, -fmessage-length=0, -fPIC, -rdynamic, -fmax-errors=3, -MD]
+    cppcompiler:
+      command: [/usr/bin/g++-5.3, -std=c++11,   -fdiagnostics-color=always, -Wall, -Wextra, -fmessage-length=0, -fPIC, -rdynamic, -fmax-errors=3, -MD]
+    archivist:
+      command: [/usr/bin/ar]
+  - name: system-gcc-5
+    type: gcc
+    version: 5.3
+    ccompiler:
+      command: [/usr/bin/gcc-5, -std=c11,   -fdiagnostics-color=always, -Wall, -Wextra, -fmessage-length=0, -fPIC, -rdynamic, -fmax-errors=3, -MD]
+    cppcompiler:
+      command: [/usr/bin/g++-5, -std=c++11,   -fdiagnostics-color=always, -Wall, -Wextra, -fmessage-length=0, -fPIC, -rdynamic, -fmax-errors=3, -MD]
+    archivist:
+      command: [/usr/bin/ar]
+  - name: system-gcc
+    type: gcc
+    version: 5.3
+    ccompiler:
+      command: [/usr/bin/gcc, -std=c11,   -fdiagnostics-color=always, -Wall, -Wextra, -fmessage-length=0, -fPIC, -rdynamic, -fmax-errors=3, -MD]
+    cppcompiler:
+      command: [/usr/bin/g++, -std=c++11,   -fdiagnostics-color=always, -Wall, -Wextra, -fmessage-length=0, -fPIC, -rdynamic, -fmax-errors=3, -MD]
+    archivist:
+      command: [/usr/bin/ar]
+  - name: system-gcc-5.4
+    type: gcc
+    version: 5.4
+    ccompiler:
+      command: [/usr/bin/gcc-5.4, -std=c11,   -fdiagnostics-color=always, -Wall, -Wextra, -fmessage-length=0, -fPIC, -rdynamic, -fmax-errors=3, -MD]
+    cppcompiler:
+      command: [/usr/bin/g++-5.4, -std=c++11,   -fdiagnostics-color=always, -Wall, -Wextra, -fmessage-length=0, -fPIC, -rdynamic, -fmax-errors=3, -MD]
+    archivist:
+      command: [/usr/bin/ar]
+  - name: system-gcc-5
+    type: gcc
+    version: 5.4
+    ccompiler:
+      command: [/usr/bin/gcc-5, -std=c11,   -fdiagnostics-color=always, -Wall, -Wextra, -fmessage-length=0, -fPIC, -rdynamic, -fmax-errors=3, -MD]
+    cppcompiler:
+      command: [/usr/bin/g++-5, -std=c++11,   -fdiagnostics-color=always, -Wall, -Wextra, -fmessage-length=0, -fPIC, -rdynamic, -fmax-errors=3, -MD]
+    archivist:
+      command: [/usr/bin/ar]
+  - name: system-gcc-5.4
+    type: gcc
+    version: 5.4
+    ccompiler:
+      command: [/usr/bin/gcc, -std=c11,   -fdiagnostics-color=always, -Wall, -Wextra, -fmessage-length=0, -fPIC, -rdynamic, -fmax-errors=3, -MD]
+    cppcompiler:
+      command: [/usr/bin/g++, -std=c++11,   -fdiagnostics-color=always, -Wall, -Wextra, -fmessage-length=0, -fPIC, -rdynamic, -fmax-errors=3, -MD]
+    archivist:
+      command: [/usr/bin/ar]

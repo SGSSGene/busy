@@ -1,0 +1,109 @@
+toolchains:
+  - name: system-gcc-4.6
+    type: gcc
+    version: 4.6
+    ccompiler:
+      command: [/usr/bin/gcc-4.6, -std=c11,   -Wall, -Wextra, -fmessage-length=0, -fPIC, -rdynamic, -fmax-errors=3, -MD]
+    cppcompiler:
+      command: [/usr/bin/g++-4.6, -std=c++11,   -Wall, -Wextra, -fmessage-length=0, -fPIC, -rdynamic, -fmax-errors=3, -MD]
+    archivist:
+      command: [/usr/bin/ar]
+  - name: system-gcc-4
+    type: gcc
+    version: 4.6
+    ccompiler:
+      command: [/usr/bin/gcc-4, -std=c11,   -Wall, -Wextra, -fmessage-length=0, -fPIC, -rdynamic, -fmax-errors=3, -MD]
+    cppcompiler:
+      command: [/usr/bin/g++-4, -std=c++11,   -Wall, -Wextra, -fmessage-length=0, -fPIC, -rdynamic, -fmax-errors=3, -MD]
+    archivist:
+      command: [/usr/bin/ar]
+  - name: system-gcc
+    type: gcc
+    version: 4.6
+    ccompiler:
+      command: [/usr/bin/gcc, -std=c11,   -Wall, -Wextra, -fmessage-length=0, -fPIC, -rdynamic, -fmax-errors=3, -MD]
+    cppcompiler:
+      command: [/usr/bin/g++, -std=c++11,   -Wall, -Wextra, -fmessage-length=0, -fPIC, -rdynamic, -fmax-errors=3, -MD]
+    archivist:
+      command: [/usr/bin/ar]
+  - name: system-gcc-4.7
+    type: gcc
+    version: 4.7
+    ccompiler:
+      command: [/usr/bin/gcc-4.7, -std=c11,   -Wall, -Wextra, -fmessage-length=0, -fPIC, -rdynamic, -fmax-errors=3, -MD]
+    cppcompiler:
+      command: [/usr/bin/g++-4.7, -std=c++11,   -Wall, -Wextra, -fmessage-length=0, -fPIC, -rdynamic, -fmax-errors=3, -MD]
+    archivist:
+      command: [/usr/bin/ar]
+  - name: system-gcc-4
+    type: gcc
+    version: 4.7
+    ccompiler:
+      command: [/usr/bin/gcc-4, -std=c11,   -Wall, -Wextra, -fmessage-length=0, -fPIC, -rdynamic, -fmax-errors=3, -MD]
+    cppcompiler:
+      command: [/usr/bin/g++-4, -std=c++11,   -Wall, -Wextra, -fmessage-length=0, -fPIC, -rdynamic, -fmax-errors=3, -MD]
+    archivist:
+      command: [/usr/bin/ar]
+  - name: system-gcc
+    type: gcc
+    version: 4.7
+    ccompiler:
+      command: [/usr/bin/gcc, -std=c11,   -Wall, -Wextra, -fmessage-length=0, -fPIC, -rdynamic, -fmax-errors=3, -MD]
+    cppcompiler:
+      command: [/usr/bin/g++, -std=c++11,   -Wall, -Wextra, -fmessage-length=0, -fPIC, -rdynamic, -fmax-errors=3, -MD]
+    archivist:
+      command: [/usr/bin/ar]
+  - name: system-gcc-4.8
+    type: gcc
+    version: 4.8
+    ccompiler:
+      command: [/usr/bin/gcc-4.8, -std=c11,   -Wall, -Wextra, -fmessage-length=0, -fPIC, -rdynamic, -fmax-errors=3, -MD]
+    cppcompiler:
+      command: [/usr/bin/g++-4.8, -std=c++11,   -Wall, -Wextra, -fmessage-length=0, -fPIC, -rdynamic, -fmax-errors=3, -MD]
+    archivist:
+      command: [/usr/bin/ar]
+  - name: system-gcc-4
+    type: gcc
+    version: 4.8
+    ccompiler:
+      command: [/usr/bin/gcc-4, -std=c11,   -Wall, -Wextra, -fmessage-length=0, -fPIC, -rdynamic, -fmax-errors=3, -MD]
+    cppcompiler:
+      command: [/usr/bin/g++-4, -std=c++11,   -Wall, -Wextra, -fmessage-length=0, -fPIC, -rdynamic, -fmax-errors=3, -MD]
+    archivist:
+      command: [/usr/bin/ar]
+  - name: system-gcc
+    type: gcc
+    version: 4.8
+    ccompiler:
+      command: [/usr/bin/gcc, -std=c11,   -Wall, -Wextra, -fmessage-length=0, -fPIC, -rdynamic, -fmax-errors=3, -MD]
+    cppcompiler:
+      command: [/usr/bin/g++, -std=c++11,   -Wall, -Wextra, -fmessage-length=0, -fPIC, -rdynamic, -fmax-errors=3, -MD]
+    archivist:
+      command: [/usr/bin/ar]
+  - name: system-gcc-4.9
+    type: gcc
+    version: 4.9
+    ccompiler:
+      command: [/usr/bin/gcc-4.9, -std=c11,   -Wall, -Wextra, -fmessage-length=0, -fPIC, -rdynamic, -fmax-errors=3, -MD]
+    cppcompiler:
+      command: [/usr/bin/g++-4.9, -std=c++11,   -Wall, -Wextra, -fmessage-length=0, -fPIC, -rdynamic, -fmax-errors=3, -MD]
+    archivist:
+      command: [/usr/bin/ar]
+  - name: system-gcc-4
+    type: gcc
+    version: 4.9
+    ccompiler:
+      command: [/usr/bin/gcc-4, -std=c11,   -Wall, -Wextra, -fmessage-length=0, -fPIC, -rdynamic, -fmax-errors=3, -MD]
+    cppcompiler:
+      command: [/usr/bin/g++-4, -std=c++11,   -Wall, -Wextra, -fmessage-length=0, -fPIC, -rdynamic, -fmax-errors=3, -MD]
+    archivist:
+      command: [/usr/bin/ar]
+  - name: system-gcc-4.9
+    type: gcc
+    version: 4.9
+    ccompiler:
+      command: [/usr/bin/gcc, -std=c11,   -Wall, -Wextra, -fmessage-length=0, -fPIC, -rdynamic, -fmax-errors=3, -MD]
+    cppcompiler:
+      command: [/usr/bin/g++, -std=c++11,   -Wall, -Wextra, -fmessage-length=0, -fPIC, -rdynamic, -fmax-errors=3, -MD]
+    archivist:
+      command: [/usr/bin/ar]
