@@ -90,14 +90,11 @@ void CompileBatch::linkSharedLibrary(Project const* _project) {
 		} else if (not utils::fileExists(outputFile)) {
 			recompile = true;
 		}
-		if (not recompile) {
-			return;
-		} else {
-			for (auto _p : _project->getDependenciesRecursiveOnlyStaticNotOverShared(ignoreProjects)) {
-				if (needsRecompile.count(_p) > 0) {
-					recompile = true;
-					break;
-				}
+
+		for (auto _p : _project->getDependenciesRecursiveOnlyStaticNotOverShared(ignoreProjects)) {
+			if (needsRecompile.count(_p) > 0) {
+				recompile = true;
+				break;
 			}
 		}
 		if (not recompile) {
@@ -199,14 +196,10 @@ void CompileBatch::linkExecutable(Project const* _project) {
 		} else if (not utils::fileExists(outputFile)) {
 			recompile = true;
 		}
-		if (not recompile) {
-			return;
-		} else {
-			for (auto _p : _project->getDependenciesRecursive(ignoreProjects)) {
-				if (needsRecompile.count(_p) > 0) {
-					recompile = true;
-					break;
-				}
+		for (auto _p : _project->getDependenciesRecursive(ignoreProjects)) {
+			if (needsRecompile.count(_p) > 0) {
+				recompile = true;
+				break;
 			}
 		}
 		if (not recompile) {
