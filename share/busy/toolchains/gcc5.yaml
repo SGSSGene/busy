@@ -98,7 +98,7 @@ toolchains:
       command: [/usr/bin/g++-5, -std=c++11,   -fdiagnostics-color=always, -Wall, -Wextra, -fmessage-length=0, -fPIC, -rdynamic, -fmax-errors=3, -MD]
     archivist:
       command: [/usr/bin/ar]
-  - name: system-gcc-5.4
+  - name: system-gcc
     type: gcc
     version: 5.4
     ccompiler:
