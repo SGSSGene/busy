@@ -55,7 +55,7 @@ void showDep(std::string const& _rootProjectName) {
 //	visitor.setStatisticUpdateCallback(build.getStatisticUpdateCallback());
 	visitor.setCppVisitor([&] (Project const* _project, std::string const& _file) {});
 	visitor.setCVisitor([&] (Project const* _project, std::string const& _file) {});
-	
+
 
 	visitor.setProjectVisitor([&] (Project const* _project) {
 		auto printDep = [&] () {

@@ -1,7 +1,7 @@
 
 #include "commands/commands.h"
 #include "Workspace.h"
-#include "version.h"
+#include <busyVersion/busyVersion.h>
 
 #include <busyUtils/busyUtils.h>
 #include <commonOptions/commonOptions.h>
@@ -74,6 +74,7 @@ auto checkCwd() -> std::string {
 }
 
 int main(int argc, char** argv) {
+
 	try {
 		if (not commonOptions::parse(argc, argv)) {
 			commonOptions::print();
@@ -82,7 +83,7 @@ int main(int argc, char** argv) {
 			commonOptions::print();
 			return EXIT_SUCCESS;
 		} else if (*swtVersion) {
-			std::cout << busy::version() << std::endl;
+			std::cout << busyVersion::version() << std::endl;
 			return EXIT_SUCCESS;
 		}
 

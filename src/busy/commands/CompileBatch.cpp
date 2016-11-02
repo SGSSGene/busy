@@ -78,8 +78,10 @@ void CompileBatch::linkStaticLibrary(Project const* _project) {
 		printError(options, proc);
 	}
 }
+
 void CompileBatch::linkSharedLibrary(Project const* _project) {
-	std::string outputFile = buildPath + "/" + _project->getFullName("lib") + ".so";
+	//std::string outputFile = buildPath + "/" + _project->getFullName("lib") + ".so";
+	std::string outputFile = outPath + "/lib" + _project->getName() + ".so";
 
 	// Check file dependencies
 	bool recompile = false;
@@ -92,6 +94,7 @@ void CompileBatch::linkSharedLibrary(Project const* _project) {
 		}
 
 		for (auto _p : _project->getDependenciesRecursiveOnlyStaticNotOverShared(ignoreProjects)) {
+//		for (auto _p : _project->getDependenciesRecursive(ignoreProjects)) {
 			if (needsRecompile.count(_p) > 0) {
 				recompile = true;
 				break;
@@ -105,6 +108,7 @@ void CompileBatch::linkSharedLibrary(Project const* _project) {
 
 	std::vector<std::string> options = toolchain->cppCompiler.command;
 	//!TODO shouldnt be default argument
+//	std::cout << "linking shared: " << outputFile << "\n";
 	options.push_back("-rdynamic");
 	options.push_back("-shared");
 	//!ENDTODO
@@ -132,8 +136,9 @@ void CompileBatch::linkSharedLibrary(Project const* _project) {
 	for (auto project : _project->getDependenciesRecursiveOnlyShared(ignoreProjects)) {
 		if (project->getIsHeaderOnly()) continue;
 
-		std::string fullPath = buildPath + "/" + project->getFullName();
-		fullPath = fullPath.substr(0, fullPath.find_last_of("/"));
+//		std::string fullPath = buildPath + "/" + project->getFullName();
+//		fullPath = fullPath.substr(0, fullPath.find_last_of("/"));
+		std::string fullPath = outPath + "/";
 
 		options.push_back("-L");
 		options.push_back(fullPath);
@@ -196,7 +201,8 @@ void CompileBatch::linkExecutable(Project const* _project) {
 		} else if (not utils::fileExists(outputFile)) {
 			recompile = true;
 		}
-		for (auto _p : _project->getDependenciesRecursive(ignoreProjects)) {
+		for (auto _p : _project->getDependenciesRecursiveOnlyStaticNotOverShared(ignoreProjects)) {
+//		for (auto _p : _project->getDependenciesRecursive(ignoreProjects)) {
 			if (needsRecompile.count(_p) > 0) {
 				recompile = true;
 				break;
@@ -235,18 +241,23 @@ void CompileBatch::linkExecutable(Project const* _project) {
 	for (auto project : _project->getDependenciesRecursiveOnlyShared(ignoreProjects)) {
 		if (project->getIsHeaderOnly()) continue;
 
-		std::string fullPath = buildPath + "/" + project->getFullName();
-		fullPath = fullPath.substr(0, fullPath.find_last_of("/"));
+		std::string fullPath = outPath + "/";
 
 		options.push_back("-L");
 		options.push_back(fullPath);
 		options.push_back("-l"+project->getName());
 	}
 
+	for (auto const& r : mRPaths) {
+		options.push_back("-Wl,-rpath");
+		options.push_back(r);
+	}
+
 	for (auto dep : _project->getSystemLibraries()) {
 		options.push_back("-l"+dep);
 	}
-	for (auto project : _project->getDependenciesRecursiveOnlyStaticNotOverShared(ignoreProjects)) {
+	//for (auto project : _project->getDependenciesRecursiveOnlyStaticNotOverShared(ignoreProjects)) {
+	for (auto project : _project->getDependenciesRecursive()) {
 		for (auto dep : project->getSystemLibraries()) {
 			options.push_back("-l"+dep);
 		}

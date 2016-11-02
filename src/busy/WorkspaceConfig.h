@@ -11,6 +11,7 @@ namespace busy {
 		std::string                        mToolchainName;
 		std::string                        mBuildModeName;
 		std::vector<std::string>           mStaticAsShared;
+		std::vector<std::string>           mRPaths;
 
 		template <typename Node>
 		void serialize(Node& node) {
@@ -18,6 +19,7 @@ namespace busy {
 			node["toolchainName"]  % mToolchainName;
 			node["buildModeName"]  % mBuildModeName;
 			node["staticAsShared"] % mStaticAsShared;
+			node["rpaths"]         % mRPaths;
 		}
 	};
 }

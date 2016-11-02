@@ -2,6 +2,6 @@
 
 #include <string>
 
-namespace busy {
+namespace busyVersion {
 	auto version() -> std::string;
 }

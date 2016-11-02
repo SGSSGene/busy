@@ -13,6 +13,7 @@ class CompileBatch {
 public:
 	std::set<Project const*> needsRecompile;
 	std::set<std::string> fileWasRecompiled;
+	std::vector<std::string> mRPaths;
 private:
 	bool& errorDetected;
 	std::mutex& printMutex;

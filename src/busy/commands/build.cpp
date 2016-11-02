@@ -111,6 +111,9 @@ bool build(std::string const& _rootProjectName, bool verbose, bool noconsole, in
 	build.createVersionFiles();
 
 	CompileBatch compileBatch(errorDetected, printMutex, buildPath, outPath, buildModeName, verbose, toolchain, ignoreProjects);
+	compileBatch.mRPaths = ws.getRPaths();
+
+
 
 
 	visitor.setStatisticUpdateCallback(build.getStatisticUpdateCallback());

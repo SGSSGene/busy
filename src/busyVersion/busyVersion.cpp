@@ -1,8 +1,9 @@
-#include "version.h"
+#include "busyVersion.h"
 #include <busy-version/version.h>
 
-namespace busy {
+namespace busyVersion {
 	auto version() -> std::string {
 		return VERSION_BUSY;
 	}
+
 }

@@ -262,6 +262,8 @@ void Workspace::setFlavor(std::string const& _flavor) {
 	for (auto const& s : flavorPtr->mLinkAsShared) {
 		mConfig.mStaticAsShared.push_back(s);
 	}
+	mConfig.mRPaths = flavorPtr->mRPaths;
+
 	std::cout << "Applying flavor " << flavorPtr->name << "\n";
 }
 
@@ -288,6 +290,10 @@ void Workspace::markProjectAsShared(std::string const& _name) {
 		p->setType(Project::Type::SharedLibrary);
 	}
 }
+auto Workspace::getRPaths() const -> std::vector<std::string> const& {
+	return mConfig.mRPaths;
+}
+
 
 auto Workspace::getSharedProjects() -> std::set<Project*> {
 	std::set<Project*> projects;

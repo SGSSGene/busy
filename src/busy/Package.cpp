@@ -70,6 +70,7 @@ namespace busy {
 			mFlavors[name].buildMode     = shared.second.buildMode;
 			mFlavors[name].toolchain     = shared.second.toolchain;
 			mFlavors[name].mLinkAsShared = shared.second.linkAsShared;
+			mFlavors[name].mRPaths       = shared.second.rpath;
 		}
 
 		// loading toolchains

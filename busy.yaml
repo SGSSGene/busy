@@ -10,3 +10,8 @@ flavors:
   default:
     buildMode: debug
     toolchain: system-gcc
+  shared:
+    buildMode: debug
+    toolchain: system-gcc
+    linkAsShared:
+      - busyVersion

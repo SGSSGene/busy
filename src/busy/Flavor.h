@@ -13,6 +13,7 @@ namespace busy {
 		std::string toolchain; //! TODO should be a pointer to the toolchain
 
 		std::vector<std::string> mLinkAsShared;
+		std::vector<std::string> mRPaths;
 	};
 
 }

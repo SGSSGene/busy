@@ -42,6 +42,7 @@ public:
 	auto getExcludedProjects(std::string const& _toolchain) const -> std::set<Project const*>;
 
 	void markProjectAsShared(std::string const& _name);
+	auto getRPaths() const -> std::vector<std::string> const&;
 private:
 	void loadPackageFolders();
 	void loadPackages();
