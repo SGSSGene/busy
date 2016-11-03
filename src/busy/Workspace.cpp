@@ -352,6 +352,32 @@ auto retrieveGccVersion(std::vector<std::string> const& _command) -> std::string
 	auto realVersion = versionParts.at(0) + "." + versionParts.at(1);
 	return realVersion;
 }
+
+auto retrieveClangVersion(std::vector<std::string> const& _command) -> std::string {
+	auto commandIter = _command.end();
+	// find first gcc
+	for (auto iter = _command.begin(); iter != _command.end(); ++iter) {
+		if (iter->find("clang") != std::string::npos
+		    or iter->find("clang++" ) != std::string::npos) {
+			commandIter = iter;
+			break;
+		}
+	}
+	// if no gcc found, throw exception
+	if (commandIter == _command.end()) {
+		throw std::runtime_error("unknown compiler");
+	}
+
+	process::Process p({*commandIter, "--version"});
+	if (p.getStatus() != 0) return "";
+	auto output = p.cout();
+	auto line    = utils::explode(output, "\n").at(0);
+	auto version = utils::explode(line, " ").at(2);
+	auto versionParts = utils::explode(version, ".");
+	auto realVersion = versionParts.at(0) + "." + versionParts.at(1);
+	return realVersion;
+}
+
 }
 
 void Workspace::discoverSystemToolchains() {
@@ -385,6 +411,9 @@ void Workspace::discoverSystemToolchains() {
 					auto version     = configToolchain.version;
 					if (configToolchain.type == "gcc") {
 						auto realVersion = retrieveGccVersion(configToolchain.cCompiler.command);
+						if (realVersion != version) continue;
+					} else if (configToolchain.type == "clang") {
+						auto realVersion = retrieveClangVersion(configToolchain.cCompiler.command);
 						if (realVersion != version) continue;
 					} else {
 						std::cerr << "unknown toolchain type: " + configToolchain.type << std::endl;
