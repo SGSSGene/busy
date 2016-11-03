@@ -79,7 +79,7 @@ bool build(std::string const& _rootProjectName, bool verbose, bool noconsole, in
 
 	checkMissingDependencies();
 
-	std::chrono::high_resolution_clock::time_point startTime = std::chrono::high_resolution_clock::now();
+	auto startTime = std::chrono::steady_clock::now();
 	Workspace ws;
 
 	auto const toolchainName = ws.getSelectedToolchain();
@@ -142,8 +142,9 @@ bool build(std::string const& _rootProjectName, bool verbose, bool noconsole, in
 
 	visitor.visit(jobs);
 
-	std::chrono::high_resolution_clock::time_point endTime = std::chrono::high_resolution_clock::now();
-	std::chrono::duration<double> time_span = std::chrono::duration_cast<std::chrono::duration<double>>(endTime - startTime);
+	auto endTime  = std::chrono::steady_clock::now();
+	auto diff = endTime - startTime;
+	auto time_span = std::chrono::duration_cast<std::chrono::milliseconds>(diff);
 
 
 
@@ -152,8 +153,7 @@ bool build(std::string const& _rootProjectName, bool verbose, bool noconsole, in
 	} else {
 		std::cout<<std::endl<< TERM_GREEN "Build \033[32msucceeded" TERM_RESET;
 	}
-
-	std::cout<< " after " << time_span.count() << " seconds." << std::endl;
+	std::cout << " after " << time_span.count() / 1000. << " seconds." << std::endl;
 	return not errorDetected;
 }
 }
