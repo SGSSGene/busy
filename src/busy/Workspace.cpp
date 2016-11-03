@@ -198,7 +198,7 @@ auto Workspace::getSelectedToolchain() const -> std::string {
 	auto toolchains = getToolchains();
 	auto iter = toolchains.find(value);
 	if (iter == toolchains.end()) {
-		return "system-gcc";
+		return "default-gcc";
 	}
 	return iter->first;
 }
