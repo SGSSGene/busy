@@ -3,9 +3,21 @@ extRepositories:
   - url: https://github.com/SGSSGene/Serializer.git
   - url: https://github.com/SGSSGene/CommonOptions.git
   - url: https://github.com/SGSSGene/ThreadPool.git
+  - url: git@cakeface.de:aBuild/GenericFactory
 projects:
   - name: busy
     type: executable
+    dependencies:
+      - busy/busyPlugins1
+      - busy/busyPlugins2
+  - name: busyPlugins1
+    type: plugin
+    singleFileProjects: true
+  - name: busyPlugins2
+    type: plugin
+  - name: testBusyPlugins
+    depLibraries:
+      - dl
 flavors:
   default:
     buildMode: debug

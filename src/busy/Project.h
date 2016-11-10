@@ -10,7 +10,8 @@ namespace busy {
 		enum class Type {
 			Executable,
 			StaticLibrary,
-			SharedLibrary
+			SharedLibrary,
+			Plugin
 		};
 	private:
 		Package* mPackage;
@@ -37,10 +38,10 @@ namespace busy {
 		std::vector<std::string> mLinkingOptions;
 	public:
 		// Constructed from config file
-		Project(busyConfig::Project const& _project, Package* _package);
+		Project(busyConfig::Project const& _project, Package* _package, std::string const& folder);
 
 		// Constructed from folder
-		Project(std::string const& _name, Package* _package);
+		Project(std::string const& _name, Package* _package, std::string const& folder);
 
 
 		auto getName() const -> std::string const& { return mName; }
@@ -94,9 +95,10 @@ namespace busy {
 	};
 	inline auto to_string(Project::Type type) -> std::string {
 		switch (type) {
-		case Project::Type::Executable: return "executable";
+		case Project::Type::Executable:    return "executable";
 		case Project::Type::StaticLibrary: return "staticLibrary";
 		case Project::Type::SharedLibrary: return "sharedLibrary";
+		case Project::Type::Plugin:        return "plugin";
 		}
 	}
 

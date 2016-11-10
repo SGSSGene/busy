@@ -57,5 +57,7 @@ namespace busy {
 		bool hasProject(std::string const& _name) const;
 		auto getProject(std::string const& _name) const -> Project const&;
 		auto getOverrides() const -> Overrides const& { return mOverrides; }
+	private:
+		void createShadowSource(Project const& p);
 	};
 }

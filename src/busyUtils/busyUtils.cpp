@@ -22,7 +22,6 @@
 
 namespace utils {
 	void mkdir(std::string const& _dir) {
-		std::stringstream call;
 		process::Process p({"mkdir", "-p", _dir});
 		if (p.getStatus() != 0) {
 			throw std::runtime_error("error running mkdir -p " + _dir);
@@ -49,6 +48,15 @@ namespace utils {
 			throw std::runtime_error("error running mv: " + p.cerr() + p.cout());
 		}
 	}
+	void softlink(std::string const& _target, std::string const& _name) {
+		std::vector<std::string> call {"ln", "-s", _target, _name};
+		process::Process p(call);
+		if (p.getStatus() != 0) {
+			throw std::runtime_error("error running ln -s: " + p.cerr() + p.cout());
+		}
+
+	}
+
 
 	std::string dirname(std::string const& _file) {
 		char c[_file.size()+1];

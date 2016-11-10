@@ -13,12 +13,17 @@ namespace {
 	std::string extRepPath { "./extRepositories" };
 	std::string busyPath   { "./.busy" };
 	std::string workspaceFile { ".busy/workspace.bin" };
-
+	std::string shadowSrc {".busy/shadow-src"};
 }
 
 Workspace::Workspace(bool _noSaving)
 	: mNoSaving { _noSaving }
 {
+	// remove folder that need to be recreated
+	if (utils::fileExists(shadowSrc)) {
+		utils::rm(shadowSrc, true);
+	}
+
 	// check if certain folders exists
 	for (std::string s : {extRepPath , busyPath}) {
 		if (not utils::fileExists(s)) {
@@ -138,7 +143,9 @@ auto Workspace::getProjectAndDependencies(std::string const& _name) const -> std
 	if (_name == "") {
 		for (auto const& package : getPackages()) {
 			for (auto const& project : package.getProjects()) {
-				if (project.getType() == Project::Type::Executable and ignoreProjects.count(&project) == 0) {
+				if ((project.getType() == Project::Type::Executable or
+				    project.getType() == Project::Type::Plugin)
+				    and ignoreProjects.count(&project) == 0) {
 					queued.push_back(&project);
 					flagged.insert(&project);
 				}

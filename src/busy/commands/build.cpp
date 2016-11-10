@@ -127,12 +127,17 @@ bool build(std::string const& _rootProjectName, bool verbose, bool noconsole, in
 
 	visitor.setProjectVisitor([&] (Project const* _project) {
 		if (errorDetected) return;
+		if (_project->getIsSingleFileProjects()) return;
+
 		switch (_project->getType()) {
 		case Project::Type::StaticLibrary:
 			compileBatch.linkStaticLibrary(_project);
 			break;
 		case Project::Type::SharedLibrary:
 			compileBatch.linkSharedLibrary(_project);
+			break;
+		case Project::Type::Plugin:
+			compileBatch.linkPlugin(_project);
 			break;
 		case Project::Type::Executable:
 			compileBatch.linkExecutable(_project);

@@ -41,7 +41,9 @@ public:
 	void linkStaticLibrary(Project const* _project);
 	void linkExecutable(Project const* _project);
 	void linkSharedLibrary(Project const* _project);
+	void linkPlugin(Project const* _project);
 private:
+	void linkSharedLibraryImpl(Project const* _project, std::string const& outputFile);
 	void compile(Project const* _project, std::string const& _file, std::vector<std::string> _options);
 	bool checkNeedsRecompile(std::string const& _file, std::string const& outputFile);
 	void insertProjectAndFile(Project const* _project, std::string const& _file);

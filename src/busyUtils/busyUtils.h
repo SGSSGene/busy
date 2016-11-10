@@ -12,6 +12,7 @@ namespace utils {
 	void mkdir(std::string const& _dir);
 	void rm(std::string const& _dir, bool recursive=false, bool force=false);
 	void mv(std::string const& _src, std::string const& _dest);
+	void softlink(std::string const& _target, std::string const& _name);
 	std::string dirname(std::string const& _file);
 	std::string _basename(std::string const& _file);
 	bool fileExists(std::string const& _file);

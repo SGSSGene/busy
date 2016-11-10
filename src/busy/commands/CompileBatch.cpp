@@ -78,10 +78,18 @@ void CompileBatch::linkStaticLibrary(Project const* _project) {
 		printError(options, proc);
 	}
 }
-
 void CompileBatch::linkSharedLibrary(Project const* _project) {
-	//std::string outputFile = buildPath + "/" + _project->getFullName("lib") + ".so";
 	std::string outputFile = outPath + "/lib" + _project->getName() + ".so";
+	linkSharedLibraryImpl(_project, outputFile);
+}
+void CompileBatch::linkPlugin(Project const* _project) {
+	std::string outputFile = outPath + "/plugin" + _project->getName() + ".so";
+	linkSharedLibraryImpl(_project, outputFile);
+}
+
+void CompileBatch::linkSharedLibraryImpl(Project const* _project, std::string const& outputFile) {
+	//std::string outputFile = buildPath + "/" + _project->getFullName("lib") + ".so";
+	//std::string outputFile = outPath + "/lib" + _project->getName() + ".so";
 
 	// Check file dependencies
 	bool recompile = false;
@@ -294,6 +302,7 @@ void CompileBatch::linkExecutable(Project const* _project) {
 
 void CompileBatch::compile(Project const* _project, std::string const& _file, std::vector<std::string> _options) {
 	if (errorDetected) return;
+	if (_project->getIsSingleFileProjects()) return;
 
 	std::string outputFile = buildPath + "/" + _file + ".o";
 

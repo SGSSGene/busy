@@ -58,6 +58,7 @@ void showDep(std::string const& _rootProjectName) {
 
 
 	visitor.setProjectVisitor([&] (Project const* _project) {
+		if (_project->getIsSingleFileProjects()) return;
 		auto printDep = [&] () {
 			for (auto p : _project->getDependenciesOnlyShared()) {
 				std::cout << u8R"( D→  )" << p->getFullName() << std::endl;
@@ -72,6 +73,10 @@ void showDep(std::string const& _rootProjectName) {
 			break;
 		case Project::Type::SharedLibrary:
 			std::cout << "shared: " << _project->getFullName() << std::endl;
+			printDep();
+			break;
+		case Project::Type::Plugin:
+			std::cout << "plugin: " << _project->getFullName() << std::endl;
 			printDep();
 			break;
 		case Project::Type::Executable:

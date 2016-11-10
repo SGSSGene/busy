@@ -19,6 +19,7 @@ namespace busyConfig {
 		bool          mIgnore      { false };
 		StringVector  linkAsShared;
 		bool          mSingleFileProjects {false};
+		bool          mPlugin {false};
 
 		template <typename Node>
 		void serialize(Node& node) {

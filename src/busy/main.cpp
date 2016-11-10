@@ -96,7 +96,6 @@ int main(int argc, char** argv) {
 			return EXIT_FAILURE;
 		}
 
-
 		if (not *swtNoConsole) {
 			std::cout << TERM_RESET;
 		}
@@ -128,6 +127,7 @@ int main(int argc, char** argv) {
 			}
 			optJobCt.setValue(count);
 		}
+
 
 		if (*cmdDocu) {
 			commands::docu();

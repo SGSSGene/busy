@@ -38,10 +38,10 @@ namespace {
 
 
 namespace busy {
-	Project::Project(busyConfig::Project const& _project, Package* _package)
+	Project::Project(busyConfig::Project const& _project, Package* _package, std::string const& folder)
 		: mPackage { _package }
 	{
-		mPath           = mPackage->getPath() + "/src";
+		mPath           = folder;
 		mName           = _project.name;
 		mHasConfigEntry = true;
 		if (_project.type == "executable") {
@@ -49,6 +49,8 @@ namespace busy {
 		} else if (_project.type == "library"
 		           or _project.type == "staticLibrary") {
 			mType = Type::StaticLibrary;
+		} else if (_project.type == "plugin") {
+			mType = Type::Plugin;
 		} else {
 			//!TODO list all possible types
 			throw std::runtime_error("Unknown project type: " + _project.type + " must be of the type \"(executable, library, staticLibrary, sharedLibrary...\"");
@@ -62,8 +64,8 @@ namespace busy {
 			mDependenciesAsString.insert(s);
 		}
 
-		mSourcePaths.emplace_back(mPackage->getPath() + "/src");
-		mIncludePaths.emplace_back(mPackage->getPath() + "/src");
+		mSourcePaths.emplace_back(mPath);
+		mIncludePaths.emplace_back(mPath);
 		for (auto const& f : _project.legacy.includes) {
 			mIncludePaths.emplace_back(mPackage->getPath() + "/" + f);
 		}
@@ -81,17 +83,17 @@ namespace busy {
 		mIsHeaderOnly = (getCppFiles().size() == 0 && getCFiles().size() == 0);
 	}
 
-	Project::Project(std::string const& _name, Package* _package)
+	Project::Project(std::string const& _name, Package* _package, std::string const& folder)
 		: mPackage { _package }
 	{
-		mPath = mPackage->getPath() + "/src";
+		mPath = folder;
 		mName = _name;
 		if (getIsUnitTest() or getIsExample()) {
 			mType = Type::Executable;
 		}
 
-		mSourcePaths.emplace_back(mPackage->getPath() + "/src");
-		mIncludePaths.emplace_back(mPackage->getPath() + "/src");
+		mSourcePaths.emplace_back(mPath);
+		mIncludePaths.emplace_back(mPath);
 
 		discoverSourceFiles();
 		mIsHeaderOnly = (getCppFiles().size() == 0 && getCFiles().size() == 0);
@@ -269,6 +271,7 @@ namespace busy {
 		// Discover cpp and c files
 		auto sourcePaths = getSourcePaths();
 		sourcePaths[0] += "/" + getName();
+
 		for (auto const& dir : sourcePaths) {
 			for (auto const &f : utils::listFiles(dir, true)) {
 				if (utils::isEndingWith(f, ".cpp")) {
