@@ -205,7 +205,7 @@ auto Workspace::getSelectedToolchain() const -> std::string {
 	auto toolchains = getToolchains();
 	auto iter = toolchains.find(value);
 	if (iter == toolchains.end()) {
-		return "default-gcc";
+		return "system-gcc";
 	}
 	return iter->first;
 }
@@ -390,7 +390,7 @@ auto retrieveClangVersion(std::vector<std::string> const& _command) -> std::stri
 void Workspace::discoverSystemToolchains() {
 	// setup toolchains plus fallback toolchain
 	std::map<std::string, std::pair<std::string, Toolchain>> searchPaths {
-	     {"/usr/bin/gcc",       {"default-gcc", {"", false,
+	     {"/usr/bin/gcc",       {"system-gcc", {"", false,
 	                                             {{"gcc", "-std=c11",   "-Wall", "-Wextra", "-fmessage-length=0", "-fPIC", "-rdynamic", "-MD"}, {}},
 	                                             {{"g++", "-std=c++11", "-Wall", "-Wextra", "-fmessage-length=0", "-fPIC", "-rdynamic", "-MD"}, {}},
 	                                             {{"ar"}, {}}
