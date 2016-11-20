@@ -4,17 +4,11 @@ rm -rf .busy
 rm -rf ./build
 
 mkdir -p extRepositories
-rm -rf extRepositories/Serializer
 git clone https://github.com/SGSSGene/Serializer.git     extRepositories/Serializer
-rm -rf extRepositories/Process
 git clone https://github.com/SGSSGene/Process.git        extRepositories/Process
-rm -rf extRepositories/jsoncpp
 git clone https://github.com/SGSSGene/jsoncpp.git        extRepositories/jsoncpp
-rm -rf extRepositories/CommonOptions
 git clone https://github.com/SGSSGene/CommonOptions.git  extRepositories/CommonOptions
-rm -rf extRepositories/ThreadPool
 git clone https://github.com/SGSSGene/ThreadPool.git     extRepositories/ThreadPool
-rm -rf extRepositories/yaml-cpp
 git clone https://github.com/SGSSGene/yaml-cpp.git       extRepositories/yaml-cpp
 
 set -e
@@ -46,6 +40,7 @@ g++ -ggdb -O0 --std=c++11 \
 	src/busy/*.cpp \
 	src/busyConfig/*.cpp \
 	src/busyUtils/*.cpp \
+	src/busyVersion/*.cpp \
 	src/busy/commands/*.cpp \
 	extRepositories/Serializer/src/serializer/binary/*.cpp \
 	extRepositories/Serializer/src/serializer/json/*.cpp \
@@ -62,6 +57,5 @@ rm -rf busy-helper
 ./busy build busy
 
 echo "run:"
-echo "$ sudo ./busy install"
-echo "or copy build/system-gcc-4.9/busy to /usr/bin"
+echo "copy build/system-gcc/busy to /usr/bin"
 
