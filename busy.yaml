@@ -3,7 +3,7 @@ extRepositories:
   - url: https://github.com/SGSSGene/Serializer.git
   - url: https://github.com/SGSSGene/CommonOptions.git
   - url: https://github.com/SGSSGene/ThreadPool.git
-  - url: git@cakeface.de:aBuild/GenericFactory
+  - url: https://github.com/SGSSGene/GenericFactory.git
 projects:
   - name: busy
     type: executable
