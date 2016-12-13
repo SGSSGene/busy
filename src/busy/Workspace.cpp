@@ -116,7 +116,7 @@ auto Workspace::getProject(std::string const& _name) const -> Project const& {
 		}
 	}
 	if (matchList.empty()) {
-		throw std::runtime_error("Coudn't find prjoect with name: " + _name);
+		throw std::runtime_error("Coudn't find project with name: " + _name);
 	}
 	if (matchList.size() > 1) {
 		std::string list;
