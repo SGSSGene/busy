@@ -31,3 +31,14 @@ If you have a project that is supported by busy you can run following things:
 - `busy git <command>` will run `git <command>` on all repositories
 - `busy clean` will clean the workspace (shouldn't be really be needed)
 
+
+
+
+
+Target forms:
+- executable
+- static library
+- shared library (headers available)
+- addon library  (like shared but no headers available)
+
+

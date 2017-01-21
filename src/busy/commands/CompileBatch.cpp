@@ -87,6 +87,24 @@ void CompileBatch::linkPlugin(Project const* _project) {
 	linkSharedLibraryImpl(_project, outputFile);
 }
 
+template <typename T>
+auto removeLastDuplicates(std::vector<T> const& vec) -> std::vector<T> {
+	std::vector<T> retList;
+	for (auto iter1 = vec.begin(); iter1 != vec.end(); ++iter1) {
+		bool found = false;
+		for (auto iter2 = iter1 +1; iter2 != vec.end(); ++iter2) {
+			if (*iter1 == *iter2) {
+				found = true;
+				break;
+			}
+		}
+		if (not found) {
+			retList.push_back(*iter1);
+		}
+	}
+	return retList;
+}
+
 void CompileBatch::linkSharedLibraryImpl(Project const* _project, std::string const& outputFile) {
 	//std::string outputFile = buildPath + "/" + _project->getFullName("lib") + ".so";
 	//std::string outputFile = outPath + "/lib" + _project->getName() + ".so";
@@ -141,6 +159,7 @@ void CompileBatch::linkSharedLibraryImpl(Project const* _project, std::string co
 		}
 	}
 	std::vector<std::string> systemLibraries;
+	std::vector<std::string> systemLibrariesPaths;
 	// add shared libraries
 	for (auto project : _project->getDependenciesRecursiveOnlyShared(ignoreProjects)) {
 		if (project->getIsHeaderOnly()) continue;
@@ -149,8 +168,8 @@ void CompileBatch::linkSharedLibraryImpl(Project const* _project, std::string co
 //		fullPath = fullPath.substr(0, fullPath.find_last_of("/"));
 		std::string fullPath = outPath + "/";
 
-		options.push_back("-L");
-		options.push_back(fullPath);
+
+		systemLibrariesPaths.push_back(fullPath);
 		systemLibraries.push_back("-l"+project->getName());
 	}
 
@@ -178,25 +197,20 @@ void CompileBatch::linkSharedLibraryImpl(Project const* _project, std::string co
 
 	for (auto project : _project->getDependenciesRecursiveOnlyStaticNotOverShared(ignoreProjects)) {
 		for (auto linking : project->getSystemLibrariesPaths()) {
-			options.push_back("-L");
-			options.push_back(linking);
+			systemLibrariesPaths.push_back(linking);
 		}
 	}
 
-	for (auto iter = systemLibraries.begin(); iter != systemLibraries.end(); ++iter) {
-		// check that no duplicate is present
-		bool found = false;
-		for (auto iter2 = iter+1; iter2 != systemLibraries.end(); ++iter2) {
-			if (*iter == *iter2) {
-				found = true;
-				break;
-			}
-		}
-		if (not found) {
-			options.push_back(*iter);
-		}
+	systemLibrariesPaths = removeLastDuplicates(systemLibrariesPaths);
+	for (auto const& s : systemLibrariesPaths) {
+		options.push_back("-L");
+		options.push_back(s);
 	}
 
+	systemLibraries = removeLastDuplicates(systemLibraries);
+	for (auto const& s : systemLibraries) {
+		options.push_back(s);
+	}
 
 	printVerboseCmd(options);
 
@@ -263,14 +277,14 @@ void CompileBatch::linkExecutable(Project const* _project) {
 	}
 
 	std::vector<std::string> systemLibraries;
+	std::vector<std::string> systemLibrariesPaths;
 	// add shared libraries
 	for (auto project : _project->getDependenciesRecursiveOnlyShared(ignoreProjects)) {
 		if (project->getIsHeaderOnly()) continue;
 
 		std::string fullPath = outPath + "/";
 
-		options.push_back("-L");
-		options.push_back(fullPath);
+		systemLibrariesPaths.push_back(fullPath);
 		systemLibraries.push_back("-l"+project->getName());
 	}
 
@@ -300,28 +314,23 @@ void CompileBatch::linkExecutable(Project const* _project) {
 		options.push_back(linking);
 	}
 
-	for (auto project : _project->getDependenciesRecursiveOnlyStaticNotOverShared(ignoreProjects)) {
+	for (auto project : _project->getDependenciesRecursive()) {
+//	for (auto project : _project->getDependenciesRecursiveOnlyStatic(ignoreProjects)) {
 		for (auto linking : project->getSystemLibrariesPaths()) {
-			options.push_back("-L");
-			options.push_back(linking);
+			systemLibrariesPaths.push_back(linking);
 		}
 	}
 
-	for (auto iter = systemLibraries.begin(); iter != systemLibraries.end(); ++iter) {
-		// check that no duplicate is present
-		bool found = false;
-		for (auto iter2 = iter+1; iter2 != systemLibraries.end(); ++iter2) {
-			if (*iter == *iter2) {
-				found = true;
-				break;
-			}
-		}
-		if (not found) {
-			options.push_back(*iter);
-		}
+	systemLibrariesPaths = removeLastDuplicates(systemLibrariesPaths);
+	for (auto const& s : systemLibrariesPaths) {
+		options.push_back("-L");
+		options.push_back(s);
 	}
 
-
+	systemLibraries = removeLastDuplicates(systemLibraries);
+	for (auto const& s : systemLibraries) {
+		options.push_back(s);
+	}
 
 	printVerboseCmd(options);
 
