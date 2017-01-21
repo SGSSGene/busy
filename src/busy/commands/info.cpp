@@ -124,6 +124,19 @@ void info(std::vector<std::string> str) {
 		printList("C++-Files:",     project.getCppFiles());
 		printList("Include-Files:", project.getIncludeFiles());*/
 //		printList("Defines:",       project.getDefines());
+	} else {
+		std::cout << "How to use: " << "\n\n";
+		std::cout << "    $ busy info packageFolders\n";
+		std::cout << "  lists all external package folders\n\n";
+		std::cout << "    $ busy info packages\n";
+		std::cout << "  lists all packages\n\n";
+		std::cout << "    $ busy info projects\n";
+		std::cout << "  lists all projects\n";
+		std::cout << "  (see also `$ busy ls-projects)\n\n";
+		std::cout << "    $ busy info package <packageName>\n";
+		std::cout << "  show information about a package\n\n";
+		std::cout << "    $ busy info project <project>\n";
+		std::cout << "  show information about a project\n\n";
 	}
 }
 }
