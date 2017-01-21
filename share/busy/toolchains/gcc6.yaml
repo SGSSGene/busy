@@ -35,4 +35,22 @@ toolchains:
       command: [ccache, /usr/bin/g++, -std=c++11,   -fdiagnostics-color=always, -Wall, -Wextra, -fmessage-length=0, -fPIC, -rdynamic, -fmax-errors=3, -MD]
     archivist:
       command: [/usr/bin/ar]
+  - name: system-gcc-6.3
+    type: gcc
+    version: 6.3
+    ccompiler:
+      command: [/usr/bin/gcc-6.3, -std=c11,   -fdiagnostics-color=always, -Wall, -Wextra, -fmessage-length=0, -fPIC, -rdynamic, -fmax-errors=3, -MD]
+    cppcompiler:
+      command: [/usr/bin/g++-6.3, -std=c++11,   -fdiagnostics-color=always, -Wall, -Wextra, -fmessage-length=0, -fPIC, -rdynamic, -fmax-errors=3, -MD]
+    archivist:
+      command: [/usr/bin/ar]
+  - name: system-gcc
+    type: gcc
+    version: 6.3
+    ccompiler:
+      command: [ccache, /usr/bin/gcc, -std=c11,   -fdiagnostics-color=always, -Wall, -Wextra, -fmessage-length=0, -fPIC, -rdynamic, -fmax-errors=3, -MD]
+    cppcompiler:
+      command: [ccache, /usr/bin/g++, -std=c++11,   -fdiagnostics-color=always, -Wall, -Wextra, -fmessage-length=0, -fPIC, -rdynamic, -fmax-errors=3, -MD]
+    archivist:
+      command: [/usr/bin/ar]
 
