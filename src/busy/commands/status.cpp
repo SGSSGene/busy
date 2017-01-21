@@ -67,6 +67,21 @@ void status() {
 			}
 		}
 	}
+	std::vector<Package const*> duplicatedPackages;
+	for (auto iter1 = validPackages.begin(); iter1 != validPackages.end(); ++iter1) {
+		for (auto iter2 = validPackages.begin(); iter2 != validPackages.end(); ++iter2) {
+			if (iter1 != iter2 and iter1->getName() == iter2->getName()) {
+				duplicatedPackages.push_back(&*iter1);
+				break;
+			}
+		}
+	}
+	if (duplicatedPackages.size() > 0) {
+		std::cout << "\n" << TERM_RED << "Warning duplicated packages found:\n" << TERM_RESET;
+		for (auto const& s : duplicatedPackages) {
+			std::cout << " - " << s->getName() << " at " << s->getPath() << "\n";
+		}
+	}
 }
 
 }
