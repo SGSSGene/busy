@@ -25,8 +25,6 @@ namespace {
 	auto cmdLsProjects = commonOptions::make_command("ls-projects",   "Print all projects in all repositories");
 	auto cmdPull       = commonOptions::make_command("pull",          "Execute pull on all git repositories");
 	auto cmdPush       = commonOptions::make_command("push",          "Execute push on all git repositories");
-	auto cmdQF         = commonOptions::make_command("qf",            "Quickfixes busy.yaml");
-	auto cmdQuickFix   = commonOptions::make_command("quickfix",      "Quickfixes busy.yaml");
 	auto cmdRelPath    = commonOptions::make_command("showRelPath",   "Show the relative path to the root busy.yaml file");
 	auto cmdShowDep    = commonOptions::make_command("showDep","",    "Show projects that depends directory on the given project");
 	auto cmdStatus     = commonOptions::make_command("status",        "Shows current status of git repositories");
@@ -150,8 +148,6 @@ int main(int argc, char** argv) {
 			std::cout<<relPath<<std::endl;
 		} else if (cmdInfo->size() > 0) {
 			commands::info(*cmdInfo);
-		} else if (*cmdQuickFix or *cmdQF) {
-			commands::quickFix();
 		} else if (*cmdStatus) {
 			commands::status();
 		} else if (*cmdBuildMode != "") {
