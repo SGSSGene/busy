@@ -140,6 +140,7 @@ void CompileBatch::linkSharedLibraryImpl(Project const* _project, std::string co
 			options.push_back("-Wl,--no-whole-archive");
 		}
 	}
+	std::vector<std::string> systemLibraries;
 	// add shared libraries
 	for (auto project : _project->getDependenciesRecursiveOnlyShared(ignoreProjects)) {
 		if (project->getIsHeaderOnly()) continue;
@@ -150,16 +151,16 @@ void CompileBatch::linkSharedLibraryImpl(Project const* _project, std::string co
 
 		options.push_back("-L");
 		options.push_back(fullPath);
-		options.push_back("-l"+project->getName());
+		systemLibraries.push_back("-l"+project->getName());
 	}
 
 
 	for (auto dep : _project->getSystemLibraries()) {
-		options.push_back("-l"+dep);
+		systemLibraries.push_back("-l"+dep);
 	}
 	for (auto project : _project->getDependenciesRecursiveOnlyStaticNotOverShared(ignoreProjects)) {
 		for (auto dep : project->getSystemLibraries()) {
-			options.push_back("-l"+dep);
+			systemLibraries.push_back("-l"+dep);
 		}
 	}
 /*	for (auto project : _project->getDependenciesRecursiveOnlyShared(ignoreProjects)) {
@@ -172,7 +173,7 @@ void CompileBatch::linkSharedLibraryImpl(Project const* _project, std::string co
 		options.push_back(p);
 	}
 	for (auto linking : _project->getLinkingOptionsRecursive()) {
-		options.push_back(linking);
+		systemLibraries.push_back(linking);
 	}
 
 	for (auto project : _project->getDependenciesRecursiveOnlyStaticNotOverShared(ignoreProjects)) {
@@ -181,6 +182,21 @@ void CompileBatch::linkSharedLibraryImpl(Project const* _project, std::string co
 			options.push_back(linking);
 		}
 	}
+
+	for (auto iter = systemLibraries.begin(); iter != systemLibraries.end(); ++iter) {
+		// check that no duplicate is present
+		bool found = false;
+		for (auto iter2 = iter+1; iter2 != systemLibraries.end(); ++iter2) {
+			if (*iter == *iter2) {
+				found = true;
+				break;
+			}
+		}
+		if (not found) {
+			options.push_back(*iter);
+		}
+	}
+
 
 	printVerboseCmd(options);
 
@@ -245,6 +261,8 @@ void CompileBatch::linkExecutable(Project const* _project) {
 			options.push_back("-Wl,--no-whole-archive");
 		}
 	}
+
+	std::vector<std::string> systemLibraries;
 	// add shared libraries
 	for (auto project : _project->getDependenciesRecursiveOnlyShared(ignoreProjects)) {
 		if (project->getIsHeaderOnly()) continue;
@@ -253,7 +271,7 @@ void CompileBatch::linkExecutable(Project const* _project) {
 
 		options.push_back("-L");
 		options.push_back(fullPath);
-		options.push_back("-l"+project->getName());
+		systemLibraries.push_back("-l"+project->getName());
 	}
 
 	for (auto const& r : mRPaths) {
@@ -262,12 +280,12 @@ void CompileBatch::linkExecutable(Project const* _project) {
 	}
 
 	for (auto dep : _project->getSystemLibraries()) {
-		options.push_back("-l"+dep);
+		systemLibraries.push_back("-l"+dep);
 	}
 	//for (auto project : _project->getDependenciesRecursiveOnlyStaticNotOverShared(ignoreProjects)) {
 	for (auto project : _project->getDependenciesRecursive()) {
 		for (auto dep : project->getSystemLibraries()) {
-			options.push_back("-l"+dep);
+			systemLibraries.push_back("-l"+dep);
 		}
 	}
 /*	for (auto project : _project->getDependenciesRecursiveOnlyShared(ignoreProjects)) {
@@ -288,6 +306,21 @@ void CompileBatch::linkExecutable(Project const* _project) {
 			options.push_back(linking);
 		}
 	}
+
+	for (auto iter = systemLibraries.begin(); iter != systemLibraries.end(); ++iter) {
+		// check that no duplicate is present
+		bool found = false;
+		for (auto iter2 = iter+1; iter2 != systemLibraries.end(); ++iter2) {
+			if (*iter == *iter2) {
+				found = true;
+				break;
+			}
+		}
+		if (not found) {
+			options.push_back(*iter);
+		}
+	}
+
 
 
 	printVerboseCmd(options);
