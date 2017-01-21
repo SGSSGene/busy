@@ -137,7 +137,7 @@ void CompileBatch::linkSharedLibraryImpl(Project const* _project, std::string co
 //	std::cout << "linking shared: " << outputFile << "\n";
 	options.push_back("-shared");
 
-	char const* ld = getenv("LD");
+	char const* ld = getenv("BUSY_LD");
 	if (ld != nullptr) {
 		options.push_back(std::string("-fuse-ld=") + ld);
 	}
@@ -259,11 +259,11 @@ void CompileBatch::linkExecutable(Project const* _project) {
 
 	std::vector<std::string> options = toolchain->cppCompiler.command;
 	//!TODO shouldnt be default argument
-	char const* ld = getenv("LD");
+	char const* ld = getenv("BUSY_LD");
 	if (ld != nullptr) {
 		options.push_back(std::string("-fuse-ld=") + ld);
 	}
-	
+
 	//!ENDTODO
 	options.push_back("-o");
 	options.push_back(outputFile);
