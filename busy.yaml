@@ -1,9 +1,12 @@
 name: busy
 extRepositories:
-  - url: https://github.com/SGSSGene/Serializer.git
-  - url: https://github.com/SGSSGene/CommonOptions.git
-  - url: https://github.com/SGSSGene/ThreadPool.git
-  - url: https://github.com/SGSSGene/GenericFactory.git
+  - url: git@github.com:SGSSGene/Serializer-github
+  - url: git@github.com:SGSSGene/Process
+  - url: git@github.com:SGSSGene/SelfTest
+  - url: git@github.com:SGSSGene/gtest
+  - url: git@github.com:SGSSGene/ThreadPool
+  - url: git@github.com:SGSSGene/CommonOptions
+  - url: git@github.com:SGSSGene/GenericFactory
 projects:
   - name: busy
     type: executable

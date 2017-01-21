@@ -3,13 +3,15 @@
 rm -rf .busy
 rm -rf ./build
 
+URL=git@github.com:SGSSGene
 mkdir -p extRepositories
-git clone https://github.com/SGSSGene/Serializer.git     extRepositories/Serializer
-git clone https://github.com/SGSSGene/Process.git        extRepositories/Process
-git clone https://github.com/SGSSGene/jsoncpp.git        extRepositories/jsoncpp
-git clone https://github.com/SGSSGene/CommonOptions.git  extRepositories/CommonOptions
-git clone https://github.com/SGSSGene/ThreadPool.git     extRepositories/ThreadPool
-git clone https://github.com/SGSSGene/yaml-cpp.git       extRepositories/yaml-cpp
+git clone ${URL}/Serializer-github.git extRepositories/Serializer
+git clone ${URL}/Serializer.git        extRepositories/Serializer
+git clone ${URL}/Process.git           extRepositories/Process
+git clone ${URL}/jsoncpp.git           extRepositories/jsoncpp
+git clone ${URL}/CommonOptions.git     extRepositories/CommonOptions
+git clone ${URL}/ThreadPool.git        extRepositories/ThreadPool
+git clone ${URL}/yaml-cpp.git          extRepositories/yaml-cpp
 
 set -e
 
