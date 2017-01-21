@@ -67,20 +67,45 @@ void status() {
 			}
 		}
 	}
-	std::vector<Package const*> duplicatedPackages;
-	for (auto iter1 = validPackages.begin(); iter1 != validPackages.end(); ++iter1) {
-		for (auto iter2 = validPackages.begin(); iter2 != validPackages.end(); ++iter2) {
-			if (iter1 != iter2 and iter1->getName() == iter2->getName()) {
-				duplicatedPackages.push_back(&*iter1);
-				break;
+
+	// checking for duplicated packages
+	{
+		std::vector<Package const*> duplicatedPackages;
+		for (auto iter1 = validPackages.begin(); iter1 != validPackages.end(); ++iter1) {
+			for (auto iter2 = validPackages.begin(); iter2 != validPackages.end(); ++iter2) {
+				if (iter1 != iter2 and iter1->getName() == iter2->getName()) {
+					duplicatedPackages.push_back(&*iter1);
+					break;
+				}
+			}
+		}
+		if (duplicatedPackages.size() > 0) {
+			std::cout << "\n" << TERM_RED << "Warning duplicated packages found:\n" << TERM_RESET;
+			for (auto const& s : duplicatedPackages) {
+				std::cout << " - " << s->getName() << " at " << s->getPath() << "\n";
 			}
 		}
 	}
-	if (duplicatedPackages.size() > 0) {
-		std::cout << "\n" << TERM_RED << "Warning duplicated packages found:\n" << TERM_RESET;
-		for (auto const& s : duplicatedPackages) {
-			std::cout << " - " << s->getName() << " at " << s->getPath() << "\n";
+
+	auto allDepPackages = validPackages.begin()->getAllDependendPackages();
+	std::vector<Package const*> noDepPackage;
+	for (auto const& p : validPackages) {
+		auto iter = std::find_if(allDepPackages.begin(), allDepPackages.end(), [&](Package const* p2) {
+			return p.getName() == p2->getName();
+		});
+		if (iter == allDepPackages.end()) {
+			noDepPackage.push_back(&p);
 		}
+	}
+
+	if (noDepPackage.size() > 0) {
+		std::cout << "\n" << TERM_RED << "Packages is not used or referenced:\n" << TERM_RESET;
+		std::string paths;
+		for (auto p : noDepPackage) {
+			std::cout << " - " << p->getName() << "\n";
+			paths += " " + p->getPath();
+		}
+		std::cout << "call rm -rf " << paths << "\n";
 	}
 }
 
