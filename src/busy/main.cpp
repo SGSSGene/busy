@@ -21,7 +21,6 @@ namespace {
 	auto cmdFlavors    = commonOptions::make_command("flavors",       "list all available flavors");
 	auto cmdGit        = commonOptions::make_command("git", std::vector<std::string>{},  "executes given options on every repository (including root package)");
 	auto cmdInfo       = commonOptions::make_command("info", std::vector<std::string>{}, "Infos about the current package and its dependencies");
-	auto cmdInstall    = commonOptions::make_command("install",       "Installs the script to the current target");
 	auto cmdLsFiles    = commonOptions::make_command("ls-files",      "Print all files of these repositories");
 	auto cmdLsProjects = commonOptions::make_command("ls-projects",   "Print all projects in all repositories");
 	auto cmdPull       = commonOptions::make_command("pull",          "Execute pull on all git repositories");
@@ -151,8 +150,6 @@ int main(int argc, char** argv) {
 			std::cout<<relPath<<std::endl;
 		} else if (cmdInfo->size() > 0) {
 			commands::info(*cmdInfo);
-		} else if (*cmdInstall) {
-			commands::install();
 		} else if (*cmdQuickFix or *cmdQF) {
 			commands::quickFix();
 		} else if (*cmdStatus) {

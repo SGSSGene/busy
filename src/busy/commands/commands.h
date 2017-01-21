@@ -16,7 +16,6 @@ namespace commands {
 	void pull();
 	void push();
 	void info(std::vector<std::string> str);
-	void install();
 	void status();
 	void buildMode(std::string const& _buildMode);
 	void quickFix();
