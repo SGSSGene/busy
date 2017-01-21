@@ -5,7 +5,7 @@ rm -rf ./build
 
 URL=git@github.com:SGSSGene
 mkdir -p extRepositories
-git clone ${URL}/Serializer-github.git extRepositories/Serializer
+git clone ${URL}/Serializer-github.git extRepositories/Serializer-github
 git clone ${URL}/Serializer.git        extRepositories/Serializer
 git clone ${URL}/Process.git           extRepositories/Process
 git clone ${URL}/jsoncpp.git           extRepositories/jsoncpp
@@ -59,5 +59,5 @@ rm -rf busy-helper
 ./busy build busy
 
 echo "run:"
-echo "copy build/system-gcc/busy to /usr/bin"
+echo "copy build/system-gcc/debug/busy to /usr/bin"
 
