@@ -11,26 +11,26 @@
 #define TERM_RESET                      "\033[0m"
 
 namespace {
-	auto cmdBuild      = commonOptions::make_command("build",     "", "builds a specific project");
-	auto cmdBuildMode  = commonOptions::make_command("buildMode", "", "Changes current buildmode to release or debug");
-	auto cmdClang      = commonOptions::make_command("clang",         "Generates a .clang_complete file");
-	auto cmdClean      = commonOptions::make_command("clean",         "Cleans current build and .busy directory");
-	auto cmdCleanAll   = commonOptions::make_command("cleanall",      "deletes all build files");
-	auto cmdDocu       = commonOptions::make_command("docu",          "Generates html docu");
-	auto cmdEclipse    = commonOptions::make_command("eclipse",       "Generate Eclipse .project and .cproject file");
-	auto cmdFlavors    = commonOptions::make_command("flavors",       "list all available flavors");
-	auto cmdGit        = commonOptions::make_command("git", std::vector<std::string>{},  "executes given options on every repository (including root package)");
-	auto cmdInfo       = commonOptions::make_command("info", std::vector<std::string>{}, "Infos about the current package and its dependencies");
-	auto cmdLsFiles    = commonOptions::make_command("ls-files",      "Print all files of these repositories");
-	auto cmdLsProjects = commonOptions::make_command("ls-projects",   "Print all projects in all repositories");
-	auto cmdPull       = commonOptions::make_command("pull",          "Execute pull on all git repositories");
-	auto cmdPush       = commonOptions::make_command("push",          "Execute push on all git repositories");
-	auto cmdRelPath    = commonOptions::make_command("showRelPath",   "Show the relative path to the root busy.yaml file");
-	auto cmdShowDep    = commonOptions::make_command("showDep","",    "Show projects that depends directory on the given project");
-	auto cmdStatus     = commonOptions::make_command("status",        "Shows current status of git repositories");
-	auto cmdTest       = commonOptions::make_command("test",          "Run all unittests");
-	auto cmdToolchain  = commonOptions::make_command("toolchain", "", "Changes current toolchain");
-	auto cmdToolchains = commonOptions::make_command("toolchains",    "Shows available toolchain");
+	auto cmdBuild        = commonOptions::make_command("build",     "", "builds a specific project");
+	auto cmdBuildMode    = commonOptions::make_command("buildMode", "", "Changes current buildmode to release or debug");
+	auto cmdClang        = commonOptions::make_command("clang",         "Generates a .clang_complete file");
+	auto cmdClean        = commonOptions::make_command("clean",         "Cleans current build and .busy directory");
+	auto cmdCleanAll     = commonOptions::make_command("cleanall",      "deletes all build files");
+	auto cmdDocu         = commonOptions::make_command("docu",          "Generates html docu");
+	auto cmdEclipse      = commonOptions::make_command("eclipse",       "Generate Eclipse .project and .cproject file");
+	auto cmdGit          = commonOptions::make_command("git", std::vector<std::string>{},  "executes given options on every repository (including root package)");
+	auto cmdInfo         = commonOptions::make_command("info", std::vector<std::string>{}, "Infos about the current package and its dependencies");
+	auto cmdLsFiles      = commonOptions::make_command("ls-files",      "Print all files of these repositories");
+	auto cmdLsFlavors    = commonOptions::make_command("ls-flavors",    "list all available flavors");
+	auto cmdLsProjects   = commonOptions::make_command("ls-projects",   "Print all projects in all repositories");
+	auto cmdLsToolchains = commonOptions::make_command("ls-toolchains", "Shows available toolchain");
+	auto cmdPull         = commonOptions::make_command("pull",          "Execute pull on all git repositories");
+	auto cmdPush         = commonOptions::make_command("push",          "Execute push on all git repositories");
+	auto cmdRelPath      = commonOptions::make_command("showRelPath",   "Show the relative path to the root busy.yaml file");
+	auto cmdShowDep      = commonOptions::make_command("showDep","",    "Show projects that depends directory on the given project");
+	auto cmdStatus       = commonOptions::make_command("status",        "Shows current status of git repositories");
+	auto cmdTest         = commonOptions::make_command("test",          "Run all unittests");
+	auto cmdToolchain    = commonOptions::make_command("toolchain", "", "Changes current toolchain");
 
 
 	auto swtHelp       = commonOptions::make_switch("help",        "Shows some inforamation about this program");
@@ -138,8 +138,6 @@ int main(int argc, char** argv) {
 			commands::git(*cmdGit);
 		} else if (*cmdEclipse) {
 			commands::eclipse();
-		} else if (*cmdFlavors) {
-			commands::flavors(not *swtNoConsole);
 		} else if (*cmdPull) {
 			commands::pull();
 		} else if (*cmdPush) {
@@ -156,9 +154,11 @@ int main(int argc, char** argv) {
 			int exitCode = commands::listFiles(relPath + "/");
 			exit(exitCode);
 			return exitCode;
+		} else if (*cmdLsFlavors) {
+			commands::flavors(not *swtNoConsole);
 		} else if (*cmdLsProjects) {
 			commands::listProjects();
-		} else if (*cmdToolchains) {
+		} else if (*cmdLsToolchains) {
 			commands::toolchains(not *swtNoConsole);
 		} else if (*cmdToolchain != "") {
 			commands::toolchain(*cmdToolchain);
