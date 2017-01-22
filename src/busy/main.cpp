@@ -124,7 +124,7 @@ int main(int argc, char** argv) {
 			}
 			optJobCt.setValue(count);
 		}
-
+		int jobCt = *optJobCt;
 
 		if (*cmdDocu) {
 			commands::docu();
@@ -139,9 +139,9 @@ int main(int argc, char** argv) {
 		} else if (*cmdEclipse) {
 			commands::eclipse();
 		} else if (*cmdPull) {
-			commands::pull();
+			commands::pull(jobCt);
 		} else if (*cmdPush) {
-			commands::push();
+			commands::push(jobCt);
 		} else if (*cmdRelPath) {
 			std::cout<<relPath<<std::endl;
 		} else if (cmdInfo->size() > 0) {
@@ -167,7 +167,7 @@ int main(int argc, char** argv) {
 		} else if (*cmdShowDep != "") {
 			commands::showDep(*cmdShowDep);
 		} else {
-			auto success = commands::build(*cmdBuild, *swtVerbose, *swtNoConsole, *optJobCt);
+			auto success = commands::build(*cmdBuild, *swtVerbose, *swtNoConsole, jobCt);
 			if (not success) return EXIT_FAILURE;
 		}
 	} catch(std::runtime_error const& e) {

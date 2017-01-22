@@ -9,7 +9,7 @@
 
 namespace commands {
 
-void push() {
+void push(int jobs) {
 	threadPool::ThreadPool<std::string> threadPool;
 	threadPool.spawnThread([&](std::string const& path) {
 		static std::mutex mutex;
@@ -24,7 +24,7 @@ void push() {
 			std::unique_lock<std::mutex> lock(mutex);
 			std::cout << "pushed (git annex copy --all --to=origin --fast) " << path << ": " << message << std::endl;
 		}
-	}, 4);
+	}, jobs);
 
 	auto allPackages = utils::listDirs("./extRepositories", true);
 	for (auto& p : allPackages) { p = "./extRepositories/"+p; }

@@ -85,7 +85,7 @@ namespace {
 	};
 }
 
-void pull() {
+void pull(int jobs) {
 	CPull pull;
 	// if possible pull current directory first
 	pull.pull(".");
@@ -97,8 +97,7 @@ void pull() {
 	threadPool::ThreadPool<std::string> threadPool;
 	threadPool.spawnThread([&](std::string const& path) {
 		pull.pull(path);
-		static std::mutex mutex;
-	}, 4);
+	}, jobs);
 
 	auto allPackages = utils::listDirs("./extRepositories", true);
 

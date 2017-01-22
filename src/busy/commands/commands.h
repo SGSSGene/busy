@@ -13,8 +13,8 @@ namespace commands {
 	void flavors(bool _isTerminal);
 	void git(std::vector<std::string> const& _options);
 	void test();
-	void pull();
-	void push();
+	void pull(int jobs);
+	void push(int jobs);
 	void info(std::vector<std::string> str);
 	void status();
 	void buildMode(std::string const& _buildMode);
