@@ -291,7 +291,7 @@ auto Workspace::getExcludedProjects(std::string const& _toolchain) const -> std:
 	}
 	return projects;
 }
-void Workspace::markProjectAsShared(std::string const& _name) {
+void Workspace::markProjectAsShared(std::string const& /*_name*/) {
 	for (auto p : getSharedProjects()) {
 		if (p->getType() != Project::Type::StaticLibrary) continue;
 		p->setType(Project::Type::SharedLibrary);

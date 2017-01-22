@@ -362,6 +362,10 @@ void CompileBatch::compile(Project const* _project, std::string const& _file, st
 		return;
 	}
 
+	if (_project->getWarningsAsErrors()) {
+		_options.push_back("-Werror");
+	}
+
 	// marking _file as recompiled and mark _project to be recompiled
 	insertProjectAndFile(_project, _file);
 
@@ -411,7 +415,7 @@ void CompileBatch::insertProjectAndFile(Project const* _project, std::string con
 }
 
 
-auto CompileBatch::generateFlags(Project const* _project, std::string const& _file, std::string const& outputFile) -> std::vector<std::string> {
+auto CompileBatch::generateFlags(Project const*, std::string const& _file, std::string const& outputFile) -> std::vector<std::string> {
 	std::vector<std::string> options;
 
 	//!TODO shouldnt be default argument

@@ -14,6 +14,7 @@ namespace busyConfig {
 		StringVector  depLibraries;
 		StringVector  defines;
 		bool          noWarnings   { false };
+		bool          warningsAsErrors { true };
 		bool          wholeArchive { false };
 		bool          mAutoDependenciesDiscovery { true };
 		bool          mIgnore      { false };
@@ -31,6 +32,7 @@ namespace busyConfig {
 			node["depLibraries"]         % depLibraries;
 			node["defines"]              % defines;
 			node["noWarnings"]           % noWarnings           or bool(false);
+			node["warningsAsErrors"]     % warningsAsErrors     or bool(true);
 			node["wholeArchive"]         % wholeArchive         or bool(false);
 			node["autoDependenciesDiscovery"] % mAutoDependenciesDiscovery or bool(true);
 			node["ignore"]               % mIgnore              or bool(false);

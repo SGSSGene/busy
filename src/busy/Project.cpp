@@ -55,10 +55,11 @@ namespace busy {
 			//!TODO list all possible types
 			throw std::runtime_error("Unknown project type: " + _project.type + " must be of the type \"(executable, library, staticLibrary, sharedLibrary...\"");
 		}
-		mWholeArchive   = _project.wholeArchive;
+		mWholeArchive              = _project.wholeArchive;
 		mAutoDependenciesDiscovery = _project.mAutoDependenciesDiscovery;
-		mSystemLibraries = _project.depLibraries;
-		mSingleFileProjects = _project.mSingleFileProjects;
+		mSystemLibraries           = _project.depLibraries;
+		mSingleFileProjects        = _project.mSingleFileProjects;
+		mWarningsAsErrors          = _project.warningsAsErrors;
 
 		for (auto s : _project.dependencies) {
 			mDependenciesAsString.insert(s);

@@ -26,6 +26,7 @@ namespace busy {
 		bool        mAutoDependenciesDiscovery {true};
 		bool        mIsHeaderOnly {false};
 		bool        mSingleFileProjects {false}; // Indicates that each .c/.cpp file should be treated as a project/library
+		bool        mWarningsAsErrors {true};
 
 		std::vector<std::string> mSourcePaths;
 		std::vector<std::string> mIncludePaths;
@@ -78,6 +79,7 @@ namespace busy {
 
 		bool getIsHeaderOnly() const { return mIsHeaderOnly; }
 		bool getIsSingleFileProjects() const { return mSingleFileProjects; }
+		bool getWarningsAsErrors() const { return mWarningsAsErrors; }
 
 		auto getIncludeAndDependendPaths() const -> std::vector<std::string>;
 		auto getSystemIncludeAndDependendPaths() const -> std::vector<std::string>;
@@ -100,6 +102,7 @@ namespace busy {
 		case Project::Type::SharedLibrary: return "sharedLibrary";
 		case Project::Type::Plugin:        return "plugin";
 		}
+		throw std::runtime_error("unknown project type: " + std::to_string(int(type)));
 	}
 
 }

@@ -1,5 +1,5 @@
 #include <iostream>
-#define _GNU_SOURCE
+//#define _GNU_SOURCE
 #include <link.h>
 #include <dlfcn.h>
 

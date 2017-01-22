@@ -59,13 +59,15 @@ namespace utils {
 
 
 	std::string dirname(std::string const& _file) {
-		char c[_file.size()+1];
+		std::vector<char> buffer(_file.size()+1);
+		char* c = buffer.data();
 		memcpy(c, _file.c_str(), _file.size()+1);
 		::dirname(c);
 		return c;
 	}
 	std::string basename(std::string const& _file) {
-		char c[_file.size()+1];
+		std::vector<char> buffer(_file.size()+1);
+		char* c = buffer.data();
 		memcpy(c, _file.c_str(), _file.size()+1);
 		char *d = ::basename(c);
 		return d;
