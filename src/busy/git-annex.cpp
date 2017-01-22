@@ -25,7 +25,7 @@ auto sync(std::string const& _cwd) -> std::string {
 
 auto sync_content(std::string const& _cwd) -> std::string {
 	setenv("LANGUAGE", "en_EN:en", 1);
-	process::Process p({"git", "annex", "sync", "--content"}, _cwd);
+	process::Process p({"git", "annex", "copy", "--all", "--to=origin", "--fast"}, _cwd);
 	if (p.getStatus() != 0) {
 		throw std::runtime_error("error running git annex sync on " + _cwd);
 	}

@@ -22,7 +22,7 @@ void push() {
 		} else {
 			auto message = git::annex::sync_content(path);
 			std::unique_lock<std::mutex> lock(mutex);
-			std::cout << "pushed (git annex sync --content) " << path << ": " << message << std::endl;
+			std::cout << "pushed (git annex copy --all --to=origin --fast) " << path << ": " << message << std::endl;
 		}
 	}, 4);
 
