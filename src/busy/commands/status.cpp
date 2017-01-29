@@ -105,7 +105,8 @@ void status() {
 			std::cout << " - " << p->getName() << "\n";
 			paths += " " + p->getPath();
 		}
-		std::cout << "call rm -rf " << paths << "\n";
+		std::cout << "you might want to run\n";
+		std::cout << TERM_GREEN"  rm -rf " << paths << TERM_RESET"\n";
 	}
 }
 
