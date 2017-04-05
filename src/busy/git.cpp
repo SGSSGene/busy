@@ -99,8 +99,12 @@ auto getConfig(std::string const& _cwd, std::string const& _option) -> std::stri
 		value.pop_back();
 	}
 	return value;
-
 }
+auto isGit(std::string const& _cwd) -> bool {
+	utils::Cwd cwd(_cwd);
+	return utils::fileExists(".git");
+}
+
 
 
 

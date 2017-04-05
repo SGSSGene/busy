@@ -50,12 +50,18 @@ void Build::createVersionFiles() const {
 	versionFile << "#pragma once" << std::endl;
 	for (auto const& package : ws.getPackages()) {
 	//	std::cout << package.getName() << " found at " << package.getPath() << std::endl;
-		auto branch = git::getBranch(package.getPath());
-		auto hash   = git::getCurrentHash(package.getPath());
-		bool dirty  = git::isDirty(package.getPath(), true);
+		auto branch = std::string{"no-branch"};
+		auto hash   = std::string{"00000000"};
+		auto dirty  = bool(true);
+		if (git::isGit(package.getPath())) {
+			branch = git::getBranch(package.getPath());
+			hash   = git::getCurrentHash(package.getPath());
+			dirty  = git::isDirty(package.getPath(), true);
+			hash = hash.substr(0, 8);
+		}
+
 		auto name   = package.getName();
 		auto date   = utils::getDate();
-		hash = hash.substr(0, 8);
 
 		std::transform(name.begin(), name.end(), name.begin(), [](char c) { return std::toupper(c); });
 

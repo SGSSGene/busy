@@ -13,6 +13,7 @@ void checkout(std::string const& _cwd, std::string const& _commit);
 auto getBranch(std::string const& _cwd) -> std::string;
 auto getCurrentHash(std::string const& _cwd) -> std::string;
 auto getConfig(std::string const& _cwd, std::string const& _option) -> std::string;
+auto isGit(std::string const& _cwd) -> bool;
 
 int untrackedFiles(std::string const& _cwd);
 int changedFiles(std::string const& _cwd);
