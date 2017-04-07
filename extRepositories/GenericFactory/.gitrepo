@@ -1,0 +1,11 @@
+; DO NOT EDIT (unless you know what you are doing)
+;
+; This subdirectory is a git "subrepo", and this file is maintained by the
+; git-subrepo command. See https://github.com/git-commands/git-subrepo#readme
+;
+[subrepo]
+	remote = git@github.com:SGSSGene/GenericFactory
+	branch = master
+	commit = 757108748ed319f55c396d464b9db8c5c8d6fce4
+	parent = 2d1afd199d8390edd0202ace62ed108d2744ad4c
+	cmdver = 0.3.0
