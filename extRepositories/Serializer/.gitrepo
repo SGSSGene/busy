@@ -1,0 +1,11 @@
+; DO NOT EDIT (unless you know what you are doing)
+;
+; This subdirectory is a git "subrepo", and this file is maintained by the
+; git-subrepo command. See https://github.com/git-commands/git-subrepo#readme
+;
+[subrepo]
+	remote = git@github.com:SGSSGene/Serializer
+	branch = master
+	commit = 878c37fe31d5a9d90c19a9581228d49e540e3114
+	parent = c9357c2729fc3b4950b018539b01f2057e55e70a
+	cmdver = 0.3.0
