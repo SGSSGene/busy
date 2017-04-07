@@ -1,0 +1,8 @@
+name: jsoncpp
+projects:
+  - name: lib_json
+    legacy:
+      includes:
+        - include
+    autoDependenciesDiscovery: false
+
