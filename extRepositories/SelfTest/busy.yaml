@@ -1,0 +1,3 @@
+name: SelfTest
+extRepositories:
+  - url: git@cakeface.de:aBuild/Process
