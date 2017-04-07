@@ -19,6 +19,7 @@ echo "
 #define VERSION_YAML-CPP      \"bootstrap-build\"
 " > busy-helper/busy-version/version.h
 
+echo "initial build, this will take a few minutes"
 g++ -ggdb -O0 --std=c++11 \
 	-isystem extRepositories/Serializer/src/ \
 	-isystem extRepositories/jsoncpp/include \
