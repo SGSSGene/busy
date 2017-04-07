@@ -1,0 +1,11 @@
+; DO NOT EDIT (unless you know what you are doing)
+;
+; This subdirectory is a git "subrepo", and this file is maintained by the
+; git-subrepo command. See https://github.com/git-commands/git-subrepo#readme
+;
+[subrepo]
+	remote = git@github.com:SGSSGene/ThreadPool
+	branch = master
+	commit = 0ec15f166840e7b77a0660b18fa8121f58adbe34
+	parent = 0a5699c7eabc664371db77b021360ad39881572d
+	cmdver = 0.3.0
