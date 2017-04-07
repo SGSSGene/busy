@@ -18,7 +18,9 @@ int main() {
 		auto handle = dlopen("build/system-gcc/debug/pluginbusyPlugins1.so", RTLD_NOW | RTLD_LOCAL);
 		printNames();
 
-		dlclose(handle);
+		if (handle != nullptr) {
+			dlclose(handle);
+		}
 		std::cout << "handle: " << handle << std::endl;
 	}
 	printNames();
@@ -33,8 +35,12 @@ int main() {
 		std::cout << "handle: " << h1 << std::endl;
 		std::cout << "handle: " << h2 << std::endl;
 
-		dlclose(h2);
-		dlclose(h1);
+		if (h2 != nullptr) {
+			dlclose(h2);
+		}
+		if (h1 != nullptr) {
+			dlclose(h1);
+		}
 	}
 
 	return EXIT_SUCCESS;
