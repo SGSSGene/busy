@@ -1,6 +1,5 @@
 name: busy
 extRepositories:
-  - url: git@github.com:SGSSGene/Serializer-github
   - url: git@github.com:SGSSGene/Process
   - url: git@github.com:SGSSGene/SelfTest
   - url: git@github.com:SGSSGene/gtest
