@@ -9,7 +9,10 @@ using SY = serializer::yaml::Serializer;
 using DY = serializer::yaml::Deserializer;
 
 struct A {
-	int32_t x;
+	int32_t x{0};
+
+	A() {}
+	A(int32_t _x) : x{_x} {}
 
 	template<typename Node>
 	void serialize(Node& node) {
@@ -21,7 +24,10 @@ struct A {
 };
 
 struct TwoValues_1 {
-	int32_t a, b;
+	int32_t a{0}, b{0};
+
+	TwoValues_1() {}
+	TwoValues_1(int32_t _a, int32_t _b) : a{_a}, b{_b} {}
 
 	template<typename Node>
 	void serialize(Node& node) {
@@ -33,7 +39,10 @@ struct TwoValues_1 {
 	}
 };
 struct TwoValues_a {
-	int32_t a;
+	int32_t a{0};
+
+	TwoValues_a() {}
+	TwoValues_a(int32_t _a) : a{_a} {}
 
 	template<typename Node>
 	void serialize(Node& node) {
@@ -41,7 +50,10 @@ struct TwoValues_a {
 	}
 };
 struct TwoValues_b {
-	int32_t b;
+	int32_t b{0};
+
+	TwoValues_b() {}
+	TwoValues_b(int32_t _b) : b{_b} {}
 
 	template<typename Node>
 	void serialize(Node& node) {
@@ -49,7 +61,10 @@ struct TwoValues_b {
 	}
 };
 struct TwoValues_c {
-	int32_t c;
+	int32_t c{0};
+
+	TwoValues_c() {}
+	TwoValues_c(int32_t _c) : c{_c} {}
 
 	template<typename Node>
 	void serialize(Node& node) {

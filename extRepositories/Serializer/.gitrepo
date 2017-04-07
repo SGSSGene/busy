@@ -6,6 +6,6 @@
 [subrepo]
 	remote = git@github.com:SGSSGene/Serializer
 	branch = master
-	commit = 878c37fe31d5a9d90c19a9581228d49e540e3114
-	parent = c9357c2729fc3b4950b018539b01f2057e55e70a
+	commit = d5f67bac2ef9002f39bfb94a0fb58ef963f4af3f
+	parent = e4b0118a56a923c5ae1aa7e99503aadb25bf350a
 	cmdver = 0.3.0

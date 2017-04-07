@@ -5,8 +5,8 @@ using SY = serializer::yaml::Serializer;
 using DY = serializer::yaml::Deserializer;
 
 struct A {
-	int32_t x;
-	int32_t y;
+	int32_t x{0};
+	int32_t y{0};
 
 	template<typename Node>
 	void serialize(Node& node) {

@@ -42,7 +42,7 @@ using DY = serializer::yaml::Deserializer;
 
 
 struct A {
-	int32_t x;
+	int32_t x{0};
 	template<typename Node>
 	void serialize(Node& node) {
 		node["x"] % x;
@@ -59,8 +59,8 @@ struct B {
 };
 struct AD {
 	A a;
-	A* aPtr;
-	int32_t* xPtr;
+	A* aPtr{nullptr};
+	int32_t* xPtr{nullptr};
 
 	template<typename Node>
 	void serialize(Node& node) {
@@ -72,8 +72,8 @@ struct AD {
 
 struct LoopB_0;
 struct LoopA_0 {
-	int32_t x;
-	LoopB_0* ptr;
+	int32_t x{0};
+	LoopB_0* ptr{nullptr};
 	template<typename Node>
 	void serialize(Node& node) {
 		node["x"]   % x;
@@ -86,8 +86,8 @@ struct LoopA_0 {
 };
 
 struct LoopB_0 {
-	int32_t y;
-	LoopA_0* ptr;
+	int32_t y{0};
+	LoopA_0* ptr{nullptr};
 	template<typename Node>
 	void serialize(Node& node) {
 		node["y"]   % y;
@@ -117,8 +117,8 @@ struct Loop_0 {
 
 struct LoopB_1;
 struct LoopA_1 {
-	int32_t x;
-	LoopB_1* ptr;
+	int32_t x{0};
+	LoopB_1* ptr{nullptr};
 	template<typename Node>
 	void serialize(Node& node) {
 		node["ptr"] % ptr;
@@ -130,8 +130,8 @@ struct LoopA_1 {
 };
 
 struct LoopB_1 {
-	int32_t y;
-	LoopA_1* ptr;
+	int32_t y{0};
+	LoopA_1* ptr{nullptr};
 	template<typename Node>
 	void serialize(Node& node) {
 		node["ptr"] % ptr;
@@ -159,7 +159,7 @@ struct Loop_1 {
 
 struct LoopB_2;
 struct LoopA_2 {
-	LoopB_2* ptr;
+	LoopB_2* ptr{nullptr};
 	template<typename Node>
 	void serialize(Node& node) {
 		node["ptr"] % ptr;
@@ -171,7 +171,7 @@ struct LoopA_2 {
 };
 
 struct LoopB_2 {
-	LoopA_2* ptr;
+	LoopA_2* ptr{nullptr};
 	template<typename Node>
 	void serialize(Node& node) {
 		node["ptr"] % ptr;
