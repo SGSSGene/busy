@@ -1,4 +1,5 @@
 #include "busyConfig.h"
+#include <busyUtils/busyUtils.h>
 #include <serializer/serializer.h>
 #include <iostream>
 
@@ -22,6 +23,24 @@ namespace busyConfig {
 				}
 			}
 		}
+
+		// adding entries to package
+		std::set<std::string> urls;
+		for (auto const& u : package.extRepositories) {
+			urls.insert(u.name);
+		}
+		if (utils::fileExists(_path + "/extRepositories")) {
+			auto includedRepos = utils::listDirs(_path + "/extRepositories");
+			for (auto const& s : includedRepos) {
+				if (utils::fileExists(_path + "/extRepositories/" + s + "/.gitrepo")) {
+					if (urls.count(s) == 0) {
+						urls.insert(s);
+						package.extRepositories.push_back(PackageURL{s, s, "master"});
+					}
+				}
+			}
+		}
+
 
 
 		return package;

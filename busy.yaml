@@ -1,11 +1,4 @@
 name: busy
-extRepositories:
-  - url: Process
-  - url: SelfTest
-  - url: gtest
-  - url: ThreadPool
-  - url: CommonOptions
-  - url: GenericFactory
 projects:
   - name: busy
     type: executable
