@@ -2,40 +2,11 @@
 #include "Package.h"
 #include "Workspace.h"
 
+#include "analyse/File.h"
+#include "analyse/Project.h"
+
 #include <algorithm>
 #include <busyUtils/busyUtils.h>
-#include <cstring>
-#include <fstream>
-#include <iostream>
-
-namespace {
-	void skipAllWhiteSpaces(char const*& str) {
-		while (*str != '\0' and (*str == '\t' or *str == ' ')) ++str;
-	}
-	bool checkIfMakroEndif(char const* str) {
-		skipAllWhiteSpaces(str);
-		return strncmp(str, "#endif", 6) == 0;
-	}
-	bool checkIfMakroIfAndBusy(char const* str) {
-		skipAllWhiteSpaces(str);
-		if (strncmp(str, "#if", 3) != 0) {
-			return false;
-		}
-		str += 3;
-		skipAllWhiteSpaces(str);
-		return strncmp(str, "BUSY_", 5) == 0;
-	}
-	bool checkIfMakroSystemInclude(char const* str) {
-		skipAllWhiteSpaces(str);
-		if (strncmp(str, "#include", 8) != 0) {
-			return false;
-		}
-		str += 8;
-		skipAllWhiteSpaces(str);
-		return *str == '<';
-	}
-}
-
 
 namespace busy {
 	Project::Project(busyConfig::Project const& _project, Package* _package, std::string const& folder)
@@ -265,36 +236,13 @@ namespace busy {
 	}
 
 	void Project::discoverSourceFiles() {
-		mSourceFiles["cpp"]       = {};
-		mSourceFiles["c"]         = {};
-		mSourceFiles["incl"]      = {};
-		mSourceFiles["incl-flat"] = {};
-		// Discover cpp and c files
-		auto sourcePaths = getSourcePaths();
-		sourcePaths[0] += "/" + getName();
+		auto includes = getIncludePaths();
+		includes.erase(includes.begin());
 
-		for (auto const& dir : sourcePaths) {
-			for (auto const &f : utils::listFiles(dir, true)) {
-				if (utils::isEndingWith(f, ".cpp")) {
-					mSourceFiles["cpp"].push_back(dir + "/" + f);
-				} else if (utils::isEndingWith(f, ".c")) {
-					mSourceFiles["c"].push_back(dir + "/" + f);
-				}
-			}
-		}
-		// Discover header files
-		auto includePaths = getIncludePaths();
-		includePaths[0] += "/" + getName();
-		for (auto const& dir : includePaths) {
-			for (auto const& f : utils::listFiles(dir, true)) {
-				mSourceFiles["incl"].push_back(dir + "/" + f);
-				if (&dir == &includePaths[0]) {
-					mSourceFiles["incl-flat"].push_back(getName() + "/" + f);
-				} else {
-					mSourceFiles["incl-flat"].push_back(f);
-				}
-			}
-		}
+		analyse::Project project(getName(), getSourcePaths()[0] + "/" + getName(), includes);
+
+		
+		mSourceFiles = project.getSourceFiles();
 	}
 
 	auto Project::getIncludeAndDependendPaths() const -> std::vector<std::string> {
@@ -357,48 +305,12 @@ namespace busy {
 		// If file modification time has changed, rescan it
 		auto modTime = utils::getFileModificationTime(_file);
 		if (modTime != fileStat.mFileDiscovery.lastChange) {
+			analyse::File file(_file);
 
-
-			std::ifstream ifs(_file);
-			std::string line;
+			auto includesOutsideOfThisProject         = file.getIncludes();
+			auto includesOutsideOfThisProjectOptional = file.getIncludesOptional();
 
 			std::set<std::string> dependenciesAsString;
-
-			std::set<std::string> includesOutsideOfThisProject;
-			std::set<std::string> includesOutsideOfThisProjectOptional;
-
-			bool optionalSection = false;
-
-			while (std::getline(ifs, line)) {
-				// check if it is '#endif'
-				if (checkIfMakroEndif(line.c_str())) {
-					optionalSection = false;
-				} else if (checkIfMakroIfAndBusy(line.c_str())) {
-					optionalSection = true;
-				} else if (checkIfMakroSystemInclude(line.c_str())) {
-					auto parts = utils::explode(line, std::vector<std::string>{" ", "\t"});
-
-					std::string includeFile;
-					if (parts.size() == 0) continue;
-					if (parts.size() == 1) {
-						includeFile = parts[0];
-					} else {
-						includeFile = parts[1];
-					}
-
-					auto pos1 = includeFile.find("<")+1;
-					auto pos2 = includeFile.find(">")-pos1;
-
-					auto file = includeFile.substr(pos1, pos2);
-
-					if (optionalSection) {
-						includesOutsideOfThisProjectOptional.insert(file);
-						includesOutsideOfThisProject.erase(file);
-					} else if (includesOutsideOfThisProjectOptional.count(file) == 0) {
-						includesOutsideOfThisProject.insert(file);
-					}
-				}
-			}
 
 			// Check all found #include<...> statements, and check if these refer to a known project
 			auto packages = mPackage->getAllDependendPackages();

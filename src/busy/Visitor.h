@@ -26,7 +26,7 @@ namespace busy {
 		void setCVisitor(CVisitor _cVisitor) { mCVisitor = _cVisitor; }
 		void setProjectVisitor(ProjectVisitor _projectVisitor) { mProjectVisitor = _projectVisitor; }
 		void setStatisticUpdateCallback(StatisticUpdate _update) { mStatisticUpdate = _update; }
-	
+
 		void visit(int _threads);
 	};
 }
