@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Installation.h"
 #include "Override.h"
 #include "PackageURL.h"
 #include "Project.h"
@@ -13,7 +12,6 @@ namespace busyConfig {
 
 	using ExtRepositories = std::vector<PackageURL>;
 	using Projects        = std::vector<Project>;
-	using Installations   = std::vector<Installation>;
 	using Toolchains      = std::vector<Toolchain>;
 	using Overrides       = std::vector<Override>;
 	using Flavors         = std::map<std::string, Flavor>;
@@ -24,7 +22,6 @@ namespace busyConfig {
 		ExtRepositories extRepositories;
 		Projects        projects;
 		Overrides       overrides;
-		Installations   installations;
 		Toolchains      toolchains;
 		Flavors         flavors;
 
@@ -35,7 +32,6 @@ namespace busyConfig {
 			node["extRepositories"] % extRepositories;
 			node["projects"]        % projects;
 			node["overrides"]       % overrides;
-			node["installations"]   % installations;
 			node["toolchains"]      % toolchains;
 			node["flavors"]         % flavors;
 		}
