@@ -27,10 +27,15 @@ void push(int jobs) {
 	}, jobs);
 
 	auto allPackages = utils::listDirs("./extRepositories", true);
-	for (auto& p : allPackages) { p = "./extRepositories/"+p; }
-	allPackages.push_back(".");
 
-	threadPool.queueContainer(allPackages);
+	std::vector<std::string> packagesToUpdate;
+	for (auto& p : allPackages) {
+		if (utils::fileExists("./extRepositories/" + p + "/.gitrepo")) continue;
+		packagesToUpdate.push_back("./extRepositories/" + p);
+	}
+	packagesToUpdate.push_back(".");
+
+	threadPool.queueContainer(packagesToUpdate);
 	threadPool.wait();
 }
 

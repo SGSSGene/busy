@@ -104,6 +104,7 @@ void pull(int jobs) {
 	std::vector<std::string> packagesToUpdate;
 	for (auto const& p : allPackages) {
 		if (paths.count(p) > 0) continue;
+		if (utils::fileExists("./extRepositories/" + p + "/.gitrepo")) continue;
 		packagesToUpdate.push_back("./extRepositories/" + p);
 	}
 

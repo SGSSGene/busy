@@ -40,6 +40,9 @@ void status() {
 					std::cout << " ";
 				}
 				std::cout << " - repository not cloned" << std::endl;
+			} else if(utils::fileExists(path+"/.gitrepo")) {
+				// ignore because it is a git subrepo
+				continue;
 			} else {
 				auto untracked = git::untrackedFiles(path);
 				auto changed   = git::changedFiles(path);
