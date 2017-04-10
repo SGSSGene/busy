@@ -36,7 +36,7 @@ namespace busy {
 			mDependenciesAsString.insert(s);
 		}
 
-		mSourcePaths.emplace_back(mPath);
+		mSourcePath = mPath + "/" + getName();
 		mIncludePaths.emplace_back(mPath);
 		for (auto const& f : _project.legacy.includes) {
 			mIncludePaths.emplace_back(mPackage->getPath() + "/" + f);
@@ -64,7 +64,7 @@ namespace busy {
 			mType = Type::Executable;
 		}
 
-		mSourcePaths.emplace_back(mPath);
+		mSourcePath = mPath + "/" + getName();
 		mIncludePaths.emplace_back(mPath);
 
 		discoverSourceFiles();
@@ -239,8 +239,7 @@ namespace busy {
 		auto includes = getIncludePaths();
 		includes.erase(includes.begin());
 
-		analyse::Project project(getName(), getSourcePaths()[0] + "/" + getName(), includes);
-
+		analyse::Project project(getName(), getSourcePath(), includes);
 		
 		mSourceFiles = project.getSourceFiles();
 	}

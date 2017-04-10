@@ -21,7 +21,9 @@ DeserializerNode::~DeserializerNode() {
 				_node[n.first.as<std::string>()] = n.second;
 			}
 		}
-		serializer.addUnusedFields(to_string(nodePath), _node);
+		if (_node.size() > 0) {
+			serializer.addUnusedFields(to_string(nodePath), _node);
+		}
 	}
 }
 

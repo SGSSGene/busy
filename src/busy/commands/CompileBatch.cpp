@@ -98,142 +98,11 @@ void CompileBatch::linkStaticLibrary(Project const* _project) {
 }
 void CompileBatch::linkSharedLibrary(Project const* _project) {
 	std::string outputFile = outPath + "/lib" + _project->getName() + ".so";
-	linkSharedLibraryImpl(_project, outputFile);
+	throw std::runtime_error("not implemented");
 }
 void CompileBatch::linkPlugin(Project const* _project) {
 	std::string outputFile = outPath + "/plugin" + _project->getName() + ".so";
-	linkSharedLibraryImpl(_project, outputFile);
-}
-
-void CompileBatch::linkSharedLibraryImpl(Project const* _project, std::string const& outputFile) {
 	throw std::runtime_error("not implemented");
-	//std::string outputFile = buildPath + "/" + _project->getFullName("lib") + ".so";
-	//std::string outputFile = outPath + "/lib" + _project->getName() + ".so";
-
-	// Check file dependencies
-	bool recompile = false;
-	{
-		std::lock_guard<std::mutex> lock(printMutex);
-		if (needsRecompile.count(_project) > 0) {
-			recompile = true;
-		} else if (not utils::fileExists(outputFile)) {
-			recompile = true;
-		}
-
-		for (auto _p : _project->getDependenciesRecursiveOnlyStaticNotOverShared(ignoreProjects)) {
-//		for (auto _p : _project->getDependenciesRecursive(ignoreProjects)) {
-			if (needsRecompile.count(_p) > 0) {
-				recompile = true;
-				break;
-			}
-		}
-		if (not recompile) {
-			return;
-		}
-	}
-
-
-/*	std::vector<std::string> options;
-	options.push_back(toolchain->linkExecutable.searchPaths.back());
-	for (auto const& o : toolchain->linkExecutable.call) {
-		options.push_back(o);
-	}
-	//!TODO shouldnt be default argument
-//	std::cout << "linking shared: " << outputFile << "\n";
-	options.push_back("-shared");
-
-	char const* ld = getenv("BUSY_LD");
-	if (ld != nullptr) {
-		options.push_back(std::string("-fuse-ld=") + ld);
-	}
-
-	//!ENDTODO
-	options.push_back("-o");
-	options.push_back(outputFile);
-
-	for (auto file : objectFilesForLinking(_project, buildPath)) {
-		options.push_back(file);
-	}*/
-
-	auto const& _command = toolchain->linkExecutable;
-	std::map<std::string, std::vector<std::string>> subMap;
-	subMap["%compiler%"]       = {_command.searchPaths.back()};
-	subMap["%infiles%"]        = objectFilesForLinking(_project, buildPath);
-	subMap["%outfile%"]        = {outputFile};
-	subMap["-fuse-ld=%ld%"]    = {utils::getEnv("BUSY_LD", "")};
-
-	auto options = substitute(_command.call, subMap);
-	options.push_back("-shared");
-
-
-
-	// add static libraries
-	for (auto project : _project->getDependenciesRecursiveOnlyStaticNotOverShared(ignoreProjects)) {
-		if (project->getIsHeaderOnly()) continue;
-		if (true) {
-//		if (project->getWholeArchive()) {
-			options.push_back("-Wl,--whole-archive");
-		}
-		options.push_back(buildPath + "/" + project->getFullName() + ".a");
-		if (true) {
-//		if (project->getWholeArchive()) {
-			options.push_back("-Wl,--no-whole-archive");
-		}
-	}
-	std::vector<std::string> systemLibraries;
-	std::vector<std::string> systemLibrariesPaths;
-	// add shared libraries
-	for (auto project : _project->getDependenciesRecursiveOnlyShared(ignoreProjects)) {
-		if (project->getIsHeaderOnly()) continue;
-
-//		std::string fullPath = buildPath + "/" + project->getFullName();
-//		fullPath = fullPath.substr(0, fullPath.find_last_of("/"));
-		std::string fullPath = outPath + "/";
-
-
-		systemLibrariesPaths.push_back(fullPath);
-		systemLibraries.push_back("-l"+project->getName());
-	}
-
-
-	for (auto dep : _project->getSystemLibraries()) {
-		systemLibraries.push_back("-l"+dep);
-	}
-	for (auto project : _project->getDependenciesRecursiveOnlyStaticNotOverShared(ignoreProjects)) {
-		for (auto dep : project->getSystemLibraries()) {
-			systemLibraries.push_back("-l"+dep);
-		}
-	}
-/*	for (auto project : _project->getDependenciesRecursiveOnlyShared(ignoreProjects)) {
-		for (auto dep : project->getSystemLibraries()) {
-			options.push_back("-l"+dep);
-		}
-	}*/
-
-	for (auto const& p : toolchain->cppCompiler.flags2) {
-		options.push_back(p);
-	}
-	for (auto linking : _project->getLinkingOptionsRecursive()) {
-		systemLibraries.push_back(linking);
-	}
-
-	for (auto project : _project->getDependenciesRecursiveOnlyStaticNotOverShared(ignoreProjects)) {
-		for (auto linking : project->getSystemLibrariesPaths()) {
-			systemLibrariesPaths.push_back(linking);
-		}
-	}
-
-	systemLibrariesPaths = removeLastDuplicates(systemLibrariesPaths);
-	for (auto const& s : systemLibrariesPaths) {
-		options.push_back("-L"+s);
-	}
-
-	systemLibraries = removeLastDuplicates(systemLibraries);
-	for (auto const& s : systemLibraries) {
-		options.push_back(s);
-	}
-
-	runCmd(options);
 }
 
 void CompileBatch::linkExecutable(Project const* _project) {
@@ -354,10 +223,12 @@ void CompileBatch::compile(Project const* _project, std::string const& _file, To
 	subMap["%genIncludes%"]    = generateIncludes(_project);
 	auto options = substitute(_command.call, subMap);
 
-	compile(options, _file);
+	if (runCmd(options)) {
+		utils::convertDFileToDDFile(buildPath + "/" + _file + ".d", buildPath + "/" + _file + ".dd");
+	}
 
 	// marking _file as recompiled and mark _project to be recompiled
-	insertProjectAndFile(_project, _file);
+	markProjectAndFileAsRecompiled(_project, _file);
 }
 
 bool CompileBatch::checkNeedsRecompile(std::string const& _file, std::string const& outputFile) {
@@ -384,7 +255,7 @@ bool CompileBatch::checkNeedsRecompile(std::string const& _file, std::string con
 	}
 	return recompile;
 }
-void CompileBatch::insertProjectAndFile(Project const* _project, std::string const& _file) {
+void CompileBatch::markProjectAndFileAsRecompiled(Project const* _project, std::string const& _file) {
 	std::lock_guard<std::mutex> lock(printMutex);
 	needsRecompile.insert(_project);
 	fileWasRecompiled.insert(_file);
@@ -425,11 +296,39 @@ auto CompileBatch::generateIncludes(Project const* _project) -> std::vector<std:
 	return options;
 }
 
-void CompileBatch::compile(std::vector<std::string> const& _options, std::string const& _file) {
-	if (runCmd(_options)) {
-		utils::convertDFileToDDFile(buildPath + "/" + _file + ".d", buildPath + "/" + _file + ".dd");
+auto CompileBatch::objectFilesForLinking(Project const* _project, std::string const& _buildPath) const -> std::vector<std::string> {
+	std::vector<std::string> options;
+	for (auto file : _project->getCppFiles()) {
+		auto objFile = _buildPath + "/" + file + ".o";
+		options.push_back(objFile);
 	}
+	for (auto file : _project->getCFiles()) {
+		auto objFile = _buildPath + "/" + file + ".o";
+		options.push_back(objFile);
+	}
+	return options;
 }
+
+bool CompileBatch::runCmd(std::vector<std::string> const& _options) {
+	// print command if verbose is activated
+	if (verbose) {
+		std::lock_guard<std::mutex> lock(printMutex);
+		std::cout << std::endl;
+		for (auto const& o : _options) {
+			std::cout << o << " ";
+		}
+		std::cout << std::endl;
+	}
+
+	process::Process proc(_options);
+	bool compileError = proc.getStatus() != 0;
+	if (compileError) {
+		printError(_options, proc);
+		return false;
+	}
+	return true;
+}
+
 void CompileBatch::printError(std::vector<std::string> const& _options, process::Process const& _proc) {
 	if (not errorDetected) {
 		std::lock_guard<std::mutex> lock(printMutex);
@@ -447,40 +346,8 @@ void CompileBatch::printError(std::vector<std::string> const& _options, process:
 		}
 	}
 }
-auto CompileBatch::objectFilesForLinking(Project const* _project, std::string const& _buildPath) const -> std::vector<std::string> {
-	std::vector<std::string> options;
-	for (auto file : _project->getCppFiles()) {
-		auto objFile = _buildPath + "/" + file + ".o";
-		options.push_back(objFile);
-	}
-	for (auto file : _project->getCFiles()) {
-		auto objFile = _buildPath + "/" + file + ".o";
-		options.push_back(objFile);
-	}
-	return options;
-}
-void CompileBatch::printVerboseCmd(std::vector<std::string> const& _options) {
-	// print command if verbose is activated
-	if (verbose) {
-		std::lock_guard<std::mutex> lock(printMutex);
-		std::cout << std::endl;
-		for (auto const& o : _options) {
-			std::cout << o << " ";
-		}
-		std::cout << std::endl;
-	}
-}
-bool CompileBatch::runCmd(std::vector<std::string> const& _options) {
-	printVerboseCmd(_options);
 
-	process::Process proc(_options);
-	bool compileError = proc.getStatus() != 0;
-	if (compileError) {
-		printError(_options, proc);
-		return false;
-	}
-	return true;
-}
+
 
 }
 }

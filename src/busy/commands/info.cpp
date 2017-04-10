@@ -117,7 +117,7 @@ void info(std::vector<std::string> str) {
 		std::cout << "link whole archive: " << project.getWholeArchive() << std::endl;
 		std::cout << "auto dependency discovery: " << project.getAutoDependenciesDiscovery() << std::endl;
 		printList<Project const*>("Dependencies:",  project.getDependencies(), [] (Project const* const& p) { std::cout << p->getFullName(); });
-		printList("Source Paths:",  project.getSourcePaths());
+		std::cout << "Source Path:" <<   project.getSourcePath() << std::endl;
 		printList("Include Paths:", project.getIncludePaths());
 		printList("System Include Paths:", project.getSystemIncludePaths());
 /*		printList("C-Files:",       project.getCFiles());

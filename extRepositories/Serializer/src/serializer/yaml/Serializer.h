@@ -323,12 +323,6 @@ public:
 };
 
 template<typename T>
-void read(std::string const& _file, T& _value);
-
-template<typename T>
-void write(std::string const& _file, T& _value);
-
-template<typename T>
 SerializerDefault<T>::~SerializerDefault() {
 	if (name == "") {
 		serializer.serialize(node, value, nodePath);
@@ -433,7 +427,7 @@ void SerializerAdapter::serializeByIterCopy(Iter iter, Iter end) {
 
 
 template<typename T>
-void read(std::string const& _file, T& _value) {
+void read(std::string const& _file, T& _value, std::map<std::string, YAML::Node>* unusedFields = nullptr) {
 
 	// Read file from storage
 	std::ifstream ifs(_file);
@@ -447,6 +441,9 @@ void read(std::string const& _file, T& _value) {
 	Deserializer serializer(strStream.str());
 	serializer.getRootNode() % _value;
 	serializer.close();
+	if (unusedFields != nullptr) {
+		*unusedFields = serializer.getUnusedFields();
+	}
 }
 
 template<typename T>

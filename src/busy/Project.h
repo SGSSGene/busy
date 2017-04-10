@@ -28,7 +28,7 @@ namespace busy {
 		bool        mSingleFileProjects {false}; // Indicates that each .c/.cpp file should be treated as a project/library
 		bool        mWarningsAsErrors {true};
 
-		std::vector<std::string> mSourcePaths;
+		std::string mSourcePath;
 		std::vector<std::string> mIncludePaths;
 		std::vector<std::string> mSystemIncludePaths;
 		std::set<std::string>    mDependenciesAsString;
@@ -55,7 +55,7 @@ namespace busy {
 		bool getIsExample() const;
 		bool getWholeArchive() const { return mWholeArchive; }
 		bool getAutoDependenciesDiscovery() const { return mAutoDependenciesDiscovery; }
-		auto getSourcePaths() const -> std::vector<std::string> const& { return mSourcePaths; }
+		auto getSourcePath() const -> std::string const& { return mSourcePath; }
 		auto getIncludePaths() const -> std::vector<std::string> const& { return mIncludePaths; }
 		auto getSystemIncludePaths() const -> std::vector<std::string> const& { return mSystemIncludePaths; }
 		auto getDependencies() const -> std::vector<Project const*> const& { return mDependencies; }

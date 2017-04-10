@@ -43,20 +43,16 @@ public:
 	void linkSharedLibrary(Project const* _project);
 	void linkPlugin(Project const* _project);
 private:
-	void linkSharedLibraryImpl(Project const* _project, std::string const& outputFile);
 	void compile(Project const* _project, std::string const& _file, Toolchain::Command const& command);
 	bool checkNeedsRecompile(std::string const& _file, std::string const& outputFile);
-	void insertProjectAndFile(Project const* _project, std::string const& _file);
+	void markProjectAndFileAsRecompiled(Project const* _project, std::string const& _file);
 	auto generateDefines(Project const* _project) -> std::vector<std::string>;
 	auto generateIncludes(Project const* _project) -> std::vector<std::string>;
-	void compile(std::vector<std::string> const& _options, std::string const& _file);
-	void printError(std::vector<std::string> const& _options, process::Process const& _proc);
 
 	auto objectFilesForLinking(Project const* _project, std::string const& _buildPath) const -> std::vector<std::string>;
 
-	void printVerboseCmd(std::vector<std::string> const& _options);
 	bool runCmd(std::vector<std::string> const& _options);
-
+	void printError(std::vector<std::string> const& _options, process::Process const& _proc);
 };
 
 }
