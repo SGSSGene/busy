@@ -45,7 +45,16 @@ private:
 	int32_t     id;
 	bool        needToKnowAddress;
 public:
-	SerializerNodeInput(Serializer& _serializer, int32_t _id, bool _needToKnowAddress);
+	SerializerNodeInput() = delete;
+	SerializerNodeInput(SerializerNodeInput const& _other);
+
+	SerializerNodeInput(Serializer& _serializer, int32_t _id, bool _needToKnowAddress,std::string const& _str);
+
+	~SerializerNodeInput();
+
+	auto operator=(SerializerNodeInput const& _other) -> SerializerNodeInput& = delete;
+	auto operator=(SerializerNodeInput&& _other) -> SerializerNodeInput& = delete;
+
 
 	template<typename T>
 	SerializerDefault<T> operator%(T& t);
@@ -58,6 +67,8 @@ private:
 	std::vector<int> index;
 	int              startPoint;
 	bool             needToKnowAddress;
+
+	std::set<std::string> mAccessed;
 public:
 	SerializerNode(Serializer& _serializer, bool _needToKnowAddress);
 	~SerializerNode();
@@ -93,7 +104,7 @@ private:
 	int                  currentPosition { 0 };
 
 	int                  startPoint;
-	SerializerNodeInput  rootNode {*this, -1, true};
+	SerializerNodeInput  rootNode {*this, -1, true, ""};
 	struct KnownAddress {
 		void const* ptr;
 		int32_t     count;
@@ -115,6 +126,9 @@ private:
 	bool mNoPointers;
 
 public:
+	NodePath mCurrentPath;
+	std::map<std::string, std::map<std::string, std::vector<uint8_t>>> mUnusedFields;
+
 	Serializer(bool _noPointers = false) {
 		mNoPointers = _noPointers;
 		// serialize number which jumps directly to lookup table of string to int32
@@ -287,7 +301,7 @@ public:
 	}
 
 	template<typename T, typename std::enable_if<std::is_fundamental<T>::value>::type* = nullptr>
-	void serialize(std::vector<T>& _value, bool _needToKnowAddress) {
+	void serialize(std::vector<T> const& _value, bool _needToKnowAddress) {
 
 		if (_needToKnowAddress) {
 			addKnownAddress(&_value, 1, sizeof(std::vector<T>), getCurrentPosition(), typeid(std::vector<T>));
@@ -349,7 +363,7 @@ public:
 		}
 
 		SerializerAdapter adapter(*this, _needToKnowAddress);
-		Converter<T>::serialize(adapter, _value);
+		Converter<T>::template serialize(adapter, _value);
 
 	}
 };
@@ -412,11 +426,15 @@ void SerializerAdapter::serializeByIterCopy(Iter iter, Iter end) {
 }
 
 template <typename T>
-void read(std::vector<uint8_t> _data, T& _value, bool usenopointers=false) {
+void read(std::vector<uint8_t> _data, T& _value, bool usenopointers=false, std::map<std::string, std::map<std::string, std::vector<uint8_t>>>* _unusedFields = nullptr) {
 	// parse file in serializer
 	Deserializer serializer(std::move(_data), usenopointers);
 	serializer.getRootNode() % _value;
 	serializer.close();
+
+	if (_unusedFields != nullptr) {
+		*_unusedFields = serializer.mUnusedFields;
+	}
 }
 
 
@@ -439,9 +457,14 @@ void read(std::string const& _file, T& _value, bool usenopointers=false) {
 }
 
 template <typename T>
-auto write(T const& _value, bool usenopointers = false) -> std::vector<uint8_t> {
+auto write(T const& _value, bool usenopointers = false, std::map<std::string, std::map<std::string, std::vector<uint8_t>>> const* _unusedFields = nullptr) -> std::vector<uint8_t> {
 	// Serialize data
 	Serializer serializer(usenopointers);
+
+	if (_unusedFields != nullptr) {
+		serializer.mUnusedFields = *_unusedFields;
+	}
+
 	serializer.getRootNode() % const_cast<T&>(_value); // Ugly const cast, but we know that we are only reading
 	serializer.close();
 	return serializer.releaseData();

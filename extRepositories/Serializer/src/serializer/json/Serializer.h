@@ -60,12 +60,12 @@ public:
 	void setDefault(T2 const& t);
 
 	template<typename T2, typename std::enable_if<std::is_default_constructible<T2>::value
-	                                              and std::is_assignable<T2, T2>::value>::type* = nullptr>
+	                                              and std::is_assignable<T2&, T2>::value>::type* = nullptr>
 	void setDefault() {
 		*this or T2();
 	}
 	template<typename T2, typename std::enable_if<not std::is_default_constructible<T2>::value
-	                                              or not std::is_assignable<T2, T2>::value>::type* = nullptr>
+	                                              or not std::is_assignable<T2&, T2>::value>::type* = nullptr>
 	void setDefault() {
 	}
 

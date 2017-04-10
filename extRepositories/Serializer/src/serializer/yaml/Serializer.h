@@ -71,12 +71,12 @@ public:
 	void setDefault(T2 const& t);
 
 	template<typename T2, typename std::enable_if<std::is_default_constructible<T2>::value
-	                                              and std::is_assignable<T2, T2>::value>::type* = nullptr>
+	                                              and std::is_assignable<T2&, T2>::value>::type* = nullptr>
 	void setDefault() {
 		*this or T2();
 	}
 	template<typename T2, typename std::enable_if<not std::is_default_constructible<T2>::value
-	                                              or not std::is_assignable<T2, T2>::value>::type* = nullptr>
+	                                              or not std::is_assignable<T2&, T2>::value>::type* = nullptr>
 	void setDefault() {
 	}
 
@@ -145,7 +145,6 @@ struct SerializerAdapter {
 		       or std::is_same<NR, float>::value
 		       or std::is_same<NR, double>::value;
 	}
-
 };
 
 
@@ -169,6 +168,7 @@ class Serializer {
 
 	bool mNoDefault {false};
 
+	std::map<std::string, YAML::Node> mUnusedFields;
 public:
 	Serializer() {
 		//node //!TODO needs initialization?
@@ -179,6 +179,13 @@ public:
 	bool getNoDefault() const {
 		return mNoDefault;
 	}
+	void setUnusedFields(std::map<std::string, YAML::Node> _unusedFields) {
+		mUnusedFields = _unusedFields;
+	}
+	auto getUnusedFields() const -> std::map<std::string, YAML::Node> const& {
+		return mUnusedFields;
+	}
+
 	void close();
 
 	std::vector<uint8_t> getData() const {
@@ -461,9 +468,12 @@ void write(std::string const& _file, T& _value) {
 }
 
 template<typename T>
-std::string writeAsString(T& _value, bool noDefault = true) {
+std::string writeAsString(T& _value, std::map<std::string, YAML::Node> const* unusedFields = nullptr) {
 	// Serialize data
 	Serializer serializer;
+	if (unusedFields != nullptr) {
+		serializer.setUnusedFields(*unusedFields);
+	}
 	serializer.getRootNode() % _value;
 	serializer.close();
 
@@ -471,12 +481,15 @@ std::string writeAsString(T& _value, bool noDefault = true) {
 }
 
 template<typename T>
-void readFromString(std::string const& _str, T& _value) {
+void readFromString(std::string const& _str, T& _value, std::map<std::string, YAML::Node>* unusedFields = nullptr) {
 
 	// parse file in serializer
 	Deserializer serializer(_str);
 	serializer.getRootNode() % _value;
 	serializer.close();
+	if (unusedFields != nullptr) {
+		*unusedFields = serializer.getUnusedFields();
+	}
 }
 
 

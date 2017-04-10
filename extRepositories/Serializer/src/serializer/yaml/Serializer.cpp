@@ -18,6 +18,11 @@ SerializerNode::SerializerNode(Serializer& _serializer, YAML::Node& _node, NodeP
 	, node       ( _node )
 	, nodePath   { _nodePath }
 {
+	auto const& m = _serializer.getUnusedFields();
+	auto iter = m.find(to_string(_nodePath));
+	if (iter != m.end()) {
+		node = iter->second;
+	}
 }
 
 SerializerNode::~SerializerNode() {

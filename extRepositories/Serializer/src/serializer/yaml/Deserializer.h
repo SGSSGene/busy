@@ -52,6 +52,17 @@ T from_string(std::string const& _value) {
 
 using NodePath = std::vector<std::string>;
 
+inline auto to_string(NodePath const& _path) -> std::string {
+	if(_path.empty()) {
+		return "";
+	}
+	std::string retValue = _path[0];
+	for (size_t i(1); i < _path.size(); ++i) {
+		retValue += "." + _path[i];
+	}
+	return retValue;
+}
+
 class Deserializer;
 
 template<typename T>
@@ -129,10 +140,12 @@ private:
 
 	std::list<YAML::Node> _nodes;
 
+	std::set<std::string> mAccessed;
+
 public:
 	DeserializerNode(Deserializer& _serializer, YAML::Node& _node, bool _available, NodePath const& _nodePath);
 	~DeserializerNode();
-	DeserializerNodeInput operator[](std::string const& _str);
+	auto operator[](std::string const& _str) -> DeserializerNodeInput;
 };
 
 struct DeserializerAdapter {
@@ -151,7 +164,6 @@ struct DeserializerAdapter {
 	void deserializeByInsert(std::function<void(T& v)> _func);
 	template<typename Key, typename Value>
 	void deserializeMap(std::map<Key, Value>& _map);
-
 };
 
 
@@ -173,6 +185,7 @@ class Deserializer {
 	YAML::Node sharedObjectNode;
 	std::map<int32_t, std::shared_ptr<void>> idToShared;
 
+	std::map<std::string, YAML::Node> mUnusedFields;
 public:
 	Deserializer(std::vector<uint8_t> const& _data);
 	Deserializer(std::string const& _data);
@@ -275,6 +288,13 @@ public:
 		DeserializerAdapter adapter(*this, _node, _nodePath);
 		Converter<T>::deserialize(adapter, _value);
 
+	}
+
+	void addUnusedFields(std::string const& _path, YAML::Node const& _node) {
+		mUnusedFields[_path] = _node;
+	}
+	auto getUnusedFields() const -> std::map<std::string, YAML::Node> const& {
+		return mUnusedFields;
 	}
 
 };

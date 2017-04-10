@@ -8,6 +8,7 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <set>
 #include <type_traits>
 #include <vector>
 
@@ -18,6 +19,30 @@
 
 namespace serializer {
 namespace binary {
+
+using NodePath = std::vector<std::string>;
+
+inline auto to_string(NodePath const& _path) -> std::string {
+	if(_path.empty()) {
+		return "";
+	}
+	std::string retValue = _path[0];
+	for (size_t i(1); i < _path.size(); ++i) {
+		retValue += "." + _path[i];
+	}
+	return retValue;
+}
+
+inline auto to_string(NodePath const& _path, std::string const& _end) -> std::string {
+	std::string retValue;
+	for (auto const& s : _path) {
+		retValue += s + ".";
+	}
+	retValue += _end;
+	return retValue;
+}
+
+
 
 class Deserializer;
 
@@ -42,19 +67,20 @@ public:
 	~DeserializerDefault();
 
 	template<typename T2, typename std::enable_if<std::is_default_constructible<T2>::value
-	                                              and std::is_assignable<T2, T2>::value>::type* = nullptr>
+	                                              and std::is_assignable<T2&, T2>::value>::type* = nullptr>
 	void getDefault(T2& _value) const {
 		_value = T2();
 	}
 	template<typename T2, typename std::enable_if<not std::is_default_constructible<T2>::value
-	                                              or not std::is_assignable<T2, T2>::value>::type* = nullptr>
+	                                              or not std::is_assignable<T2&, T2>::value>::type* = nullptr>
 	void getDefault(T2& _value) const {
 		(void)_value;
-		throw std::runtime_error("trying to construct object without default constructor");
+		using std::to_string;
+		throw std::runtime_error("trying to construct object without default constructor: " + to_string(std::is_default_constructible<T2>::value) + " and " + to_string(std::is_assignable<T2&, T2>::value));
 	}
 
 
-	template<typename T2, typename std::enable_if<std::is_assignable<T2, T2>::value or std::is_pod<T2>::value>::type* = nullptr>
+	template<typename T2, typename std::enable_if<std::is_assignable<T2&, T2>::value or std::is_pod<T2>::value>::type* = nullptr>
 	void operator or(T2 const& t) {
 		if (not available) {
 			defaultValue = true;
@@ -62,7 +88,7 @@ public:
 		}
 	}
 
-	template<typename T2, typename std::enable_if<not std::is_assignable<T2, T2>::value and not std::is_pod<T2>::value>::type* = nullptr>
+	template<typename T2, typename std::enable_if<not std::is_assignable<T2&, T2>::value and not std::is_pod<T2>::value>::type* = nullptr>
 	void operator or(T2 const& t) {
 		(void)t;
 		throw std::runtime_error(std::string("trying to us \"or\" on a not copyable datatype: ") + typeid(T2).name());
@@ -76,12 +102,16 @@ private:
 	Deserializer& serializer;
 	bool          available;
 	bool          needToKnowAddress;
-public: DeserializerNodeInput(Deserializer& _serializer, bool _available, bool _needToKnowAddress)
-		: serializer ( _serializer )
-		, available  { _available}
-		, needToKnowAddress { _needToKnowAddress }
-	{
-	}
+public:
+	DeserializerNodeInput() = delete;
+	DeserializerNodeInput(DeserializerNodeInput const& _other);
+
+	DeserializerNodeInput(Deserializer& _serializer, bool _available, bool _needToKnowAddress, std::string const& _str);
+	~DeserializerNodeInput();
+
+	auto operator=(DeserializerNodeInput const& _other) -> DeserializerNodeInput& = delete;
+	auto operator=(DeserializerNodeInput&& _other) -> DeserializerNodeInput& = delete;
+
 
 	template<typename T>
 	DeserializerDefault<T> operator%(T& t);
@@ -94,6 +124,8 @@ private:
 	int32_t          startPoint;
 	int32_t          size;
 	bool             needToKnowAddress;
+
+	std::set<std::string> mAccessed;
 public:
 	DeserializerNode(Deserializer& _serializer, bool _available, bool _needToKnowAddress);
 	~DeserializerNode();
@@ -127,7 +159,7 @@ private:
 
 	bool useNoPointers;
 
-	DeserializerNodeInput rootNode { *this, true, true};
+	DeserializerNodeInput rootNode { *this, true, true, ""};
 
 	struct KnownAddress {
 		void const* ptr;
@@ -148,12 +180,15 @@ private:
 	std::map<int32_t, std::shared_ptr<void>> idToShared;
 
 public:
+	NodePath mCurrentPath;
+	std::map<std::string, std::map<std::string, std::vector<uint8_t>>> mUnusedFields;
+
 	Deserializer(std::vector<uint8_t> _data, bool usenopointers = false)
 		: buffer {std::move(_data)}
 		, useNoPointers {usenopointers}
 	{
 
-		intToString[-1] = "";// Special entry that indicates not found string
+		intToString[-1] = "";// Special entry that indicates no string found
 
 		int32_t size;
 		deserialize(size, false);
@@ -309,7 +344,7 @@ public:
 
 	template<typename T, typename std::enable_if<std::is_fundamental<T>::value>::type* = nullptr>
 	void deserialize(std::vector<T>& _value, bool _needToKnowAddress) {
-		int32_t size;
+		uint32_t size;
 		if (_needToKnowAddress) {
 			addKnownAddress(&_value, 1, sizeof(T), getCurrentPosition(), typeid(std::vector<T>));
 		}

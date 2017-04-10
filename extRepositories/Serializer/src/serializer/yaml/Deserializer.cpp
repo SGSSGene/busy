@@ -2,8 +2,6 @@
 
 #include <serializer/standardTypes.h>
 
-
-
 namespace serializer {
 namespace yaml {
 
@@ -16,11 +14,22 @@ DeserializerNode::DeserializerNode(Deserializer& _serializer, YAML::Node& _node,
 }
 
 DeserializerNode::~DeserializerNode() {
+	if (node.IsMap()) {
+		auto _node = YAML::Node(YAML::NodeType::Map);
+		for (auto const& n : node) {
+			if (mAccessed.count(n.first.as<std::string>()) == 0) {
+				_node[n.first.as<std::string>()] = n.second;
+			}
+		}
+		serializer.addUnusedFields(to_string(nodePath), _node);
+	}
 }
 
-DeserializerNodeInput DeserializerNode::operator[](std::string const& _str) {
+auto DeserializerNode::operator[](std::string const& _str) -> DeserializerNodeInput {
 	NodePath newNodePath = nodePath;
 	newNodePath.push_back(_str);
+
+	mAccessed.insert(_str);
 
 	if (not node.IsMap() or not node[_str].IsDefined()) {
 		return DeserializerNodeInput(serializer, node, false, newNodePath);
