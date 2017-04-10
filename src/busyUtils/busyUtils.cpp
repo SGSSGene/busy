@@ -334,6 +334,14 @@ namespace utils {
 		out.pop_back();
 		return out;
 	}
+	auto getEnv(std::string const& _env, std::string _default) -> std::string {
+		char const* ld = getenv(_env.c_str());
+		if (ld != nullptr) {
+			_default = ld;
+		}
+		return _default;
+	}
+
 
 
 

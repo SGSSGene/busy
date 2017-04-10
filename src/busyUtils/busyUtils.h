@@ -57,6 +57,7 @@ namespace utils {
 	bool validPackageName(std::string const& _str);
 
 	auto getDate() -> std::string;
+	auto getEnv(std::string const& _env, std::string _default="") -> std::string;
 
 
 	class AtomicWrite {

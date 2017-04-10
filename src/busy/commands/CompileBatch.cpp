@@ -17,6 +17,47 @@ namespace {
 		}
 		return depFiles;
 	}
+
+	template <typename T>
+	auto removeLastDuplicates(std::vector<T> const& vec) -> std::vector<T> {
+		std::vector<T> retList;
+		for (auto iter1 = vec.begin(); iter1 != vec.end(); ++iter1) {
+			bool found = false;
+			for (auto iter2 = iter1 +1; iter2 != vec.end(); ++iter2) {
+				if (*iter1 == *iter2) {
+					found = true;
+					break;
+				}
+			}
+			if (not found) {
+				retList.push_back(*iter1);
+			}
+		}
+		return retList;
+	}
+
+
+
+
+	auto substitute(std::vector<std::string> const& _options, std::map<std::string, std::vector<std::string>> const& _map) -> std::vector<std::string> {
+		std::vector<std::string> options;
+		for (auto const& o : _options) {
+			auto iter = _map.find(o);
+			if (iter != _map.end()) {
+				auto prefix = o.substr(0, o.find('%'));
+				for (auto const& o2 : iter->second) {
+					for (auto s : utils::explode(prefix+o2, " ")) {
+						options.push_back(s);
+					}
+				}
+			} else if (o.find("%") != std::string::npos) {
+				std::cerr << "\nignoring: " << o << std::endl;
+			} else {
+				options.push_back(o);
+			}
+		}
+		return options;
+	}
 }
 
 
@@ -34,15 +75,10 @@ void CompileBatch::linkStaticLibrary(Project const* _project) {
 	std::string outputFile = buildPath + "/" + _project->getFullName() + ".a";
 
 	// Check file dependencies
-	bool recompile = false;
 	{
 		std::lock_guard<std::mutex> lock(printMutex);
-		if (needsRecompile.count(_project) > 0) {
-			recompile = true;
-		} else if (not utils::fileExists(outputFile)) {
-			recompile = true;
-		}
-		if (not recompile) {
+		if (needsRecompile.count(_project) == 0
+		    && utils::fileExists(outputFile)) {
 			return;
 		}
 
@@ -50,36 +86,15 @@ void CompileBatch::linkStaticLibrary(Project const* _project) {
 		needsRecompile.insert(_project);
 	}
 
-	std::vector<std::string> options;
-	options.push_back(toolchain->archivist.searchPaths.back());
-	for (auto const& o : toolchain->archivist.flags) {
-		options.push_back(o);
-	}
+	auto const& _command = toolchain->archivist;
+	std::map<std::string, std::vector<std::string>> subMap;
+	subMap["%compiler%"]       = {_command.searchPaths.back()};
+	subMap["%objfiles%"]       = objectFilesForLinking(_project, buildPath);
+	subMap["%outfile%"]        = {outputFile};
+	auto options = substitute(_command.call, subMap);
 
-	options.push_back(buildPath + "/" + _project->getFullName() + ".a");
 
-	for (auto file : objectFilesForLinking(_project, buildPath)) {
-		options.push_back(file);
-	}
-
-	for (auto const& p : toolchain->archivist.flags2) {
-		options.push_back(p);
-	}
-
-	if (verbose) {
-		std::lock_guard<std::mutex> lock(printMutex);
-		std::cout << std::endl;
-		for (auto const& o : options) {
-			std::cout << o << " ";
-		}
-		std::cout << std::endl;
-	}
-
-	process::Process proc(options);
-	bool compileError = proc.getStatus() != 0;
-	if (compileError) {
-		printError(options, proc);
-	}
+	runCmd(options);
 }
 void CompileBatch::linkSharedLibrary(Project const* _project) {
 	std::string outputFile = outPath + "/lib" + _project->getName() + ".so";
@@ -90,25 +105,8 @@ void CompileBatch::linkPlugin(Project const* _project) {
 	linkSharedLibraryImpl(_project, outputFile);
 }
 
-template <typename T>
-auto removeLastDuplicates(std::vector<T> const& vec) -> std::vector<T> {
-	std::vector<T> retList;
-	for (auto iter1 = vec.begin(); iter1 != vec.end(); ++iter1) {
-		bool found = false;
-		for (auto iter2 = iter1 +1; iter2 != vec.end(); ++iter2) {
-			if (*iter1 == *iter2) {
-				found = true;
-				break;
-			}
-		}
-		if (not found) {
-			retList.push_back(*iter1);
-		}
-	}
-	return retList;
-}
-
 void CompileBatch::linkSharedLibraryImpl(Project const* _project, std::string const& outputFile) {
+	throw std::runtime_error("not implemented");
 	//std::string outputFile = buildPath + "/" + _project->getFullName("lib") + ".so";
 	//std::string outputFile = outPath + "/lib" + _project->getName() + ".so";
 
@@ -135,9 +133,9 @@ void CompileBatch::linkSharedLibraryImpl(Project const* _project, std::string co
 	}
 
 
-	std::vector<std::string> options;
+/*	std::vector<std::string> options;
 	options.push_back(toolchain->linkExecutable.searchPaths.back());
-	for (auto const& o : toolchain->linkExecutable.flags) {
+	for (auto const& o : toolchain->linkExecutable.call) {
 		options.push_back(o);
 	}
 	//!TODO shouldnt be default argument
@@ -155,7 +153,19 @@ void CompileBatch::linkSharedLibraryImpl(Project const* _project, std::string co
 
 	for (auto file : objectFilesForLinking(_project, buildPath)) {
 		options.push_back(file);
-	}
+	}*/
+
+	auto const& _command = toolchain->linkExecutable;
+	std::map<std::string, std::vector<std::string>> subMap;
+	subMap["%compiler%"]       = {_command.searchPaths.back()};
+	subMap["%infiles%"]        = objectFilesForLinking(_project, buildPath);
+	subMap["%outfile%"]        = {outputFile};
+	subMap["-fuse-ld=%ld%"]    = {utils::getEnv("BUSY_LD", "")};
+
+	auto options = substitute(_command.call, subMap);
+	options.push_back("-shared");
+
+
 
 	// add static libraries
 	for (auto project : _project->getDependenciesRecursiveOnlyStaticNotOverShared(ignoreProjects)) {
@@ -223,14 +233,7 @@ void CompileBatch::linkSharedLibraryImpl(Project const* _project, std::string co
 		options.push_back(s);
 	}
 
-	printVerboseCmd(options);
-
-	process::Process proc(options);
-
-	bool compileError = proc.getStatus() != 0;
-	if (compileError) {
-		printError(options, proc);
-	}
+	runCmd(options);
 }
 
 void CompileBatch::linkExecutable(Project const* _project) {
@@ -251,7 +254,6 @@ void CompileBatch::linkExecutable(Project const* _project) {
 			recompile = true;
 		}
 		for (auto _p : _project->getDependenciesRecursiveOnlyStaticNotOverShared(ignoreProjects)) {
-//		for (auto _p : _project->getDependenciesRecursive(ignoreProjects)) {
 			if (needsRecompile.count(_p) > 0) {
 				recompile = true;
 				break;
@@ -262,40 +264,21 @@ void CompileBatch::linkExecutable(Project const* _project) {
 		}
 	}
 
-
-	std::vector<std::string> options;
-	options.push_back(toolchain->linkExecutable.searchPaths.back());
-	for (auto const& o : toolchain->linkExecutable.flags) {
-		options.push_back(o);
-	}
-
-	//!TODO shouldnt be default argument
-	char const* ld = getenv("BUSY_LD");
-	if (ld != nullptr) {
-		options.push_back(std::string("-fuse-ld=") + ld);
-	}
-
-	//!ENDTODO
-	options.push_back("-o");
-	options.push_back(outputFile);
-
-	for (auto file : objectFilesForLinking(_project, buildPath)) {
-		options.push_back(file);
-	}
-
 	// add static libraries
+	std::vector<std::string> staticFiles;
 	for (auto project : _project->getDependenciesRecursiveOnlyStaticNotOverShared(ignoreProjects)) {
 		if (project->getIsHeaderOnly()) continue;
 
 		if (project->getWholeArchive()) {
-			options.push_back("-Wl,--whole-archive");
+			staticFiles.push_back("-Wl,--whole-archive");
 		}
-		options.push_back(buildPath + "/" + project->getFullName() + ".a");
+		staticFiles.push_back(buildPath + "/" + project->getFullName() + ".a");
 		if (project->getWholeArchive()) {
-			options.push_back("-Wl,--no-whole-archive");
+			staticFiles.push_back("-Wl,--no-whole-archive");
 		}
 	}
 
+	// generate library and library paths
 	std::vector<std::string> systemLibraries;
 	std::vector<std::string> systemLibrariesPaths;
 	// add shared libraries
@@ -305,61 +288,42 @@ void CompileBatch::linkExecutable(Project const* _project) {
 		std::string fullPath = outPath + "/";
 
 		systemLibrariesPaths.push_back(fullPath);
-		systemLibraries.push_back("-l"+project->getName());
-	}
-
-	for (auto const& r : mRPaths) {
-		options.push_back("-Wl,-rpath");
-		options.push_back(r);
+		systemLibraries.push_back(project->getName());
 	}
 
 	for (auto dep : _project->getSystemLibraries()) {
-		systemLibraries.push_back("-l"+dep);
+		systemLibraries.push_back(dep);
 	}
-	//for (auto project : _project->getDependenciesRecursiveOnlyStaticNotOverShared(ignoreProjects)) {
 	for (auto project : _project->getDependenciesRecursive()) {
 		for (auto dep : project->getSystemLibraries()) {
-			systemLibraries.push_back("-l"+dep);
+			systemLibraries.push_back(dep);
 		}
-	}
-/*	for (auto project : _project->getDependenciesRecursiveOnlyShared(ignoreProjects)) {
-		for (auto dep : project->getSystemLibraries()) {
-			options.push_back("-l"+dep);
-		}
-	}*/
-	for (auto const& p : toolchain->cppCompiler.flags2) {
-		options.push_back(p);
-	}
-	for (auto linking : _project->getLinkingOptionsRecursive()) {
-		options.push_back(linking);
 	}
 
 	for (auto project : _project->getDependenciesRecursive()) {
-//	for (auto project : _project->getDependenciesRecursiveOnlyStatic(ignoreProjects)) {
 		for (auto linking : project->getSystemLibrariesPaths()) {
 			systemLibrariesPaths.push_back(linking);
 		}
 	}
 
 	systemLibrariesPaths = removeLastDuplicates(systemLibrariesPaths);
-	for (auto const& s : systemLibrariesPaths) {
-		options.push_back("-L");
-		options.push_back(s);
-	}
+	systemLibraries      = removeLastDuplicates(systemLibraries);
 
-	systemLibraries = removeLastDuplicates(systemLibraries);
-	for (auto const& s : systemLibraries) {
-		options.push_back(s);
-	}
+	auto const& _command = toolchain->linkExecutable;
+	std::map<std::string, std::vector<std::string>> subMap;
+	subMap["%compiler%"]          = {_command.searchPaths.back()};
+	subMap["%outfile%"]           = {outputFile};
+	subMap["%objfiles%"]          = objectFilesForLinking(_project, buildPath);
+	subMap["%afiles%"]            = staticFiles;
+	subMap["-fuse-ld=%ld%"]       = {utils::getEnv("BUSY_LD", "")};
+	subMap["-Wl,-rpath %rpaths%"] = mRPaths;
+	subMap["%legacyLinking%"]     = _project->getLinkingOptionsRecursive();
+	subMap["-L%libPaths%"]        = systemLibrariesPaths;
+	subMap["-l%libs%"]            = systemLibraries;
 
-	printVerboseCmd(options);
+	auto options = substitute(_command.call, subMap);
 
-	process::Process proc(options);
-
-	bool compileError = proc.getStatus() != 0;
-	if (compileError) {
-		printError(options, proc);
-	}
+	runCmd(options);
 }
 
 void CompileBatch::compile(Project const* _project, std::string const& _file, Toolchain::Command const& _command) {
@@ -374,49 +338,27 @@ void CompileBatch::compile(Project const* _project, std::string const& _file, To
 	}
 
 	// generating buildModeFlags
-	std::vector<std::string> buildModeFlags;
-	auto iter = _command.buildModeFlags.find(buildModeName);
-	if (iter != _command.buildModeFlags.end()) {
-		buildModeFlags = iter->second;
-	}
+	auto flags          = _command.buildModeFlags;
+	auto buildModeFlags = flags[buildModeName];
 
 	// generate general flags
-	std::vector<std::string> options;
-	options.push_back(_command.searchPaths.back());
-	if (_project->getWarningsAsErrors()) {
-		for (auto const& o :_command.strict) {
-			options.push_back(o);
-		}
-	}
-	for (auto const& o : _command.flags) {
-		if (o == "%infile%") {
-			options.push_back(_file);
-		} else if (o == "%outfile%") {
-			options.push_back(outputFile);
-		} else if (o == "%buildModeFlags%") {
-			for (auto const& f : buildModeFlags) {
-				options.push_back(f);
-			}
-		} else {
-			options.push_back(o);
-		}
-	}
+	auto strict = _project->getWarningsAsErrors()?_command.strict:std::vector<std::string>{};
 
+	std::map<std::string, std::vector<std::string>> subMap;
+	subMap["%compiler%"]       = {_command.searchPaths.back()};
+	subMap["%infile%"]         = {_file};
+	subMap["%outfile%"]        = {outputFile};
+	subMap["%buildModeFlags%"] = buildModeFlags;
+	subMap["%strict%"]         = strict;
+	subMap["%genDefines%"]     = generateDefines(_project);
+	subMap["%genIncludes%"]    = generateIncludes(_project);
+	auto options = substitute(_command.call, subMap);
+
+	compile(options, _file);
 
 	// marking _file as recompiled and mark _project to be recompiled
 	insertProjectAndFile(_project, _file);
-
-	for (auto& d : generateDefines(_project)) {
-		options.emplace_back(std::move(d));
-	}
-	for (auto& i : generateIncludes(_project)) {
-		options.emplace_back(std::move(i));
-	}
-	compile(options, _file);
 }
-
-
-
 
 bool CompileBatch::checkNeedsRecompile(std::string const& _file, std::string const& outputFile) {
 
@@ -484,15 +426,8 @@ auto CompileBatch::generateIncludes(Project const* _project) -> std::vector<std:
 }
 
 void CompileBatch::compile(std::vector<std::string> const& _options, std::string const& _file) {
-	printVerboseCmd(_options);
-
-	// run actuall command and do dependency file conversion
-	process::Process proc(_options);
-	bool compileError = proc.getStatus() != 0;
-	if (not compileError) {
+	if (runCmd(_options)) {
 		utils::convertDFileToDDFile(buildPath + "/" + _file + ".d", buildPath + "/" + _file + ".dd");
-	} else {
-		printError(_options, proc);
 	}
 }
 void CompileBatch::printError(std::vector<std::string> const& _options, process::Process const& _proc) {
@@ -534,7 +469,17 @@ void CompileBatch::printVerboseCmd(std::vector<std::string> const& _options) {
 		}
 		std::cout << std::endl;
 	}
+}
+bool CompileBatch::runCmd(std::vector<std::string> const& _options) {
+	printVerboseCmd(_options);
 
+	process::Process proc(_options);
+	bool compileError = proc.getStatus() != 0;
+	if (compileError) {
+		printError(_options, proc);
+		return false;
+	}
+	return true;
 }
 
 }

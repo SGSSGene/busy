@@ -16,7 +16,7 @@ namespace busyConfig {
 
 			std::vector<std::string> searchPaths;
 			std::vector<std::string> strict;
-			std::vector<std::string> flags;
+			std::vector<std::string> call;
 			std::vector<std::string> flags2;
 			BuildModes               buildModeFlags;
 
@@ -24,8 +24,7 @@ namespace busyConfig {
 			void serialize(Node& node) {
 				node["searchPaths"]    % searchPaths;
 				node["strict"]         % strict;
-				node["flags"]          % flags;
-				node["flags2"]         % flags2;
+				node["call"]           % call;
 				node["buildModeFlags"] % buildModeFlags;
 			}
 		};

@@ -55,6 +55,7 @@ private:
 	auto objectFilesForLinking(Project const* _project, std::string const& _buildPath) const -> std::vector<std::string>;
 
 	void printVerboseCmd(std::vector<std::string> const& _options);
+	bool runCmd(std::vector<std::string> const& _options);
 
 };
 

@@ -416,6 +416,7 @@ void Workspace::discoverSystemToolchains() {
 				// Check version
 				try {
 					auto _d = utils::explode(configToolchain.version, "-");
+					if (_d.size() != 2) continue;
 					auto type = _d.at(0);
 					auto version = _d.at(1);
 
