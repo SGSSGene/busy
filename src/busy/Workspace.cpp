@@ -205,7 +205,7 @@ auto Workspace::getSelectedToolchain() const -> std::string {
 	auto toolchains = getToolchains();
 	auto iter = toolchains.find(value);
 	if (iter == toolchains.end()) {
-		return "system-gcc";
+		return "fallback-gcc";
 	}
 	return iter->first;
 }
@@ -389,15 +389,15 @@ auto retrieveClangVersion(std::vector<std::string> const& _command) -> std::stri
 
 void Workspace::discoverSystemToolchains() {
 	// setup toolchains plus fallback toolchain
-	std::map<std::string, std::pair<std::string, Toolchain>> searchPaths {
-	     {"/usr/bin/gcc",       {"system-gcc", {"", false,
+	std::map<std::string, std::pair<std::string, Toolchain>> searchPaths;/* {
+	     {"/usr/bin/gcc",       {"fallback-gcc", {"",
 	                                             {{"gcc", "-std=c11",   "-Wall", "-Wextra", "-fmessage-length=0", "-fPIC", "-rdynamic", "-MD"}, {}},
 	                                             {{"g++", "-std=c++11", "-Wall", "-Wextra", "-fmessage-length=0", "-fPIC", "-rdynamic", "-MD"}, {}},
 	                                             {{"ar"}, {}}
 	                                            }
 	                            }
 	     }
-	};
+	};*/
 	for (auto const& p : searchPaths) {
 		mSystemToolchains[p.second.first] = p.second.second;
 	}
@@ -415,15 +415,18 @@ void Workspace::discoverSystemToolchains() {
 			for (auto configToolchain : package.toolchains) {
 				// Check version
 				try {
-					auto version     = configToolchain.version;
-					if (configToolchain.type == "gcc") {
-						auto realVersion = retrieveGccVersion(configToolchain.cCompiler.command);
+					auto _d = utils::explode(configToolchain.version, "-");
+					auto type = _d.at(0);
+					auto version = _d.at(1);
+
+					if (type == "gcc") {
+						auto realVersion = retrieveGccVersion(configToolchain.cCompiler.searchPaths);
 						if (realVersion != version) continue;
-					} else if (configToolchain.type == "clang") {
-						auto realVersion = retrieveClangVersion(configToolchain.cCompiler.command);
+					} else if (type == "clang") {
+						auto realVersion = retrieveClangVersion(configToolchain.cCompiler.searchPaths);
 						if (realVersion != version) continue;
 					} else {
-						std::cerr << "unknown toolchain type: " + configToolchain.type << std::endl;
+						std::cerr << "unknown toolchain type: " + type << std::endl;
 					}
 					mSystemToolchains[configToolchain.name] = configToolchain;
 				} catch (...) {}

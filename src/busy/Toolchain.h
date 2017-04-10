@@ -8,25 +8,20 @@
 namespace busy {
 
 struct Toolchain {
-	struct Command {
-		std::vector<std::string> command;
-		std::vector<std::string> postOptions;
-	};
+	using Command = busyConfig::Toolchain::Command;
 
 	std::string version;
 	Command cCompiler;
 	Command cppCompiler;
+	Command linkExecutable;
 	Command archivist;
 
 	auto operator=(Toolchain const&) -> Toolchain& = default;
 	auto operator=(busyConfig::Toolchain const& _other) -> Toolchain {
-		version                 = _other.version;
-		cCompiler.command       = _other.cCompiler.command;
-		cCompiler.postOptions   = _other.cCompiler.postOptions;
-		cppCompiler.command     = _other.cppCompiler.command;
-		cppCompiler.postOptions = _other.cppCompiler.postOptions;
-		archivist.command       = _other.archivist.command;
-		archivist.postOptions   = _other.archivist.postOptions;
+		cCompiler      = _other.cCompiler;
+		cppCompiler    = _other.cppCompiler;
+		linkExecutable = _other.linkExecutable;
+		archivist      = _other.archivist;
 
 		return *this;
 	}

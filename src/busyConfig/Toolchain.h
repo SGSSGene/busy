@@ -1,5 +1,6 @@
 #pragma once
 
+#include <map>
 #include <string>
 #include <vector>
 
@@ -7,36 +8,41 @@ namespace busyConfig {
 
 	struct Toolchain {
 		std::string name;
-		std::string type;
 		std::string version;
 
 		struct Command {
-			std::vector<std::string> command;
-			std::vector<std::string> postOptions;
+			using Flags = std::vector<std::string>;
+			using BuildModes = std::map<std::string, Flags>;
+
+			std::vector<std::string> searchPaths;
+			std::vector<std::string> strict;
+			std::vector<std::string> flags;
+			std::vector<std::string> flags2;
+			BuildModes               buildModeFlags;
 
 			template <typename Node>
 			void serialize(Node& node) {
-				node["command"]     % command;
-				node["postOptions"] % postOptions;
+				node["searchPaths"]    % searchPaths;
+				node["strict"]         % strict;
+				node["flags"]          % flags;
+				node["flags2"]         % flags2;
+				node["buildModeFlags"] % buildModeFlags;
 			}
 		};
 
-
 		Command cCompiler;
 		Command cppCompiler;
+		Command linkExecutable;
 		Command archivist;
-		std::vector<std::string> installations;
-
 
 		template <typename Node>
 		void serialize(Node& node) {
-			node["name"]          % name;
-			node["type"]          % type;
-			node["version"]       % version or std::string("unknown");
-			node["ccompiler"]     % cCompiler;
-			node["cppcompiler"]   % cppCompiler;
-			node["archivist"]     % archivist;
-			node["installations"] % installations;
+			node["name"]           % name;
+			node["version"]        % version;
+			node["ccompiler"]      % cCompiler;
+			node["cppcompiler"]    % cppCompiler;
+			node["linkExecutable"] % linkExecutable;
+			node["archivist"]      % archivist;
 		}
 
 	};

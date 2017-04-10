@@ -29,3 +29,28 @@ flavors:
     toolchain: system-gcc
     linkAsShared:
       - busyVersion
+toolchains:
+  - name: gcc-6.3-c++14
+    version: gcc-6.3
+    ccompiler:
+      searchPaths: [/usr/bin/gcc-6.3, /usr/bin/gcc]
+      strict:      [-Werror]
+      flags:       [-std=c11, -Wall, -Wextra, -fdiagnostics-color=always, -fPIC, -fmax-errors=3, -MD, -c, "%infile%", -o, "%outfile%", "%buildModeFlags%"]
+      buildModeFlags:
+        release: [-O2]
+        release_with_symbols: [-O2, -g3]
+        debug:   [-O0, -g3]
+    cppcompiler:
+      searchPaths: [/usr/bin/g++-6.3, /usr/bin/g++]
+      strict:      [-Werror]
+      flags:       [-std=c++14, -Wall, -Wextra, -fdiagnostics-color=always, -fPIC, -fmax-errors=3, -MD, -c, "%infile%", -o, "%outfile%", "%buildModeFlags%"]
+      buildModeFlags:
+        release: [-O2]
+        release_with_symbols: [-O2, -g3]
+        debug:   [-O0, -g3]
+    linkExecutable:
+      searchPaths: [/usr/bin/g++-6.3, /usr/bin/g++]
+      flags:       [-rdynamic]
+    archivist:
+      searchPaths: [/usr/bin/ar]
+      flags:       [rcs]

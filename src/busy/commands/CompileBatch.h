@@ -44,10 +44,9 @@ public:
 	void linkPlugin(Project const* _project);
 private:
 	void linkSharedLibraryImpl(Project const* _project, std::string const& outputFile);
-	void compile(Project const* _project, std::string const& _file, std::vector<std::string> _options);
+	void compile(Project const* _project, std::string const& _file, Toolchain::Command const& command);
 	bool checkNeedsRecompile(std::string const& _file, std::string const& outputFile);
 	void insertProjectAndFile(Project const* _project, std::string const& _file);
-	auto generateFlags(Project const* _project, std::string const& _file, std::string const& outputFile) -> std::vector<std::string>;
 	auto generateDefines(Project const* _project) -> std::vector<std::string>;
 	auto generateIncludes(Project const* _project) -> std::vector<std::string>;
 	void compile(std::vector<std::string> const& _options, std::string const& _file);

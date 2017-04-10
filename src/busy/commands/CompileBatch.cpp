@@ -24,11 +24,11 @@ namespace busy {
 namespace commands {
 
 void CompileBatch::compileCpp(Project const* _project, std::string const& _file) {
-	compile(_project, _file, toolchain->cppCompiler.command);
+	compile(_project, _file, toolchain->cppCompiler);
 }
 
 void CompileBatch::compileC(Project const* _project, std::string const& _file) {
-	compile(_project, _file, toolchain->cCompiler.command);
+	compile(_project, _file, toolchain->cCompiler);
 }
 void CompileBatch::linkStaticLibrary(Project const* _project) {
 	std::string outputFile = buildPath + "/" + _project->getFullName() + ".a";
@@ -50,8 +50,11 @@ void CompileBatch::linkStaticLibrary(Project const* _project) {
 		needsRecompile.insert(_project);
 	}
 
-	std::vector<std::string> options = toolchain->archivist.command;
-	options.push_back("rcs");
+	std::vector<std::string> options;
+	options.push_back(toolchain->archivist.searchPaths.back());
+	for (auto const& o : toolchain->archivist.flags) {
+		options.push_back(o);
+	}
 
 	options.push_back(buildPath + "/" + _project->getFullName() + ".a");
 
@@ -59,7 +62,7 @@ void CompileBatch::linkStaticLibrary(Project const* _project) {
 		options.push_back(file);
 	}
 
-	for (auto const& p : toolchain->archivist.postOptions) {
+	for (auto const& p : toolchain->archivist.flags2) {
 		options.push_back(p);
 	}
 
@@ -132,7 +135,11 @@ void CompileBatch::linkSharedLibraryImpl(Project const* _project, std::string co
 	}
 
 
-	std::vector<std::string> options = toolchain->cppCompiler.command;
+	std::vector<std::string> options;
+	options.push_back(toolchain->linkExecutable.searchPaths.back());
+	for (auto const& o : toolchain->linkExecutable.flags) {
+		options.push_back(o);
+	}
 	//!TODO shouldnt be default argument
 //	std::cout << "linking shared: " << outputFile << "\n";
 	options.push_back("-shared");
@@ -193,7 +200,7 @@ void CompileBatch::linkSharedLibraryImpl(Project const* _project, std::string co
 		}
 	}*/
 
-	for (auto const& p : toolchain->cppCompiler.postOptions) {
+	for (auto const& p : toolchain->cppCompiler.flags2) {
 		options.push_back(p);
 	}
 	for (auto linking : _project->getLinkingOptionsRecursive()) {
@@ -208,8 +215,7 @@ void CompileBatch::linkSharedLibraryImpl(Project const* _project, std::string co
 
 	systemLibrariesPaths = removeLastDuplicates(systemLibrariesPaths);
 	for (auto const& s : systemLibrariesPaths) {
-		options.push_back("-L");
-		options.push_back(s);
+		options.push_back("-L"+s);
 	}
 
 	systemLibraries = removeLastDuplicates(systemLibraries);
@@ -257,7 +263,12 @@ void CompileBatch::linkExecutable(Project const* _project) {
 	}
 
 
-	std::vector<std::string> options = toolchain->cppCompiler.command;
+	std::vector<std::string> options;
+	options.push_back(toolchain->linkExecutable.searchPaths.back());
+	for (auto const& o : toolchain->linkExecutable.flags) {
+		options.push_back(o);
+	}
+
 	//!TODO shouldnt be default argument
 	char const* ld = getenv("BUSY_LD");
 	if (ld != nullptr) {
@@ -316,7 +327,7 @@ void CompileBatch::linkExecutable(Project const* _project) {
 			options.push_back("-l"+dep);
 		}
 	}*/
-	for (auto const& p : toolchain->cppCompiler.postOptions) {
+	for (auto const& p : toolchain->cppCompiler.flags2) {
 		options.push_back(p);
 	}
 	for (auto linking : _project->getLinkingOptionsRecursive()) {
@@ -351,7 +362,7 @@ void CompileBatch::linkExecutable(Project const* _project) {
 	}
 }
 
-void CompileBatch::compile(Project const* _project, std::string const& _file, std::vector<std::string> _options) {
+void CompileBatch::compile(Project const* _project, std::string const& _file, Toolchain::Command const& _command) {
 	if (errorDetected) return;
 	if (_project->getIsSingleFileProjects()) return;
 
@@ -362,23 +373,46 @@ void CompileBatch::compile(Project const* _project, std::string const& _file, st
 		return;
 	}
 
-	if (_project->getWarningsAsErrors()) {
-		_options.push_back("-Werror");
+	// generating buildModeFlags
+	std::vector<std::string> buildModeFlags;
+	auto iter = _command.buildModeFlags.find(buildModeName);
+	if (iter != _command.buildModeFlags.end()) {
+		buildModeFlags = iter->second;
 	}
+
+	// generate general flags
+	std::vector<std::string> options;
+	options.push_back(_command.searchPaths.back());
+	if (_project->getWarningsAsErrors()) {
+		for (auto const& o :_command.strict) {
+			options.push_back(o);
+		}
+	}
+	for (auto const& o : _command.flags) {
+		if (o == "%infile%") {
+			options.push_back(_file);
+		} else if (o == "%outfile%") {
+			options.push_back(outputFile);
+		} else if (o == "%buildModeFlags%") {
+			for (auto const& f : buildModeFlags) {
+				options.push_back(f);
+			}
+		} else {
+			options.push_back(o);
+		}
+	}
+
 
 	// marking _file as recompiled and mark _project to be recompiled
 	insertProjectAndFile(_project, _file);
 
-	for (auto& o : generateFlags(_project, _file, outputFile)) {
-		_options.push_back(o);
-	}
 	for (auto& d : generateDefines(_project)) {
-		_options.emplace_back(std::move(d));
+		options.emplace_back(std::move(d));
 	}
 	for (auto& i : generateIncludes(_project)) {
-		_options.emplace_back(std::move(i));
+		options.emplace_back(std::move(i));
 	}
-	compile(_options, _file);
+	compile(options, _file);
 }
 
 
@@ -415,33 +449,10 @@ void CompileBatch::insertProjectAndFile(Project const* _project, std::string con
 }
 
 
-auto CompileBatch::generateFlags(Project const*, std::string const& _file, std::string const& outputFile) -> std::vector<std::string> {
-	std::vector<std::string> options;
-
-	//!TODO shouldnt be default argument
-	options.push_back("-c");
-	options.push_back(_file);
-	options.push_back("-o");
-	options.push_back(outputFile);
-	if (buildModeName == "release") {
-		options.push_back("-O3");
-	} else if (buildModeName == "release_with_symbols") {
-		options.push_back("-O3");
-		options.push_back("-g3");
-	} else if (buildModeName == "debug") {
-		options.push_back("-g3");
-		options.push_back("-O0");
-	}
-	//!ENDTODO
-	return options;
-}
-
-
 auto CompileBatch::generateDefines(Project const* _project) -> std::vector<std::string> {
 	std::vector<std::string> options;
 
-	options.push_back("-isystem");
-	options.push_back(".busy/helper-include");
+	options.push_back("-isystem.busy/helper-include");
 
 	options.push_back("-DBUSY=BUSY");
 	{
@@ -458,19 +469,16 @@ auto CompileBatch::generateDefines(Project const* _project) -> std::vector<std::
 auto CompileBatch::generateIncludes(Project const* _project) -> std::vector<std::string> {
 	std::vector<std::string> options;
 	for (auto path : _project->getIncludeAndDependendPaths()) {
-		options.push_back("-I");
-		options.push_back(path);
+		options.push_back("-I" + path);
 	}
 	for (auto path : _project->getSystemIncludeAndDependendPaths()) {
-		options.push_back("-isystem");
-		options.push_back(path);
+		options.push_back("-isystem" + path);
 	}
-	for (auto const& p : toolchain->cCompiler.postOptions) {
+	for (auto const& p : toolchain->cCompiler.flags2) {
 		options.push_back(p);
 	}
 	for (auto path : _project->getLegacySystemIncludeAndDependendPaths()) {
-		options.push_back("-isystem");
-		options.push_back(path);
+		options.push_back("-isystem" + path);
 	}
 	return options;
 }
