@@ -9,7 +9,6 @@ namespace busyConfig {
 		std::string name;
 		std::string type;
 		std::string version;
-		bool crossCompiler;
 
 		struct Command {
 			std::vector<std::string> command;
@@ -34,7 +33,6 @@ namespace busyConfig {
 			node["name"]          % name;
 			node["type"]          % type;
 			node["version"]       % version or std::string("unknown");
-			node["crossCompiler"] % crossCompiler or false;
 			node["ccompiler"]     % cCompiler;
 			node["cppcompiler"]   % cppCompiler;
 			node["archivist"]     % archivist;

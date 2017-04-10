@@ -14,7 +14,6 @@ struct Toolchain {
 	};
 
 	std::string version;
-	bool        crossCompiler;
 	Command cCompiler;
 	Command cppCompiler;
 	Command archivist;
@@ -22,7 +21,6 @@ struct Toolchain {
 	auto operator=(Toolchain const&) -> Toolchain& = default;
 	auto operator=(busyConfig::Toolchain const& _other) -> Toolchain {
 		version                 = _other.version;
-		crossCompiler           = _other.crossCompiler;
 		cCompiler.command       = _other.cCompiler.command;
 		cCompiler.postOptions   = _other.cCompiler.postOptions;
 		cppCompiler.command     = _other.cppCompiler.command;
@@ -37,9 +35,6 @@ struct Toolchain {
 		std::vector<std::string> infos;
 		if (version != "") {
 			infos.push_back(version);
-		}
-		if (crossCompiler) {
-			infos.push_back("cross compiler");
 		}
 		if (infos.empty()) return "";
 		if (infos.size() == 1) return infos.front();
