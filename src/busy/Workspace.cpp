@@ -389,15 +389,32 @@ auto retrieveClangVersion(std::vector<std::string> const& _command) -> std::stri
 
 void Workspace::discoverSystemToolchains() {
 	// setup toolchains plus fallback toolchain
-	std::map<std::string, std::pair<std::string, Toolchain>> searchPaths;/* {
-	     {"/usr/bin/gcc",       {"fallback-gcc", {"",
-	                                             {{"gcc", "-std=c11",   "-Wall", "-Wextra", "-fmessage-length=0", "-fPIC", "-rdynamic", "-MD"}, {}},
-	                                             {{"g++", "-std=c++11", "-Wall", "-Wextra", "-fmessage-length=0", "-fPIC", "-rdynamic", "-MD"}, {}},
-	                                             {{"ar"}, {}}
-	                                            }
-	                            }
-	     }
-	};*/
+	std::map<std::string, std::pair<std::string, Toolchain>> searchPaths;
+	{
+		auto& pair = searchPaths["/usr/bin/gcc"];
+		pair.first = "fallback-gcc";
+		auto& tc = pair.second;
+		tc.cCompiler.searchPaths = {"gcc"};
+		tc.cCompiler.strict      = {"-Werror"};
+		tc.cCompiler.call        = {"%compiler%", "%strict%", "-std=c11", "-fPIC", "-MD", "-c", "%infile%", "-o", "%outfile%", "%buildModeFlags%", "%genDefines%", "%genIncludes%"};
+		tc.cCompiler.buildModeFlags["release"] = {};
+		tc.cCompiler.buildModeFlags["release_with_symbols"] = {};
+		tc.cCompiler.buildModeFlags["debug"] = {};
+		tc.cppCompiler.searchPaths = {"g++"};
+		tc.cppCompiler.strict      = {"-Werror"};
+		tc.cppCompiler.call        = {"%compiler%", "%strict%", "-std=c++14", "-fPIC", "-MD", "-c", "%infile%", "-o", "%outfile%", "%buildModeFlags%", "%genDefines%", "%genIncludes%"};
+		tc.cppCompiler.buildModeFlags["release"] = {};
+		tc.cppCompiler.buildModeFlags["release_with_symbols"] = {};
+		tc.cppCompiler.buildModeFlags["debug"] = {};
+		tc.linkExecutable.searchPaths = {"g++"};
+		tc.linkExecutable.strict      = {"-Werror"};
+		tc.linkExecutable.call        = {"%compiler%", "-rdynamic", "-o", "%outfile%", "%objfiles%", "%afiles%", "-Wl,-rpath %rpaths%", "-l%libs%", "-L%libPaths%", "%legacyLinking%"};
+		tc.linkExecutable.buildModeFlags["release"] = {};
+		tc.linkExecutable.buildModeFlags["release_with_symbols"] = {};
+		tc.linkExecutable.buildModeFlags["debug"] = {};
+		tc.archivist.searchPaths = {"ar"};
+		tc.archivist.call        = {"%compiler%", "rcs", "%outfile%", "%objfiles%"};
+	}
 	for (auto const& p : searchPaths) {
 		mSystemToolchains[p.second.first] = p.second.second;
 	}
