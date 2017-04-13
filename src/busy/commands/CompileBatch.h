@@ -53,7 +53,7 @@ public:
 	void linkSharedLibrary(Project const* _project);
 	void linkPlugin(Project const* _project);
 
-	auto getDBEntries() const {
+	auto getDBEntries() const -> std::vector<DBEntry> const& {
 		return mDBEntries;
 	}
 private:

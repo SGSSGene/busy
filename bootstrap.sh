@@ -20,7 +20,7 @@ echo "
 " > busy-helper/busy-version/version.h
 
 echo "initial build, this will take a few minutes"
-g++ -ggdb -O0 --std=c++14 \
+g++ -ggdb -O0 --std=c++11 \
 	-isystem extRepositories/Serializer/src/ \
 	-isystem extRepositories/jsoncpp/include \
 	-isystem extRepositories/CommonOptions/src \

@@ -402,7 +402,7 @@ void Workspace::discoverSystemToolchains() {
 		tc.cCompiler.buildModeFlags["debug"] = {};
 		tc.cppCompiler.searchPaths = {"g++"};
 		tc.cppCompiler.strict      = {"-Werror"};
-		tc.cppCompiler.call        = {"%compiler%", "%strict%", "-std=c++14", "-fPIC", "-MD", "-c", "%infile%", "-o", "%outfile%", "%buildModeFlags%", "%genDefines%", "%genIncludes%"};
+		tc.cppCompiler.call        = {"%compiler%", "%strict%", "-std=c++11", "-fPIC", "-MD", "-c", "%infile%", "-o", "%outfile%", "%buildModeFlags%", "%genDefines%", "%genIncludes%"};
 		tc.cppCompiler.buildModeFlags["release"] = {};
 		tc.cppCompiler.buildModeFlags["release_with_symbols"] = {};
 		tc.cppCompiler.buildModeFlags["debug"] = {};
