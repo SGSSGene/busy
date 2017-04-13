@@ -71,7 +71,7 @@ namespace commands {
 
 using namespace busy::commands;
 
-bool build(std::string const& _rootProjectName, bool verbose, bool noconsole, int jobs, bool _dryRun) {
+bool build(std::string const& _rootProjectName, bool verbose, bool noconsole, int jobs, bool _dryRun, bool _strict) {
 	std::string rootProjectName = "";
 	if (_rootProjectName != "true") {
 		rootProjectName = _rootProjectName;
@@ -110,7 +110,7 @@ bool build(std::string const& _rootProjectName, bool verbose, bool noconsole, in
 	// create version files
 	build.createVersionFiles();
 
-	CompileBatch compileBatch(errorDetected, printMutex, buildPath, outPath, buildModeName, verbose, toolchain, ignoreProjects, _dryRun, false);
+	CompileBatch compileBatch(errorDetected, printMutex, buildPath, outPath, buildModeName, verbose, toolchain, ignoreProjects, _dryRun, _strict, false);
 	compileBatch.mRPaths = ws.getRPaths();
 
 

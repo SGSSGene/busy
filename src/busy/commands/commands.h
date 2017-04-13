@@ -4,7 +4,7 @@
 #include <vector>
 
 namespace commands {
-	bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int jobs, bool _dryRun);
+	bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int jobs, bool _dryRun, bool _strict);
 	void clean();
 	void cleanAll();
 	void docu();

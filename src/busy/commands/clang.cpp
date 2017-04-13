@@ -31,7 +31,7 @@ void genClangdb() {
 	bool errorDetected;
 	std::mutex printMutex;
 
-	CompileBatch compileBatch(errorDetected, printMutex, buildPath, outPath, buildModeName, false, toolchain, ignoreProjects, false, true);
+	CompileBatch compileBatch(errorDetected, printMutex, buildPath, outPath, buildModeName, false, toolchain, ignoreProjects, false, false, true);
 	compileBatch.mRPaths = ws.getRPaths();
 
 	visitor.setCppVisitor([&] (Project const* _project, std::string const& _file) {

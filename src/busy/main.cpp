@@ -38,6 +38,7 @@ namespace {
 	auto swtVerbose    = commonOptions::make_switch("verbose",     "Shows more information while running");
 	auto swtVersion    = commonOptions::make_switch("version",     "Shows version");
 	auto swtDryRun     = commonOptions::make_switch("dryrun",      "don't execute compiling");
+	auto swtNoStrict   = commonOptions::make_switch("nostrict",    "don't treat any warnings as errors");
 
 
 	auto optFlavor     = commonOptions::make_option("flavor", "",   "builds and sets given flavor for future builds (toolchain + buildMode)");
@@ -169,7 +170,7 @@ int main(int argc, char** argv) {
 		} else if (*cmdShowDep != "") {
 			commands::showDep(*cmdShowDep);
 		} else {
-			auto success = commands::build(*cmdBuild, *swtVerbose, *swtNoConsole, jobCt, *swtDryRun);
+			auto success = commands::build(*cmdBuild, *swtVerbose, *swtNoConsole, jobCt, *swtDryRun, not *swtNoStrict);
 			if (not success) return EXIT_FAILURE;
 		}
 	} catch(std::runtime_error const& e) {

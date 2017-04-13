@@ -219,7 +219,7 @@ void CompileBatch::compile(Project const* _project, std::string const& _file, To
 	auto buildModeFlags = flags[buildModeName];
 
 	// generate general flags
-	auto strict = _project->getWarningsAsErrors()?_command.strict:std::vector<std::string>{};
+	auto strict = (_project->getWarningsAsErrors() and mStrict)?_command.strict:std::vector<std::string>{};
 
 	std::map<std::string, std::vector<std::string>> subMap;
 	subMap["%compiler%"]       = {_command.searchPaths.back()};
