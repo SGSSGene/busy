@@ -37,6 +37,8 @@ namespace {
 	auto swtNoConsole  = commonOptions::make_switch("noterminal",  "Doesn't use pretty output to display current progress");
 	auto swtVerbose    = commonOptions::make_switch("verbose",     "Shows more information while running");
 	auto swtVersion    = commonOptions::make_switch("version",     "Shows version");
+	auto swtDryRun     = commonOptions::make_switch("dryrun",      "don't execute compiling");
+
 
 	auto optFlavor     = commonOptions::make_option("flavor", "",   "builds and sets given flavor for future builds (toolchain + buildMode)");
 	auto optJobCt      = commonOptions::make_option("j",        0,  "change the amount of jobs, 0 will autodetect good size");
@@ -167,7 +169,7 @@ int main(int argc, char** argv) {
 		} else if (*cmdShowDep != "") {
 			commands::showDep(*cmdShowDep);
 		} else {
-			auto success = commands::build(*cmdBuild, *swtVerbose, *swtNoConsole, jobCt);
+			auto success = commands::build(*cmdBuild, *swtVerbose, *swtNoConsole, jobCt, *swtDryRun);
 			if (not success) return EXIT_FAILURE;
 		}
 	} catch(std::runtime_error const& e) {

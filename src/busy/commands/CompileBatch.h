@@ -23,9 +23,10 @@ private:
 	bool verbose;
 	Toolchain const* toolchain;
 	std::set<Project const*> ignoreProjects;
+	bool mDryRun;
 
 public:
-	CompileBatch(bool& _errorDetected, std::mutex& _printMutex, std::string _buildPath, std::string _outPath, std::string _buildModeName, bool _verbose, Toolchain const* _toolchain, std::set<Project const*> _ignoreProjects)
+	CompileBatch(bool& _errorDetected, std::mutex& _printMutex, std::string _buildPath, std::string _outPath, std::string _buildModeName, bool _verbose, Toolchain const* _toolchain, std::set<Project const*> _ignoreProjects, bool _dryRun)
 		: errorDetected(_errorDetected)
 		, printMutex(_printMutex)
 		, buildPath (std::move(_buildPath))
@@ -34,6 +35,7 @@ public:
 		, verbose(_verbose)
 		, toolchain(_toolchain)
 		, ignoreProjects(_ignoreProjects)
+		, mDryRun(_dryRun)
 	{}
 
 	void compileCpp(Project const* _project, std::string const& _file);

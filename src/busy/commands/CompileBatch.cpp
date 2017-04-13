@@ -311,7 +311,7 @@ auto CompileBatch::objectFilesForLinking(Project const* _project, std::string co
 
 bool CompileBatch::runCmd(std::vector<std::string> const& _options) {
 	// print command if verbose is activated
-	if (verbose) {
+	if (verbose || mDryRun) {
 		std::lock_guard<std::mutex> lock(printMutex);
 		std::cout << std::endl;
 		for (auto const& o : _options) {
@@ -320,11 +320,13 @@ bool CompileBatch::runCmd(std::vector<std::string> const& _options) {
 		std::cout << std::endl;
 	}
 
-	process::Process proc(_options);
-	bool compileError = proc.getStatus() != 0;
-	if (compileError) {
-		printError(_options, proc);
-		return false;
+	if (not mDryRun) {
+		process::Process proc(_options);
+		bool compileError = proc.getStatus() != 0;
+		if (compileError) {
+			printError(_options, proc);
+			return false;
+		}
 	}
 	return true;
 }
