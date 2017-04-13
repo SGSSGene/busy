@@ -31,10 +31,11 @@ g++ -ggdb -O0 --std=c++14 \
 	-isystem src \
 	-I src/busy/ \
 	src/busy/*.cpp \
+	src/busy/analyse/*.cpp \
+	src/busy/commands/*.cpp \
 	src/busyConfig/*.cpp \
 	src/busyUtils/*.cpp \
 	src/busyVersion/*.cpp \
-	src/busy/commands/*.cpp \
 	extRepositories/Serializer/src/serializer/binary/*.cpp \
 	extRepositories/Serializer/src/serializer/json/*.cpp \
 	extRepositories/Serializer/src/serializer/yaml/*.cpp \
