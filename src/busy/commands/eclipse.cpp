@@ -4,8 +4,7 @@
 #include <fstream>
 #include <iostream>
 
-using namespace busy;
-
+namespace busy {
 namespace commands {
 
 void generatePart1(std::ostream& ost, std::set<std::string> const& _includePaths, std::string const& _path);
@@ -14,7 +13,7 @@ void generatePart2(std::ostream& ost, std::set<std::string> const& _includePaths
 void generatePart3(std::ostream& ost, std::string const& _projectName);
 
 
-void eclipse() {
+void genEclipse() {
 	std::cout << "Generate .cproject and .project files" << std::endl;
 
 	Workspace ws;
@@ -253,9 +252,5 @@ R"|(<?xml version="1.0" encoding="UTF-8"?>
 )|";
 }
 
-
-
-
-
 }
-
+}

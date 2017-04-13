@@ -8,7 +8,6 @@ namespace commands {
 	void clean();
 	void cleanAll();
 	void docu();
-	void eclipse();
 	void flavors(bool _isTerminal);
 	void git(std::vector<std::string> const& _options);
 	void test();
@@ -26,7 +25,7 @@ namespace commands {
 
 namespace busy {
 namespace commands {
-	void clang();
-	void clangdb();
+	void genClangdb();
+	void genEclipse();
 }
 }

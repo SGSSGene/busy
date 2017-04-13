@@ -240,8 +240,19 @@ void CompileBatch::compile(Project const* _project, std::string const& _file, To
 		markProjectAndFileAsRecompiled(_project, _file);
 	} else {
 		auto call = _command.call;
-		auto iter = std::find(begin(call), end(call), "%compiler%");
-		call.erase(begin(call), iter);
+		// delete everything before the compiler call (will remove distcc and ccache calls)
+		{
+			auto iter = std::find(begin(call), end(call), "%compiler%");
+			call.erase(begin(call), iter);
+		}
+		// delete -MD flag (if available)
+		{
+			auto iter = std::find(begin(call), end(call), "-MD");
+			if (iter != end(call)) {
+				call.erase(iter);
+			}
+		}
+
 		auto options = substitute(call, subMap);
 		auto file    = _file;
 

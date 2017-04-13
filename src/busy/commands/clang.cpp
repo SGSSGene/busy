@@ -10,35 +10,7 @@
 namespace busy {
 namespace commands {
 
-void clang() {
-	Workspace ws;
-	std::ofstream ofs(".clang_complete");
-	Visitor visitor(ws, "");
-	visitor.setProjectVisitor([&ofs] (Project const* _project) {
-		std::vector<std::string> options;
-		options.push_back("-std=c++11");
-		options.push_back("-DBUSY");
-		options.push_back("-DBUSY_" + utils::sanitizeForMakro(_project->getName()));
-		for (auto depP : _project->getDependencies()) {
-			options.push_back("-DBUSY_" + utils::sanitizeForMakro(depP->getName()));
-		}
-		for (auto path : _project->getIncludeAndDependendPaths()) {
-			options.push_back("-I " + path);
-		}
-		for (auto path : _project->getSystemIncludeAndDependendPaths()) {
-			options.push_back("-isystem " + path);
-		}
-		for (auto const& o : options) {
-			ofs << o << " ";
-		}
-		ofs << std::endl;
-	});
-
-	visitor.visit(1);
-	std::cout << "generated .clang_complete file" << std::endl;
-}
-
-void clangdb() {
+void genClangdb() {
 	Workspace ws;
 
 	auto const toolchainName = ws.getSelectedToolchain();

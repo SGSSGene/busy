@@ -13,12 +13,11 @@
 namespace {
 	auto cmdBuild        = commonOptions::make_command("build",     "", "builds a specific project");
 	auto cmdBuildMode    = commonOptions::make_command("buildMode", "", "Changes current buildmode to release or debug");
-	auto cmdClang        = commonOptions::make_command("clang",         "Generates a .clang_complete file");
-	auto cmdClangDB      = commonOptions::make_command("clangdb",       "Generates a .clang_complete file");
 	auto cmdClean        = commonOptions::make_command("clean",         "Cleans current build and .busy directory");
 	auto cmdCleanAll     = commonOptions::make_command("cleanall",      "deletes all build files");
 	auto cmdDocu         = commonOptions::make_command("docu",          "Generates html docu");
-	auto cmdEclipse      = commonOptions::make_command("eclipse",       "Generate Eclipse .project and .cproject file");
+	auto cmdGenClangDB   = commonOptions::make_command("genClangdb",    "Generates a .clang_complete file");
+	auto cmdGenEclipse   = commonOptions::make_command("genEclipse",    "Generate Eclipse .project and .cproject file");
 	auto cmdGit          = commonOptions::make_command("git", std::vector<std::string>{},  "executes given options on every repository (including root package)");
 	auto cmdInfo         = commonOptions::make_command("info", std::vector<std::string>{}, "Infos about the current package and its dependencies");
 	auto cmdLsFiles      = commonOptions::make_command("ls-files",      "Print all files of these repositories");
@@ -139,8 +138,8 @@ int main(int argc, char** argv) {
 			commands::cleanAll();
 		} else if (cmdGit->size() > 0) {
 			commands::git(*cmdGit);
-		} else if (*cmdEclipse) {
-			commands::eclipse();
+		} else if (*cmdGenEclipse) {
+			busy::commands::genEclipse();
 		} else if (*cmdPull) {
 			commands::pull(jobCt);
 		} else if (*cmdPush) {
@@ -165,10 +164,8 @@ int main(int argc, char** argv) {
 			commands::toolchains(not *swtNoConsole);
 		} else if (*cmdToolchain != "") {
 			commands::toolchain(*cmdToolchain);
-		} else if (*cmdClang) {
-			busy::commands::clang();
-		} else if (*cmdClangDB) {
-			busy::commands::clangdb();
+		} else if (*cmdGenClangDB) {
+			busy::commands::genClangdb();
 		} else if (*cmdShowDep != "") {
 			commands::showDep(*cmdShowDep);
 		} else {
