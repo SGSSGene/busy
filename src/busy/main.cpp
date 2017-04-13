@@ -16,7 +16,7 @@ namespace {
 	auto cmdClean        = commonOptions::make_command("clean",         "Cleans current build and .busy directory");
 	auto cmdCleanAll     = commonOptions::make_command("cleanall",      "deletes all build files");
 	auto cmdDocu         = commonOptions::make_command("docu",          "Generates html docu");
-	auto cmdGenClangDB   = commonOptions::make_command("genClangdb",    "Generates a .clang_complete file");
+	auto cmdGenClangDB   = commonOptions::make_command("genClangdb",    "Generates a compile_commands.json file (clang build database)");
 	auto cmdGenEclipse   = commonOptions::make_command("genEclipse",    "Generate Eclipse .project and .cproject file");
 	auto cmdGit          = commonOptions::make_command("git", std::vector<std::string>{},  "executes given options on every repository (including root package)");
 	auto cmdInfo         = commonOptions::make_command("info", std::vector<std::string>{}, "Infos about the current package and its dependencies");
@@ -138,6 +138,8 @@ int main(int argc, char** argv) {
 			commands::cleanAll();
 		} else if (cmdGit->size() > 0) {
 			commands::git(*cmdGit);
+		} else if (*cmdGenClangDB) {
+			busy::commands::genClangdb();
 		} else if (*cmdGenEclipse) {
 			busy::commands::genEclipse();
 		} else if (*cmdPull) {
@@ -164,8 +166,6 @@ int main(int argc, char** argv) {
 			commands::toolchains(not *swtNoConsole);
 		} else if (*cmdToolchain != "") {
 			commands::toolchain(*cmdToolchain);
-		} else if (*cmdGenClangDB) {
-			busy::commands::genClangdb();
 		} else if (*cmdShowDep != "") {
 			commands::showDep(*cmdShowDep);
 		} else {
