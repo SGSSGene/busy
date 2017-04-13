@@ -13,7 +13,7 @@ using namespace busy;
 namespace commands {
 
 void cleanAll() {
-	utils::rm("./build", true);
+	utils::rm("./build", true, true);
 	utils::mkdir("./build");
 	utils::rm(".busy", true, true);
 	std::cout << "clean all done" << std::endl;
