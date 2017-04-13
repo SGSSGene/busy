@@ -14,6 +14,7 @@ namespace {
 	auto cmdBuild        = commonOptions::make_command("build",     "", "builds a specific project");
 	auto cmdBuildMode    = commonOptions::make_command("buildMode", "", "Changes current buildmode to release or debug");
 	auto cmdClang        = commonOptions::make_command("clang",         "Generates a .clang_complete file");
+	auto cmdClangDB      = commonOptions::make_command("clangdb",       "Generates a .clang_complete file");
 	auto cmdClean        = commonOptions::make_command("clean",         "Cleans current build and .busy directory");
 	auto cmdCleanAll     = commonOptions::make_command("cleanall",      "deletes all build files");
 	auto cmdDocu         = commonOptions::make_command("docu",          "Generates html docu");
@@ -165,7 +166,9 @@ int main(int argc, char** argv) {
 		} else if (*cmdToolchain != "") {
 			commands::toolchain(*cmdToolchain);
 		} else if (*cmdClang) {
-			commands::clang();
+			busy::commands::clang();
+		} else if (*cmdClangDB) {
+			busy::commands::clangdb();
 		} else if (*cmdShowDep != "") {
 			commands::showDep(*cmdShowDep);
 		} else {

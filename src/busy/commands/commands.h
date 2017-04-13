@@ -5,7 +5,6 @@
 
 namespace commands {
 	bool build(std::string const& rootProjectName, bool verbose, bool noconsole, int jobs, bool _dryRun);
-	void clang();
 	void clean();
 	void cleanAll();
 	void docu();
@@ -23,4 +22,11 @@ namespace commands {
 	void showDep(std::string const& rootProjectName);
 	void toolchains(bool _isTerminal);
 	void toolchain(std::string const& _toolchain);
+}
+
+namespace busy {
+namespace commands {
+	void clang();
+	void clangdb();
+}
 }

@@ -25,8 +25,15 @@ private:
 	std::set<Project const*> ignoreProjects;
 	bool mDryRun;
 
+	struct DBEntry {
+		std::string file;
+		std::string command;
+	};
+	std::vector<DBEntry> mDBEntries;
+	bool                 mGenerateDBEntries;
+
 public:
-	CompileBatch(bool& _errorDetected, std::mutex& _printMutex, std::string _buildPath, std::string _outPath, std::string _buildModeName, bool _verbose, Toolchain const* _toolchain, std::set<Project const*> _ignoreProjects, bool _dryRun)
+	CompileBatch(bool& _errorDetected, std::mutex& _printMutex, std::string _buildPath, std::string _outPath, std::string _buildModeName, bool _verbose, Toolchain const* _toolchain, std::set<Project const*> _ignoreProjects, bool _dryRun, bool _generateDBEntries)
 		: errorDetected(_errorDetected)
 		, printMutex(_printMutex)
 		, buildPath (std::move(_buildPath))
@@ -36,6 +43,7 @@ public:
 		, toolchain(_toolchain)
 		, ignoreProjects(_ignoreProjects)
 		, mDryRun(_dryRun)
+		, mGenerateDBEntries(_generateDBEntries)
 	{}
 
 	void compileCpp(Project const* _project, std::string const& _file);
@@ -44,6 +52,10 @@ public:
 	void linkExecutable(Project const* _project);
 	void linkSharedLibrary(Project const* _project);
 	void linkPlugin(Project const* _project);
+
+	auto getDBEntries() const {
+		return mDBEntries;
+	}
 private:
 	void compile(Project const* _project, std::string const& _file, Toolchain::Command const& command);
 	bool checkNeedsRecompile(std::string const& _file, std::string const& outputFile);

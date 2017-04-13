@@ -110,7 +110,7 @@ bool build(std::string const& _rootProjectName, bool verbose, bool noconsole, in
 	// create version files
 	build.createVersionFiles();
 
-	CompileBatch compileBatch(errorDetected, printMutex, buildPath, outPath, buildModeName, verbose, toolchain, ignoreProjects, _dryRun);
+	CompileBatch compileBatch(errorDetected, printMutex, buildPath, outPath, buildModeName, verbose, toolchain, ignoreProjects, _dryRun, false);
 	compileBatch.mRPaths = ws.getRPaths();
 
 
@@ -147,16 +147,16 @@ bool build(std::string const& _rootProjectName, bool verbose, bool noconsole, in
 
 	visitor.visit(jobs);
 
-	auto endTime  = std::chrono::steady_clock::now();
-	auto diff = endTime - startTime;
+	auto endTime   = std::chrono::steady_clock::now();
+	auto diff      = endTime - startTime;
 	auto time_span = std::chrono::duration_cast<std::chrono::milliseconds>(diff);
 
 
 
 	if (errorDetected) {
-		std::cout<<std::endl<< TERM_RED "Build failed" TERM_RESET;
+		std::cout<<"\n" TERM_RED "Build failed" TERM_RESET;
 	} else {
-		std::cout<<std::endl<< TERM_GREEN "Build \033[32msucceeded" TERM_RESET;
+		std::cout<<"\n" TERM_GREEN "Build succeeded" TERM_RESET;
 	}
 	std::cout << " after " << time_span.count() / 1000. << " seconds." << std::endl;
 	return not errorDetected;

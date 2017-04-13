@@ -72,6 +72,10 @@ void CompileBatch::compileC(Project const* _project, std::string const& _file) {
 	compile(_project, _file, toolchain->cCompiler);
 }
 void CompileBatch::linkStaticLibrary(Project const* _project) {
+	if (mGenerateDBEntries) {
+		return;
+	}
+
 	std::string outputFile = buildPath + "/" + _project->getFullName() + ".a";
 
 	// Check file dependencies
@@ -93,19 +97,23 @@ void CompileBatch::linkStaticLibrary(Project const* _project) {
 	subMap["%outfile%"]        = {outputFile};
 	auto options = substitute(_command.call, subMap);
 
-
 	runCmd(options);
 }
+
 void CompileBatch::linkSharedLibrary(Project const* _project) {
 	std::string outputFile = outPath + "/lib" + _project->getName() + ".so";
 	throw std::runtime_error("not implemented");
 }
+
 void CompileBatch::linkPlugin(Project const* _project) {
 	std::string outputFile = outPath + "/plugin" + _project->getName() + ".so";
 	throw std::runtime_error("not implemented");
 }
 
 void CompileBatch::linkExecutable(Project const* _project) {
+	if (mGenerateDBEntries) {
+		return;
+	}
 	std::string outputFile = outPath + "/" + _project->getName();
 	if (_project->getIsUnitTest()) {
 		outputFile = outPath + "/tests/" + _project->getFullName();
@@ -114,8 +122,8 @@ void CompileBatch::linkExecutable(Project const* _project) {
 	}
 
 	// Check file dependencies
-	bool recompile = false;
 	{
+		bool recompile = false;
 		std::lock_guard<std::mutex> lock(printMutex);
 		if (needsRecompile.count(_project) > 0) {
 			recompile = true;
@@ -221,19 +229,37 @@ void CompileBatch::compile(Project const* _project, std::string const& _file, To
 	subMap["%strict%"]         = strict;
 	subMap["%genDefines%"]     = generateDefines(_project);
 	subMap["%genIncludes%"]    = generateIncludes(_project);
-	auto options = substitute(_command.call, subMap);
+	if (not mGenerateDBEntries) {
+		auto options = substitute(_command.call, subMap);
 
-	if (runCmd(options)) {
-		utils::convertDFileToDDFile(buildPath + "/" + _file + ".d", buildPath + "/" + _file + ".dd");
+		if (runCmd(options)) {
+			utils::convertDFileToDDFile(buildPath + "/" + _file + ".d", buildPath + "/" + _file + ".dd");
+		}
+
+		// marking _file as recompiled and mark _project to be recompiled
+		markProjectAndFileAsRecompiled(_project, _file);
+	} else {
+		auto call = _command.call;
+		auto iter = std::find(begin(call), end(call), "%compiler%");
+		call.erase(begin(call), iter);
+		auto options = substitute(call, subMap);
+		auto file    = _file;
+
+		auto command = options[0];
+		for (size_t i(1); i < options.size(); ++i) {
+			command += " " + options[i];
+		}
+		mDBEntries.push_back({file, command});
 	}
-
-	// marking _file as recompiled and mark _project to be recompiled
-	markProjectAndFileAsRecompiled(_project, _file);
 }
 
 bool CompileBatch::checkNeedsRecompile(std::string const& _file, std::string const& outputFile) {
 
 	// Check file dependencies
+	if (mGenerateDBEntries) {
+		return true;
+	}
+
 	bool recompile = false;
 	auto outputFileDate = utils::getFileModificationTime(outputFile);
 	auto ddFile = buildPath + "/" + _file + ".dd";
