@@ -41,6 +41,9 @@ void genClangdb() {
 	visitor.setCVisitor([&] (Project const* _project, std::string const& _file) {
 		compileBatch.compileC(_project, _file);
 	});
+	visitor.setHVisitor([&] (Project const* _project, std::string const& _file) {
+		compileBatch.compileCpp(_project, _file);
+	});
 
 	visitor.setProjectVisitor([&] (Project const* _project) {
 		if (errorDetected) return;
@@ -62,7 +65,7 @@ void genClangdb() {
 		}
 	});
 
-	visitor.visit(1);
+	visitor.visit(1, true);
 
 	auto cwd = utils::cwd();
 	std::ofstream ofs("compile_commands.json");

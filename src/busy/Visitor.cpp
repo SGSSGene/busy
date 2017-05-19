@@ -12,11 +12,12 @@ namespace busy {
 	{
 		setCppVisitor([] (Project const*, std::string const&) {});
 		setCVisitor([] (Project const*, std::string const&) {});
+		setHVisitor([] (Project const*, std::string const&) {});
 		setProjectVisitor([] (Project const*) {});
 		setStatisticUpdateCallback([] (int, int) {});
 	}
 
-	void Visitor::visit(int _jobs) {
+	void Visitor::visit(int _jobs, bool _visitHeaders) {
 		mWorkspace.markProjectAsShared(mTarget);
 
 		auto projects = mWorkspace.getProjectAndDependencies(mTarget);
@@ -65,6 +66,15 @@ namespace busy {
 				job.mAction = [=] {
 					mCVisitor(project, file);
 				};
+			}
+
+			if (_visitHeaders) {
+				for (auto file : project->getIncludeFiles()) {
+					auto& job = mAllJobs[file];
+					job.mAction = [=] {
+						mHVisitor(project, file);
+					};
+				}
 			}
 		}
 		// run over all jobs and set their names
