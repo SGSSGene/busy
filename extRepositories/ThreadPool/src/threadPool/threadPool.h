@@ -2,9 +2,10 @@
 
 #include "blockingQueue.h"
 
-#include <thread>
 #include <atomic>
+#include <functional>
 #include <pthread.h>
+#include <thread>
 
 namespace threadPool {
 
