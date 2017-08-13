@@ -28,7 +28,7 @@ void genClangdb() {
 
 	Visitor visitor(ws, "");
 
-	bool errorDetected;
+	bool errorDetected {false};
 	std::mutex printMutex;
 
 	CompileBatch compileBatch(errorDetected, printMutex, buildPath, outPath, buildModeName, false, toolchain, ignoreProjects, false, false, true);
@@ -90,6 +90,7 @@ void genClangdb() {
 	}
 
 	ofs << "\n]";
+	ofs.close();
 	std::cout << "generated compile_commands.json" << std::endl;
 }
 
