@@ -195,7 +195,7 @@ auto Workspace::getToolchains() const -> std::map<std::string, Toolchain const*>
 	return retMap;
 }
 auto Workspace::getBuildModes() const -> std::vector<std::string> {
-	return {"debug", "release", "release_with_symbols"};
+	return {"debug", "release", "release_with_symbols", "fast-math"};
 }
 
 
@@ -394,26 +394,36 @@ void Workspace::discoverSystemToolchains() {
 		auto& pair = searchPaths["/usr/bin/gcc"];
 		pair.first = "fallback-gcc";
 		auto& tc = pair.second;
+		std::vector<std::string> __extras {"-fassociative-math", "-freciprocal-math", "-fno-signed-zeros", "-fno-trapping-math", "-frename-registers", "-flto", "-march=native", "-Ofast", "-frename-registers", "-funroll-loops", "-fopenmp", "-D_GLIBCXX_PARALLEL"};
 		tc.cCompiler.searchPaths = {"gcc"};
 		tc.cCompiler.strict      = {"-Werror"};
-		tc.cCompiler.call        = {"%compiler%", "%strict%", "-std=c11", "-fPIC", "-MD", "-c", "%infile%", "-o", "%outfile%", "%buildModeFlags%", "%genDefines%", "%genIncludes%"};
-		tc.cCompiler.buildModeFlags["release"] = {"-O3", "-ffast-math", "-funroll-loops", "--param", "max-unroll-times=1000"};
+		tc.cCompiler.call        = {"%compiler%", "%strict%", "-std=c11", "-fPIC", "-MD", "-c", "%infile%", "-o", "%outfile%", "%buildModeFlags%", "%genDefines%", "%genIncludes%", "-fdiagnostics-color=always"};
+		tc.cCompiler.buildModeFlags["release"] = {"-O3", /*"-flto",*/ "-march=native", "-funroll-loops" };
+		tc.cCompiler.buildModeFlags["fast-math"] = {"-O3", "-flto", "-ffast-math", "-march=native", "-funroll-loops" };
 		tc.cCompiler.buildModeFlags["release_with_symbols"] = {};
 		tc.cCompiler.buildModeFlags["debug"] = {"-g3", "-ggdb"};
 		tc.cppCompiler.searchPaths = {"g++"};
 		tc.cppCompiler.strict      = {"-Werror"};
-		tc.cppCompiler.call        = {"%compiler%", "%strict%", "-std=c++11", "-fPIC", "-MD", "-c", "%infile%", "-o", "%outfile%", "%buildModeFlags%", "%genDefines%", "%genIncludes%"};
-		tc.cppCompiler.buildModeFlags["release"] = {"-O3", "-ffast-math", "-funroll-loops", "--param", "max-unroll-times=1000"};
+		tc.cppCompiler.call        = {"%compiler%", "%strict%", "-std=c++14", "-fPIC", "-MD", "-c", "%infile%", "-o", "%outfile%", "%buildModeFlags%", "%genDefines%", "%genIncludes%", "-fdiagnostics-color=always"};
+		tc.cppCompiler.buildModeFlags["release"] = {"-O3", /*"-flto",*/ "-march=native", "-funroll-loops" };
+		tc.cppCompiler.buildModeFlags["fast-math"] = {"-O3", "-flto", "-ffast-math", "-march=native", "-funroll-loops" };
 		tc.cppCompiler.buildModeFlags["release_with_symbols"] = {};
 		tc.cppCompiler.buildModeFlags["debug"] = {"-g3", "-ggdb"};;
 		tc.linkExecutable.searchPaths = {"g++"};
 		tc.linkExecutable.strict      = {"-Werror"};
-		tc.linkExecutable.call        = {"%compiler%", "-rdynamic", "-o", "%outfile%", "%objfiles%", "%afiles%", "-Wl,-rpath %rpaths%", "-l%libs%", "-L%libPaths%", "%legacyLinking%"};
-		tc.linkExecutable.buildModeFlags["release"] = {"-Ofast", "-ffast-math", "-funroll-loops", "--param", "max-unroll-times=1000"};
+		tc.linkExecutable.call        = {"%compiler%", "-rdynamic", "-o", "%outfile%", "%objfiles%", "%afiles%", "-Wl,-rpath %rpaths%", "-l%libs%", "-L%libPaths%", "%legacyLinking%", "%buildModeFlags%", "-fdiagnostics-color=always"};
+		tc.linkExecutable.buildModeFlags["release"] = {"-O3", /*"-flto",*/ "-march=native", "-funroll-loops" };
+		tc.linkExecutable.buildModeFlags["fast-math"] = {"-O3", "-flto", "-ffast-math", "-march=native", "-funroll-loops", "-lgomp" };
 		tc.linkExecutable.buildModeFlags["release_with_symbols"] = {};
 		tc.linkExecutable.buildModeFlags["debug"] = {"-g3", "-ggdb"};;
 		tc.archivist.searchPaths = {"ar"};
 		tc.archivist.call        = {"%compiler%", "rcs", "%outfile%", "%objfiles%"};
+
+		for (auto x : __extras) {
+			tc.cCompiler.buildModeFlags["fast-math"].push_back(x);
+			tc.cppCompiler.buildModeFlags["fast-math"].push_back(x);
+			tc.linkExecutable.buildModeFlags["fast-math"].push_back(x);
+		}
 	}
 	for (auto const& p : searchPaths) {
 		mSystemToolchains[p.second.first] = p.second.second;

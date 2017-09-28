@@ -191,6 +191,7 @@ void CompileBatch::linkExecutable(Project const* _project) {
 	subMap["%compiler%"]          = {_command.searchPaths.back()};
 	subMap["%outfile%"]           = {outputFile};
 	subMap["%objfiles%"]          = objectFilesForLinking(_project, buildPath);
+	subMap["%buildModeFlags%"]    = _command.buildModeFlags.at(buildModeName);
 	subMap["%afiles%"]            = staticFiles;
 	subMap["-fuse-ld=%ld%"]       = {utils::getEnv("BUSY_LD", "")};
 	subMap["-Wl,-rpath %rpaths%"] = mRPaths;
