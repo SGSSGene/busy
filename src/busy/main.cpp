@@ -20,6 +20,7 @@ namespace {
 	auto cmdGenEclipse   = commonOptions::make_command("genEclipse",    "Generate Eclipse .project and .cproject file");
 	auto cmdGit          = commonOptions::make_command("git", std::vector<std::string>{},  "executes given options on every repository (including root package)");
 	auto cmdInfo         = commonOptions::make_command("info", std::vector<std::string>{}, "Infos about the current package and its dependencies");
+	auto cmdLsBuildModes = commonOptions::make_command("ls-buildModes", "Print all available build mode");
 	auto cmdLsFiles      = commonOptions::make_command("ls-files",      "Print all files of these repositories");
 	auto cmdLsFlavors    = commonOptions::make_command("ls-flavors",    "list all available flavors");
 	auto cmdLsProjects   = commonOptions::make_command("ls-projects",   "Print all projects in all repositories");
@@ -159,6 +160,8 @@ int main(int argc, char** argv) {
 			int exitCode = commands::listFiles(relPath + "/");
 			exit(exitCode);
 			return exitCode;
+		} else if (*cmdLsBuildModes) {
+			commands::listBuildModes();
 		} else if (*cmdLsFlavors) {
 			commands::flavors(not *swtNoConsole);
 		} else if (*cmdLsProjects) {

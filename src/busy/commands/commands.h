@@ -16,6 +16,7 @@ namespace commands {
 	void info(std::vector<std::string> str);
 	void status();
 	void buildMode(std::string const& _buildMode);
+	void listBuildModes();
 	int  listFiles(std::string const& _relPath);
 	void listProjects();
 	void showDep(std::string const& rootProjectName);

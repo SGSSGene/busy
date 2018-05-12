@@ -7,7 +7,7 @@ _busy()
 	elif [ "$prev" = "build" ]; then
 		COMPREPLY=( $(compgen -W "`busy ls-projects --noterminal`" -- $cur) )
 	elif [ "$prev" = "buildMode" ]; then
-		COMPREPLY=( $(compgen -W "debug release release_with_symbols" -- $cur) )
+		COMPREPLY=( $(compgen -W "`busy ls-buildModes --noterminal`" -- $cur) )
 	elif [ "$prev" = "--flavor" ]; then
 		COMPREPLY=( $(compgen -W "`busy ls-flavors --noterminal`" -- $cur) )
 	elif [ -z "$cur" ]; then
