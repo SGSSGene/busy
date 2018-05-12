@@ -18,18 +18,14 @@ namespace {
 	auto cmdDocu         = commonOptions::make_command("docu",          "Generates html docu");
 	auto cmdGenClangDB   = commonOptions::make_command("genClangdb",    "Generates a compile_commands.json file (clang build database)");
 	auto cmdGenEclipse   = commonOptions::make_command("genEclipse",    "Generate Eclipse .project and .cproject file");
-	auto cmdGit          = commonOptions::make_command("git", std::vector<std::string>{},  "executes given options on every repository (including root package)");
 	auto cmdInfo         = commonOptions::make_command("info", std::vector<std::string>{}, "Infos about the current package and its dependencies");
 	auto cmdLsBuildModes = commonOptions::make_command("ls-buildModes", "Print all available build mode");
 	auto cmdLsFiles      = commonOptions::make_command("ls-files",      "Print all files of these repositories");
 	auto cmdLsFlavors    = commonOptions::make_command("ls-flavors",    "list all available flavors");
 	auto cmdLsProjects   = commonOptions::make_command("ls-projects",   "Print all projects in all repositories");
 	auto cmdLsToolchains = commonOptions::make_command("ls-toolchains", "Shows available toolchain");
-	auto cmdPull         = commonOptions::make_command("pull",          "Execute pull on all git repositories");
-	auto cmdPush         = commonOptions::make_command("push",          "Execute push on all git repositories");
 	auto cmdRelPath      = commonOptions::make_command("showRelPath",   "Show the relative path to the root busy.yaml file");
 	auto cmdShowDep      = commonOptions::make_command("showDep","",    "Show projects that depends directory on the given project");
-	auto cmdStatus       = commonOptions::make_command("status",        "Shows current status of git repositories");
 	auto cmdTest         = commonOptions::make_command("test",          "Run all unittests");
 	auto cmdToolchain    = commonOptions::make_command("toolchain", "", "Changes current toolchain");
 
@@ -138,22 +134,14 @@ int main(int argc, char** argv) {
 			commands::clean();
 		} else if (*cmdCleanAll) {
 			commands::cleanAll();
-		} else if (cmdGit->size() > 0) {
-			commands::git(*cmdGit);
 		} else if (*cmdGenClangDB) {
 			busy::commands::genClangdb();
 		} else if (*cmdGenEclipse) {
 			busy::commands::genEclipse();
-		} else if (*cmdPull) {
-			commands::pull(jobCt);
-		} else if (*cmdPush) {
-			commands::push(jobCt);
 		} else if (*cmdRelPath) {
 			std::cout<<relPath<<std::endl;
 		} else if (cmdInfo->size() > 0) {
 			commands::info(*cmdInfo);
-		} else if (*cmdStatus) {
-			commands::status();
 		} else if (*cmdBuildMode != "") {
 			commands::buildMode(*cmdBuildMode);
 		} else if (*cmdLsFiles) {
