@@ -1,8 +1,1 @@
 name: Serializer
-extRepositories:
-  - url: git@cakeface.de:aBuild/gtest
-  - url: git@cakeface.de:aBuild/jsoncpp
-  - url: git@cakeface.de:aBuild/yaml-cpp
-projects:
-    - name: exampleSerializer
-      type: executable

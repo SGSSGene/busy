@@ -1,0 +1,10 @@
+name: gtest
+projects:
+  - name: gtest
+    legacy:
+      includes:
+        - include
+    noWarnings: true
+    warningsAsErrors: false
+    depLibraries:
+      - pthread

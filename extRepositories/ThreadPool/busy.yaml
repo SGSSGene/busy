@@ -1,6 +1,4 @@
 name: ThreadPool
-extRepositories:
-  - url: git@cakeface.de:aBuild/gtest
 projects:
   - name: threadPool
     depLibraries:

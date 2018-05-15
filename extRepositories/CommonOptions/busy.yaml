@@ -1,4 +1,1 @@
 name: CommonOptions
-extRepositories:
-  - url: git@cakeface.de:aBuild/SelfTest
-  - url: git@cakeface.de:aBuild/Serializer

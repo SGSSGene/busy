@@ -1,6 +1,4 @@
 name: GenericFactory
-extRepositories:
-  - url: git@cakeface.de:aBuild/gtest
 projects:
   - name: libExample
     wholeArchive: true
