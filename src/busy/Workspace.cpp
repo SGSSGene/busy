@@ -25,10 +25,8 @@ Workspace::Workspace(bool _noSaving)
 	}
 
 	// check if certain folders exists
-	for (std::string s : {extRepPath , busyPath}) {
-		if (not utils::fileExists(s)) {
-			utils::mkdir(s);
-		}
+	if (not utils::fileExists(busyPath)) {
+		utils::mkdir(busyPath);
 	}
 
 	if (utils::fileExists(workspaceFile)) {
