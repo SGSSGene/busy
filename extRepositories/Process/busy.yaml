@@ -1,5 +1,0 @@
-name: Process
-projects:
-  - name: process
-    depLibraries:
-      - pthread
