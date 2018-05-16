@@ -3,8 +3,9 @@
 #include <algorithm>
 #include <busyUtils/busyUtils.h>
 #include <iostream>
-#include <serializer/serializer.h>
 #include <process/Process.h>
+#include <queue>
+#include <serializer/serializer.h>
 
 
 namespace busy {
@@ -311,9 +312,21 @@ auto Workspace::getSharedProjects() -> std::set<Project*> {
 
 
 void Workspace::loadPackageFolders() {
-	mPackageFolders.emplace_back("./");
-	for (auto const& f : utils::listDirs(extRepPath, true)) {
-		mPackageFolders.emplace_back(extRepPath + "/" + f);
+	std::queue<std::string> queue;
+	queue.emplace("./");
+
+	while (not queue.empty()) {
+		auto front = queue.front();
+		queue.pop();
+
+		mPackageFolders.emplace_back(front);
+
+		auto nextPath = front + "extRepositories/";
+		if (utils::fileExists(nextPath)) {
+			for (auto const& f : utils::listDirs(nextPath, true)) {
+				queue.emplace(nextPath + f + "/");
+			}
+		}
 	}
 }
 void Workspace::loadPackages() {
