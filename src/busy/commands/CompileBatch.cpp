@@ -325,9 +325,6 @@ auto CompileBatch::generateIncludes(Project const* _project) -> std::vector<std:
 	for (auto path : _project->getSystemIncludeAndDependendPaths()) {
 		options.push_back("-isystem" + path);
 	}
-	for (auto const& p : toolchain->cCompiler.flags2) {
-		options.push_back(p);
-	}
 	for (auto path : _project->getLegacySystemIncludeAndDependendPaths()) {
 		options.push_back("-isystem" + path);
 	}

@@ -17,7 +17,6 @@ namespace busyConfig {
 			std::vector<std::string> searchPaths;
 			std::vector<std::string> strict;
 			std::vector<std::string> call;
-			std::vector<std::string> flags2;
 			BuildModes               buildModeFlags;
 
 			template <typename Node>
