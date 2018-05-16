@@ -105,8 +105,8 @@ void info(std::vector<std::string> str) {
 			std::cout << "    * " << package.getName() << "/" << project.getName() << std::endl;
 		}
 		std::cout << "  - External Repositories: " << std::endl;
-		for (auto const& rep : package.getExternalPackageURLs()) {
-			std::cout << "    * " << rep.name << " " << rep.url << " " << rep.branch << std::endl;
+		for (auto const& r : package.getExternalPackages()) {
+			std::cout << "    * " << r->getName() << "\n";
 		}
 	} else if (str.at(0) == "project" && str.size() == 2) {
 		auto const& project = ws.getProject(str.at(1));

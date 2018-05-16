@@ -29,7 +29,7 @@ namespace busyConfig {
 			auto includedRepos = utils::listDirs(_path + "/extRepositories");
 			for (auto const& s : includedRepos) {
 				if (s != "." and s != "..") {
-					package.extRepositories.push_back(PackageURL{s, s, "master"});
+					package.extRepositories.push_back(s);
 				}
 			}
 		}

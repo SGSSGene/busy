@@ -11,22 +11,15 @@
 namespace busy {
 	class Workspace;
 
-	struct PackageURL {
-		std::string name;
-		std::string url;
-		std::string branch;
-	};
-
 	class Package {
 	private:
 		Workspace* mWorkspace;
 
-		std::string   mName;
-		std::string   mPath;
+		std::string mName;
+		std::string mPath;
 
-		std::list<Project> mProjects;
-		std::vector<PackageURL> mExternalRepURLs;
-		std::vector<Package*>   mExternalPackages;
+		std::list<Project>    mProjects;
+		std::vector<Package*> mExternalPackages;
 
 		std::map<std::string, Flavor>    mFlavors;
 		std::map<std::string, Toolchain> mToolchains;
@@ -47,7 +40,6 @@ namespace busy {
 		auto getProjects() const -> std::list<Project> const& { return mProjects; }
 		auto getProjects()       -> std::list<Project>&       { return mProjects; }
 
-		auto getExternalPackageURLs() -> std::vector<PackageURL> const& { return mExternalRepURLs; }
 		auto getExternalPackages() -> std::vector<Package*> const& { return mExternalPackages; }
 		auto getAllDependendPackages() -> std::vector<Package*>;
 

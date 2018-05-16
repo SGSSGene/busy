@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Override.h"
-#include "PackageURL.h"
 #include "Project.h"
 #include "Toolchain.h"
 #include "Flavor.h"
@@ -10,7 +9,7 @@
 
 namespace busyConfig {
 
-	using ExtRepositories = std::vector<PackageURL>;
+	using ExtRepositories = std::vector<std::string>;
 	using Projects        = std::vector<Project>;
 	using Toolchains      = std::vector<Toolchain>;
 	using Overrides       = std::vector<Override>;

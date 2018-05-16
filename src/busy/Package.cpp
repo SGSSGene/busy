@@ -79,27 +79,6 @@ namespace {
 			}
 		}
 
-		// setting all externalRepURLS
-		for (auto const& url : configPackage.extRepositories) {
-			auto name = url.url;
-			if (utils::isEndingWith(name, ".git")) {
-				for (int i {0}; i<4; ++i) name.pop_back();
-			}
-			auto l = utils::explode(name, "/");
-			if (l.size() == 1) {
-				name = l[0];
-			}
-			name = l[l.size()-1];
-
-			l = utils::explode(name, ":");
-			if (l .size() == 1) {
-			 name = l[0];
-			}
-			name = l[l.size()-1];
-
-			mExternalRepURLs.push_back({name, url.url, url.branch});
-		}
-
 		// loading Flavors
 		for (auto const& shared : configPackage.flavors) {
 			auto name = shared.first;
@@ -126,15 +105,13 @@ namespace {
 		}
 	}
 	void Package::setupPackageDependencies() {
-		for (auto const& url : mExternalRepURLs) {
-			auto package = &mWorkspace->getPackage(url.name);
+		auto configPackage = busyConfig::readPackage(mPath);
+
+		// adding external repos
+		for (auto const& name : configPackage.extRepositories) {
+			auto package = &mWorkspace->getPackage(name);
 			mExternalPackages.push_back(package);
 		}
-/*		for (auto& flavor : mFlavors) {
-			for (auto const& s : flavor.second.mLinkAsSharedAsStrings) {
-				flavor.second.mLinkAsShared.push_back(&mWorkspace->getProject(s));
-			}
-		}*/
 	}
 
 	auto Package::getAllDependendPackages() -> std::vector<Package*> {
