@@ -51,5 +51,5 @@ rm -rf busy-helper
 ./busy build busy
 
 echo "run:"
-echo "copy build/system-gcc/debug/busy to /usr/bin"
+echo "copy build/fallback-gcc/debug/busy to /usr/bin"
 
