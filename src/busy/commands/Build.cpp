@@ -57,7 +57,7 @@ void Build::createVersionFiles() const {
 			branch = git::getBranch(package.getPath());
 			hash   = git::getCurrentHash(package.getPath());
 			dirty  = git::isDirty(package.getPath(), true);
-			hash = hash.substr(0, 8);
+			hash   = hash.substr(0, 8);
 		}
 
 		auto name   = package.getName();
