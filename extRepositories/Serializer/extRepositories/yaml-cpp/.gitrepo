@@ -1,0 +1,11 @@
+; DO NOT EDIT (unless you know what you are doing)
+;
+; This subdirectory is a git "subrepo", and this file is maintained by the
+; git-subrepo command. See https://github.com/git-commands/git-subrepo#readme
+;
+[subrepo]
+	remote = git@github.com:SGSSGene/yaml-cpp
+	branch = master
+	commit = e546265d758a74377fe2d907047a08bdcee1adf6
+	parent = 8a86fdbce372b4c7983ed0f4b3cecb4a9b03e144
+	cmdver = 0.3.0
