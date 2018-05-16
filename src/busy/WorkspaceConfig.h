@@ -1,9 +1,10 @@
 #pragma once
 
 #include "FileStat.h"
+
+#include <map>
 #include <string>
 #include <vector>
-
 
 namespace busy {
 	struct WorkspaceConfig {

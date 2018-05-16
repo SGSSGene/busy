@@ -1,6 +1,7 @@
 #pragma once
 
-#include "Flavor.h"
+#include <string>
+#include <vector>
 
 namespace busyConfig {
 	struct Flavor {
