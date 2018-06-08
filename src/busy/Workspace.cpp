@@ -390,14 +390,15 @@ auto retrieveClangVersion(std::vector<std::string> const& _command) -> std::stri
 	return realVersion;
 }
 
-auto getProgs(busyConfig::Toolchain toolchain) -> busyConfig::Toolchain {
+auto getProgs(busy::Toolchain toolchain) -> busy::Toolchain {
 	auto f = [](std::vector<std::string>& list) {
 		for (auto const& p : list) {
 			if (utils::fileExists(p)) {
 				list = {p};
-				break;
+				return;
 			}
 		}
+		list = {};
 	};
 	f(toolchain.archivist.searchPaths);
 	f(toolchain.cCompiler.searchPaths);
@@ -477,8 +478,9 @@ void Workspace::discoverSystemToolchains() {
 					} else {
 						std::cerr << "unknown toolchain type: " + type << std::endl;
 					}
-					configToolchain = getProgs(configToolchain);
-					mSystemToolchains[configToolchain.name] = configToolchain;
+					busy::Toolchain toolchain;
+					toolchain = configToolchain;
+					mSystemToolchains[configToolchain.name] = getProgs(toolchain);
 				} catch (...) {}
 
 			}

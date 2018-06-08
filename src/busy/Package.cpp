@@ -26,6 +26,24 @@ namespace {
 		return r;
 	}
 
+	auto getProgs(busy::Toolchain toolchain) -> busy::Toolchain {
+		auto f = [](std::vector<std::string>& list) {
+			for (auto const& p : list) {
+				if (utils::fileExists(p)) {
+					list = {p};
+					return;
+				}
+			}
+			list = {};
+		};
+		f(toolchain.archivist.searchPaths);
+		f(toolchain.cCompiler.searchPaths);
+		f(toolchain.cppCompiler.searchPaths);
+		f(toolchain.linkExecutable.searchPaths);
+		return toolchain;
+	}
+
+
 }
 
 	Package::Package(std::string const& _path, Workspace* _workspace)
@@ -112,7 +130,9 @@ namespace {
 
 		// loading toolchains
 		for (auto const& toolchain : configPackage.toolchains) {
-			mToolchains[toolchain.name] = toolchain;
+			busy::Toolchain tc;
+			tc = toolchain;
+			mToolchains[toolchain.name] = getProgs(tc);
 		}
 
 		// loading Overrides

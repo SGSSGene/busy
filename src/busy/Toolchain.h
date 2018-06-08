@@ -18,6 +18,7 @@ struct Toolchain {
 
 	auto operator=(Toolchain const&) -> Toolchain& = default;
 	auto operator=(busyConfig::Toolchain const& _other) -> Toolchain {
+		version        = _other.version;
 		cCompiler      = _other.cCompiler;
 		cppCompiler    = _other.cppCompiler;
 		linkExecutable = _other.linkExecutable;
