@@ -2,31 +2,14 @@ name: busy
 projects:
   - name: busy
     type: executable
-#    dependencies:
-#      - busy/busyPlugins1
-#      - busy/busyPlugins2
-#  - name: busyPlugins1
-#    type: plugin
-#    singleFileProjects: true
-#  - name: busyPlugins2
-#    type: plugin
   - name: testBusyPlugins
     depLibraries:
       - dl
-flavors:
-  default:
-    buildMode: debug
-    toolchain: system-gcc
-#  shared:
-#    buildMode: debug
-#    toolchain: system-gcc
-#    linkAsShared:
-#      - busyVersion
 toolchains:
-  - name: gcc-6.3-c++14
-    version: gcc-6.3
+  - name: gcc-8.1-c++17
+    version: gcc-8.1
     ccompiler:
-      searchPaths: [/usr/bin/gcc-6.3, /usr/bin/gcc]
+      searchPaths: [/usr/bin/gcc-8.1, /usr/bin/gcc-8, /usr/bin/gcc]
       strict:      [-Werror]
       call:        [ccache, "%compiler%", "%strict%", -std=c11, -Wall, -Wextra, -fdiagnostics-color=always, -fPIC, -fmax-errors=3, -MD, -c, "%infile%", -o, "%outfile%", "%buildModeFlags%", "%genDefines%", "%genIncludes%"]
       buildModeFlags:
@@ -34,15 +17,15 @@ toolchains:
         release_with_symbols: [-O2, -g3]
         debug:   [-O0, -g3]
     cppcompiler:
-      searchPaths: [/usr/bin/g++-6.3, /usr/bin/g++]
+      searchPaths: [/usr/bin/g++-8.1, /usr/bin/g++-8, /usr/bin/g++]
       strict:      [-Werror]
-      call:        [ccache, "%compiler%", "%strict%", -std=c++14, -Wall, -Wextra, -fdiagnostics-color=always, -fPIC, -fmax-errors=3, -MD, -c, "%infile%", -o, "%outfile%", "%buildModeFlags%", "%genDefines%", "%genIncludes%"]
+      call:        [ccache, "%compiler%", "%strict%", -std=c++17, -Wall, -Wextra, -fdiagnostics-color=always, -fPIC, -fmax-errors=3, -MD, -c, "%infile%", -o, "%outfile%", "%buildModeFlags%", "%genDefines%", "%genIncludes%"]
       buildModeFlags:
         release: [-O2]
         release_with_symbols: [-O2, -g3]
         debug:   [-O0, -g3]
     linkExecutable:
-      searchPaths: [/usr/bin/g++-6.3, /usr/bin/g++]
+      searchPaths: [/usr/bin/g++-8.1, /usr/bin-g++-8, /usr/bin/g++]
       call:        [ccache, "%compiler%", -rdynamic, -o, "%outfile%", "%objfiles%", "%afiles%", "-Wl,-rpath %rpaths%", "-l%libs%", "-L%libPaths%", "%legacyLinking%"]
     archivist:
       searchPaths: [/usr/bin/ar]
