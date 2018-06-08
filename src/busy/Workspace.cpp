@@ -259,7 +259,7 @@ void Workspace::setFlavor(std::string const& _flavor) {
 			throw std::runtime_error("flavor " + _flavor + " is unknown");
 		}
 		if (matches.size() > 1) {
-			throw std::runtime_error("flavor " + _flavor + " is ambigious");
+			throw std::runtime_error("flavor " + _flavor + " is ambiguous");
 		}
 		flavorPtr = matches.at(0);
 	}
@@ -335,6 +335,7 @@ void Workspace::loadPackages() {
 }
 
 namespace {
+
 auto retrieveGccVersion(std::vector<std::string> const& _command) -> std::string {
 	auto commandIter = _command.end();
 	// find first gcc
@@ -351,7 +352,9 @@ auto retrieveGccVersion(std::vector<std::string> const& _command) -> std::string
 	}
 
 	process::Process p({*commandIter, "--version"});
-	if (p.getStatus() != 0) return "";
+	if (p.getStatus() != 0) {
+		throw std::runtime_error("unknown compiler");
+	}
 	auto output = p.cout();
 	auto line    = utils::explode(output, "\n").at(0);
 	auto version = utils::explode(utils::explode(line, ")").at(1), " ").at(0);
@@ -376,13 +379,31 @@ auto retrieveClangVersion(std::vector<std::string> const& _command) -> std::stri
 	}
 
 	process::Process p({*commandIter, "--version"});
-	if (p.getStatus() != 0) return "";
+	if (p.getStatus() != 0) {
+		throw std::runtime_error("unknown compiler");
+	}
 	auto output = p.cout();
 	auto line    = utils::explode(output, "\n").at(0);
 	auto version = utils::explode(line, " ").at(2);
 	auto versionParts = utils::explode(version, ".");
 	auto realVersion = versionParts.at(0) + "." + versionParts.at(1);
 	return realVersion;
+}
+
+auto getProgs(busyConfig::Toolchain toolchain) -> busyConfig::Toolchain {
+	auto f = [](std::vector<std::string>& list) {
+		for (auto const& p : list) {
+			if (utils::fileExists(p)) {
+				list = {p};
+				break;
+			}
+		}
+	};
+	f(toolchain.archivist.searchPaths);
+	f(toolchain.cCompiler.searchPaths);
+	f(toolchain.cppCompiler.searchPaths);
+	f(toolchain.linkExecutable.searchPaths);
+	return toolchain;
 }
 
 }
@@ -456,6 +477,7 @@ void Workspace::discoverSystemToolchains() {
 					} else {
 						std::cerr << "unknown toolchain type: " + type << std::endl;
 					}
+					configToolchain = getProgs(configToolchain);
 					mSystemToolchains[configToolchain.name] = configToolchain;
 				} catch (...) {}
 
