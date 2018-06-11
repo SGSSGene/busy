@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <busyConfig/busyConfig.h>
 #include <busyUtils/busyUtils.h>
+#include <process/Process.h>
 
 #include <iostream>
 
@@ -25,6 +26,59 @@ namespace {
 		}
 		return r;
 	}
+
+auto retrieveGccVersion(std::vector<std::string> const& _command) -> std::string {
+	auto commandIter = _command.end();
+	// find first gcc
+	for (auto iter = _command.begin(); iter != _command.end(); ++iter) {
+		if (utils::fileExists(*iter)) {
+			commandIter = iter;
+			break;
+		}
+	}
+	// if no gcc found, throw exception
+	if (commandIter == _command.end()) {
+		throw std::runtime_error("unknown compiler");
+	}
+
+	process::Process p({*commandIter, "--version"});
+	if (p.getStatus() != 0) {
+		throw std::runtime_error("unknown compiler version");
+	}
+	auto output = p.cout();
+	auto line    = utils::explode(output, "\n").at(0);
+	auto version = utils::explode(utils::explode(line, ")").at(1), " ").at(0);
+	auto versionParts = utils::explode(version, ".");
+	auto realVersion = versionParts.at(0) + "." + versionParts.at(1);
+	return realVersion;
+}
+
+auto retrieveClangVersion(std::vector<std::string> const& _command) -> std::string {
+	auto commandIter = _command.end();
+	// find first clang
+	for (auto iter = _command.begin(); iter != _command.end(); ++iter) {
+		if (utils::fileExists(*iter)) {
+			commandIter = iter;
+			break;
+		}
+	}
+	// if no clang found, throw exception
+	if (commandIter == _command.end()) {
+		throw std::runtime_error("unknown compiler");
+	}
+
+	process::Process p({*commandIter, "--version"});
+	if (p.getStatus() != 0) {
+		throw std::runtime_error("unknown compiler");
+	}
+	auto output = p.cout();
+	auto line    = utils::explode(output, "\n").at(0);
+	auto version = utils::explode(line, " ").at(2);
+	auto versionParts = utils::explode(version, ".");
+	auto realVersion = versionParts.at(0) + "." + versionParts.at(1);
+	return realVersion;
+}
+
 
 	auto getProgs(busy::Toolchain toolchain) -> busy::Toolchain {
 		auto f = [](std::vector<std::string>& list) {
@@ -129,10 +183,27 @@ namespace {
 		}
 
 		// loading toolchains
-		for (auto const& toolchain : configPackage.toolchains) {
-			busy::Toolchain tc;
-			tc = toolchain;
-			mToolchains[toolchain.name] = getProgs(tc);
+		for (auto const& configToolchain : configPackage.toolchains) {
+			// Check version
+			try {
+				auto _d = utils::explode(configToolchain.version, "-");
+				if (_d.size() < 2) continue;
+				auto type = _d.at(0);
+				auto version = _d.at(1);
+
+				if (type == "gcc") {
+					auto realVersion = retrieveGccVersion(configToolchain.cCompiler.searchPaths);
+					if (realVersion != version) continue;
+				} else if (type == "clang") {
+					auto realVersion = retrieveClangVersion(configToolchain.cCompiler.searchPaths);
+					if (realVersion != version) continue;
+				} else {
+					std::cerr << "unknown toolchain type: " + type << std::endl;
+				}
+				busy::Toolchain toolchain;
+				toolchain = configToolchain;
+				mToolchains[configToolchain.name] = getProgs(toolchain);
+			} catch (...) {}
 		}
 
 		// loading Overrides

@@ -340,8 +340,7 @@ auto retrieveGccVersion(std::vector<std::string> const& _command) -> std::string
 	auto commandIter = _command.end();
 	// find first gcc
 	for (auto iter = _command.begin(); iter != _command.end(); ++iter) {
-		if (iter->find("gcc") != std::string::npos
-		    or iter->find("g++" ) != std::string::npos) {
+		if (utils::fileExists(*iter)) {
 			commandIter = iter;
 			break;
 		}
@@ -353,7 +352,7 @@ auto retrieveGccVersion(std::vector<std::string> const& _command) -> std::string
 
 	process::Process p({*commandIter, "--version"});
 	if (p.getStatus() != 0) {
-		throw std::runtime_error("unknown compiler");
+		throw std::runtime_error("unknown compiler version");
 	}
 	auto output = p.cout();
 	auto line    = utils::explode(output, "\n").at(0);
@@ -365,15 +364,14 @@ auto retrieveGccVersion(std::vector<std::string> const& _command) -> std::string
 
 auto retrieveClangVersion(std::vector<std::string> const& _command) -> std::string {
 	auto commandIter = _command.end();
-	// find first gcc
+	// find first clang
 	for (auto iter = _command.begin(); iter != _command.end(); ++iter) {
-		if (iter->find("clang") != std::string::npos
-		    or iter->find("clang++" ) != std::string::npos) {
+		if (utils::fileExists(*iter)) {
 			commandIter = iter;
 			break;
 		}
 	}
-	// if no gcc found, throw exception
+	// if no clang found, throw exception
 	if (commandIter == _command.end()) {
 		throw std::runtime_error("unknown compiler");
 	}
@@ -465,7 +463,7 @@ void Workspace::discoverSystemToolchains() {
 				// Check version
 				try {
 					auto _d = utils::explode(configToolchain.version, "-");
-					if (_d.size() != 2) continue;
+					if (_d.size() < 2) continue;
 					auto type = _d.at(0);
 					auto version = _d.at(1);
 

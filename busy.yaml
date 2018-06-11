@@ -30,7 +30,6 @@ toolchains:
     archivist:
       searchPaths: [/usr/bin/ar]
       call:        ["%compiler%", "rcs", "%outfile%", "%objfiles%"]
-toolchains:
   - name: gcc-5.5-c++17
     version: gcc-5.5
     ccompiler:
@@ -51,6 +50,30 @@ toolchains:
         debug:   [-O0, -g3]
     linkExecutable:
       searchPaths: [/usr/bin/g++-5.5, /usr/bin-g++-5, /usr/bin/g++]
+      call:        [ccache, "%compiler%", -rdynamic, -o, "%outfile%", "%objfiles%", "%afiles%", "-Wl,-rpath %rpaths%", "-l%libs%", "-L%libPaths%", "%legacyLinking%"]
+    archivist:
+      searchPaths: [/usr/bin/ar]
+      call:        ["%compiler%", "rcs", "%outfile%", "%objfiles%"]
+  - name: gcc-5.4-c++17
+    version: gcc-5.4
+    ccompiler:
+      searchPaths: [/usr/bin/gcc-5.4, /usr/bin/gcc-5, /usr/bin/gcc]
+      strict:      [-Werror]
+      call:        [ccache, "%compiler%", "%strict%", -std=c11, -Wall, -Wextra, -fdiagnostics-color=always, -fPIC, -fmax-errors=3, -MD, -c, "%infile%", -o, "%outfile%", "%buildModeFlags%", "%genDefines%", "%genIncludes%"]
+      buildModeFlags:
+        release: [-O2]
+        release_with_symbols: [-O2, -g3]
+        debug:   [-O0, -g3]
+    cppcompiler:
+      searchPaths: [/usr/bin/g++-5.4, /usr/bin/g++-5, /usr/bin/g++]
+      strict:      [-Werror]
+      call:        [ccache, "%compiler%", "%strict%", -std=c++17, -Wall, -Wextra, -fdiagnostics-color=always, -fPIC, -fmax-errors=3, -MD, -c, "%infile%", -o, "%outfile%", "%buildModeFlags%", "%genDefines%", "%genIncludes%"]
+      buildModeFlags:
+        release: [-O2]
+        release_with_symbols: [-O2, -g3]
+        debug:   [-O0, -g3]
+    linkExecutable:
+      searchPaths: [/usr/bin/g++-5.4, /usr/bin-g++-5, /usr/bin/g++]
       call:        [ccache, "%compiler%", -rdynamic, -o, "%outfile%", "%objfiles%", "%afiles%", "-Wl,-rpath %rpaths%", "-l%libs%", "-L%libPaths%", "%legacyLinking%"]
     archivist:
       searchPaths: [/usr/bin/ar]
