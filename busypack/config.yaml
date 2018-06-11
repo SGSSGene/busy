@@ -1,0 +1,16 @@
+name: glf-busy
+version: 1.0.14
+archlinux:
+  dependencies:
+  target: pacman
+  docker:
+    from: "base/archlinux"
+    setup_script: setup-archlinux.bash
+    build_script: build-archlinux.bash
+ubuntu1604:
+  dependencies:
+  target: deb
+  docker:
+    from: "ubuntu:16.04"
+    setup_script: setup-ubuntu16.04.bash
+    build_script: build-ubuntu16.04.bash
