@@ -48,8 +48,9 @@ g++ -ggdb -O0 --std=c++11 \
 	-lpthread \
 	-o busy
 rm -rf busy-helper
+./busy clean
 ./busy build busy
 
 echo "run:"
-echo "copy build/system-gcc/debug/busy to /usr/bin"
+echo "copy build/fallback-gcc/debug/busy to /usr/bin"
 
