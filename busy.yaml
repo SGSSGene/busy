@@ -2,6 +2,8 @@ name: busy
 projects:
   - name: busy
     type: executable
+  - name: busyAnalyse
+    type: executable
 #    dependencies:
 #      - busy/busyPlugins1
 #      - busy/busyPlugins2

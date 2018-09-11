@@ -21,12 +21,12 @@ echo "
 
 echo "initial build, this will take a few minutes"
 g++ -ggdb -O0 --std=c++11 \
-	-isystem extRepositories/Serializer/src/ \
-	-isystem extRepositories/jsoncpp/include \
+	-isystem extRepositories/CommonOptions/extRepositories/Serializer/src/ \
+	-isystem extRepositories/CommonOptions/extRepositories/Serializer/extRepositories/jsoncpp/include \
 	-isystem extRepositories/CommonOptions/src \
 	-isystem extRepositories/ThreadPool/src \
-	-isystem extRepositories/yaml-cpp/include \
-	-isystem extRepositories/Process/src \
+	-isystem extRepositories/CommonOptions/extRepositories/Serializer/extRepositories/yaml-cpp/include \
+	-isystem extRepositories/CommonOptions/extRepositories/SelfTest/extRepositories/Process/src \
 	-isystem busy-helper \
 	-isystem src \
 	-I src/busy/ \
@@ -36,18 +36,19 @@ g++ -ggdb -O0 --std=c++11 \
 	src/busyConfig/*.cpp \
 	src/busyUtils/*.cpp \
 	src/busyVersion/*.cpp \
-	extRepositories/Serializer/src/serializer/binary/*.cpp \
-	extRepositories/Serializer/src/serializer/json/*.cpp \
-	extRepositories/Serializer/src/serializer/yaml/*.cpp \
-	extRepositories/jsoncpp/src/lib_json/json_reader.cpp \
-	extRepositories/jsoncpp/src/lib_json/json_value.cpp \
-	extRepositories/jsoncpp/src/lib_json/json_writer.cpp \
-	extRepositories/yaml-cpp/src/yaml-cpp/*.cpp \
+	extRepositories/CommonOptions/extRepositories/Serializer/src/serializer/binary/*.cpp \
+	extRepositories/CommonOptions/extRepositories/Serializer/src/serializer/json/*.cpp \
+	extRepositories/CommonOptions/extRepositories/Serializer/src/serializer/yaml/*.cpp \
+	extRepositories/CommonOptions/extRepositories/Serializer/extRepositories/jsoncpp/src/lib_json/json_reader.cpp \
+	extRepositories/CommonOptions/extRepositories/Serializer/extRepositories/jsoncpp/src/lib_json/json_value.cpp \
+	extRepositories/CommonOptions/extRepositories/Serializer/extRepositories/jsoncpp/src/lib_json/json_writer.cpp \
+	extRepositories/CommonOptions/extRepositories/Serializer/extRepositories/yaml-cpp/src/yaml-cpp/*.cpp \
 	extRepositories/CommonOptions/src/commonOptions/*.cpp \
-	extRepositories/Process/src/process/*.cpp \
+	extRepositories/CommonOptions/extRepositories/SelfTest/extRepositories/Process/src/process/*.cpp \
 	-lpthread \
 	-o busy
 rm -rf busy-helper
+echo "rebuild busy with busy"
 ./busy build busy
 
 echo "run:"
