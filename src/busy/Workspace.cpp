@@ -11,7 +11,7 @@
 namespace busy {
 
 namespace {
-	std::string extRepPath { "./extRepositories" };
+	std::string extRepPath { "./external" };
 	std::string busyPath   { "./.busy" };
 	std::string workspaceFile { ".busy/workspace.bin" };
 	std::string shadowSrc {".busy/shadow-src"};
@@ -321,7 +321,7 @@ void Workspace::loadPackageFolders() {
 
 		mPackageFolders.emplace_back(front);
 
-		auto nextPath = front + "extRepositories/";
+		auto nextPath = front + "external/";
 		if (utils::fileExists(nextPath)) {
 			for (auto const& f : utils::listDirs(nextPath, true)) {
 				queue.emplace(nextPath + f + "/");

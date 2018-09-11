@@ -45,16 +45,16 @@ int listFiles(std::string const& _relPath) {
 	printLsFiles(_relPath, ".");
 	auto cwdDirs = utils::cwd();
 	auto cwdDirsList = utils::explode(cwdDirs, "/");
-	if (cwdDirsList[cwdDirsList.size()-1] == "extRepositories") {
+	if (cwdDirsList[cwdDirsList.size()-1] == "external") {
 		auto projectDirs = utils::listDirs(".", true);
 		for (auto const& d : projectDirs) {
 			auto path = d;
 			printLsFiles(_relPath, path);
 		}
-	} else if (utils::fileExists("extRepositories")) {
-		auto projectDirs = utils::listDirs("extRepositories", true);
+	} else if (utils::fileExists("external")) {
+		auto projectDirs = utils::listDirs("external", true);
 		for (auto const& d : projectDirs) {
-			auto path = std::string("extRepositories/")+d;
+			auto path = std::string("external/")+d;
 			printLsFiles(_relPath, path);
 		}
 	}

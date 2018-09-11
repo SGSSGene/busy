@@ -61,7 +61,7 @@ auto checkCwd() -> std::string {
 	}
 	auto dirs = utils::explode(cwd, "/");
 	if (dirs.size() > 1) {
-		if (dirs[dirs.size()-2] == "extRepositories"
+		if (dirs[dirs.size()-2] == "external"
 		    and utils::fileExists("../../busy.yaml")) {
 			utils::cwd("../..");
 			relPath = relPath + "/../..";

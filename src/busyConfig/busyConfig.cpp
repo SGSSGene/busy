@@ -25,8 +25,8 @@ namespace busyConfig {
 		}
 
 		// adding entries to package
-		if (utils::fileExists(_path + "/extRepositories")) {
-			auto includedRepos = utils::listDirs(_path + "/extRepositories");
+		if (utils::fileExists(_path + "/external")) {
+			auto includedRepos = utils::listDirs(_path + "/external");
 			for (auto const& s : includedRepos) {
 				if (s != "." and s != "..") {
 					package.extRepositories.push_back(s);

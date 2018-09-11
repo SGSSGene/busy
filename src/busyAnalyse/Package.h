@@ -26,7 +26,7 @@ public:
 		mName = package.name;
 
 		// load external packages
-		auto extPath = mPath + "extRepositories/";
+		auto extPath = mPath + "external/";
 		if (::utils::fileExists(extPath)) {
 			auto packagesDirs = ::utils::listDirs(extPath, true);
 			for (auto const& p : packagesDirs) {

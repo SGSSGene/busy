@@ -21,12 +21,12 @@ echo "
 
 echo "initial build, this will take a few minutes"
 g++ -ggdb -O0 --std=c++11 \
-	-isystem extRepositories/CommonOptions/extRepositories/Serializer/src/ \
-	-isystem extRepositories/CommonOptions/extRepositories/Serializer/extRepositories/jsoncpp/include \
-	-isystem extRepositories/CommonOptions/src \
-	-isystem extRepositories/ThreadPool/src \
-	-isystem extRepositories/CommonOptions/extRepositories/Serializer/extRepositories/yaml-cpp/include \
-	-isystem extRepositories/CommonOptions/extRepositories/SelfTest/extRepositories/Process/src \
+	-isystem external/CommonOptions/external/Serializer/src/ \
+	-isystem external/CommonOptions/external/Serializer/external/jsoncpp/include \
+	-isystem external/CommonOptions/src \
+	-isystem external/ThreadPool/src \
+	-isystem external/CommonOptions/external/Serializer/external/yaml-cpp/include \
+	-isystem external/CommonOptions/external/SelfTest/external/Process/src \
 	-isystem busy-helper \
 	-isystem src \
 	-I src/busy/ \
@@ -36,15 +36,15 @@ g++ -ggdb -O0 --std=c++11 \
 	src/busyConfig/*.cpp \
 	src/busyUtils/*.cpp \
 	src/busyVersion/*.cpp \
-	extRepositories/CommonOptions/extRepositories/Serializer/src/serializer/binary/*.cpp \
-	extRepositories/CommonOptions/extRepositories/Serializer/src/serializer/json/*.cpp \
-	extRepositories/CommonOptions/extRepositories/Serializer/src/serializer/yaml/*.cpp \
-	extRepositories/CommonOptions/extRepositories/Serializer/extRepositories/jsoncpp/src/lib_json/json_reader.cpp \
-	extRepositories/CommonOptions/extRepositories/Serializer/extRepositories/jsoncpp/src/lib_json/json_value.cpp \
-	extRepositories/CommonOptions/extRepositories/Serializer/extRepositories/jsoncpp/src/lib_json/json_writer.cpp \
-	extRepositories/CommonOptions/extRepositories/Serializer/extRepositories/yaml-cpp/src/yaml-cpp/*.cpp \
-	extRepositories/CommonOptions/src/commonOptions/*.cpp \
-	extRepositories/CommonOptions/extRepositories/SelfTest/extRepositories/Process/src/process/*.cpp \
+	external/CommonOptions/external/Serializer/src/serializer/binary/*.cpp \
+	external/CommonOptions/external/Serializer/src/serializer/json/*.cpp \
+	external/CommonOptions/external/Serializer/src/serializer/yaml/*.cpp \
+	external/CommonOptions/external/Serializer/external/jsoncpp/src/lib_json/json_reader.cpp \
+	external/CommonOptions/external/Serializer/external/jsoncpp/src/lib_json/json_value.cpp \
+	external/CommonOptions/external/Serializer/external/jsoncpp/src/lib_json/json_writer.cpp \
+	external/CommonOptions/external/Serializer/external/yaml-cpp/src/yaml-cpp/*.cpp \
+	external/CommonOptions/src/commonOptions/*.cpp \
+	external/CommonOptions/external/SelfTest/external/Process/src/process/*.cpp \
 	-lpthread \
 	-o busy
 rm -rf busy-helper
