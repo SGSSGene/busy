@@ -51,11 +51,15 @@ public:
 		if (mIncludesOptional != _other.mIncludesOptional) {
 			return false;
 		}
+		if (readFileAsStr(mPath) != _other.readFileAsStr(_other.mPath)) {
+			return false;
+		}
 		return true;
 	}
 
 
 private:
+	auto readFileAsStr(std::string const& _file) const -> std::string;
 	void readFile(std::string const& _file);
 };
 }

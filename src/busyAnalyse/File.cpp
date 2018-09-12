@@ -35,6 +35,16 @@ namespace {
 	}
 }
 
+auto File::readFileAsStr(std::string const& _file) const -> std::string {
+	auto ifs = std::ifstream(_file);
+	ifs.seekg(0, std::ios::end);
+	auto size = ifs.tellg();
+	auto buffer = std::string(size, ' ');
+	ifs.seekg(0);
+	ifs.read(&buffer[0], size);
+	return buffer;
+}
+
 void File::readFile(std::string const& _file) {
 	std::ifstream ifs(_file);
 	std::string line;
