@@ -9,6 +9,7 @@
 #include "stringsource.h"
 #include "yaml-cpp/binary.h"  // IWYU pragma: keep
 #include "yaml-cpp/ostream_wrapper.h"
+#include "yaml-cpp/null.h"
 
 namespace YAML {
 namespace Utils {
@@ -133,12 +134,12 @@ void WriteCodePoint(ostream_wrapper& out, int codePoint) {
   if (codePoint < 0 || codePoint > 0x10FFFF) {
     codePoint = REPLACEMENT_CHARACTER;
   }
-  if (codePoint < 0x7F) {
+  if (codePoint <= 0x7F) {
     out << static_cast<char>(codePoint);
-  } else if (codePoint < 0x7FF) {
+  } else if (codePoint <= 0x7FF) {
     out << static_cast<char>(0xC0 | (codePoint >> 6))
         << static_cast<char>(0x80 | (codePoint & 0x3F));
-  } else if (codePoint < 0xFFFF) {
+  } else if (codePoint <= 0xFFFF) {
     out << static_cast<char>(0xE0 | (codePoint >> 12))
         << static_cast<char>(0x80 | ((codePoint >> 6) & 0x3F))
         << static_cast<char>(0x80 | (codePoint & 0x3F));
@@ -152,12 +153,8 @@ void WriteCodePoint(ostream_wrapper& out, int codePoint) {
 
 bool IsValidPlainScalar(const std::string& str, FlowType::value flowType,
                         bool allowOnlyAscii) {
-  if (str.empty()) {
-    return false;
-  }
-
   // check against null
-  if (str == "null") {
+  if (IsNullString(str)) {
     return false;
   }
 
@@ -357,7 +354,7 @@ bool WriteDoubleQuotedString(ostream_wrapper& out, const std::string& str,
 }
 
 bool WriteLiteralString(ostream_wrapper& out, const std::string& str,
-                        int indent) {
+                        std::size_t indent) {
   out << "|\n";
   out << IndentTo(indent);
   int codePoint;
@@ -383,6 +380,8 @@ bool WriteChar(ostream_wrapper& out, char ch) {
     out << "\"\\n\"";
   } else if (ch == '\b') {
     out << "\"\\b\"";
+  } else if (ch == '\\') {
+    out << "\"\\\\\"";
   } else if ((0x20 <= ch && ch <= 0x7e) || ch == ' ') {
     out << "\"" << ch << "\"";
   } else {
@@ -394,7 +393,7 @@ bool WriteChar(ostream_wrapper& out, char ch) {
 }
 
 bool WriteComment(ostream_wrapper& out, const std::string& str,
-                  int postCommentIndent) {
+                  std::size_t postCommentIndent) {
   const std::size_t curIndent = out.col();
   out << "#" << Indentation(postCommentIndent);
   out.set_comment();

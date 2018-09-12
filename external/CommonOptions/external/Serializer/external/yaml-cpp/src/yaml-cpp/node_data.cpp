@@ -13,15 +13,6 @@
 namespace YAML {
 namespace detail {
 
- bool NodeDataComperator::operator()(node const* n1, node const* n2) {
-	if (n1->type() == NodeType::Scalar and n2->type() == NodeType::Scalar) {
-		return n1->scalar () < n2->scalar();
-	}
-	return n1 < n2;
-}
-
-
-
 std::string node_data::empty_scalar;
 
 node_data::node_data()
@@ -244,6 +235,14 @@ bool node_data::remove(node& key, shared_memory_holder /* pMemory */) {
   if (m_type != NodeType::Map)
     return false;
 
+  kv_pairs::iterator it = m_undefinedPairs.begin();
+  while (it != m_undefinedPairs.end()) {
+    kv_pairs::iterator jt = std::next(it);
+    if (it->first->is(key))
+      m_undefinedPairs.erase(it);
+    it = jt;
+  }
+
   for (node_map::iterator it = m_map.begin(); it != m_map.end(); ++it) {
     if (it->first->is(key)) {
       m_map.erase(it);
@@ -265,9 +264,10 @@ void node_data::reset_map() {
 }
 
 void node_data::insert_map_pair(node& key, node& value) {
-  m_map[&key] = &value;
+  m_map.emplace_back(&key, &value);
+
   if (!key.is_defined() || !value.is_defined())
-    m_undefinedPairs.push_back(kv_pair(&key, &value));
+    m_undefinedPairs.emplace_back(&key, &value);
 }
 
 void node_data::convert_to_map(shared_memory_holder pMemory) {
