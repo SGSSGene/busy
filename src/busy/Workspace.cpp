@@ -415,7 +415,7 @@ void Workspace::discoverSystemToolchains() {
 		tc.cCompiler.buildModeFlags["debug"] = {"-g3", "-ggdb"};
 		tc.cppCompiler.searchPaths = {"g++"};
 		tc.cppCompiler.strict      = {""};
-		tc.cppCompiler.call        = {"%compiler%", "%strict%", "-std=c++14", "-fPIC", "-MD", "-c", "%infile%", "-o", "%outfile%", "%buildModeFlags%", "%genDefines%", "%genIncludes%", "-fdiagnostics-color=always"};
+		tc.cppCompiler.call        = {"%compiler%", "%strict%", "-std=c++17", "-fPIC", "-MD", "-c", "%infile%", "-o", "%outfile%", "%buildModeFlags%", "%genDefines%", "%genIncludes%", "-fdiagnostics-color=always"};
 		tc.cppCompiler.buildModeFlags["release"] = {"-O3", /*"-flto",*/ "-march=native", "-funroll-loops" };
 		tc.cppCompiler.buildModeFlags["fast-math"] = {"-O3", "-flto", "-ffast-math", "-march=native", "-funroll-loops" };
 		tc.cppCompiler.buildModeFlags["release_with_symbols"] = {};
