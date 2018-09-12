@@ -1,6 +1,6 @@
 #pragma once
 
-#include <busyConfig/busyConfig.h>
+#include <busyConfig2/busyConfig.h>
 #include <busyUtils/busyUtils.h>
 
 #include <set>
@@ -8,8 +8,7 @@
 
 #include "Project.h"
 
-namespace busy {
-namespace analyse {
+namespace busy::analyse {
 
 class Package {
 private:
@@ -80,5 +79,3 @@ public:
 };
 
 }
-}
-

@@ -26,8 +26,8 @@ void printPackage(std::string tabs, busy::analyse::Package const& package) {
 	if (not package.getPackages().empty()) {
 		std::cout << tabs << "packages:\n";
 		for (auto const& p : package.getPackages()) {
-			std::cout << tabs << "- " << p.getName() << "\n";
-			printPackage(tabs + "  ", p);
+			std::cout << tabs << "  - name: " << p.getName() << "\n";
+			printPackage(tabs + "    ", p);
 		}
 	}
 }
@@ -53,7 +53,7 @@ void findDoublePackages(busy::analyse::Package const& package) {
 	}
 
 	for (auto const& e : count) {
-		std::cout << "found " << e.first << " " << e.second.counter << " times\n";
+		//std::cout << "found " << e.first << " " << e.second.counter << " times\n";
 		if (e.second.counter > 1) {
 			auto const& first = *e.second.packages[0];
 			bool error = false;
@@ -76,10 +76,10 @@ void findDoublePackages(busy::analyse::Package const& package) {
 int main() {
 	busy::analyse::Package package("./");
 
-	std::cout << "name: " << package.getName() << "\n";
+//	std::cout << "name: " << package.getName() << "\n";
 	printPackage("", package);
 
-	std::cout << "---\n";
+//	std::cout << "---\n";
 	findDoublePackages(package);
 	// check for clashing packages
 //	package.

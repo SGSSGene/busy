@@ -4,6 +4,9 @@ projects:
     type: executable
   - name: busyAnalyse
     type: executable
+  - name: busyConfig2
+    depLibraries:
+      - stdc++fs
 #    dependencies:
 #      - busy/busyPlugins1
 #      - busy/busyPlugins2
