@@ -1,6 +1,5 @@
 #pragma once
 
-
 #include <yaml-cpp/yaml.h>
 #include <optional>
 #include <tuple>
@@ -27,21 +26,14 @@ auto accessNode(std::tuple<rootname, Args...> const& key, YAML::Node& node) {
 	}
 }
 
-template <typename Key>
-auto toKey(Key key) {
-	if constexpr(std::is_same_v<Key, std::string> or std::is_arithmetic_v<Key>) {
-		return key;
-	} else if constexpr (not std::is_same_v<Key, rootname>) {
-		return std::string{key};
-	}
-}
-
 template <typename Stack, typename Node, typename ValueT>
 void push_pop_key(Stack& stack, Node& node, ValueT& obj) {
 	if constexpr (Node::push_key) {
 		using Key = std::decay_t<decltype(node->getKey())>;
-		if constexpr (not std::is_same_v<Key, rootname>) {
-			stack.push_back(stack.back()[toKey(node->getKey())]);
+		if constexpr(std::is_same_v<Key, std::string> or std::is_arithmetic_v<Key>) {
+			stack.push_back(stack.back()[node->getKey()]);
+		} else if constexpr (not std::is_same_v<Key, rootname>) {
+			stack.push_back(stack.back()[std::string{node->getKey()}]);
 		}
 	} else if constexpr (Node::pop_key) {
 		stack.pop_back();
@@ -60,13 +52,15 @@ auto serialize(T const& _input, YAML::Node root = {}) -> YAML::Node {
 		using ValueT = std::decay_t<decltype(obj)>;
 		if constexpr (Node::is_key) {
 			push_pop_key(stack, node, obj);
-		} else if constexpr (Node::pop_key) {
-			stack.pop_back();
 		} else if constexpr (std::is_enum_v<ValueT>) {
 			stack.back() = static_cast<std::underlying_type_t<ValueT>>(obj);
 		} else if constexpr (Node::is_value) {
 			stack.back() = obj;
 		} else if constexpr (Node::is_map or Node::is_list or Node::is_object) {
+			if constexpr (Node::is_map or Node::is_object) { // !TODO Workaround, forces yaml maps
+				stack.back()[1] = 0;
+				stack.back().remove(1);
+			}
 			Node::range(obj, [&](auto& key, auto& value) {
 				node[key] % value;
 			});
@@ -86,12 +80,17 @@ auto serialize(T const& _input, YAML::Node root = {}) -> YAML::Node {
 
 template <typename T>
 auto deserialize(YAML::Node root) -> T {
+
 	std::vector<YAML::Node> stack{root};
 
 	auto res = getEmpty<T>();
 	visit([&](auto& node, auto& obj) {
 		using Node   = std::decay_t<decltype(node)>;
 		using ValueT = std::decay_t<decltype(obj)>;
+		if (not stack.back().IsDefined()) {
+			return;
+		}
+
 
 		if constexpr (Node::is_key) {
 			push_pop_key(stack, node, obj);
@@ -99,7 +98,27 @@ auto deserialize(YAML::Node root) -> T {
 			using UT = std::underlying_type_t<ValueT>;
 			obj = ValueT{stack.back().template as<UT>()};
 		} else if constexpr (Node::is_value) {
-			obj = stack.back().template as<ValueT>();
+			if constexpr (is_any_of_v<ValueT, int8_t, uint8_t>) {
+				auto v = stack.back().template as<int16_t>();
+				if (v < std::numeric_limits<ValueT>::min() or v > std::numeric_limits<ValueT>::max()) {
+					throw std::runtime_error("value out of range");
+				}
+				obj = v;
+			} else if constexpr (is_any_of_v<ValueT, int16_t, uint16_t>) {
+				auto v = stack.back().template as<int32_t>();
+				if (v < std::numeric_limits<ValueT>::min() or v > std::numeric_limits<ValueT>::max()) {
+					throw std::runtime_error("value out of range");
+				}
+				obj = v;
+			} else if constexpr (is_any_of_v<ValueT, int32_t, uint32_t>) {
+				auto v = stack.back().template as<int64_t>();
+				if (v < std::numeric_limits<ValueT>::min() or v > std::numeric_limits<ValueT>::max()) {
+					throw std::runtime_error("value out of range");
+				}
+				obj = v;
+			} else {
+				obj = stack.back().template as<ValueT>();
+			}
 		} else if constexpr (Node::is_list) {
 			Node::reserve(obj, stack.back().size());
 			for (size_t idx{0}; idx < stack.back().size(); ++idx) {
@@ -123,9 +142,6 @@ auto deserialize(YAML::Node root) -> T {
 			}
 		} else if constexpr (Node::is_object) {
 			Node::range(obj, [&](auto& key, auto& value) {
-				if (not stack.back()[toKey(key)].IsDefined()) {
-					return;
-				}
 				node[key] % value;
 			});
 		}
@@ -142,7 +158,6 @@ auto deserialize(YAML::Node root) -> T {
 				if (not stack.back().IsDefined()) {
 					return;
 				}
-				std::cout << "searching for " << node->getPath() << "\n";
 				findObj<BaseType>(res, stack.back().as<std::string>(), [&](auto& _obj) {
 					obj = &_obj;
 				});

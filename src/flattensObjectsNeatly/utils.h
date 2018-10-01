@@ -3,7 +3,6 @@
 #include "traits.h"
 #include "Node.h"
 #include "convert.h"
-#include <iostream>
 
 namespace fon {
 
@@ -85,16 +84,12 @@ template <typename BaseType, typename ...Args, typename T, typename L>
 void findObj(T& input, std::string const& path, L l) {
 	bool found{false};
 
-	std::cout << "start comparing--\n";
 	filter<BaseType>([&](auto& node, auto& obj) {
-		std::cout << "compare: " << node->getPath() << " == " << path << "\n";
-
 		using Node   = std::decay_t<decltype(node)>;
 		if (found) {
 			return;
 		}
 
-		std::cout << "compare: " << node->getPath() << " == " << path << "\n";
 		if (node->getPath() == path) {
 			l(obj);
 			found = true;

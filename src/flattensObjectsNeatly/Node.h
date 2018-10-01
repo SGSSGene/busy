@@ -68,7 +68,7 @@ public:
 		, mParent {_parent}
 	{
 		if constexpr (not std::is_same_v<Key, rootname>) {
-			bool null;
+			bool null{};
 			auto wrapper = NodeWrapper<Node, bool, true, false>{*this};
 			cb(wrapper, null);
 		}
