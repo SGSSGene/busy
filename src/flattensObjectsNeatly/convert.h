@@ -7,6 +7,7 @@
 #include <forward_list>
 #include <list>
 #include <map>
+#include <memory>
 #include <set>
 #include <string>
 #include <string_view>
@@ -15,20 +16,18 @@
 #include <unordered_set>
 #include <variant>
 #include <vector>
-#include <memory>
 
 namespace fon {
 
 enum class Type {
 	None,
 	Value,
+	Convertible,
 	List,
 	Map,
 	Object,
 	Pointer,
 };
-
-enum class index : size_t {};
 
 // converter functions
 template <typename Node, typename T, class Enable=void>
@@ -64,13 +63,23 @@ struct convert<Node, T, typename std::enable_if_t<std::is_arithmetic_v<T>>> {
 	convert(Node&, T&) {}
 };
 
+
+// convertible
 template <typename Node, typename T>
 struct convert<Node, T, typename std::enable_if_t<std::is_enum_v<T>>> {
-	static constexpr Type type = Type::Value;
-	struct Infos {};
-
+	static constexpr Type type = Type::Convertible;
+	struct Infos {
+		template <typename Node2>
+		static void convert(Node2& node, T& obj) {
+			using UT = std::underlying_type_t<T>;
+			auto val = static_cast<UT>(obj);
+			node % val;
+			obj = T {val};
+		}
+	};
 	convert(Node&, T&) {}
 };
+
 
 // list types
 template <template <typename...> typename C, typename T>
@@ -241,16 +250,23 @@ struct SubVisitor {
 		cb(key, obj);
 	}
 };
-template <typename Cb>
+template <typename Cb1, typename Cb2>
 struct Visitor {
-	Cb cb;
+	Cb1 cb1;
+	Cb2 cb2;
 
-	Visitor(Cb const& _cb)
-		: cb{_cb}
+	Visitor(Cb1 const& _cb1, Cb2 const& _cb2)
+		: cb1{_cb1}
+		, cb2{_cb2}
 	{};
 
 	auto operator[](std::string_view key) {
-		return SubVisitor{cb, key};
+		return SubVisitor{cb1, key};
+	}
+
+	template <typename T>
+	auto operator%(T& obj) {
+		cb2(obj);
 	}
 };
 }
@@ -260,11 +276,9 @@ template <typename Node, typename T>
 struct convert<Node, T, typename std::enable_if_t<has_ser_v<Node, T>>> {
 	static constexpr Type type = Type::Object;
 	struct Infos {
-		template <typename L>
-		static auto range(T& obj, L const& l) {
-			auto visitor = helper::Visitor{[&l](auto& key, auto& obj) {
-				l(key, obj);
-			}};
+		template <typename L1, typename L2>
+		static auto range(T& obj, L1 const& l1, L2 const& l2) {
+			auto visitor = helper::Visitor{l1, l2};
 			obj.serialize(visitor);
 		};
 
@@ -470,6 +484,19 @@ struct convert<Node, std::unique_ptr<T>> {
 		using Value = T;
 	};
 	convert(Node& node, std::unique_ptr<T>& obj) {
+		if (obj) {
+			node % *obj;
+		}
+	}
+};
+
+template <typename Node, typename T>
+struct convert<Node, std::shared_ptr<T>> {
+	static constexpr Type type = Type::Pointer;
+	struct Infos {
+		using Value = T;
+	};
+	convert(Node& node, std::shared_ptr<T>& obj) {
 		if (obj) {
 			node % *obj;
 		}

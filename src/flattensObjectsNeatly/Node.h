@@ -8,29 +8,38 @@
 #include <sstream>
 #include <functional>
 
+
 namespace fon {
 
-enum class rootname : uint8_t {};
+template <size_t N, typename L, typename ...Args>
+void for_tuple(std::tuple<Args...> const& tuple, L const& l) {
+	if constexpr (N < sizeof...(Args)) {
+		l(std::get<N>(tuple));
+		for_tuple<N+1>(tuple, l);
+	}
+}
 
-template <typename Parent, typename T, bool pushKey, bool popKey>
+template <typename L, typename ...Args>
+void for_tuple(std::tuple<Args...> const& tuple, L const& l) {
+	for_tuple<0>(tuple, l);
+}
+
+template <typename Parent, typename T>
 struct NodeWrapper : convert<Parent, T>::Infos {
 	Parent const& mParent;
 	NodeWrapper(Parent const& _other)
 		: mParent{_other}
 	{}
 
-	static constexpr bool push_key   = pushKey;
-	static constexpr bool pop_key    = popKey;
-
-	static constexpr Type type = convert<Parent, T>::type;
-	static constexpr bool is_value   = Type::Value   == type;
-	static constexpr bool is_list    = Type::List    == type;
-	static constexpr bool is_map     = Type::Map     == type;
-	static constexpr bool is_object  = Type::Object  == type;
-	static constexpr bool is_pointer = Type::Pointer == type;
-	static constexpr bool is_owner   = not is_pointer or is_same_base_v<std::unique_ptr, T> or is_same_base_v<std::shared_ptr, T>;
-
-	static constexpr bool is_key     = push_key or pop_key;
+	static constexpr Type type {convert<Parent, T>::type};
+	static constexpr bool is_none    { type == Type::None };
+	static constexpr bool is_value   { type == Type::Value };
+	static constexpr bool is_convert { type == Type::Convertible };
+	static constexpr bool is_list    { type == Type::List };
+	static constexpr bool is_map     { type == Type::Map };
+	static constexpr bool is_object  { type == Type::Object };
+	static constexpr bool is_pointer { type == Type::Pointer };
+	static constexpr bool is_owner   { not is_pointer or is_same_base_v<std::unique_ptr, T> or is_same_base_v<std::shared_ptr, T> };
 
 
 	static auto getEmpty() {
@@ -54,39 +63,28 @@ struct NodeWrapper : convert<Parent, T>::Infos {
 
 enum class noparent : uint8_t {};
 
-template <typename Cb, typename Key, typename Parent>
+template <typename Cb, typename Parent, typename ...Key>
 struct Node {
 protected:
 	Cb const& cb;
-	Key mKey;
+	std::tuple<Key...> mKey;
+	static_assert(sizeof...(Key) == 0 or sizeof...(Key) == 1, "must provide one or zero keys");
 	Parent const* mParent;
 
 public:
-	Node(Cb const& _cb, Key _key, Parent const* _parent)
+	Node(Cb const& _cb, std::tuple<Key...> _key, Parent const* _parent)
 		: cb      {_cb}
-		, mKey    {std::move(_key)}
+		, mKey   {std::move(_key)}
 		, mParent {_parent}
-	{
-		if constexpr (not std::is_same_v<Key, rootname>) {
-			bool null{};
-			auto wrapper = NodeWrapper<Node, bool, true, false>{*this};
-			cb(wrapper, null);
-		}
-	}
+	{}
 
-	~Node() {
-		if constexpr (not std::is_same_v<Key, rootname>) {
-			bool null;
-			auto wrapper = NodeWrapper<Node, bool, false, true>{*this};
-			cb(wrapper, null);
-		}
-	}
+	~Node() {}
 
 
 	template <typename TKey>
 	auto operator[](TKey key) const {
 		static_assert(is_any_of_v<TKey, std::string, std::string_view> or std::is_arithmetic_v<TKey>);
-		return Node<Cb, TKey, Node>{cb, key, this};
+		return Node<Cb, Node, TKey>{cb, std::make_tuple(key), this};
 	}	
 
 	// we assume all c-str are static values
@@ -96,7 +94,7 @@ public:
 
 	template<typename T>
 	void operator% (T& t) const {
-		auto wrapper = NodeWrapper<Node, T, false, false>{*this};
+		auto wrapper = NodeWrapper<Node, T>{*this};
 		cb(wrapper, t);
 	}
 
@@ -105,7 +103,7 @@ public:
 	}
 
 	template <typename L>
-	auto visit(L l) const {
+	auto visit(L const& l) const {
 		if constexpr (not std::is_same_v<std::nullptr_t, Parent>) {
 			mParent->visit(l);
 		}
@@ -113,19 +111,21 @@ public:
 	}
 
 	auto getFullKey() const {
-		if constexpr (std::is_same_v<Key, rootname>) {
-			return std::tuple{getKey()};
+		if constexpr (std::is_same_v<std::nullptr_t, Parent>) {
+			return getKey();
 		} else {
-			return std::tuple_cat(mParent->getFullKey(), std::tuple{getKey()});
+			std::stringstream name;
+			for_tuple(getKey(), [&](auto key) {
+				name << "/" << key;
+			});
+			return std::tuple_cat(mParent->getFullKey(), getKey());
 		}
 	}
 
 	auto getPath() const {
 		std::stringstream name;
-		visit([&](auto& node) {
-			if constexpr (not std::is_same_v<std::decay_t<decltype(node.getKey())>, rootname>) {
-				name << "/" << node.getKey();
-			}
+		for_tuple(getFullKey(), [&](auto key) {
+			name << "/" << key;
 		});
 		return name.str();
 	}

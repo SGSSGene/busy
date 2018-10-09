@@ -1,14 +1,14 @@
 #pragma once
 
 #include "traits.h"
-#include "Node.h"
 #include "convert.h"
+#include "Node.h"
 
 namespace fon {
 
 template <typename Cb, typename T>
 void visit(Cb cb, T& obj) {
-	auto node = Node{cb, rootname{}, (Node<Cb, rootname, std::nullptr_t> const*)nullptr};
+	auto node = Node{cb, std::make_tuple(), (Node<Cb, std::nullptr_t> const*)nullptr};
 	node % obj;
 }
 
@@ -17,10 +17,6 @@ void filter(Cb cb, T& obj) {
 	visit([&](auto& node, auto& obj) {
 		using Node  = std::decay_t<decltype(node)>;
 		using Value = std::decay_t<decltype(obj)>;
-
-		if constexpr (Node::is_key) {
-			return;
-		}
 
 		if constexpr(std::is_base_of_v<F, Value> or std::is_same_v<F, Value>) {
 			cb(node, obj);
