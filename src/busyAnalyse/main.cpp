@@ -68,7 +68,32 @@ void printPackage(std::string tabs, busy::analyse::Package const& package) {
 	}*/
 }
 
-void findDoublePackages(busy::analyse::Package const& package) {
+auto groupPackages(std::vector<busy::analyse::Package const*> packages) -> std::map<busy::analyse::Package const*, std::vector<busy::analyse::Package const*>> {
+	auto result = std::map<busy::analyse::Package const*, std::vector<busy::analyse::Package const*>>{};
+
+	// finds a place in result
+	// returns a pointer to an equivalent map key
+	auto find = [&](busy::analyse::Package const* p) -> std::vector<busy::analyse::Package const*>* {
+		for (auto& [id, list] : result) {
+			if (p->isEquivalent(*id)) {
+				return &list;
+			}
+		}
+		return nullptr;
+	};
+
+	for (auto p : packages) {
+		auto listPtr = find(p);
+		if (listPtr) {
+			listPtr->emplace_back(p);
+		} else {
+			result[p].push_back(p);
+		}
+	}
+	return result;
+}
+
+auto collectDoublePackages(busy::analyse::Package const& package) -> std::map<std::string, std::vector<busy::analyse::Package const*>> {
 	auto count = std::map<std::string, std::vector<busy::analyse::Package const*>>{};
 
 	count[package.getName()].push_back(&package);
@@ -78,32 +103,46 @@ void findDoublePackages(busy::analyse::Package const& package) {
 			count[p2.getName()].push_back(&p2);
 		}
 	}
+	return count;
+}
 
+bool findDoublePackages(busy::analyse::Package const& package) {
+	auto count = collectDoublePackages(package);
+
+	bool error {false};
 	for (auto const& [key, value] : count) {
-		bool error = false;
+		auto groups = groupPackages(value);
+		if (groups.size() == 1) {
+			continue;
+		}
+		auto rootPath = "./external/" + value.at(0)->getName() + "/";
+		auto iter = std::find_if(begin(value), end(value), [&](auto const& e) {
+			std::cout << "compare: " << rootPath << " " << e->getPath() << "\n";
+			return rootPath == e->getPath();
+		});
 
-		auto const& first = *value[0];
-
-		if (value.size() > 1) {
-			for (int i{1}; i < value.size(); ++i) {
-				if (not first.isEquivalent(*value[i])) {
-					error = true;
-				}
+		if (iter == end(value)) {
+			error = true;
+		}
+		std::cout << "Packages in different versions: " << groups.begin()->first->getName() << " located at: " << "\n";
+		int type{1};
+		for (auto const& [key, list] : groups) {
+			std::cout << "  Type " << type << ":\n";
+			for (auto p : list) {
+				std::cout << "  - " << p->getPath() << "\n";
 			}
-			if (error) {
-				std::cout << "Packages in different versions: " << first.getName() << " located at: " << "\n";
-				for (auto p : value) {
-					std::cout << "  - " << p->getPath() << "\n";
-				}
-			}
+			++type;
 		}
 	}
+	return error;
 }
-void linkPackages(busy::analyse::Package const& package) {
+
+bool linkPackages(busy::analyse::Package const& package) {
 	std::queue<busy::analyse::Package const*> queue;
 	for (auto const& p : package.getPackages()) {
 		queue.emplace(&p);
 	}
+	bool addedNewLinks {false};
 	while(not queue.empty()) {
 		auto const& front = *queue.front();
 		queue.pop();
@@ -112,6 +151,7 @@ void linkPackages(busy::analyse::Package const& package) {
 		auto linkName = std::string{"./external/" + front.getName()};
 		auto type = fs::status(linkName).type();
 		if (type == fs::file_type::not_found) {
+			addedNewLinks = true;
 			auto cmd = std::string{"ln -s ../" + front.getPath() + " " + linkName};
 			std::cout << cmd << "\n";
 			system(cmd.c_str());
@@ -123,6 +163,7 @@ void linkPackages(busy::analyse::Package const& package) {
 			queue.emplace(&p);
 		}
 	}
+	return addedNewLinks;
 }
 
 auto allIncludes(busy::analyse::Project const& project) {
@@ -320,9 +361,17 @@ int main(int argc, char const** argv) {
 		{
 			auto package = busy::analyse::Package{path};
 			std::cout << "---\n";
-			findDoublePackages(package);
-			linkPackages(package);
-			checkForCycle(package);
+			if (findDoublePackages(package)) {
+				std::cout << "canceled\n";
+				return 0;
+			}
+			if (linkPackages(package)) {
+				package = busy::analyse::Package{path};
+			}
+			if (checkForCycle(package)) {
+				std::cout << "canceled\n";
+				return 0;
+			}
 
 			int compileCt{0};
 			int linkCt{0};
