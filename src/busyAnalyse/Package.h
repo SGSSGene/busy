@@ -18,8 +18,8 @@ private:
 	std::vector<Project> mProjects;
 	std::vector<Package> mPackages;
 public:
-	Package(std::filesystem::path _path)
-		: mPath { std::move(_path) }
+	Package(std::filesystem::path const& _path)
+		: mPath { _path.lexically_normal() }
 	{
 		// read this package config
 		auto package = ::busyConfig::readPackage(mPath);
