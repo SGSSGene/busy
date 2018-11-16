@@ -1,47 +1,51 @@
 #include "Project.h"
 
-#include <busyUtils/busyUtils.h>
+namespace busy::analyse {
 
-namespace busy {
-namespace analyse {
-
-Project::Project(std::string _name, std::string _sourcePath, std::vector<std::string> const& _legacyIncludePaths)
+Project::Project(std::string _name, std::filesystem::path _sourcePath, std::vector<std::filesystem::path> const& _legacyIncludePaths)
 	: mName { std::move(_name) }
 	, mPath { std::move(_sourcePath) }
 {
 	analyseFiles(mName, mPath, _legacyIncludePaths);
 }
 
-void Project::analyseFiles(std::string const& _name, std::string const& _sourcePath, std::vector<std::string> const& _legacyIncludePaths) {
-	mFiles["cpp"]       = {};
-	mFiles["c"]         = {};
-	mFiles["incl"]      = {};
+void Project::analyseFiles(std::string const& _name, std::filesystem::path const& _sourcePath, std::vector<std::filesystem::path> const& _legacyIncludePaths) {
+	mFiles = {
+		{FileType::C, {}},
+		{FileType::Cpp, {}},
+		{FileType::H, {}},
+	};
 
-	// Discover cpp and c files
-	for (auto const &f : utils::listFiles(_sourcePath, true)) {
-		auto path     = _sourcePath + "/" + f;
-		auto flatPath = _name + "/" + f;
+	// Discover header, cpp and c files
+	for (auto const &e : std::filesystem::recursive_directory_iterator(_sourcePath)) {
+		if (not is_regular_file(e)) {
+			continue;
+		}
+		auto ext = e.path().extension();
+		auto path = e.path();
+		auto flatPath = relative(e.path(), _sourcePath);
 
-		auto type = [&]() -> std::string {
-			if (utils::isEndingWith(f, ".cpp")) {
-				return "cpp";
-			} else if (utils::isEndingWith(f, ".c")) {
-				return "c";
-			}
-			return "incl";
+		auto fileType = [&]() {
+			if (ext == ".c") return FileType::C;
+			if (ext == ".cpp") return FileType::Cpp;
+			return FileType::H;
 		}();
-		mFiles[type].push_back({path, flatPath});
+
+		mFiles[fileType].emplace_back(std::move(path), std::move(flatPath));
 	}
 
-	// Discover header files
+	// Discover legacy include paths
 	for (auto const& dir : _legacyIncludePaths) {
-		for (auto const& f : utils::listFiles(dir, true)) {
-			mFiles["incl"].push_back({dir + "/" + f, f});
+		for (auto const &e : std::filesystem::recursive_directory_iterator(dir)) {
+			if (not is_regular_file(e)) {
+				continue;
+			}
+			auto path = e.path();
+			auto flatPath = relative(e.path(), dir);
+
+			mFiles[FileType::H].emplace_back(std::move(path), std::move(flatPath));
 		}
 	}
-
 }
 
-
-}
 }

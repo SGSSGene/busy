@@ -1,4 +1,4 @@
-
+#include "FileCache.h"
 #include "Package.h"
 
 #include <cstdlib>
@@ -7,7 +7,6 @@
 #include <iostream>
 #include <list>
 #include <queue>
-#include "FileCache.h"
 
 auto exceptionToString(std::exception const& e, int level = 0) -> std::string {
 	std::string ret = std::string(level, ' ') + e.what();
@@ -27,7 +26,17 @@ void printProject(std::string tabs, busy::analyse::Project const& project) {
 	std::cout << tabs << "   files:\n";
 	for (auto const& [key, value] : project.getFiles()) {
 		if (value.empty()) continue;
-		std::cout << tabs << "     - " << key << ":\n";
+		auto keyToString = [](busy::analyse::FileType type) -> std::string {
+			using FileType = busy::analyse::FileType;
+			if (type == FileType::Cpp) {
+				return "cpp";
+			} else if (type == FileType::C) {
+				return "c";
+			} else {
+				return "incl";
+			}
+		};
+		std::cout << tabs << "     - " << keyToString(key) << ":\n";
 		for (auto const& f : value) {
 			std::cout << tabs << "       - " << f.getPath() << "\n";
 		}
@@ -363,34 +372,36 @@ int main(int argc, char const** argv) {
 			auto package = busy::analyse::Package{path};
 			std::cout << "---\n";
 			if (findDoublePackages(package)) {
-				std::cout << "canceled\n";
-				return 0;
+				throw std::runtime_error{"found duplicate packages with different versions"};
 			}
 			if (linkPackages(package)) {
 				package = busy::analyse::Package{path};
 			}
 			if (checkForCycle(package)) {
-				std::cout << "canceled\n";
-				return 0;
+				throw std::runtime_error{"found packages that form a cycle"};
 			}
 
 			int compileCt{0};
 			int linkCt{0};
 			auto projects = createProjects(package);
 			for (auto const& p : projects) {
-				auto cct = p.project->getFiles().at("cpp").size();
+				auto countCpp = p.project->getFiles().at(busy::analyse::FileType::Cpp).size();
+				auto countC   = p.project->getFiles().at(busy::analyse::FileType::C).size();
+				auto cct      = countCpp + countC;
 				if (cct > 0) {
 					linkCt += 1;
 				}
 				compileCt += cct;
 			}
+
+			printPackage("  ", package);
+			for (auto const& p : package.getPackages()) {
+				printPackage("  ", p);
+			}
 			std::cout << "link:" << linkCt << "\n";
 			std::cout << "compile: " << compileCt << "\n";
 			std::cout << "total: " << linkCt + compileCt << "\n";
-/*			printPackage("  ", package);
-			for (auto const& p : package.getPackages()) {
-				printPackage("  ", p);
-			}*/
+
 
 		}
 		if (false)
@@ -427,9 +438,6 @@ int main(int argc, char const** argv) {
 			out << fon::yaml::serialize(getFileCache());
 			std::ofstream(path / ".filecache.yaml") << out.c_str();
 		}
-
-	// check for clashing packages
-//	package.
 	} catch (std::exception const& e) {
 		std::cerr << "exception: " << exceptionToString(e) << "\n";
 	}

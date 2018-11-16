@@ -1,26 +1,31 @@
 #pragma once
 
+#include "File.h"
+
 #include <map>
 #include <set>
 #include <string>
 #include <vector>
 
-#include "File.h"
+namespace busy::analyse {
 
-namespace busy {
-namespace analyse {
+enum class FileType {
+	C,
+	Cpp,
+	H
+};
 
 class Project {
 private:
 	std::string mName;
-	std::string mPath;
+	std::filesystem::path mPath;
 
-	std::map<std::string, std::vector<File>> mFiles;
+	std::map<FileType, std::vector<File>> mFiles;
 
 public:
-	Project(std::string _name, std::string _sourcePath, std::vector<std::string> const& _legacyIncludePaths);
+	Project(std::string _name, std::filesystem::path _sourcePath, std::vector<std::filesystem::path> const& _legacyIncludePaths);
 
-	auto getFiles() const -> std::map<std::string, std::vector<File>> const& {
+	auto const& getFiles() const {
 		return mFiles;
 	}
 
@@ -28,7 +33,7 @@ public:
 		return mName;
 	}
 
-	auto getPath() const -> std::string const& {
+	auto getPath() const -> std::filesystem::path const& {
 		return mPath;
 	}
 
@@ -58,9 +63,7 @@ public:
 
 
 private:
-	void analyseFiles(std::string const& _name, std::string const& _sourcePath, std::vector<std::string> const& _legacyIncludePaths);
+	void analyseFiles(std::string const& _name, std::filesystem::path const& _sourcePath, std::vector<std::filesystem::path> const& _legacyIncludePaths);
 };
 
 }
-}
-

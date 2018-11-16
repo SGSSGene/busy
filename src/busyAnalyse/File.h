@@ -1,13 +1,13 @@
 #pragma once
 
+#include "FileCache.h"
+
 #include <array>
 #include <set>
 #include <string>
 
-#include "FileCache.h"
 
-namespace busy {
-namespace analyse {
+namespace busy::analyse {
 
 /**
  *
@@ -17,20 +17,20 @@ class File {
 public:
 	using Hash = std::array<unsigned char, picosha2::k_digest_size>;
 private:
-	std::string mPath;
-	std::string mFlatPath; // !maybe this should be removed?
+	std::filesystem::path mPath;
+	std::filesystem::path mFlatPath; // !maybe this should be removed?
 
-	std::set<std::string> mIncludes;
-	std::set<std::string> mIncludesOptional;
+	std::set<std::filesystem::path> mIncludes;
+	std::set<std::filesystem::path> mIncludesOptional;
 
 	Hash mHash;
 
 public:
-	File(std::string _path, std::string _flatPath)
+	File(std::filesystem::path _path, std::filesystem::path _flatPath)
 		: mPath     { std::move(_path) }
 		, mFlatPath { std::move(_flatPath) }
 	{
-		//readFile(mPath);
+		readFile(mPath);
 	}
 
 	auto const& getPath() const {
@@ -69,7 +69,7 @@ public:
 
 
 private:
-	void readFile(std::string const& _file);
+	void readFile(std::filesystem::path const& _file);
 };
-}
+
 }

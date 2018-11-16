@@ -4,8 +4,7 @@
 #include <busyUtils/busyUtils.h>
 #include <fstream>
 
-namespace busy {
-namespace analyse {
+namespace busy::analyse {
 
 namespace {
 	void skipAllWhiteSpaces(char const*& str) {
@@ -35,7 +34,7 @@ namespace {
 	}
 }
 
-void File::readFile(std::string const& _file) {
+void File::readFile(std::filesystem::path const& _file) {
 	// generate hash
 	{
 		std::ifstream ifs(_file, std::ios::binary);
@@ -83,5 +82,4 @@ void File::readFile(std::string const& _file) {
 
 }
 
-}
 }
