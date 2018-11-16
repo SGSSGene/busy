@@ -176,7 +176,9 @@ struct convert<Node, C<T>, typename std::enable_if_t<is_set_v<C, T>>> {
 		static void range(C<T>& obj, L const& l) {
 			auto iter {begin(obj)};
 			for (size_t i{0}; iter != end(obj); ++i, ++iter) {
-				l(i, *iter);
+				//!TODO this const cast needs to go away
+				auto& entry = const_cast<T&>(*iter);
+				l(i, entry);
 			}
 		}
 
@@ -193,7 +195,9 @@ struct convert<Node, C<T>, typename std::enable_if_t<is_set_v<C, T>>> {
 	convert(Node& node, C<T>& obj) {
 		auto iter {begin(obj)};
 		for (size_t i{0}; iter != end(obj); ++i, ++iter) {
-			node[i] % *iter;
+			//!TODO this const cast needs to go away
+			auto& entry = const_cast<T&>(*iter);
+			node[i] % entry;
 		}
 	}
 };

@@ -85,7 +85,7 @@ public:
 	auto operator[](TKey key) const {
 		static_assert(is_any_of_v<TKey, std::string, std::string_view> or std::is_arithmetic_v<TKey>);
 		return Node<Cb, Node, TKey>{cb, std::make_tuple(key), this};
-	}	
+	}
 
 	// we assume all c-str are static values
 	auto operator[](char const* value) const {
