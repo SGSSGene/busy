@@ -152,7 +152,8 @@ bool linkPackages(busy::analyse::Package const& package) {
 		auto type = fs::status(linkName).type();
 		if (type == fs::file_type::not_found) {
 			addedNewLinks = true;
-			auto cmd = std::string{"ln -s ../" + front.getPath() + " " + linkName};
+			auto targetPath = ".." / front.getPath();
+			auto cmd = std::string{"ln -s " + targetPath.string() + " " + linkName};
 			std::cout << cmd << "\n";
 			system(cmd.c_str());
 		} else if (type != fs::file_type::directory) {

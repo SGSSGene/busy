@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Project.h"
+
 #include <busyConfig2/busyConfig.h>
 #include <busyUtils/busyUtils.h>
 
@@ -7,18 +9,16 @@
 #include <set>
 #include <string>
 
-#include "Project.h"
-
 namespace busy::analyse {
 
 class Package {
 private:
-	std::string mPath;
+	std::filesystem::path mPath;
 	std::string mName;
 	std::vector<Project> mProjects;
 	std::vector<Package> mPackages;
 public:
-	Package(std::string _path)
+	Package(std::filesystem::path _path)
 		: mPath { std::move(_path) }
 	{
 		// read this package config
@@ -28,20 +28,23 @@ public:
 		// load external packages
 		namespace fs = std::filesystem;
 		// adding entries to package
-		if (fs::status(mPath + "external").type() == fs::file_type::directory) {
-			for(auto& p : fs::directory_iterator(mPath + "external")) {
-				mPackages.push_back(p.path().string()+ "/");
+		if (fs::status(mPath / "external").type() == fs::file_type::directory) {
+			for(auto& p : fs::directory_iterator(mPath / "external")) {
+				mPackages.push_back(p.path());
 			}
 		}
 
 		// load projects
-		auto projectDirs = ::utils::listDirs(mPath + "src/", true);
-		for (auto const& p : projectDirs) {
-			mProjects.emplace_back(Project{p, mPath + "src/" + p, {}});
+		for(auto& p : fs::directory_iterator(mPath / "src")) {
+			if (not fs::is_directory(p)) {
+				continue;
+			}
+			auto name = p.path().filename();
+			mProjects.emplace_back(Project{name, p.path(), {}});
 		}
 	}
 
-	auto getPath() const -> std::string const& {
+	auto getPath() const -> std::filesystem::path {
 		return mPath;
 	}
 
