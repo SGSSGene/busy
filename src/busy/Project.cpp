@@ -51,7 +51,7 @@ namespace busy {
 			mLinkingOptions.push_back(f);
 		}
 		discoverSourceFiles();
-		
+
 		mIsHeaderOnly = (getCppFiles().size() == 0 && getCFiles().size() == 0);
 	}
 
@@ -236,12 +236,27 @@ namespace busy {
 	}
 
 	void Project::discoverSourceFiles() {
+		//!TODO fix std::filesystem
 		auto includes = getIncludePaths();
 		includes.erase(includes.begin());
 
-		analyse::Project project(getName(), getSourcePath(), includes);
-		
-		mSourceFiles = project.getSourceFiles();
+		auto sourcePath = std::filesystem::path{getSourcePath()};
+		auto legacyIncludesPaths = std::vector<std::filesystem::path>{};
+		for (auto const& i : includes) {
+			legacyIncludesPaths.push_back(i);
+		}
+
+		analyse::Project project(getName(), sourcePath, legacyIncludesPaths);
+		for (auto const& [e, list] : project.getSourceFiles()) {
+			auto& files = *[&]() {
+				if (e == analyse::FileType::C)   return &mSourceFiles["c"];
+				if (e == analyse::FileType::Cpp) return &mSourceFiles["cpp"];
+				if (e == analyse::FileType::H)   return &mSourceFiles["incl"];
+			}();
+			for (auto const& p : list) {
+				files.emplace_back(std::string(p));
+			}
+		}
 	}
 
 	auto Project::getIncludeAndDependendPaths() const -> std::vector<std::string> {

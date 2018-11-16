@@ -1,27 +1,30 @@
 #pragma once
 
+#include <filesystem>
 #include <map>
-#include <set>
-#include <string>
+#include <string_view>
 #include <vector>
 
-namespace busy {
-namespace analyse {
+namespace busy::analyse {
+
+enum class FileType {
+	C,
+	Cpp,
+	H
+};
 
 class Project {
 private:
-	std::map<std::string, std::vector<std::string>> mSourceFiles;
+	std::map<FileType, std::vector<std::filesystem::path>> mSourceFiles;
 
 public:
-	Project(std::string const& _name, std::string const& _sourcePath, std::vector<std::string> const& _legacyIncludePaths);
+	Project(std::string_view _name, std::filesystem::path const& _sourcePath, std::vector<std::filesystem::path> const& _legacyIncludePaths);
 
-	auto getSourceFiles() const -> std::map<std::string, std::vector<std::string>> const& {
+	auto const& getSourceFiles() const {
 		return mSourceFiles;
 	}
 private:
-	void analyseFiles(std::string const& _name, std::string const& _sourcePath, std::vector<std::string> const& _legacyIncludePaths);
+	void analyseFiles(std::string_view _name, std::filesystem::path const& _sourcePath, std::vector<std::filesystem::path> const& _legacyIncludePaths);
 };
 
 }
-}
-

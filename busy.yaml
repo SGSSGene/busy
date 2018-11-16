@@ -2,6 +2,8 @@ name: busy
 projects:
   - name: busy
     type: executable
+    depLibraries:
+      - stdc++fs
   - name: busyAnalyse
     type: executable
   - name: busyConfig2

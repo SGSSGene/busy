@@ -2,41 +2,47 @@
 
 #include <busyUtils/busyUtils.h>
 
-namespace busy {
-namespace analyse {
+namespace busy::analyse {
 
-Project::Project(std::string const& _name, std::string const& _sourcePath, std::vector<std::string> const& _legacyIncludePaths) {
+namespace fs = std::filesystem;
+
+
+Project::Project(std::string_view _name, std::filesystem::path const& _sourcePath, std::vector<std::filesystem::path> const& _legacyIncludePaths) {
 	analyseFiles(_name, _sourcePath, _legacyIncludePaths);
 }
 
-void Project::analyseFiles(std::string const& _name, std::string const& _sourcePath, std::vector<std::string> const& _legacyIncludePaths) {
-	mSourceFiles["cpp"]       = {};
-	mSourceFiles["c"]         = {};
-	mSourceFiles["incl"]      = {};
-	mSourceFiles["incl-flat"] = {};
+void Project::analyseFiles(std::string_view _name, std::filesystem::path const& _sourcePath, std::vector<std::filesystem::path> const& _legacyIncludePaths) {
+	mSourceFiles = {
+		{FileType::C, {}},
+		{FileType::Cpp, {}},
+		{FileType::H, {}},
+	};
 
 	// Discover cpp and c files
-	for (auto const &f : utils::listFiles(_sourcePath, true)) {
-		if (utils::isEndingWith(f, ".cpp")) {
-			mSourceFiles["cpp"].push_back(_sourcePath + "/" + f);
-		} else if (utils::isEndingWith(f, ".c")) {
-			mSourceFiles["c"].push_back(_sourcePath + "/" + f);
+	for (auto const &e : fs::recursive_directory_iterator(_sourcePath)) {
+		if (not is_regular_file(e)) {
+			continue;
+		}
+		auto ext = e.path().extension();
+		if (ext == ".c") {
+			mSourceFiles[FileType::C].emplace_back(e.path());
+		} else if (ext == ".cpp") {
+			mSourceFiles[FileType::Cpp].emplace_back(e.path());
 		} else {
-			mSourceFiles["incl"].push_back(_sourcePath + "/" + f);
-			mSourceFiles["incl-flat"].push_back(_name + "/" + f);
+			mSourceFiles[FileType::H].emplace_back(e.path());
 		}
 	}
 
+	//!TODO discover legacy include paths
 	// Discover header files
-	for (auto const& dir : _legacyIncludePaths) {
-		for (auto const& f : utils::listFiles(dir, true)) {
-			mSourceFiles["incl"].push_back(dir + "/" + f);
-			mSourceFiles["incl-flat"].push_back(f);
-		}
-	}
+//	for (auto const& dir : _legacyIncludePaths) {
+//		for (auto const& f : utils::listFiles(dir, true)) {
+//			mSourceFiles["incl"].push_back(dir + "/" + f);
+//			mSourceFiles["incl-flat"].push_back(f);
+//		}
+//	}
 
 }
 
 
-}
 }
