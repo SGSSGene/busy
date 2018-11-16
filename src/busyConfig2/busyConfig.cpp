@@ -1,22 +1,23 @@
 #include "busyConfig.h"
 
-#include <flattensObjectsNeatly/fon.h>
-#include <flattensObjectsNeatly/yaml.h>
+#include <flattensObjectsNeatly/flattensObjectsNeatly.h>
 
-#include <filesystem>
+#include <iostream>
 
 namespace busyConfig {
 
-auto readPackage(std::string const& _path) -> Package {
+auto readPackage(std::filesystem::path path) -> Package {
 	std::map<std::string, YAML::Node> unused;
 
-	auto file = _path + "/busy.yaml";
-	auto package = fon::yaml::deserialize<Package>(YAML::LoadFile(file));
+	path /= "busy.yaml";
+	auto node = YAML::LoadFile(path.string());
+	auto package = fon::yaml::deserialize<Package>(node);
 
 	namespace fs = std::filesystem;
+
 	// adding entries to package
-	if (fs::status(_path + "/external").type() == fs::file_type::directory) {
-		for(auto& p : fs::directory_iterator(_path + "/external")) {
+	if (fs::status(path / Package::external).type() == fs::file_type::directory) {
+		for(auto& p : fs::directory_iterator(path / Package::external)) {
 			package.packages.push_back(p.path().string());
 		}
 	}

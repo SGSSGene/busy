@@ -3,6 +3,7 @@
 #include <busyConfig2/busyConfig.h>
 #include <busyUtils/busyUtils.h>
 
+#include <filesystem>
 #include <set>
 #include <string>
 
@@ -25,11 +26,11 @@ public:
 		mName = package.name;
 
 		// load external packages
-		auto extPath = mPath + "external/";
-		if (::utils::fileExists(extPath)) {
-			auto packagesDirs = ::utils::listDirs(extPath, true);
-			for (auto const& p : packagesDirs) {
-				mPackages.emplace_back(extPath + p + "/");
+		namespace fs = std::filesystem;
+		// adding entries to package
+		if (fs::status(mPath + "external").type() == fs::file_type::directory) {
+			for(auto& p : fs::directory_iterator(mPath + "external")) {
+				mPackages.push_back(p.path().string()+ "/");
 			}
 		}
 

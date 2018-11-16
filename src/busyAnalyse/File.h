@@ -1,7 +1,10 @@
 #pragma once
 
+#include <array>
 #include <set>
 #include <string>
+
+#include "FileCache.h"
 
 namespace busy {
 namespace analyse {
@@ -11,6 +14,8 @@ namespace analyse {
  * searching for includes using <> not ""
  */
 class File {
+public:
+	using Hash = std::array<unsigned char, picosha2::k_digest_size>;
 private:
 	std::string mPath;
 	std::string mFlatPath; // !maybe this should be removed?
@@ -18,27 +23,33 @@ private:
 	std::set<std::string> mIncludes;
 	std::set<std::string> mIncludesOptional;
 
+	Hash mHash;
+
 public:
 	File(std::string _path, std::string _flatPath)
 		: mPath     { std::move(_path) }
 		, mFlatPath { std::move(_flatPath) }
 	{
-		readFile(mPath);
+		//readFile(mPath);
 	}
 
-	auto getPath() const -> std::string const& {
+	auto const& getPath() const {
 		return mPath;
 	}
-	auto getFlatPath() const -> std::string const& {
+
+	auto const& getFlatPath() const {
 		return mFlatPath;
 	}
 
-	auto getIncludes() const -> std::set<std::string> const& {
+	auto const& getIncludes() const {
 		return mIncludes;
 	}
 
-	auto getIncludesOptional() const -> std::set<std::string> const& {
+	auto const& getIncludesOptional() const {
 		return mIncludesOptional;
+	}
+	auto const& getHash() const {
+		return mHash;
 	}
 
 	auto isEquivalent(File const& _other) const -> bool {
@@ -51,15 +62,13 @@ public:
 		if (mIncludesOptional != _other.mIncludesOptional) {
 			return false;
 		}
-		if (readFileAsStr(mPath) != _other.readFileAsStr(_other.mPath)) {
-			return false;
-		}
-		return true;
+		auto info1 = getFileCache().getFileCache(mPath);
+		auto info2 = getFileCache().getFileCache(_other.mPath);
+		return info1.hash == info2.hash;
 	}
 
 
 private:
-	auto readFileAsStr(std::string const& _file) const -> std::string;
 	void readFile(std::string const& _file);
 };
 }

@@ -2,8 +2,10 @@
 
 #include "Package.h"
 
+#include <filesystem>
+
 namespace busyConfig {
 
-auto readPackage(std::string const& _path) -> Package;
+auto readPackage(std::filesystem::path path) -> Package;
 
 }

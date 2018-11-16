@@ -30,7 +30,6 @@ void Project::analyseFiles(std::string const& _name, std::string const& _sourceP
 			}
 			return "incl";
 		}();
-
 		mFiles[type].push_back({path, flatPath});
 	}
 

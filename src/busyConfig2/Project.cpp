@@ -2,13 +2,16 @@
 
 
 namespace {
-	bool isStartingWith(std::string const& str, std::string const& start) {
-		if (str.length() <= start.length()) {
+	bool hasPrefix(std::string_view str, std::string_view prefix) {
+		if (str.length() < prefix.length()) {
 			return false;
 		}
-		std::string sub = str.substr(0, start.length());
-
-		return sub == start;
+		for (size_t i{0}; i < prefix.length(); ++i) {
+			if (str.at(i) != prefix.at(i)) {
+				return false;
+			}
+		}
+		return true;
 	}
 }
 
@@ -19,8 +22,10 @@ namespace busyConfig {
  *  everything else is a library
  */
 auto Project::getDefaultTypeByName() const -> std::string {
-	if (isStartingWith(name, "test")) {
-		return "executable";
+	for (auto prefix : {"test", "demo", "example"}) {
+		if (hasPrefix(name, prefix)) {
+			return "executable";
+		}
 	}
 	return "library";
 }

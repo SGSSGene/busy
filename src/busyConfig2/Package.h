@@ -17,8 +17,10 @@ namespace busyConfig {
 		Projects        projects;
 		Toolchains      toolchains;
 
+		static constexpr std::string_view external{"external"};
+
 		template <typename Node>
-		constexpr void serialize(Node& node) {
+		void serialize(Node& node) {
 			node["name"]            % name;
 			node["projects"]        % projects;
 			node["toolchains"]      % toolchains;

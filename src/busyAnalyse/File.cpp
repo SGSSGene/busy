@@ -35,19 +35,16 @@ namespace {
 	}
 }
 
-auto File::readFileAsStr(std::string const& _file) const -> std::string {
-	auto ifs = std::ifstream(_file);
-	ifs.seekg(0, std::ios::end);
-	auto size = ifs.tellg();
-	auto buffer = std::string(size, ' ');
-	ifs.seekg(0);
-	ifs.read(&buffer[0], size);
-	return buffer;
-}
-
 void File::readFile(std::string const& _file) {
+	// generate hash
+	{
+		std::ifstream ifs(_file, std::ios::binary);
+		picosha2::hash256(ifs, mHash.begin(), mHash.end());
+	}
+
 	std::ifstream ifs(_file);
 	std::string line;
+
 
 	std::set<std::string> dependenciesAsString;
 
