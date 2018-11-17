@@ -14,18 +14,14 @@ namespace busy::analyse {
  * searching for includes using <> not ""
  */
 class File {
-public:
-	using Hash = std::array<unsigned char, picosha2::k_digest_size>;
 private:
 	std::filesystem::path mPath;
 	std::filesystem::path mFlatPath; // !maybe this should be removed?
 
 	std::set<std::filesystem::path> mIncludes;
 	std::set<std::filesystem::path> mIncludesOptional;
-
-	Hash mHash;
-
 public:
+
 	File(std::filesystem::path _path, std::filesystem::path _flatPath)
 		: mPath     { std::move(_path) }
 		, mFlatPath { std::move(_flatPath) }
@@ -48,9 +44,7 @@ public:
 	auto const& getIncludesOptional() const {
 		return mIncludesOptional;
 	}
-	auto const& getHash() const {
-		return mHash;
-	}
+	auto getHash() const -> std::string;
 
 	auto isEquivalent(File const& _other) const -> bool {
 		if (mFlatPath != _other.mFlatPath) {

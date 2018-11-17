@@ -32,54 +32,84 @@ namespace {
 		skipAllWhiteSpaces(str);
 		return *str == '<';
 	}
+
+	auto computeHash(std::filesystem::path const& path) -> std::string {
+		std::ifstream ifs(path, std::ios::binary);
+		using Hash = std::array<unsigned char, picosha2::k_digest_size>;
+		Hash hash;
+		picosha2::hash256(ifs, hash.begin(), hash.end());
+		auto b64 = base64_encode(&hash[0], picosha2::k_digest_size);
+		return b64;
+	}
+
 }
 
-void File::readFile(std::filesystem::path const& _file) {
-	// generate hash
-	{
-		std::ifstream ifs(_file, std::ios::binary);
-		picosha2::hash256(ifs, mHash.begin(), mHash.end());
-	}
-
-	std::ifstream ifs(_file);
-	std::string line;
+namespace {
+	auto readIncludes(std::filesystem::path const& _file) -> std::tuple<std::set<std::filesystem::path>, std::set<std::filesystem::path>>{
+		std::ifstream ifs(_file);
+		std::string line;
 
 
-	std::set<std::string> dependenciesAsString;
+		std::set<std::string> dependenciesAsString;
 
-	bool optionalSection = false;
+		bool optionalSection = false;
 
-	while (std::getline(ifs, line)) {
-		// check if it is '#endif'
-		if (checkIfMakroEndif(line.c_str())) {
-			optionalSection = false;
-		} else if (checkIfMakroIfAndBusy(line.c_str())) {
-			optionalSection = true;
-		} else if (checkIfMakroSystemInclude(line.c_str())) {
-			auto parts = utils::explode(line, std::vector<std::string>{" ", "\t"});
+		std::set<std::filesystem::path> resIncludes;
+		std::set<std::filesystem::path> resIncludesOptional;
 
-			std::string includeFile;
-			if (parts.size() == 0) continue;
-			if (parts.size() == 1) {
-				includeFile = parts[0];
-			} else {
-				includeFile = parts[1];
-			}
+		while (std::getline(ifs, line)) {
+			// check if it is '#endif'
+			if (checkIfMakroEndif(line.c_str())) {
+				optionalSection = false;
+			} else if (checkIfMakroIfAndBusy(line.c_str())) {
+				optionalSection = true;
+			} else if (checkIfMakroSystemInclude(line.c_str())) {
+				auto parts = utils::explode(line, std::vector<std::string>{" ", "\t"});
 
-			auto pos1 = includeFile.find("<")+1;
-			auto pos2 = includeFile.find(">")-pos1;
+				std::string includeFile;
+				if (parts.size() == 0) continue;
+				if (parts.size() == 1) {
+					includeFile = parts[0];
+				} else {
+					includeFile = parts[1];
+				}
 
-			auto file = includeFile.substr(pos1, pos2);
+				auto pos1 = includeFile.find("<")+1;
+				auto pos2 = includeFile.find(">")-pos1;
 
-			if (optionalSection) {
-				mIncludesOptional.insert(file);
-				mIncludes.erase(file);
-			} else if (mIncludes.count(file) == 0) {
-				mIncludes.insert(file);
+				auto file = includeFile.substr(pos1, pos2);
+
+				if (optionalSection) {
+					resIncludesOptional.insert(std::filesystem::path(file));
+					resIncludes.erase(file);
+				} else if (resIncludes.count(file) == 0) {
+					resIncludes.insert(file);
+				}
 			}
 		}
+		return {std::move(resIncludes), std::move(resIncludesOptional)};
+	}
+}
+
+auto File::getHash() const -> std::string {
+
+	if (getFileCache().hasTChange<std::string>(mPath)) {
+		getFileCache().updateT<std::string>(mPath, computeHash(mPath));
+	}
+	return getFileCache().getT<std::string>(mPath);
+}
+
+
+void File::readFile(std::filesystem::path const& _file) {
+	using AllIncludes = FileCache::AllIncludes;
+
+	if (getFileCache().hasTChange<AllIncludes>(_file)) {
+		getFileCache().updateT<AllIncludes>(_file, readIncludes(_file));
 	}
 
+	auto const& [incl, optIncl] = getFileCache().getT<AllIncludes>(_file);
+	mIncludes = incl;
+	mIncludesOptional = optIncl;
 }
 
 }
