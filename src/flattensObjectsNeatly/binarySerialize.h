@@ -50,12 +50,18 @@ struct Frame {
 	{}
 
 	~Frame() {
-		if (buffer.size() == index + sizeof(mType) + sizeof(size_t)) { // roll back if no data was written
+		//!TODO roll back doesn't seem to work, some unit test are failing
+		#if 0
+		// roll back if no data was written and nothing has to be written
+		if (buffer.size() == index + sizeof(mType) + sizeof(size_t)
+			and (not entriesPtr or entries == 0)) {
+			std::cout << "roll back: entries: " << entries << "\n";
 			buffer.resize(index);
 			return;
 		}
-		// finalize different data
+		#endif
 
+		// finalize different data
 		if (sizePtr) {
 			(*sizePtr) = sizePtr->size();
 		}

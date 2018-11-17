@@ -10,8 +10,6 @@
 #include "binarySerialize.h"
 #include "binaryDeserialize.h"
 
-#include <iostream>
-
 namespace fon::binary {
 
 namespace details {

@@ -82,7 +82,7 @@ struct Frame {
 		auto frame = Frame{buffer, nextIndexEntries};
 		nextIndexEntries += frame.size;
 		return next;
-		
+
 	}
 };
 
