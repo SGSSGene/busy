@@ -1,13 +1,15 @@
 #pragma once
 
+#include <filesystem>
+#include <set>
 #include <string>
 #include <vector>
 
 namespace busyConfig {
 	struct ProjectLegacy {
-		std::vector<std::string> includes;
+		std::vector<std::filesystem::path> includes;
 		std::vector<std::string> systemIncludes;
-		std::vector<std::string> systemLibraries;
+		std::set<std::string>    systemLibraries;
 		std::vector<std::string> linkingOption;
 		std::vector<std::string> dependentProjects;
 		std::vector<std::string> depLibraries;

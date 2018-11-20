@@ -4,11 +4,17 @@ projects:
     type: executable
     depLibraries:
       - stdc++fs
+    legacy:
+      systemLibraries:
+        - stdc++fs
   - name: busyAnalyse
     type: executable
   - name: busyConfig2
     depLibraries:
       - stdc++fs
+    legacy:
+      systemLibraries:
+        - stdc++fs
 #    dependencies:
 #      - busy/busyPlugins1
 #      - busy/busyPlugins2
@@ -20,6 +26,9 @@ projects:
   - name: testBusyPlugins
     depLibraries:
       - dl
+    legacy:
+      systemLibraries:
+        - dl
 flavors:
   default:
     buildMode: debug

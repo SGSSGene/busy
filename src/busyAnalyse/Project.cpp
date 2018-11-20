@@ -2,11 +2,13 @@
 
 namespace busy::analyse {
 
-Project::Project(std::string _name, std::filesystem::path _sourcePath, std::vector<std::filesystem::path> const& _legacyIncludePaths)
-	: mName { std::move(_name) }
-	, mPath { std::move(_sourcePath) }
+Project::Project(std::string _name, std::filesystem::path _sourcePath, std::vector<std::filesystem::path> _legacyIncludePaths, std::set<std::string> _systemLibraries)
+	: mName               { std::move(_name) }
+	, mPath               { std::move(_sourcePath) }
+	, mLegacyIncludePaths { std::move(_legacyIncludePaths) }
+	, mSystemLibraries    { std::move(_systemLibraries) }
 {
-	analyseFiles(mName, mPath, _legacyIncludePaths);
+	analyseFiles(mName, mPath, mLegacyIncludePaths);
 }
 
 void Project::analyseFiles(std::string const& _name, std::filesystem::path const& _sourcePath, std::vector<std::filesystem::path> const& _legacyIncludePaths) {
@@ -31,11 +33,15 @@ void Project::analyseFiles(std::string const& _name, std::filesystem::path const
 			return FileType::H;
 		}();
 
-		mFiles[fileType].emplace_back(std::move(path), std::move(flatPath));
+		mFiles[fileType].emplace_back(std::move(path), mName / flatPath);
 	}
 
 	// Discover legacy include paths
 	for (auto const& dir : _legacyIncludePaths) {
+		if (not std::filesystem::is_directory(dir)) {
+			continue;
+		}
+		std::cout << "checking for includes: " << dir << "\n";
 		for (auto const &e : std::filesystem::recursive_directory_iterator(dir)) {
 			if (not is_regular_file(e)) {
 				continue;
@@ -43,7 +49,9 @@ void Project::analyseFiles(std::string const& _name, std::filesystem::path const
 			auto path = e.path();
 			auto flatPath = relative(e.path(), dir);
 
-			mFiles[FileType::H].emplace_back(std::move(path), std::move(flatPath));
+//			std::cout << "found: " << path << " -> " << flatPath << "\n";
+
+			mFiles[FileType::H].emplace_back(std::move(path), flatPath);
 		}
 	}
 }

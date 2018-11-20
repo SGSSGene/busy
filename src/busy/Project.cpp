@@ -5,6 +5,7 @@
 #include "analyse/File.h"
 #include "analyse/Project.h"
 
+#include <cassert>
 #include <algorithm>
 #include <busyUtils/busyUtils.h>
 
@@ -252,6 +253,7 @@ namespace busy {
 				if (e == analyse::FileType::C)   return &mSourceFiles["c"];
 				if (e == analyse::FileType::Cpp) return &mSourceFiles["cpp"];
 				if (e == analyse::FileType::H)   return &mSourceFiles["incl"];
+				assert(false);
 			}();
 			for (auto const& p : list) {
 				files.emplace_back(std::string(p));

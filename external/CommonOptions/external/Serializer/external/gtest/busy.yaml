@@ -4,6 +4,8 @@ projects:
     legacy:
       includes:
         - include
+      systemLibraries:
+        - pthread
     noWarnings: true
     warningsAsErrors: false
     depLibraries:

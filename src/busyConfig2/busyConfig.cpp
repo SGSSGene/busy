@@ -1,6 +1,7 @@
 #include "busyConfig.h"
 
 #include <flattensObjectsNeatly/flattensObjectsNeatly.h>
+#include <flattensObjectsNeatly/filesystem.h>
 
 #include <iostream>
 

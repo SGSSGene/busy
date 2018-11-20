@@ -34,6 +34,7 @@ namespace {
 	}
 
 	auto computeHash(std::filesystem::path const& path) -> std::string {
+		std::cout << "computing hash of: " << path << "\n";
 		std::ifstream ifs(path, std::ios::binary);
 		using Hash = std::array<unsigned char, picosha2::k_digest_size>;
 		Hash hash;

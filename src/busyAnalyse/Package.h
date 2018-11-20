@@ -34,14 +34,46 @@ public:
 			}
 		}
 
+		auto findProjectConfig = [&](std::string_view projectName) -> ::busyConfig::Project const* {
+			auto iter = std::find_if(begin(package.projects), end(package.projects),
+				[&](auto const& p) {
+					return p.name == projectName;
+				});
+			if (iter == end(package.projects)) {
+				return nullptr;
+			}
+			return &(*iter);
+		};
+
 		// load projects
 		for(auto& p : fs::directory_iterator(mPath / "src")) {
 			if (not fs::is_directory(p)) {
 				continue;
 			}
 			auto name = p.path().filename();
-			mProjects.emplace_back(Project{name, p.path(), {}});
+
+			auto systemLibraries = [&]() -> std::set<std::string> {
+				auto projectConfig = findProjectConfig(name.string());
+				if (not projectConfig) {
+					return {};
+				}
+				return projectConfig->legacy.systemLibraries;
+			}();
+			auto legacyIncludePaths = [&]() -> std::vector<std::filesystem::path> {
+				auto projectConfig = findProjectConfig(name.string());
+				if (not projectConfig) {
+					return {};
+				}
+				return projectConfig->legacy.includes;
+			}();
+			for (auto& lip : legacyIncludePaths) {
+				lip = mPath / lip;
+			}
+
+
+			mProjects.emplace_back(Project{name, p.path().lexically_normal(), legacyIncludePaths, std::move(systemLibraries)});
 		}
+
 	}
 
 	auto getPath() const -> std::filesystem::path {

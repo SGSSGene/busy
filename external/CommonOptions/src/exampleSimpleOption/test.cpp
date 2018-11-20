@@ -6,6 +6,7 @@
 #include <iostream>
 #include <vector>
 
+
 namespace {
 	auto optPara1 = commonOptions::make_option("para1", 0,         "this is an int");
 	auto optPara2 = commonOptions::make_option("para2", 0.,        "this is a double");

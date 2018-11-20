@@ -21,9 +21,12 @@ private:
 	std::filesystem::path mPath;
 
 	std::map<FileType, std::vector<File>> mFiles;
+	std::vector<std::filesystem::path>    mLegacyIncludePaths;
+	std::set<std::string>                 mSystemLibraries;
+
 
 public:
-	Project(std::string _name, std::filesystem::path _sourcePath, std::vector<std::filesystem::path> const& _legacyIncludePaths);
+	Project(std::string _name, std::filesystem::path _sourcePath, std::vector<std::filesystem::path> _legacyIncludePaths, std::set<std::string> _systemLibraries);
 
 	auto const& getFiles() const {
 		return mFiles;
@@ -37,6 +40,17 @@ public:
 		return mPath;
 	}
 
+	auto getSystemLibraries() const -> std::set<std::string> const& {
+		return mSystemLibraries;
+	}
+
+	auto getLegacyIncludePaths() const -> std::vector<std::filesystem::path> const& {
+		return mLegacyIncludePaths;
+	}
+	auto isHeaderOnly() const -> bool {
+		return mFiles.at(FileType::C).empty() and mFiles.at(FileType::Cpp).empty();
+	}
+
 	auto isEquivalent(Project const& _other) const -> bool {
 		if (mName != _other.mName) {
 			return false;
@@ -44,6 +58,10 @@ public:
 		if (mFiles.size() != _other.mFiles.size()) {
 			return false;
 		}
+		if (mSystemLibraries != _other.mSystemLibraries) {
+			return false;
+		}
+
 		for (auto const& e1 : mFiles) {
 			if (_other.mFiles.count(e1.first) == 0) {
 				return false;

@@ -1,5 +1,8 @@
 name: ThreadPool
 projects:
   - name: threadPool
+    legacy:
+      systemLibraries:
+        - pthread
     depLibraries:
       - pthread
