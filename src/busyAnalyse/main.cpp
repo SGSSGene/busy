@@ -154,18 +154,20 @@ bool linkPackages(busy::analyse::Package const& package) {
 	for (auto const& p : package.getPackages()) {
 		queue.emplace(&p);
 	}
+	auto rootPath = package.getPath();
+	std::cout << "path: " << package.getPath() << "\n";
 	bool addedNewLinks {false};
 	while(not queue.empty()) {
 		auto const& front = *queue.front();
 		queue.pop();
 		namespace fs = std::filesystem;
 		// adding entries to package
-		auto linkName = std::string{"./external/" + front.getName()};
+		auto linkName = rootPath / "external" / front.getName();
 		auto type = fs::status(linkName).type();
 		if (type == fs::file_type::not_found) {
 			addedNewLinks = true;
-			auto targetPath = ".." / front.getPath();
-			auto cmd = std::string{"ln -s " + targetPath.string() + " " + linkName};
+			auto targetPath = rootPath / ".." / front.getPath();
+			auto cmd = std::string{"ln -s " + targetPath.string() + " " + linkName.string()};
 			std::cout << cmd << "\n";
 			system(cmd.c_str());
 		} else if (type != fs::file_type::directory) {
@@ -505,31 +507,34 @@ public:
 
 int main(int argc, char const** argv) {
 	try {
-		auto const path = std::filesystem::path{[&]() {
-			if (argc == 2) {
-				return argv[1];
-			} else {
-				return "./";
-			}
-		}()};
+		if (argc <= 1) {
+			std::cout << "please give path of busy.yaml\n";
+			return 0;
+		}
+		auto rootPath = relative(std::filesystem::path(argv[1]));
+		if (rootPath == ".") {
+			std::cout << "can't build in source, please create a `build` directory\n";
+			return 0;
+		}
+
 		getFileCache() = [&]() {
-			if (std::filesystem::exists(path / ".filecache")) {
-				auto buffer = readFullFile(path / ".filecache");
+			if (std::filesystem::exists(".filecache")) {
+				auto buffer = readFullFile(".filecache");
 				return fon::binary::deserialize<FileCache>(buffer);
-			} else if (std::filesystem::exists(path / ".filecache.yaml")) {
-				return fon::yaml::deserialize<FileCache>(YAML::LoadFile(path / ".filecache.yaml"));
+			} else if (std::filesystem::exists(".filecache.yaml")) {
+				return fon::yaml::deserialize<FileCache>(YAML::LoadFile(".filecache.yaml"));
 			}
 			return FileCache{};
 		}();
 
 		{
-			auto package = busy::analyse::Package{path};
+			auto package = busy::analyse::Package{rootPath};
 			std::cout << "---\n";
 			if (findDoublePackages(package)) {
 				throw std::runtime_error{"found duplicate packages with different versions"};
 			}
 			if (linkPackages(package)) {
-				package = busy::analyse::Package{path};
+				package = busy::analyse::Package{rootPath};
 			}
 			if (checkForCycle(package)) {
 				throw std::runtime_error{"found packages that form a cycle"};
@@ -597,52 +602,78 @@ int main(int argc, char const** argv) {
 				}
 				auto queue = Q{nodes, edges};
 
-				auto compileFile = [&](busy::analyse::File const& file) -> std::vector<std::string> {
+				struct SetupCompileFile {
+					std::filesystem::path in;
+					std::filesystem::path out;
+					std::vector<std::filesystem::path> projectIncludes;
+					std::vector<std::filesystem::path> systemIncludes;
+				};
+
+				auto compileFileSetup = [&](busy::analyse::File const& file) -> std::optional<SetupCompileFile> {
 					auto ext = file.getPath().extension();
 					if (ext != ".cpp" and ext != ".c") {
+						return std::nullopt;
+					}
+
+					auto outFile = file.getPath().lexically_normal().replace_extension(".o");
+					auto inFile  = file.getPath();
+
+					auto& project = queue.find_outgoing<busy::analyse::Project const>(&file);
+
+					auto projectIncludes = std::vector<std::filesystem::path>{};
+					projectIncludes.emplace_back(project.getPath());
+					projectIncludes.emplace_back(project.getPath().parent_path());
+					projectIncludes.emplace_back(project.getPath().parent_path().parent_path() / "include");
+
+
+					auto systemIncludes = std::vector<std::filesystem::path>{};
+					queue.visit_incoming(&project, [&](auto& x) {
+						using X = std::decay_t<decltype(x)>;
+						if constexpr (std::is_same_v<X, busy::analyse::Project>) {
+							systemIncludes.push_back(x.getPath().parent_path());
+							for (auto const& i : x.getLegacyIncludePaths()) {
+								systemIncludes.push_back(i);
+							}
+						}
+					});
+					return SetupCompileFile{inFile, outFile, projectIncludes, systemIncludes};
+				};
+				auto compileFile = [&](busy::analyse::File const& file) -> std::vector<std::string> {
+					auto result = compileFileSetup(file);
+					if (not result) {
 						return {};
 					}
-					auto objPath = ".tmp/obj" / file.getPath();
-					objPath.replace_extension(".o");
-
-
 					auto params = std::vector<std::string>{};
 
-					for (auto s : {"ccache", "g++", "-std=c++17", "-fPIC", "-MD", "-g3", "-ggdb", "-fdiagnostics-color=always"}) {
+					params.emplace_back("./compileFile.sh");
+					params.emplace_back(result->in);
+					params.emplace_back("obj" / relative(result->out, rootPath));
+					params.emplace_back(std::to_string(result->projectIncludes.size()));
+					params.emplace_back(std::to_string(result->systemIncludes.size()));
+					params.insert(end(params), begin(result->projectIncludes), end(result->projectIncludes));
+					params.insert(end(params), begin(result->systemIncludes), end(result->systemIncludes));
+
+
+/*					for (auto s : {"ccache", "g++", "-std=c++17", "-fPIC", "-MD", "-g3", "-ggdb", "-fdiagnostics-color=always"}) {
 						params.emplace_back(s);
 					}
 
 					params.emplace_back("-c");
-					params.emplace_back(file.getPath());
+					params.emplace_back(result->in);
 					params.emplace_back("-o");
-					params.emplace_back(objPath);
+					params.emplace_back(result->out);
 
-					std::set<std::filesystem::path> inclSys;
-					auto& project = queue.find_outgoing<busy::analyse::Project const>(&file);
-
-					queue.visit_incoming(&project, [&](auto& x) {
-						using X = std::decay_t<decltype(x)>;
-						if constexpr (std::is_same_v<X, busy::analyse::Project>) {
-							inclSys.insert(x.getPath().parent_path());
-							for (auto const& i : x.getLegacyIncludePaths()) {
-								inclSys.insert(i);
-							}
-						}
-					});
-					params.emplace_back("-I");
-					params.emplace_back(project.getPath());
-					params.emplace_back("-I");
-					params.emplace_back(project.getPath().parent_path());
-					params.emplace_back("-I");
-					params.emplace_back(project.getPath().parent_path().parent_path() / "include");
-
-					inclSys.erase(project.getPath().parent_path());
-					for (auto const& p : inclSys) {
-						params.emplace_back("-isystem");
-						params.emplace_back(p);
+					for (auto const& i : result->projectIncludes) {
+						params.emplace_back("-I");
+						params.emplace_back(i);
 					}
 
-					std::filesystem::create_directories(objPath.parent_path());
+					for (auto const& i : result->systemIncludes) {
+						params.emplace_back("-isystem");
+						params.emplace_back(i);
+					}
+
+					std::filesystem::create_directories(result->out.parent_path());*/
 					return params;
 				};
 				auto linkLibrary = [&](busy::analyse::Project const& project) -> std::vector<std::string> {
@@ -651,7 +682,7 @@ int main(int argc, char const** argv) {
 						return {};
 					}
 
-					auto target = (std::filesystem::path{".tmp/lib"} / project.getName()).replace_extension(".a");
+					auto target = (std::filesystem::path{"lib"} / project.getName()).replace_extension(".a");
 
 					auto params = std::vector<std::string>{};
 					for (auto s : {"ccache", "ar", "rcs"}) {
@@ -662,7 +693,7 @@ int main(int argc, char const** argv) {
 					for (auto file : queue.find_incoming<busy::analyse::File>(&project)) {
 						auto ext = file->getPath().extension();
 						if (ext == ".cpp" or ext == ".c") {
-							auto objPath = ".tmp/obj" / file->getPath();
+							auto objPath = "obj" / relative(file->getPath(), rootPath);
 							objPath.replace_extension(".o");
 							params.emplace_back(objPath);
 						}
@@ -673,7 +704,7 @@ int main(int argc, char const** argv) {
 					return params;
 				};
 				auto linkExecutable = [&](busy::analyse::Project const& project) {
-					auto target = std::filesystem::path{".tmp/bin"} / project.getName();
+					auto target = std::filesystem::path{"bin"} / project.getName();
 
 					auto params = std::vector<std::string>{};
 					for (auto s : {"ccache", "g++", "-rdynamic", "-g3", "-ggdb", "-fdiagnostics-color=always"}) {
@@ -686,7 +717,7 @@ int main(int argc, char const** argv) {
 					for (auto file : queue.find_incoming<busy::analyse::File>(&project)) {
 						auto ext = file->getPath().extension();
 						if (ext == ".cpp" or ext == ".c") {
-							auto objPath = ".tmp/obj" / file->getPath();
+							auto objPath = "obj" / relative(file->getPath(), rootPath);
 							objPath.replace_extension(".o");
 							params.emplace_back(objPath);
 						}
@@ -709,7 +740,7 @@ int main(int argc, char const** argv) {
 						using X = std::decay_t<decltype(project)>;
 						if constexpr (std::is_same_v<X, busy::analyse::Project>) {
 							if (not project.isHeaderOnly()) {
-								auto target = (std::filesystem::path{".tmp/lib"} / project.getName()).replace_extension(".a");
+								auto target = (std::filesystem::path{"lib"} / project.getName()).replace_extension(".a");
 								params.emplace_back(target);
 							}
 							addSystemLibraries(project);
@@ -749,7 +780,12 @@ int main(int argc, char const** argv) {
 							return {};
 						}();
 						if (not params.empty()) {
-							auto p = process::Process{params};
+							auto p = std::string{};
+							for (auto const& s : params) {
+								p += s + " ";
+							}
+							std::cout << "should run: " <<  p << "\n";
+							/*auto p = process::Process{params};
 							if (p.getStatus() != 0) {
 								std::stringstream ss;
 								for (auto const& p : params) {
@@ -759,7 +795,7 @@ int main(int argc, char const** argv) {
 
 								std::cout << p.cout() << "\n";
 								std::cerr << p.cerr() << "\n";
-							}
+							}*/
 						}
 					});
 				}
@@ -791,14 +827,14 @@ int main(int argc, char const** argv) {
 
 		{ // write binary
 		auto node = fon::binary::serialize(getFileCache());
-		auto ofs = std::ofstream{path / ".filecache", std::ios::binary};
+		auto ofs = std::ofstream{".filecache", std::ios::binary};
 		std::cout << "node: " << node.size() << "\n";
 		ofs.write(reinterpret_cast<char const*>(node.data()), node.size());
 		}
 		if (false) { // write yaml
 			YAML::Emitter out;
 			out << fon::yaml::serialize(getFileCache());
-			std::ofstream(path / ".filecache.yaml") << out.c_str();
+			std::ofstream(".filecache.yaml") << out.c_str();
 		}
 	} catch (std::exception const& e) {
 		std::cerr << "exception: " << exceptionToString(e) << "\n";
