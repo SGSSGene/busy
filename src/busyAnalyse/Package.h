@@ -2,7 +2,7 @@
 
 #include "Project.h"
 
-#include <busyConfig2/busyConfig.h>
+#include <busyConfig/busyConfig.h>
 #include <busyUtils/busyUtils.h>
 
 #include <filesystem>

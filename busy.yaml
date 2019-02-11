@@ -2,7 +2,7 @@ name: busy
 projects:
   - name: busyAnalyse
     type: executable
-  - name: busyConfig2
+  - name: busyConfig
     legacy:
       systemLibraries:
         - stdc++fs
