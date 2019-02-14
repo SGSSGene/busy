@@ -647,14 +647,13 @@ int main(int argc, char const** argv) {
 					auto params = std::vector<std::string>{};
 
 					params.emplace_back("./compileFile.sh");
+					params.emplace_back(absolute(rootPath));
 					params.emplace_back(result->in);
 					params.emplace_back("obj" / relative(result->out, rootPath));
 					params.emplace_back(std::to_string(result->projectIncludes.size()));
 					params.emplace_back(std::to_string(result->systemIncludes.size()));
 					params.insert(end(params), begin(result->projectIncludes), end(result->projectIncludes));
 					params.insert(end(params), begin(result->systemIncludes), end(result->systemIncludes));
-
-
 /*					for (auto s : {"ccache", "g++", "-std=c++17", "-fPIC", "-MD", "-g3", "-ggdb", "-fdiagnostics-color=always"}) {
 						params.emplace_back(s);
 					}
