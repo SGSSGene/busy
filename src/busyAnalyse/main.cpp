@@ -162,14 +162,17 @@ bool linkPackages(busy::analyse::Package const& package) {
 		queue.pop();
 		namespace fs = std::filesystem;
 		// adding entries to package
-		auto linkName = rootPath / "external" / front.getName();
+		auto linkName = ".." / fs::path{"external"} / front.getName();
 		auto type = fs::status(linkName).type();
 		if (type == fs::file_type::not_found) {
+			fs::create_directories("external");
 			addedNewLinks = true;
-			auto targetPath = rootPath / ".." / front.getPath();
-			auto cmd = std::string{"ln -s " + targetPath.string() + " " + linkName.string()};
-			std::cout << cmd << "\n";
-			system(cmd.c_str());
+			auto targetPath = front.getPath();
+			std::filesystem::create_symlink(targetPath, linkName);
+			std::cout << "ln -s " << targetPath << " " << linkName << "\n";
+
+/*			auto cmd = std::string{"ln -s " + targetPath.string() + " " + linkName.string()};
+			system(cmd.c_str());*/
 		} else if (type != fs::file_type::directory) {
 			std::cout << "expected directory(or symbolic link) at: " << linkName << "\n";
 		}
@@ -399,9 +402,7 @@ private:
 	};
 
 	std::list<IntNode> nodes;
-
 	std::queue<IntNode*> work;
-
 	std::mutex mutex;
 
 	auto& findNode(Node v) {
@@ -779,13 +780,14 @@ int main(int argc, char const** argv) {
 							}
 							return {};
 						}();
+
 						if (not params.empty()) {
-							auto p = std::string{};
+							/*auto p = std::string{};
 							for (auto const& s : params) {
 								p += s + " ";
 							}
-							std::cout << "should run: " <<  p << "\n";
-							/*auto p = process::Process{params};
+							std::cout << "should run: " <<  p << "\n";*/
+							auto p = process::Process{params};
 							if (p.getStatus() != 0) {
 								std::stringstream ss;
 								for (auto const& p : params) {
@@ -795,7 +797,7 @@ int main(int argc, char const** argv) {
 
 								std::cout << p.cout() << "\n";
 								std::cerr << p.cerr() << "\n";
-							}*/
+							}
 						}
 					});
 				}
