@@ -2,8 +2,6 @@
 
 #include "Project.h"
 
-#include <busyUtils/busyUtils.h>
-
 #include <filesystem>
 #include <set>
 #include <string>

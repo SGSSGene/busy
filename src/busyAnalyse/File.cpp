@@ -65,7 +65,7 @@ namespace {
 			} else if (checkIfMakroIfAndBusy(line.c_str())) {
 				optionalSection = true;
 			} else if (checkIfMakroSystemInclude(line.c_str())) {
-				auto parts = utils::explode(line, std::vector<std::string>{" ", "\t"});
+				auto parts = utils::explode(line, {' ', '\t'});
 
 				std::string includeFile;
 				if (parts.size() == 0) continue;
