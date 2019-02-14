@@ -2,79 +2,26 @@
 
 #include "Project.h"
 
-#include <busyConfig/busyConfig.h>
 #include <busyUtils/busyUtils.h>
 
 #include <filesystem>
 #include <set>
 #include <string>
+#include <string_view>
 
 namespace busy::analyse {
 
 class Package {
+public:
+	static constexpr std::string_view external{"external"};
+
 private:
 	std::filesystem::path mPath;
 	std::string mName;
 	std::vector<Project> mProjects;
 	std::vector<Package> mPackages;
 public:
-	Package(std::filesystem::path const& _path)
-		: mPath { _path.lexically_normal() }
-	{
-		// read this package config
-		auto package = ::busyConfig::readPackage(mPath);
-		mName = package.name;
-
-		// load external packages
-		namespace fs = std::filesystem;
-		// adding entries to package
-		if (fs::status(mPath / "external").type() == fs::file_type::directory) {
-			for(auto& p : fs::directory_iterator(mPath / "external")) {
-				mPackages.push_back(p.path());
-			}
-		}
-
-		auto findProjectConfig = [&](std::string_view projectName) -> ::busyConfig::Project const* {
-			auto iter = std::find_if(begin(package.projects), end(package.projects),
-				[&](auto const& p) {
-					return p.name == projectName;
-				});
-			if (iter == end(package.projects)) {
-				return nullptr;
-			}
-			return &(*iter);
-		};
-
-		// load projects
-		for(auto& p : fs::directory_iterator(mPath / "src")) {
-			if (not fs::is_directory(p)) {
-				continue;
-			}
-			auto name = p.path().filename();
-
-			auto systemLibraries = [&]() -> std::set<std::string> {
-				auto projectConfig = findProjectConfig(name.string());
-				if (not projectConfig) {
-					return {};
-				}
-				return projectConfig->legacy.systemLibraries;
-			}();
-			auto legacyIncludePaths = [&]() -> std::vector<std::filesystem::path> {
-				auto projectConfig = findProjectConfig(name.string());
-				if (not projectConfig) {
-					return {};
-				}
-				return projectConfig->legacy.includes;
-			}();
-			for (auto& lip : legacyIncludePaths) {
-				lip = mPath / lip;
-			}
-
-
-			mProjects.emplace_back(Project{name, p.path().lexically_normal(), legacyIncludePaths, std::move(systemLibraries)});
-		}
-
-	}
+	Package(std::filesystem::path const& _path);
 
 	auto getPath() const -> std::filesystem::path {
 		return mPath;
