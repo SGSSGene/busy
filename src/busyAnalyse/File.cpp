@@ -1,7 +1,8 @@
 #include "File.h"
 
+#include "utils/utils.h"
+
 #include <cstring>
-#include <busyUtils/busyUtils.h>
 #include <fstream>
 
 namespace busy::analyse {
@@ -39,7 +40,7 @@ namespace {
 		using Hash = std::array<unsigned char, picosha2::k_digest_size>;
 		Hash hash;
 		picosha2::hash256(ifs, hash.begin(), hash.end());
-		auto b64 = base64_encode(&hash[0], picosha2::k_digest_size);
+		auto b64 = busy::base64_encode(&hash[0], picosha2::k_digest_size);
 		return b64;
 	}
 

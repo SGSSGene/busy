@@ -787,7 +787,7 @@ int main(int argc, char const** argv) {
 							}
 							std::cout << "should run: " <<  p << "\n";*/
 							auto p = process::Process{params};
-							if (p.getStatus() != 0) {
+							if (p.getStatus() != 0 or true) {
 								std::stringstream ss;
 								for (auto const& p : params) {
 									ss << p << " ";

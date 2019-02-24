@@ -1,13 +1,13 @@
 #pragma once
 
+#include "utils/base64.h"
+
 #include <picosha2/picosha2.h>
 
 #include <flattensObjectsNeatly/flattensObjectsNeatly.h>
 #include <flattensObjectsNeatly/chrono.h>
 #include <flattensObjectsNeatly/filesystem.h>
 #include <flattensObjectsNeatly/binary.h>
-
-#include "base64.h"
 
 #include <iostream>
 
@@ -17,7 +17,7 @@ inline auto computeHash(std::filesystem::path const& path) -> std::string {
 	Hash hash;
 	picosha2::hash256(ifs, hash.begin(), hash.end());
 	std::cout << "computing hash of: " << path << "\n";
-	auto b64 = base64_encode(&hash[0], picosha2::k_digest_size);
+	auto b64 = busy::base64_encode(&hash[0], picosha2::k_digest_size);
 	return b64;
 }
 

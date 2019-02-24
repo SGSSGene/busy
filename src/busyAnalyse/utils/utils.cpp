@@ -1,4 +1,4 @@
-#include "busyUtils.h"
+#include "utils.h"
 
 #include <algorithm>
 #include <cstdio>
@@ -28,9 +28,9 @@ auto explode(std::string const& _str, std::vector<char> const& _dels) -> std::ve
 }
 
 void safeFileWrite(std::filesystem::path _dest, std::filesystem::path _src) {
-	int fd = open(_src.string().c_str(), O_APPEND);
-	fsync(fd);
+	int fd = ::open(_src.string().c_str(), O_APPEND);
+	::fsync(fd);
 	::close(fd);
-	rename(_src.string().c_str(), _dest.string().c_str());
+	::rename(_src.string().c_str(), _dest.string().c_str());
 }
 }
