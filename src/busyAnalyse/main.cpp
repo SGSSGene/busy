@@ -646,34 +646,15 @@ int main(int argc, char const** argv) {
 					}
 					auto params = std::vector<std::string>{};
 
-					params.emplace_back("./compileFile.sh");
-					params.emplace_back(absolute(rootPath));
+					params.emplace_back("./toolchainCall.sh");
+					params.emplace_back("compile");
+					params.emplace_back(canonical(rootPath));
 					params.emplace_back(result->in);
 					params.emplace_back("obj" / relative(result->out, rootPath));
-					params.emplace_back(std::to_string(result->projectIncludes.size()));
-					params.emplace_back(std::to_string(result->systemIncludes.size()));
+					params.emplace_back("-I");
 					params.insert(end(params), begin(result->projectIncludes), end(result->projectIncludes));
+					params.emplace_back("-isystem");
 					params.insert(end(params), begin(result->systemIncludes), end(result->systemIncludes));
-/*					for (auto s : {"ccache", "g++", "-std=c++17", "-fPIC", "-MD", "-g3", "-ggdb", "-fdiagnostics-color=always"}) {
-						params.emplace_back(s);
-					}
-
-					params.emplace_back("-c");
-					params.emplace_back(result->in);
-					params.emplace_back("-o");
-					params.emplace_back(result->out);
-
-					for (auto const& i : result->projectIncludes) {
-						params.emplace_back("-I");
-						params.emplace_back(i);
-					}
-
-					for (auto const& i : result->systemIncludes) {
-						params.emplace_back("-isystem");
-						params.emplace_back(i);
-					}
-
-					std::filesystem::create_directories(result->out.parent_path());*/
 					return params;
 				};
 				auto linkLibrary = [&](busy::analyse::Project const& project) -> std::vector<std::string> {
@@ -685,11 +666,13 @@ int main(int argc, char const** argv) {
 					auto target = (std::filesystem::path{"lib"} / project.getName()).replace_extension(".a");
 
 					auto params = std::vector<std::string>{};
-					for (auto s : {"ccache", "ar", "rcs"}) {
-						params.emplace_back(s);
-					}
+					params.emplace_back("./toolchainCall.sh");
+					params.emplace_back("archive");
+					params.emplace_back(canonical(rootPath));
+
 					params.emplace_back(target);
 
+					params.emplace_back("-i");
 					for (auto file : queue.find_incoming<busy::analyse::File>(&project)) {
 						auto ext = file->getPath().extension();
 						if (ext == ".cpp" or ext == ".c") {
@@ -699,20 +682,20 @@ int main(int argc, char const** argv) {
 						}
 					}
 
-					std::filesystem::create_directories(target.parent_path());
-
 					return params;
 				};
 				auto linkExecutable = [&](busy::analyse::Project const& project) {
 					auto target = std::filesystem::path{"bin"} / project.getName();
 
 					auto params = std::vector<std::string>{};
-					for (auto s : {"ccache", "g++", "-rdynamic", "-g3", "-ggdb", "-fdiagnostics-color=always"}) {
-						params.emplace_back(s);
-					}
-					params.emplace_back("-o");
+					params.emplace_back("./toolchainCall.sh");
+					params.emplace_back("link");
+					params.emplace_back("executable");
+					params.emplace_back(canonical(rootPath));
+
 					params.emplace_back(target);
 
+					params.emplace_back("-i");
 
 					for (auto file : queue.find_incoming<busy::analyse::File>(&project)) {
 						auto ext = file->getPath().extension();
@@ -750,9 +733,6 @@ int main(int argc, char const** argv) {
 					for (auto const& l : systemLibraries) {
 						params.emplace_back("-l"+l);
 					}
-
-					std::filesystem::create_directories(target.parent_path());
-
 					return params;
 				};
 
