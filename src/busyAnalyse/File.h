@@ -11,30 +11,24 @@ namespace busy::analyse {
 
 /**
  *
- * searching for includes using <> not ""
+ * searching for includes using <> (includes using "" are being ignored)
  */
 class File {
 private:
 	std::filesystem::path mPath;
-	std::filesystem::path mFlatPath; // !maybe this should be removed?
 
 	std::set<std::filesystem::path> mIncludes;
 	std::set<std::filesystem::path> mIncludesOptional;
 public:
 
-	File(std::filesystem::path _path, std::filesystem::path _flatPath)
+	File(std::filesystem::path _path)
 		: mPath     { std::move(_path) }
-		, mFlatPath { std::move(_flatPath) }
 	{
 		readFile(mPath);
 	}
 
 	auto const& getPath() const {
 		return mPath;
-	}
-
-	auto const& getFlatPath() const {
-		return mFlatPath;
 	}
 
 	auto const& getIncludes() const {
@@ -47,9 +41,6 @@ public:
 	auto getHash() const -> std::string;
 
 	auto isEquivalent(File const& _other) const -> bool {
-		if (mFlatPath != _other.mFlatPath) {
-			return false;
-		}
 		if (mIncludes != _other.mIncludes) {
 			return false;
 		}

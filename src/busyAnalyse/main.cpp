@@ -184,38 +184,6 @@ bool linkPackages(busy::analyse::Package const& package) {
 	return addedNewLinks;
 }
 
-auto allIncludes(busy::analyse::Project const& project) {
-	std::set<std::string> ret;
-	for (auto const& [key, value] : project.getFiles()) {
-		for (auto const& f : value) {
-			for (auto const& i : f.getIncludes()) {
-				ret.emplace(i);
-			}
-		}
-	}
-	return ret;
-}
-auto allOptionalIncludes(busy::analyse::Project const& project) {
-	std::set<std::string> ret;
-	for (auto const& [key, value] : project.getFiles()) {
-		for (auto const& f : value) {
-			for (auto const& i : f.getIncludesOptional()) {
-				ret.emplace(i);
-			}
-		}
-	}
-	return ret;
-}
-
-auto allIncludables(busy::analyse::Project const& project) {
-	std::set<std::string> ret;
-	for (auto const& [key, value] : project.getFiles()) {
-		for (auto const& f : value) {
-			ret.emplace(f.getFlatPath());
-		}
-	}
-	return ret;
-}
 auto getAllPackages(busy::analyse::Package const& package) {
 	auto ret = std::map<std::string, busy::analyse::Package const*>{};
 
@@ -234,7 +202,7 @@ auto findDependentProjects(busy::analyse::Package const& package, busy::analyse:
 	for (auto const& exPackage : package.getPackages()) {
 		p.push_back(&exPackage);
 	}
-	auto _allIncludes = allIncludes(project);
+	auto _allIncludes = project.getIncludes();
 	bool check = project.getName() == "testThreadPool";
 	if (check) {
 		std::cout << "find testThreadPool neededincludes:" << "\n";
@@ -244,7 +212,7 @@ auto findDependentProjects(busy::analyse::Package const& package, busy::analyse:
 	}
 	for (auto const& exPackage : p) {
 		for (auto const& exProject : packages.at(exPackage->getName())->getProjects()) {
-			auto includables = allIncludables(exProject);
+			auto includables = exProject.getFlatIncludes();
 			if (check) {
 				std::cout << "checking if project has includes files: " << exProject.getName() << "\n";
 				for (auto i : includables) {
@@ -274,13 +242,13 @@ void checkProject(busy::analyse::Package const& package, std::map<std::string, b
 	}
 	for (auto const& exPackage : p) {
 		for (auto const& exProject : packages.at(exPackage->getName())->getProjects()) {
-			auto includables = allIncludables(exProject);
-			for (auto const& i : allIncludes(project)) {
+			auto includables = exProject.getFlatIncludes();
+			for (auto const& i : project.getIncludes()) {
 				if (includables.count(i) > 0) {
 					std::cout << "  should include " << exProject.getName() << "\n";
 				}
 			}
-			for (auto const& i : allOptionalIncludes(project)) {
+			for (auto const& i : project.getIncludesOptional()) {
 				if (includables.count(i) > 0) {
 					std::cout << "  could include " << exProject.getName() << "\n";
 				}

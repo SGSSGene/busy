@@ -51,6 +51,42 @@ public:
 		return mFiles.at(FileType::C).empty() and mFiles.at(FileType::Cpp).empty();
 	}
 
+	auto getFlatIncludes() const -> std::set<std::filesystem::path> {
+		auto ret = std::set<std::filesystem::path>{};
+		auto parentPath = getPath().parent_path();
+		for (auto const& [key, value] : getFiles()) {
+			for (auto const& f : value) {
+				ret.emplace(relative(f.getPath(), parentPath));
+			}
+		}
+		return ret;
+	}
+	auto getIncludes() const -> std::set<std::filesystem::path> {
+		auto ret = std::set<std::filesystem::path>{};
+		for (auto const& [key, value] : getFiles()) {
+			for (auto const& f : value) {
+				for (auto const& i : f.getIncludes()) {
+					ret.emplace(i);
+				}
+			}
+		}
+		return ret;
+	}
+
+	auto getIncludesOptional() const -> std::set<std::filesystem::path> {
+		auto ret = std::set<std::filesystem::path>{};
+		for (auto const& [key, value] : getFiles()) {
+			for (auto const& f : value) {
+				for (auto const& i : f.getIncludesOptional()) {
+					ret.emplace(i);
+				}
+			}
+		}
+		return ret;
+	}
+
+
+
 	auto isEquivalent(Project const& _other) const -> bool {
 		if (mName != _other.mName) {
 			return false;

@@ -25,7 +25,6 @@ void Project::analyseFiles(std::string const& _name, std::filesystem::path const
 		}
 		auto ext = e.path().extension();
 		auto path = e.path();
-		auto flatPath = relative(e.path(), _sourcePath);
 
 		auto fileType = [&]() {
 			if (ext == ".c") return FileType::C;
@@ -33,7 +32,7 @@ void Project::analyseFiles(std::string const& _name, std::filesystem::path const
 			return FileType::H;
 		}();
 
-		mFiles[fileType].emplace_back(std::move(path), mName / flatPath);
+		mFiles[fileType].emplace_back(std::move(path));
 	}
 
 	// Discover legacy include paths
@@ -47,11 +46,7 @@ void Project::analyseFiles(std::string const& _name, std::filesystem::path const
 				continue;
 			}
 			auto path = e.path();
-			auto flatPath = relative(e.path(), dir);
-
-//			std::cout << "found: " << path << " -> " << flatPath << "\n";
-
-			mFiles[FileType::H].emplace_back(std::move(path), flatPath);
+			mFiles[FileType::H].emplace_back(std::move(path));
 		}
 	}
 }
