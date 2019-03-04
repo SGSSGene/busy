@@ -51,16 +51,6 @@ public:
 		return mFiles.at(FileType::C).empty() and mFiles.at(FileType::Cpp).empty();
 	}
 
-	auto getFlatIncludes() const -> std::set<std::filesystem::path> {
-		auto ret = std::set<std::filesystem::path>{};
-		auto parentPath = getPath().parent_path();
-		for (auto const& [key, value] : getFiles()) {
-			for (auto const& f : value) {
-				ret.emplace(relative(f.getPath(), parentPath));
-			}
-		}
-		return ret;
-	}
 	auto getIncludes() const -> std::set<std::filesystem::path> {
 		auto ret = std::set<std::filesystem::path>{};
 		for (auto const& [key, value] : getFiles()) {
