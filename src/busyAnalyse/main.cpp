@@ -2,7 +2,7 @@
 #include "Package.h"
 
 #include <process/Process.h>
-
+#include <algorithm>
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
@@ -10,6 +10,17 @@
 #include <list>
 #include <mutex>
 #include <queue>
+
+namespace {
+	auto isPrefix(std::filesystem::path const& _prefix, std::filesystem::path const& _path) -> bool {
+		auto prefix = std::string{_prefix};
+		auto path   = std::string{_path};
+		if (prefix.size() > path.size()) return false;
+
+		auto [iterL, iterR] = std::mismatch(begin(prefix), end(prefix), begin(path));
+		return iterL == end(prefix);
+	}
+}
 
 auto exceptionToString(std::exception const& e, int level = 0) -> std::string {
 	std::string ret = std::string(level, ' ') + e.what();
@@ -108,107 +119,50 @@ auto groupPackages(std::vector<busy::analyse::Package const*> packages) -> std::
 auto collectDoublePackages(busy::analyse::Package const& package) -> std::map<std::string, std::vector<busy::analyse::Package const*>> {
 	auto count = std::map<std::string, std::vector<busy::analyse::Package const*>>{};
 
-	count[package.getName()].push_back(&package);
-	for (auto const& p : package.getPackages()) {
-		count[p.getName()].push_back(&p);
-		for (auto const& p2 : p.getPackages()) {
-			count[p2.getName()].push_back(&p2);
+	auto queue = std::queue<busy::analyse::Package const*>();
+	queue.push(&package);
+	while(not queue.empty()) {
+		auto p = queue.front();
+		queue.pop();
+		count[p->getName()].push_back(p);
+		for (auto const& p2 : p->getPackages()) {
+			queue.push(&p2);
 		}
 	}
 	return count;
 }
 
-bool findDoublePackages(busy::analyse::Package const& package) {
-	auto count = collectDoublePackages(package);
-
-	bool error {false};
-	for (auto const& [key, value] : count) {
-		auto groups = groupPackages(value);
-		if (groups.size() == 1) {
-			continue;
-		}
-		auto rootPath = "./external/" + value.at(0)->getName() + "/";
-		auto iter = std::find_if(begin(value), end(value), [&](auto const& e) {
-			std::cout << "compare: " << rootPath << " " << e->getPath() << "\n";
-			return rootPath == e->getPath();
-		});
-
-		if (iter == end(value)) {
-			error = true;
-		}
-		std::cout << "Packages in different versions: " << groups.begin()->first->getName() << " located at: " << "\n";
-		int type{1};
-		for (auto const& [key, list] : groups) {
-			std::cout << "  Type " << type << ":\n";
-			for (auto p : list) {
-				std::cout << "  - " << p->getPath() << "\n";
-			}
-			++type;
-		}
-	}
-	return error;
-}
-
-bool linkPackages(busy::analyse::Package const& package) {
-	std::queue<busy::analyse::Package const*> queue;
-	for (auto const& p : package.getPackages()) {
-		queue.emplace(&p);
-	}
-	auto rootPath = package.getPath();
-	bool addedNewLinks {false};
-	while(not queue.empty()) {
-		auto const& front = *queue.front();
-		queue.pop();
-		namespace fs = std::filesystem;
-		// adding entries to package
-		auto linkName = ".." / fs::path{"external"} / front.getName();
-		auto type = fs::status(linkName).type();
-		if (type == fs::file_type::not_found) {
-			fs::create_directories("external");
-			addedNewLinks = true;
-			auto targetPath = front.getPath();
-			std::filesystem::create_symlink(targetPath, linkName);
-			std::cout << "ln -s " << targetPath << " " << linkName << "\n";
-
-/*			auto cmd = std::string{"ln -s " + targetPath.string() + " " + linkName.string()};
-			system(cmd.c_str());*/
-		} else if (type != fs::file_type::directory) {
-			std::cout << "expected directory(or symbolic link) at: " << linkName << "\n";
-		}
-
-		for (auto const& p : front.getPackages()) {
-			queue.emplace(&p);
-		}
-	}
-	return addedNewLinks;
+auto groupPackagesByName(busy::analyse::Package const& package) {
+	return collectDoublePackages(package);
 }
 
 auto getAllPackages(busy::analyse::Package const& package) {
 	auto ret = std::map<std::string, busy::analyse::Package const*>{};
 
-	ret[package.getName()] = &package;
-	for (auto const& p : package.getPackages()) {
-		ret[p.getName()] = &p;
+	auto queue = std::queue<busy::analyse::Package const*>();
+	queue.push(&package);
+	while(not queue.empty()) {
+		auto e = queue.front();
+		queue.pop();
+		ret.try_emplace(e->getName(), e);
+		for (auto const& p : e->getPackages()) {
+			queue.push(&p);
+		}
 	}
 	return ret;
 }
 
 auto findDependentProjects(busy::analyse::Package const& package, busy::analyse::Project const& project, std::map<std::string, busy::analyse::Package const*> packages) {
-	std::set<std::tuple<busy::analyse::Package const*, busy::analyse::Project const*>> ret;
+	auto ret = std::set<std::tuple<busy::analyse::Package const*, busy::analyse::Project const*>>{};
 
-
-	std::vector<busy::analyse::Package const*> p{&package};
-	for (auto const& exPackage : package.getPackages()) {
-		p.push_back(&exPackage);
-	}
 	auto _allIncludes = project.getIncludes();
 
-	for (auto const& exPackage : p) {
-		for (auto const& exProject : packages.at(exPackage->getName())->getProjects()) {
-			auto includables = exProject.getFlatIncludes();
-				for (auto const& i : _allIncludes) {
-				if (includables.count(i) > 0) {
-					ret.emplace(std::tuple{nullptr, &exProject});
+	for (auto const& [key, exPackage] : packages) {
+		for (auto const& exProject : exPackage->getProjects()) {
+			for (auto file : exProject.getFiles().at(busy::analyse::FileType::H)) {
+				auto path = exProject.getName() / relative(file.getPath(), exProject.getPath());
+				if (_allIncludes.count(path)) {
+					ret.emplace(nullptr, &exProject);
 				}
 			}
 		}
@@ -216,47 +170,99 @@ auto findDependentProjects(busy::analyse::Package const& package, busy::analyse:
 	return ret;
 }
 
-void checkProject(busy::analyse::Package const& package, std::map<std::string, busy::analyse::Package const*> packages, busy::analyse::Project const& project) {
-	std::cout << "\nchecking(2): " << project.getName() << "\n";
-
-	std::vector<busy::analyse::Package const*> p{&package};
-	for (auto const& exPackage : package.getPackages()) {
-		p.push_back(&exPackage);
-	}
-	for (auto const& exPackage : p) {
-		for (auto const& exProject : packages.at(exPackage->getName())->getProjects()) {
-			auto includables = exProject.getFlatIncludes();
-			for (auto const& i : project.getIncludes()) {
-				if (includables.count(i) > 0) {
-					std::cout << "  should include " << exProject.getName() << "\n";
-				}
-			}
-			for (auto const& i : project.getIncludesOptional()) {
-				if (includables.count(i) > 0) {
-					std::cout << "  could include " << exProject.getName() << "\n";
-				}
-			}
-
-		}
-	}
-}
-
-void checkPackages(std::map<std::string, busy::analyse::Package const*> packages) {
-	for (auto const& [key, value] : packages) {
-		for (auto const& project : value->getProjects()) {
-			checkProject(*value, packages, project);
-		}
-	}
-}
-
-auto getAllProjects(busy::analyse::Package const& rootPackage) {
-	std::set<std::tuple<busy::analyse::Package const*, busy::analyse::Project const*>> ret;
-	for (auto const& [key, package] : getAllPackages(rootPackage)) {
+auto getAllProjects(std::map<std::string, busy::analyse::Package const*> packages) {
+	auto ret = std::set<std::tuple<busy::analyse::Package const*, busy::analyse::Project const*>>{};
+	for (auto const& [key, package] : packages) {
 		for (auto const& project : package->getProjects()) {
 			ret.emplace(std::tuple{package, &project});
 		}
 	}
 	return ret;
+}
+
+namespace externalIssues {
+	/// checks if <build>/external exists
+	auto externalExists() {
+		auto const external = std::filesystem::path{busy::analyse::Package::external};
+		return exists(external);
+	}
+
+	/// collects all paths that should be removed from <build>/external
+	auto invalidPaths() {
+		auto invalidPaths = std::set<std::filesystem::path>{};
+
+		auto const external = std::filesystem::path{busy::analyse::Package::external};
+		if (not exists(external)) {
+			return invalidPaths;
+		}
+
+		for (auto p : std::filesystem::directory_iterator{external}) {
+			if (not p.is_symlink()) {
+				invalidPaths.insert(p);
+			} else if (not exists(relative(external / read_symlink(p)))) {
+				invalidPaths.insert(p);
+			}
+		}
+		return invalidPaths;
+	}
+
+	/// check for duplicate packages and potential version differences
+	auto checkDuplicatePackages(busy::analyse::Package const& rootPackage) {
+		auto listOfErrorGroups = std::vector<std::vector<std::vector<busy::analyse::Package const*>>>{};
+
+		auto const external = std::filesystem::path{busy::analyse::Package::external};
+
+		// check which other packages are available, if duplicates exists, check if they are the same
+		// otherwise quit with an error
+		auto groupedPackages = groupPackagesByName(rootPackage);
+
+		groupedPackages.erase(rootPackage.getName()); //!TODO this should kind of be also an error?
+
+		// all packages only available once, can be linked
+		for (auto const& [name, packages] : groupedPackages) {
+			// ignore if packages is linked at <build>/external or ./external
+			if (exists(external / name) or exists(rootPackage.getPath() / external / name)) {
+				continue;
+			}
+
+			// no issue if only one available package
+			if (packages.size() == 1) {
+				continue;
+			}
+
+			auto equalGroups = groupPackages(packages);
+			// all version are the same, automatic choose the first
+			if (equalGroups.size() == 1) {
+				continue;
+			}
+
+			auto errorGroups = std::vector<std::vector<busy::analyse::Package const*>>{};
+			for (auto const& [first, tail] : equalGroups) {
+				errorGroups.emplace_back(tail);
+			}
+			listOfErrorGroups.emplace_back(std::move(errorGroups));
+		}
+		return listOfErrorGroups;
+	}
+}
+
+auto fixExternalPath(busy::analyse::Package const& rootPackage) {
+	auto externalExists = externalIssues::externalExists();
+	auto invalidPaths   = externalIssues::invalidPaths();
+	auto errorGroups    = externalIssues::checkDuplicatePackages(rootPackage);
+
+	bool error = false;
+	for (auto const& groups : errorGroups) {
+		error = true;
+		std::cout << "error with package " << groups.front().front()->getName() << "\n";
+		for (auto const& group : groups) {
+			std::cout << " -\n";
+			for (auto const& p : group) {
+				std::cout << "    - " << p->getPath() << "\n";
+			}
+		}
+	}
+	return error;
 }
 
 struct Project {
@@ -267,14 +273,13 @@ struct Project {
 	std::set<Project const*> dependOnThis;
 };
 
-auto createProjects(busy::analyse::Package const& package) {
-	auto allPackages = getAllPackages(package);
-
+auto createProjects(std::map<std::string, busy::analyse::Package const*> const& allPackages) {
 	std::vector<Project> projects;
-	for (auto const& [package, project] : getAllProjects(package)) {
+	for (auto const& [package, project] : getAllProjects(allPackages)) {
 		projects.push_back({package, project});
 	}
 	for (auto& p : projects) {
+		std::cout << "checking " << p.project->getName() << "\n";
 		auto deps = findDependentProjects(*p.package, *p.project, allPackages);
 
 		for (auto& p2 : projects) {
@@ -290,6 +295,7 @@ auto createProjects(busy::analyse::Package const& package) {
 	return projects;
 }
 
+//!FixMe, should output a list, not do the output itself
 bool checkForCycle(Project const& project) {
 	std::queue<Project const*> projects;
 	for (auto d : project.dependencies) {
@@ -308,8 +314,8 @@ bool checkForCycle(Project const& project) {
 	}
 	return false;
 }
-bool checkForCycle(busy::analyse::Package const& package) {
-	auto projects = createProjects(package);
+bool checkForCycle(std::map<std::string, busy::analyse::Package const*> packages) {
+	auto projects = createProjects(packages);
 	for (auto const& p : projects) {
 		if (checkForCycle(p)) {
 			return true;
@@ -473,20 +479,22 @@ int main(int argc, char const** argv) {
 
 		{
 			auto package = busy::analyse::Package{rootPath};
-			std::cout << "---\n";
-			if (findDoublePackages(package)) {
-				throw std::runtime_error{"found duplicate packages with different versions"};
+
+			// check consistency of packages
+			std::cout << "check consistency\n";
+			if (fixExternalPath(package)) {
+				throw std::runtime_error("packages are not consistent");
 			}
-			if (linkPackages(package)) {
-				package = busy::analyse::Package{rootPath};
-			}
-			if (checkForCycle(package)) {
+
+			auto packages = getAllPackages(package);
+			if (checkForCycle(packages)) {
 				throw std::runtime_error{"found packages that form a cycle"};
 			}
 
+			auto const& allPackages = packages;
 			int compileCt{0};
 			int linkCt{0};
-			auto projects = createProjects(package);
+			auto projects = createProjects(allPackages);
 			for (auto const& p : projects) {
 				auto countCpp = p.project->getFiles().at(busy::analyse::FileType::Cpp).size();
 				auto countC   = p.project->getFiles().at(busy::analyse::FileType::C).size();
@@ -532,7 +540,7 @@ int main(int argc, char const** argv) {
 				auto nodes = Q::Nodes{};
 				auto edges = Q::Edges{};
 
-				auto projects = createProjects(package);
+				auto projects = createProjects(allPackages);
 
 				for (auto& p : projects) {
 					nodes.push_back(p.project);
@@ -561,6 +569,14 @@ int main(int argc, char const** argv) {
 						return std::nullopt;
 					}
 
+					auto fixExternal = [&](std::filesystem::path p) {
+						if (isPrefix(std::filesystem::path{".."} / busy::analyse::Package::external, p)) {
+							auto buildPath = relative(std::filesystem::current_path(), std::filesystem::current_path() / rootPath);
+							return (buildPath / p).lexically_normal();
+						}
+						return p;
+					};
+
 					auto outFile = file.getPath().lexically_normal().replace_extension(".o");
 					auto inFile  = file.getPath();
 
@@ -582,6 +598,17 @@ int main(int argc, char const** argv) {
 							}
 						}
 					});
+
+					for (auto& p : projectIncludes) {
+						p = fixExternal(p);
+					}
+
+					for (auto& p : systemIncludes) {
+						p = fixExternal(p);
+					}
+					inFile  = fixExternal(inFile);
+					outFile = fixExternal(outFile);
+
 					return SetupCompileFile{inFile, outFile, projectIncludes, systemIncludes};
 				};
 				auto compileFile = [&](busy::analyse::File const& file) -> std::vector<std::string> {
@@ -706,7 +733,7 @@ int main(int argc, char const** argv) {
 						}();
 
 						if (not params.empty()) {
-							/*auto p = std::string{};
+/*							auto p = std::string{};
 							for (auto const& s : params) {
 								p += s + " ";
 							}
@@ -725,29 +752,6 @@ int main(int argc, char const** argv) {
 						}
 					});
 				}
-			}
-		}
-		// run compilation
-		if (false)
-		{
-			busy::analyse::Package package("./");
-			auto packages = getAllPackages(package);
-			checkPackages(packages);
-		}
-		if (false)
-		{
-			busy::analyse::Package package("./");
-			auto projects = createProjects(package);
-			for (auto const& p : projects) {
-				std::cout << "name: " << p.package->getName() << "/" << p.project->getName() << "\n";
-				if (p.dependencies.size() > 0) {
-					std::cout << "dep:\n";
-					for (auto d : p.dependencies) {
-						std::cout << "  - " << d->package->getName() << "/" << d->project->getName() << "\n";
-					}
-				}
-				checkForCycle(p);
-
 			}
 		}
 
