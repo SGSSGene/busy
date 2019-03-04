@@ -32,63 +32,6 @@ auto exceptionToString(std::exception const& e, int level = 0) -> std::string {
 	return ret;
 }
 
-void printProject(std::string tabs, busy::analyse::Project const& project) {
-	std::cout << tabs << " - name: " << project.getName() << "\n";
-	std::cout << tabs << "   path: " << project.getPath() << "\n";
-	std::cout << tabs << "   files:\n";
-	for (auto const& [key, value] : project.getFiles()) {
-		if (value.empty()) continue;
-		auto keyToString = [](busy::analyse::FileType type) -> std::string {
-			using FileType = busy::analyse::FileType;
-			if (type == FileType::Cpp) {
-				return "cpp";
-			} else if (type == FileType::C) {
-				return "c";
-			} else {
-				return "incl";
-			}
-		};
-		std::cout << tabs << "     - " << keyToString(key) << ":\n";
-		for (auto const& f : value) {
-			std::cout << tabs << "       - " << f.getPath() << "\n";
-		}
-	}
-	std::cout << tabs << "   includes:\n";
-
-	std::set<std::string> allIncludes;
-	for (auto const& [type, files] : project.getFiles()) {
-		if (files.empty()) continue;
-		for (auto const& f : files) {
-			auto incl = f.getIncludes();
-			allIncludes.insert(begin(incl), end(incl));
-		}
-	}
-	for (auto const& i : allIncludes) {
-		std::cout << tabs << "     - " << i << "\n";
-	}
-}
-
-void printPackage(std::string tabs, busy::analyse::Package const& package) {
-	std::cout << tabs << "- name: " << package.getName() << "\n";
-	tabs += "  ";
-	std::cout << tabs << "path: " << package.getPath() << "\n";
-	std::cout << tabs << "projects:\n";
-	for (auto const& project : package.getProjects()) {
-		printProject(tabs, project);
-	}
-/*	if (not package.getPackages().empty()) {
-		std::cout << tabs << "packages:\n";
-		for (auto const& p : package.getPackages()) {
-			for (auto const& project : package.getProjects()) {
-				printProject(tabs, project);
-			}
-
-			std::cout << tabs << "  - name: " << p.getName() << "\n";
-			printPackage(tabs + "    ", p);
-		}
-	}*/
-}
-
 auto groupPackages(std::vector<busy::analyse::Package const*> packages) -> std::map<busy::analyse::Package const*, std::vector<busy::analyse::Package const*>> {
 	auto result = std::map<busy::analyse::Package const*, std::vector<busy::analyse::Package const*>>{};
 
@@ -404,10 +347,6 @@ int main(int argc, char const** argv) {
 			}
 			}
 
-/*			printPackage("  ", package);
-			for (auto const& p : package.getPackages()) {
-				printPackage("  ", p);
-			}*/
 			std::cout << "link:" << linkCt << "\n";
 			std::cout << "compile: " << compileCt << "\n";
 			std::cout << "total: " << linkCt + compileCt << "\n";
