@@ -155,7 +155,6 @@ bool linkPackages(busy::analyse::Package const& package) {
 		queue.emplace(&p);
 	}
 	auto rootPath = package.getPath();
-	std::cout << "path: " << package.getPath() << "\n";
 	bool addedNewLinks {false};
 	while(not queue.empty()) {
 		auto const& front = *queue.front();
@@ -203,28 +202,12 @@ auto findDependentProjects(busy::analyse::Package const& package, busy::analyse:
 		p.push_back(&exPackage);
 	}
 	auto _allIncludes = project.getIncludes();
-	bool check = project.getName() == "testThreadPool";
-	if (check) {
-		std::cout << "find testThreadPool neededincludes:" << "\n";
-		for (auto i : _allIncludes) {
-			std::cout << "  - " << i << "\n";
-		}
-	}
+
 	for (auto const& exPackage : p) {
 		for (auto const& exProject : packages.at(exPackage->getName())->getProjects()) {
 			auto includables = exProject.getFlatIncludes();
-			if (check) {
-				std::cout << "checking if project has includes files: " << exProject.getName() << "\n";
-				for (auto i : includables) {
-					std::cout << "  - " << i << "\n";
-				}
-			}
-			for (auto const& i : _allIncludes) {
+				for (auto const& i : _allIncludes) {
 				if (includables.count(i) > 0) {
-					if (check) {
-						std::cout << "found\n";
-						std::cout << exProject.getPath()<< "\n";
-					}
 					ret.emplace(std::tuple{nullptr, &exProject});
 				}
 			}
@@ -293,14 +276,6 @@ auto createProjects(busy::analyse::Package const& package) {
 	}
 	for (auto& p : projects) {
 		auto deps = findDependentProjects(*p.package, *p.project, allPackages);
-
-		bool check = p.project->getName() == "testThreadPool";
-		if (check) {
-			std::cout << "has dependencies: " << p.project->getName() << "\n";
-			for (auto [key, value] : deps) {
-				//std::cout << key->getPath() << " -> " << value->getPath() << "\n";
-			}
-		}
 
 		for (auto& p2 : projects) {
 			if (deps.count({nullptr, p2.project}) > 0) {
@@ -523,6 +498,7 @@ int main(int argc, char const** argv) {
 			}
 
 
+			if (false) {
 			for (auto const& p : projects) {
 				std::cout << "  - project-name: " << p.package->getName() << "/" << p.project->getName() << "\n";
 				std::cout << "    path: " << p.project->getPath() << "\n";
@@ -541,6 +517,7 @@ int main(int argc, char const** argv) {
 				if (p.project->isHeaderOnly()) {
 					std::cout << "    header-only: true\n";
 				}
+			}
 			}
 
 /*			printPackage("  ", package);

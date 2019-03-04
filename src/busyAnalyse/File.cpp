@@ -35,16 +35,6 @@ bool checkIfMakroSystemInclude(char const* str) {
 	return *str == '<';
 }
 
-auto computeHash(std::filesystem::path const& path) -> std::string {
-	std::cout << "computing hash of: " << path << "\n";
-	std::ifstream ifs(path, std::ios::binary);
-	using Hash = std::array<unsigned char, picosha2::k_digest_size>;
-	Hash hash;
-	picosha2::hash256(ifs, hash.begin(), hash.end());
-	auto b64 = busy::base64_encode(&hash[0], picosha2::k_digest_size);
-	return b64;
-}
-
 auto readIncludes(std::filesystem::path const& _file) -> std::tuple<std::set<std::filesystem::path>, std::set<std::filesystem::path>>{
 	std::ifstream ifs(_file);
 	std::string line;

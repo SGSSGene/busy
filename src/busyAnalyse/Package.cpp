@@ -47,7 +47,6 @@ Package::Package(std::filesystem::path const& _path)
 
 			for (auto e : n["legacy"]["includes"]) {
 				legacyIncludePaths.push_back(mPath / e.as<std::string>());
-				std::cout << "includes: " << mPath / e.as<std::string>() << "\n";
 			}
 			for (auto e : n["legacy"]["systemLibraries"]) {
 				legacySystemLibraries.insert(e.as<std::string>());
@@ -67,7 +66,6 @@ Package::Package(std::filesystem::path const& _path)
 			mPackages.emplace_back(p);
 		}
 	}
-
 }
 
 }

@@ -40,7 +40,6 @@ void Project::analyseFiles(std::string const& _name, std::filesystem::path const
 		if (not std::filesystem::is_directory(dir)) {
 			continue;
 		}
-		std::cout << "checking for includes: " << dir << "\n";
 		for (auto const &e : std::filesystem::recursive_directory_iterator(dir)) {
 			if (not is_regular_file(e)) {
 				continue;
