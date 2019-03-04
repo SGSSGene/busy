@@ -57,7 +57,7 @@ auto groupPackages(std::vector<busy::analyse::Package const*> packages) -> std::
 	return result;
 }
 
-auto collectDoublePackages(busy::analyse::Package const& package) -> std::map<std::string, std::vector<busy::analyse::Package const*>> {
+auto groupPackagesByName(busy::analyse::Package const& package) {
 	auto count = std::map<std::string, std::vector<busy::analyse::Package const*>>{};
 
 	auto queue = std::queue<busy::analyse::Package const*>();
@@ -71,10 +71,6 @@ auto collectDoublePackages(busy::analyse::Package const& package) -> std::map<st
 		}
 	}
 	return count;
-}
-
-auto groupPackagesByName(busy::analyse::Package const& package) {
-	return collectDoublePackages(package);
 }
 
 auto getAllPackages(busy::analyse::Package const& package) {
