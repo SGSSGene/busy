@@ -27,15 +27,17 @@ Package::Package(std::filesystem::path const& _path)
 	}
 	mName = node["name"].as<std::string>();
 
+	// add all project names based on directory entries
+	auto projectNames = std::set<std::string>{};
+	for(auto& p : fs::directory_iterator(mPath / "src")) {
+		if (is_directory(p)) {
+			projectNames.insert(p.path().filename());
+		}
+	}
+
 	if (node["projects"].IsDefined()) {
 		if (not node["projects"].IsSequence()) {
 			throw yaml_error{path, node["projects"], "expected 'projects' as sequence"};
-		}
-		auto projectNames = std::set<std::string>{};
-		for(auto& p : fs::directory_iterator(mPath / "src")) {
-			if (is_directory(p)) {
-				projectNames.insert(p.path().filename());
-			}
 		}
 
 		for (auto n : node["projects"]) {
@@ -54,15 +56,18 @@ Package::Package(std::filesystem::path const& _path)
 
 			mProjects.emplace_back(name, path, legacyIncludePaths, legacySystemLibraries);
 		}
-		for (auto const& p : projectNames) {
-			mProjects.emplace_back(p, mPath / "src" / p, std::vector<fs::path>{}, std::set<std::string>{});
-		}
 	}
+
+	// add all projects that weren't defined in "projects" section of busy.yaml
+	for (auto const& p : projectNames) {
+		mProjects.emplace_back(p, mPath / "src" / p, std::vector<fs::path>{}, std::set<std::string>{});
+	}
+
 
 	// adding entries to package
 	auto packages = std::vector<std::string>{};
 	if (is_directory(mPath / external)) {
-		for(auto& p : fs::directory_iterator(mPath / external)) {
+		for (auto& p : fs::directory_iterator(mPath / external)) {
 			mPackages.emplace_back(p);
 		}
 	}
