@@ -1,7 +1,0 @@
-name: GenericFactory
-projects:
-  - name: libExample
-    wholeArchive: true
-  - name: genericFactory
-    depLibraries:
-      - pthread

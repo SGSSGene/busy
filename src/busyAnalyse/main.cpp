@@ -9,17 +9,6 @@
 #include <fstream>
 #include <iostream>
 
-namespace {
-	auto isPrefix(std::filesystem::path const& _prefix, std::filesystem::path const& _path) -> bool {
-		auto prefix = std::string{_prefix};
-		auto path   = std::string{_path};
-		if (prefix.size() > path.size()) return false;
-
-		auto [iterL, iterR] = std::mismatch(begin(prefix), end(prefix), begin(path));
-		return iterL == end(prefix);
-	}
-}
-
 auto exceptionToString(std::exception const& e, int level = 0) -> std::string {
 	std::string ret = std::string(level, ' ') + e.what();
 	try {
@@ -97,9 +86,19 @@ auto findDependentProjects(busy::analyse::Package const& package, busy::analyse:
 	for (auto const& [key, exPackage] : packages) {
 		for (auto const& exProject : exPackage->getProjects()) {
 			for (auto file : exProject.getFiles().at(busy::analyse::FileType::H)) {
+				//!TODO paths are not well defined :/
+				{
 				auto path = exProject.getName() / relative(file.getPath(), exProject.getPath());
 				if (_allIncludes.count(path)) {
 					ret.emplace(nullptr, &exProject);
+				}
+				}
+				{
+				auto path = relative(file.getPath(), exProject.getPath() / "../../include");
+				if (_allIncludes.count(path)) {
+					ret.emplace(nullptr, &exProject);
+				}
+
 				}
 			}
 		}
@@ -216,7 +215,6 @@ auto createProjects(std::map<std::string, busy::analyse::Package const*> const& 
 		projects.push_back({package, project});
 	}
 	for (auto& p : projects) {
-		std::cout << "checking " << p.project->getName() << "\n";
 		auto deps = findDependentProjects(*p.package, *p.project, allPackages);
 
 		for (auto& p2 : projects) {
@@ -232,9 +230,9 @@ auto createProjects(std::map<std::string, busy::analyse::Package const*> const& 
 	return projects;
 }
 
-//!FixMe, should output a list, not do the output itself
+//!TODO, should output a list, not do the output itself
 bool checkForCycle(Project const& project) {
-	std::queue<Project const*> projects;
+	auto projects = std::queue<Project const*>{};
 	for (auto d : project.dependencies) {
 		projects.push(d);
 	}
@@ -243,7 +241,6 @@ bool checkForCycle(Project const& project) {
 		projects.pop();
 		for (auto d : top->dependencies) {
 			if (d == &project) {
-				std::cerr << "dependency cycle between: " << project.package->getName() << "/" << project.project->getName() << " and " << top->package->getName() << "/" << top->project->getName() << "\n";
 				return true;
 			}
 			projects.push(d);
@@ -321,7 +318,7 @@ int main(int argc, char const** argv) {
 			}
 
 
-			if (false) {
+			if (true) {
 			for (auto const& p : projects) {
 				std::cout << "  - project-name: " << p.package->getName() << "/" << p.project->getName() << "\n";
 				std::cout << "    path: " << p.project->getPath() << "\n";
@@ -367,11 +364,12 @@ int main(int argc, char const** argv) {
 				}
 				auto queue = Q{nodes, edges};
 
+				using PathPair = std::tuple<std::filesystem::path, std::filesystem::path>;
 				struct SetupCompileFile {
 					std::filesystem::path in;
 					std::filesystem::path out;
-					std::vector<std::filesystem::path> projectIncludes;
-					std::vector<std::filesystem::path> systemIncludes;
+					std::vector<PathPair> projectIncludes;
+					std::vector<PathPair> systemIncludes;
 				};
 
 				auto compileFileSetup = [&](busy::analyse::File const& file) -> std::optional<SetupCompileFile> {
@@ -380,45 +378,27 @@ int main(int argc, char const** argv) {
 						return std::nullopt;
 					}
 
-					auto fixExternal = [&](std::filesystem::path p) {
-						if (isPrefix(std::filesystem::path{".."} / busy::analyse::Package::external, p)) {
-							auto buildPath = relative(std::filesystem::current_path(), std::filesystem::current_path() / rootPath);
-							return (buildPath / p).lexically_normal();
-						}
-						return p;
-					};
-
 					auto outFile = file.getPath().lexically_normal().replace_extension(".o");
 					auto inFile  = file.getPath();
 
 					auto& project = queue.find_outgoing<busy::analyse::Project const>(&file);
 
-					auto projectIncludes = std::vector<std::filesystem::path>{};
-					projectIncludes.emplace_back(project.getPath());
-					projectIncludes.emplace_back(project.getPath().parent_path());
-					projectIncludes.emplace_back(project.getPath().parent_path().parent_path() / "include");
+					auto projectIncludes = std::vector<PathPair>{};
+					projectIncludes.emplace_back(project.getPath(), ".");
+					projectIncludes.emplace_back(project.getPath().parent_path(), ".");
+					projectIncludes.emplace_back(project.getPath().parent_path().parent_path() / "include", ".");
 
 
-					auto systemIncludes = std::vector<std::filesystem::path>{};
+					auto systemIncludes = std::vector<PathPair>{};
 					queue.visit_incoming(&project, [&](auto& x) {
 						using X = std::decay_t<decltype(x)>;
 						if constexpr (std::is_same_v<X, busy::analyse::Project>) {
-							systemIncludes.push_back(x.getPath().parent_path());
+							systemIncludes.emplace_back(x.getPath().parent_path(), ".");
 							for (auto const& i : x.getLegacyIncludePaths()) {
-								systemIncludes.push_back(i);
+								systemIncludes.emplace_back(i, ".");
 							}
 						}
 					});
-
-					for (auto& p : projectIncludes) {
-						p = fixExternal(p);
-					}
-
-					for (auto& p : systemIncludes) {
-						p = fixExternal(p);
-					}
-					inFile  = fixExternal(inFile);
-					outFile = fixExternal(outFile);
 
 					return SetupCompileFile{inFile, outFile, projectIncludes, systemIncludes};
 				};
@@ -435,9 +415,13 @@ int main(int argc, char const** argv) {
 					params.emplace_back(result->in);
 					params.emplace_back("obj" / relative(result->out, rootPath));
 					params.emplace_back("-I");
-					params.insert(end(params), begin(result->projectIncludes), end(result->projectIncludes));
+					for (auto const& [p1, p2] : result->projectIncludes) {
+						params.emplace_back(p1.string() + ":" + p2.string());
+					}
 					params.emplace_back("-isystem");
-					params.insert(end(params), begin(result->systemIncludes), end(result->systemIncludes));
+					for (auto const& [p1, p2] : result->systemIncludes) {
+						params.emplace_back(p1.string() + ":" + p2.string());
+					}
 					return params;
 				};
 				auto linkLibrary = [&](busy::analyse::Project const& project) -> std::vector<std::string> {
@@ -505,6 +489,7 @@ int main(int argc, char const** argv) {
 					queue.visit_incoming(&project, [&](auto& project) {
 						using X = std::decay_t<decltype(project)>;
 						if constexpr (std::is_same_v<X, busy::analyse::Project>) {
+							std::cout << "dep: " << project.getName() << "\n";
 							if (not project.isHeaderOnly()) {
 								auto target = (std::filesystem::path{"lib"} / project.getName()).replace_extension(".a");
 								params.emplace_back(target);
@@ -559,6 +544,10 @@ int main(int argc, char const** argv) {
 
 								std::cout << p.cout() << "\n";
 								std::cerr << p.cerr() << "\n";
+								if (p.getStatus() != 0) {
+									std::cout << "error exit\n";
+									exit(1);
+								}
 							}
 						}
 					});

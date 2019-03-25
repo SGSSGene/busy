@@ -1,6 +1,7 @@
 name: jsoncpp
 projects:
   - name: lib_json
+    type: library
     legacy:
       includes:
         - include
