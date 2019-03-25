@@ -86,19 +86,21 @@ auto findDependentProjects(busy::analyse::Package const& package, busy::analyse:
 	for (auto const& [key, exPackage] : packages) {
 		for (auto const& exProject : exPackage->getProjects()) {
 			for (auto file : exProject.getFiles().at(busy::analyse::FileType::H)) {
-				//!TODO paths are not well defined :/
+				// check if is includable by default path
 				{
-				auto path = exProject.getName() / relative(file.getPath(), exProject.getPath());
-				if (_allIncludes.count(path)) {
-					ret.emplace(nullptr, &exProject);
+					auto path = exProject.getName() / relative(file.getPath(), exProject.getPath());
+					if (_allIncludes.count(path)) {
+						ret.emplace(nullptr, &exProject);
+					}
 				}
-				}
+				// check if it is includable by legacy include path
 				{
-				auto path = relative(file.getPath(), exProject.getPath() / "../../include");
-				if (_allIncludes.count(path)) {
-					ret.emplace(nullptr, &exProject);
-				}
-
+					for (auto const& p : exProject.getLegacyIncludePaths()) {
+						auto path = relative(file.getPath(), p);
+						if (_allIncludes.count(path)) {
+							ret.emplace(nullptr, &exProject);
+						}
+					}
 				}
 			}
 		}
@@ -320,6 +322,7 @@ int main(int argc, char const** argv) {
 
 			if (true) {
 			for (auto const& p : projects) {
+				std::cout << "\n";
 				std::cout << "  - project-name: " << p.package->getName() << "/" << p.project->getName() << "\n";
 				std::cout << "    path: " << p.project->getPath() << "\n";
 				if (not p.project->getSystemLibraries().empty()) {

@@ -47,6 +47,7 @@ public:
 	auto getLegacyIncludePaths() const -> std::vector<std::filesystem::path> const& {
 		return mLegacyIncludePaths;
 	}
+
 	auto isHeaderOnly() const -> bool {
 		return mFiles.at(FileType::C).empty() and mFiles.at(FileType::Cpp).empty();
 	}
@@ -75,8 +76,6 @@ public:
 		return ret;
 	}
 
-
-
 	auto isEquivalent(Project const& _other) const -> bool {
 		if (mName != _other.mName) {
 			return false;
@@ -104,7 +103,6 @@ public:
 		}
 		return true;
 	}
-
 
 private:
 	void analyseFiles(std::string const& _name, std::filesystem::path const& _sourcePath, std::vector<std::filesystem::path> const& _legacyIncludePaths);
