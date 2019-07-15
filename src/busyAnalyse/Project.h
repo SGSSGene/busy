@@ -64,18 +64,6 @@ public:
 		return ret;
 	}
 
-	auto getIncludesOptional() const -> std::set<std::filesystem::path> {
-		auto ret = std::set<std::filesystem::path>{};
-		for (auto const& [key, value] : getFiles()) {
-			for (auto const& f : value) {
-				for (auto const& i : f.getIncludesOptional()) {
-					ret.emplace(i);
-				}
-			}
-		}
-		return ret;
-	}
-
 	auto isEquivalent(Project const& _other) const -> bool {
 		if (mName != _other.mName) {
 			return false;

@@ -37,20 +37,20 @@ public:
 		return mPackages;
 	}
 
-	auto isEquivalent(Package const& _other) const -> bool {
-		if (mProjects.size() != _other.mProjects.size()) {
+	friend auto isEquivalent(Package const& l, Package const& r) -> bool {
+		if (l.mProjects.size() != r.mProjects.size()) {
 			return false;
 		}
-		if (mPackages.size() != _other.mPackages.size()) {
+		if (l.mPackages.size() != r.mPackages.size()) {
 			return false;
 		}
-		for (int i{0}; i < mProjects.size(); ++i) {
-			if (not mProjects[i].isEquivalent(_other.mProjects[i])) {
+		for (int i{0}; i < l.mProjects.size(); ++i) {
+			if (not l.mProjects[i].isEquivalent(r.mProjects[i])) {
 				return false;
 			}
 		}
-		for (int i{0}; i < mPackages.size(); ++i) {
-			if (not mPackages[i].isEquivalent(_other.mPackages[i])) {
+		for (int i{0}; i < l.mPackages.size(); ++i) {
+			if (not isEquivalent(l.mPackages[i], r.mPackages[i])) {
 				return false;
 			}
 		}

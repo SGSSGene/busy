@@ -17,7 +17,8 @@ struct yaml_error : std::runtime_error {
 
 
 Package::Package(std::filesystem::path const& _path)
-		: mPath { _path.lexically_normal()} {
+	: mPath { _path.lexically_normal()} {
+
 	// read this package config
 	auto path = mPath / "busy.yaml";
 	auto node = YAML::LoadFile(path.string());
@@ -25,6 +26,7 @@ Package::Package(std::filesystem::path const& _path)
 	if (not node["name"].IsScalar()) {
 		throw yaml_error{path, node["name"], "expected 'name' as string"};
 	}
+
 	mName = node["name"].as<std::string>();
 
 	// add all project names based on directory entries
@@ -35,6 +37,7 @@ Package::Package(std::filesystem::path const& _path)
 		}
 	}
 
+	// scan all defined projects
 	if (node["projects"].IsDefined()) {
 		if (not node["projects"].IsSequence()) {
 			throw yaml_error{path, node["projects"], "expected 'projects' as sequence"};

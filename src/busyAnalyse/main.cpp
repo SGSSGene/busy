@@ -28,7 +28,7 @@ auto groupPackages(std::vector<busy::analyse::Package const*> packages) -> std::
 	// returns a pointer to an equivalent map key
 	auto find = [&](busy::analyse::Package const* p) -> std::vector<busy::analyse::Package const*>* {
 		for (auto& [id, list] : result) {
-			if (p->isEquivalent(*id)) {
+			if (isEquivalent(*p, *id)) {
 				return &list;
 			}
 		}
