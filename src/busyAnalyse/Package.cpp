@@ -21,58 +21,64 @@ Package::Package(std::filesystem::path const& _path)
 
 	// read this package config
 	auto path = mPath / "busy.yaml";
-	auto node = YAML::LoadFile(path.string());
 
-	if (not node["name"].IsScalar()) {
-		throw yaml_error{path, node["name"], "expected 'name' as string"};
-	}
+	try {
 
-	mName = node["name"].as<std::string>();
+		auto node = YAML::LoadFile(path.string());
 
-	// add all project names based on directory entries
-	auto projectNames = std::set<std::string>{};
-	for(auto& p : fs::directory_iterator(mPath / "src")) {
-		if (is_directory(p)) {
-			projectNames.insert(p.path().filename());
-		}
-	}
-
-	// scan all defined projects
-	if (node["projects"].IsDefined()) {
-		if (not node["projects"].IsSequence()) {
-			throw yaml_error{path, node["projects"], "expected 'projects' as sequence"};
+		if (not node["name"].IsScalar()) {
+			throw yaml_error{path, node["name"], "expected 'name' as string"};
 		}
 
-		for (auto n : node["projects"]) {
-			auto name = n["name"].as<std::string>();
-			projectNames.erase(name);
-			auto path = mPath / "src" / name;
-			auto legacyIncludePaths = std::vector<fs::path>{};
-			auto legacySystemLibraries    = std::set<std::string>{};
+		mName = node["name"].as<std::string>();
 
-			for (auto e : n["legacy"]["includes"]) {
-				legacyIncludePaths.push_back(mPath / e.as<std::string>());
+		// add all project names based on directory entries
+		auto projectNames = std::set<std::string>{};
+		for(auto& p : fs::directory_iterator(mPath / "src")) {
+			if (is_directory(p)) {
+				projectNames.insert(p.path().filename());
 			}
-			for (auto e : n["legacy"]["systemLibraries"]) {
-				legacySystemLibraries.insert(e.as<std::string>());
+		}
+
+		// scan all defined projects
+		if (node["projects"].IsDefined()) {
+			if (not node["projects"].IsSequence()) {
+				throw yaml_error{path, node["projects"], "expected 'projects' as sequence"};
 			}
 
-			mProjects.emplace_back(name, path, legacyIncludePaths, legacySystemLibraries);
+			for (auto n : node["projects"]) {
+				auto name = n["name"].as<std::string>();
+				projectNames.erase(name);
+				auto path = mPath / "src" / name;
+				auto legacyIncludePaths = std::vector<fs::path>{};
+				auto legacySystemLibraries    = std::set<std::string>{};
+
+				for (auto e : n["legacy"]["includes"]) {
+					legacyIncludePaths.push_back(mPath / e.as<std::string>());
+				}
+				for (auto e : n["legacy"]["systemLibraries"]) {
+					legacySystemLibraries.insert(e.as<std::string>());
+				}
+
+				mProjects.emplace_back(name, path, legacyIncludePaths, legacySystemLibraries);
+			}
 		}
-	}
 
-	// add all projects that weren't defined in "projects" section of busy.yaml
-	for (auto const& p : projectNames) {
-		mProjects.emplace_back(p, mPath / "src" / p, std::vector<fs::path>{}, std::set<std::string>{});
-	}
-
-
-	// adding entries to package
-	auto packages = std::vector<std::string>{};
-	if (is_directory(mPath / external)) {
-		for (auto& p : fs::directory_iterator(mPath / external)) {
-			mPackages.emplace_back(p);
+		// add all projects that weren't defined in "projects" section of busy.yaml
+		for (auto const& p : projectNames) {
+			mProjects.emplace_back(p, mPath / "src" / p, std::vector<fs::path>{}, std::set<std::string>{});
 		}
+
+
+		// adding entries to package
+		auto packages = std::vector<std::string>{};
+		if (is_directory(mPath / external)) {
+			for (auto& p : fs::directory_iterator(mPath / external)) {
+				mPackages.emplace_back(p);
+			}
+		}
+	} catch(...) {
+		std::throw_with_nested(std::runtime_error{"failed loading " + path.string()});
 	}
 }
 
