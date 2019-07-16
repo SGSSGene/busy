@@ -433,7 +433,8 @@ void app(std::vector<std::string_view> args) {
 
 				auto params = std::vector<std::string>{};
 				params.emplace_back("./toolchainCall.sh");
-				params.emplace_back("archive");
+				params.emplace_back("link");
+				params.emplace_back("static_library");
 				params.emplace_back(canonical(rootPath));
 
 				params.emplace_back(target);
