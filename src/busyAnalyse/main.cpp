@@ -364,12 +364,11 @@ void app(std::vector<std::string_view> args) {
 			}
 			auto queue = Q{nodes, edges};
 
-			using PathPair = std::tuple<std::filesystem::path, std::filesystem::path>;
 			struct SetupCompileFile {
 				std::filesystem::path in;
 				std::filesystem::path out;
-				std::vector<PathPair> projectIncludes;
-				std::vector<PathPair> systemIncludes;
+				std::vector<std::filesystem::path> projectIncludes;
+				std::vector<std::filesystem::path> systemIncludes;
 			};
 
 			auto compileFileSetup = [&](busy::analyse::File const& file) -> std::optional<SetupCompileFile> {
@@ -383,19 +382,19 @@ void app(std::vector<std::string_view> args) {
 
 				auto& project = queue.find_outgoing<busy::analyse::Project const>(&file);
 
-				auto projectIncludes = std::vector<PathPair>{};
-				projectIncludes.emplace_back(project.getPath(), ".");
-				projectIncludes.emplace_back(project.getPath().parent_path(), ".");
-				projectIncludes.emplace_back(project.getPath().parent_path().parent_path() / "include", ".");
+				auto projectIncludes = std::vector<std::filesystem::path>{};
+				projectIncludes.emplace_back(project.getPath());
+				projectIncludes.emplace_back(project.getPath().parent_path());
+				projectIncludes.emplace_back(project.getPath().parent_path().parent_path() / "include");
 
 
-				auto systemIncludes = std::vector<PathPair>{};
+				auto systemIncludes = std::vector<std::filesystem::path>{};
 				queue.visit_incoming(&project, [&](auto& x) {
 					using X = std::decay_t<decltype(x)>;
 					if constexpr (std::is_same_v<X, busy::analyse::Project>) {
-						systemIncludes.emplace_back(x.getPath().parent_path(), ".");
+						systemIncludes.emplace_back(x.getPath().parent_path());
 						for (auto const& i : x.getLegacyIncludePaths()) {
-							systemIncludes.emplace_back(i, ".");
+							systemIncludes.emplace_back(i);
 						}
 					}
 				});
@@ -415,12 +414,12 @@ void app(std::vector<std::string_view> args) {
 				params.emplace_back(result->in);
 				params.emplace_back("obj" / relative(result->out, rootPath));
 				params.emplace_back("-I");
-				for (auto const& [p1, p2] : result->projectIncludes) {
-					params.emplace_back(p1.string() + ":" + p2.string());
+				for (auto const& p : result->projectIncludes) {
+					params.emplace_back(p.string());
 				}
 				params.emplace_back("-isystem");
-				for (auto const& [p1, p2] : result->systemIncludes) {
-					params.emplace_back(p1.string() + ":" + p2.string());
+				for (auto const& p : result->systemIncludes) {
+					params.emplace_back(p.string());
 				}
 				return params;
 			};
