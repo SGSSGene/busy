@@ -412,7 +412,7 @@ void app(std::vector<std::string_view> args) {
 				params.emplace_back("compile");
 				params.emplace_back(canonical(rootPath));
 				params.emplace_back(result->in);
-				params.emplace_back("obj" / relative(result->out, rootPath));
+				params.emplace_back("obj" / result->out);
 				params.emplace_back("-I");
 				for (auto const& p : result->projectIncludes) {
 					params.emplace_back(p.string());
@@ -443,7 +443,7 @@ void app(std::vector<std::string_view> args) {
 				for (auto file : queue.find_incoming<busy::analyse::File>(&project)) {
 					auto ext = file->getPath().extension();
 					if (ext == ".cpp" or ext == ".c") {
-						auto objPath = "obj" / relative(file->getPath(), rootPath);
+						auto objPath = "obj" / file->getPath();
 						objPath.replace_extension(".o");
 						params.emplace_back(objPath);
 					}
@@ -467,7 +467,7 @@ void app(std::vector<std::string_view> args) {
 				for (auto file : queue.find_incoming<busy::analyse::File>(&project)) {
 					auto ext = file->getPath().extension();
 					if (ext == ".cpp" or ext == ".c") {
-						auto objPath = "obj" / relative(file->getPath(), rootPath);
+						auto objPath = "obj" / file->getPath();
 						objPath.replace_extension(".o");
 						params.emplace_back(objPath);
 					}
