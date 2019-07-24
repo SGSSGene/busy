@@ -2,16 +2,16 @@
 
 namespace busy::analyse {
 
-Project::Project(std::string _name, std::filesystem::path _sourcePath, std::vector<std::filesystem::path> _legacyIncludePaths, std::set<std::string> _systemLibraries)
+Project::Project(std::string _name, std::filesystem::path const& _root, std::filesystem::path _sourcePath, std::vector<std::filesystem::path> _legacyIncludePaths, std::set<std::string> _systemLibraries)
 	: mName               { std::move(_name) }
 	, mPath               { std::move(_sourcePath) }
 	, mLegacyIncludePaths { std::move(_legacyIncludePaths) }
 	, mSystemLibraries    { std::move(_systemLibraries) }
 {
-	analyseFiles(mName, mPath, mLegacyIncludePaths);
+	analyseFiles(mName, _root, mPath, mLegacyIncludePaths);
 }
 
-void Project::analyseFiles(std::string const& _name, std::filesystem::path const& _sourcePath, std::vector<std::filesystem::path> const& _legacyIncludePaths) {
+void Project::analyseFiles(std::string const& _name, std::filesystem::path const& _root, std::filesystem::path const& _sourcePath, std::vector<std::filesystem::path> const& _legacyIncludePaths) {
 	mFiles = {
 		{FileType::C, {}},
 		{FileType::Cpp, {}},
@@ -19,7 +19,7 @@ void Project::analyseFiles(std::string const& _name, std::filesystem::path const
 	};
 
 	// Discover header, cpp and c files
-	for (auto const &e : std::filesystem::recursive_directory_iterator(_sourcePath)) {
+	for (auto const &e : std::filesystem::recursive_directory_iterator(_root / _sourcePath)) {
 		if (not is_regular_file(e)) {
 			continue;
 		}
@@ -32,20 +32,20 @@ void Project::analyseFiles(std::string const& _name, std::filesystem::path const
 			return FileType::H;
 		}();
 
-		mFiles[fileType].emplace_back(std::move(path));
+		mFiles[fileType].emplace_back(_root, relative(path, _root));
 	}
 
 	// Discover legacy include paths
 	for (auto const& dir : _legacyIncludePaths) {
-		if (not std::filesystem::is_directory(dir)) {
+		if (not is_directory(dir)) {
 			continue;
 		}
 		for (auto const &e : std::filesystem::recursive_directory_iterator(dir)) {
 			if (not is_regular_file(e)) {
 				continue;
 			}
-			auto path = e.path();
-			mFiles[FileType::H].emplace_back(std::move(path));
+			auto path = relative(e.path(), _root);
+			mFiles[FileType::H].emplace_back(_root, std::move(path));
 		}
 	}
 }

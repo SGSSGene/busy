@@ -289,7 +289,7 @@ void app(std::vector<std::string_view> args) {
 	}();
 
 	{
-		auto package = busy::analyse::Package{rootPath};
+		auto package = busy::analyse::Package{rootPath, rootPath};
 
 		// check consistency of packages
 		std::cout << "check consistency\n";

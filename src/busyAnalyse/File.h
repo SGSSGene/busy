@@ -15,16 +15,18 @@ namespace busy::analyse {
  */
 class File {
 private:
+	std::filesystem::path mRoot;
 	std::filesystem::path mPath;
 
 	std::set<std::filesystem::path> mIncludes;
 	std::set<std::filesystem::path> mIncludesOptional;
 public:
 
-	File(std::filesystem::path _path)
-		: mPath     { std::move(_path) }
+	File(std::filesystem::path const& _root, std::filesystem::path _path)
+		: mRoot     { _root }
+		, mPath     { std::move(_path) }
 	{
-		readFile(mPath);
+		readFile(_root / mPath);
 	}
 
 	auto const& getPath() const {
@@ -47,8 +49,8 @@ public:
 		if (mIncludesOptional != _other.mIncludesOptional) {
 			return false;
 		}
-		auto info1 = getFileCache().getFileCache(mPath);
-		auto info2 = getFileCache().getFileCache(_other.mPath);
+		auto info1 = getFileCache().getFileCache(mRoot / mPath);
+		auto info2 = getFileCache().getFileCache(_other.mRoot / _other.mPath);
 		return info1.hash == info2.hash;
 	}
 

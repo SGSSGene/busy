@@ -26,7 +26,7 @@ private:
 
 
 public:
-	Project(std::string _name, std::filesystem::path _sourcePath, std::vector<std::filesystem::path> _legacyIncludePaths, std::set<std::string> _systemLibraries);
+	Project(std::string _name, std::filesystem::path const& _root, std::filesystem::path _sourcePath, std::vector<std::filesystem::path> _legacyIncludePaths, std::set<std::string> _systemLibraries);
 
 	auto const& getFiles() const {
 		return mFiles;
@@ -93,7 +93,7 @@ public:
 	}
 
 private:
-	void analyseFiles(std::string const& _name, std::filesystem::path const& _sourcePath, std::vector<std::filesystem::path> const& _legacyIncludePaths);
+	void analyseFiles(std::string const& _name, std::filesystem::path const& _root, std::filesystem::path const& _sourcePath, std::vector<std::filesystem::path> const& _legacyIncludePaths);
 };
 
 }

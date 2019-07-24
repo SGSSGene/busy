@@ -16,11 +16,11 @@ struct yaml_error : std::runtime_error {
 };
 
 
-Package::Package(std::filesystem::path const& _path)
-	: mPath { _path.lexically_normal()} {
+Package::Package(std::filesystem::path const& _root, std::filesystem::path const& _path)
+	: mPath { relative(_path, _root).lexically_normal() } {
 
 	// read this package config
-	auto path = mPath / "busy.yaml";
+	auto path = _root / mPath / "busy.yaml";
 
 	try {
 
@@ -34,7 +34,7 @@ Package::Package(std::filesystem::path const& _path)
 
 		// add all project names based on directory entries
 		auto projectNames = std::set<std::string>{};
-		for(auto& p : fs::directory_iterator(mPath / "src")) {
+		for(auto& p : fs::directory_iterator(_root / mPath / "src")) {
 			if (is_directory(p)) {
 				projectNames.insert(p.path().filename());
 			}
@@ -60,21 +60,21 @@ Package::Package(std::filesystem::path const& _path)
 					legacySystemLibraries.insert(e.as<std::string>());
 				}
 
-				mProjects.emplace_back(name, path, legacyIncludePaths, legacySystemLibraries);
+				mProjects.emplace_back(name, _root, path, legacyIncludePaths, legacySystemLibraries);
 			}
 		}
 
 		// add all projects that weren't defined in "projects" section of busy.yaml
 		for (auto const& p : projectNames) {
-			mProjects.emplace_back(p, mPath / "src" / p, std::vector<fs::path>{}, std::set<std::string>{});
+			mProjects.emplace_back(p, _root, mPath / "src" / p, std::vector<fs::path>{}, std::set<std::string>{});
 		}
 
 
 		// adding entries to package
 		auto packages = std::vector<std::string>{};
-		if (is_directory(mPath / external)) {
-			for (auto& p : fs::directory_iterator(mPath / external)) {
-				mPackages.emplace_back(p);
+		if (is_directory(_root / mPath / external)) {
+			for (auto& p : fs::directory_iterator(_root / mPath / external)) {
+				mPackages.emplace_back(_root, p);
 			}
 		}
 	} catch(...) {

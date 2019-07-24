@@ -19,7 +19,7 @@ private:
 	std::vector<Project> mProjects;
 	std::vector<Package> mPackages;
 public:
-	Package(std::filesystem::path const& _path);
+	Package(std::filesystem::path const& _root, std::filesystem::path const& _path);
 
 	auto getPath() const -> std::filesystem::path {
 		return mPath;
