@@ -23,8 +23,8 @@ function parse {
 		parsePairs+=("$1")
 		shift
 	done
-	shift
 	while [ $# -gt 0 ]; do
+		shift
 		r=
 		for x in "${parsePairs[@]}"; do
 			if [ -z "$r" ]; then
@@ -34,7 +34,6 @@ function parse {
 		if [ -z "$r" ]; then
 			parseValue "$1"
 		fi
-		shift
 	done
 }
 function implode {
@@ -77,7 +76,6 @@ fi
 
 
 if [ "$1" == "compile" ]; then
-	shift; rootPath="$1"
 	shift; inputFile="$1"
 	shift; outputFile="$1"
 	shift
@@ -99,12 +97,14 @@ if [ "$1" == "compile" ]; then
 	call="ccache g++ -O0 -std=c++17 -fPIC -MD -g3 -ggdb -fdiagnostics-color=always -c $inputFile -o $outputFile $projectIncludes $systemIncludes"
 elif [ "$1" == "link" ]; then
 	shift; target="$1"
-	shift; rootPath="$1"
 	shift; outputFile="$1"
 	shift
 
 	parse "-i       inputFiles" \
+	      "-l       libraries" \
 	      "--" "$@"
+
+	libraries=($(implode " -l" "${libraries[@]}"))
 
 	# Header only
 	if [ "${#inputFiles[@]}" -eq 0 ]; then
@@ -112,7 +112,7 @@ elif [ "$1" == "link" ]; then
 
 	# Executable
 	elif [ "${target}" == "executable" ]; then
-		call="ccache g++ -rdynamic -g3 -ggdb -fdiagnostics-color=always -o $outputFile ${inputFiles[@]}"
+		call="ccache g++ -rdynamic -g3 -ggdb -fdiagnostics-color=always -o $outputFile ${inputFiles[@]} ${libraries[@]}"
 
 	# Static library?
 	elif [ "${target}" == "static_library" ]; then

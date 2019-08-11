@@ -227,7 +227,6 @@ void app(std::vector<std::string_view> args) {
 
 			params.emplace_back("./toolchainCall.sh");
 			params.emplace_back("compile");
-			params.emplace_back(canonical(rootPath));
 			params.emplace_back(result->in);
 			params.emplace_back("obj" / result->out);
 			params.emplace_back("-I");
@@ -240,19 +239,12 @@ void app(std::vector<std::string_view> args) {
 			}
 			return params;
 		};
-		auto linkLibrary = [&](busy::analyse::Project const& project) -> std::vector<std::string> {
 
-			if (project.isHeaderOnly()) {
-				return {};
-			}
-
-			auto target = (std::filesystem::path{"lib"} / project.getName()).replace_extension(".a");
-
+		auto createLinkTarget = [&](busy::analyse::Project const& project, std::string action, std::string const& target) {
 			auto params = std::vector<std::string>{};
 			params.emplace_back("./toolchainCall.sh");
 			params.emplace_back("link");
-			params.emplace_back("static_library");
-			params.emplace_back(canonical(rootPath));
+			params.emplace_back(action);
 
 			params.emplace_back(target);
 
@@ -266,31 +258,7 @@ void app(std::vector<std::string_view> args) {
 				}
 			}
 
-			return params;
-		};
-		auto linkExecutable = [&](busy::analyse::Project const& project) {
-			auto target = std::filesystem::path{"bin"} / project.getName();
-
-			auto params = std::vector<std::string>{};
-			params.emplace_back("./toolchainCall.sh");
-			params.emplace_back("link");
-			params.emplace_back("executable");
-			params.emplace_back(canonical(rootPath));
-
-			params.emplace_back(target);
-
-			params.emplace_back("-i");
-
-			for (auto file : queue.find_incoming<busy::analyse::File>(&project)) {
-				auto ext = file->getPath().extension();
-				if (ext == ".cpp" or ext == ".c") {
-					auto objPath = "obj" / file->getPath();
-					objPath.replace_extension(".o");
-					params.emplace_back(objPath);
-				}
-			}
 			std::vector<std::string> systemLibraries;
-
 			auto addSystemLibraries = [&](busy::analyse::Project const& project) {
 				for (auto const& l : project.getSystemLibraries()) {
 					auto iter = std::find(begin(systemLibraries), end(systemLibraries), l);
@@ -306,7 +274,6 @@ void app(std::vector<std::string_view> args) {
 			queue.visit_incoming(&project, [&](auto& project) {
 				using X = std::decay_t<decltype(project)>;
 				if constexpr (std::is_same_v<X, busy::analyse::Project>) {
-					//std::cout << "dep: " << project.getName() << "\n";
 					if (not project.isHeaderOnly()) {
 						auto target = (std::filesystem::path{"lib"} / project.getName()).replace_extension(".a");
 						params.emplace_back(target);
@@ -315,9 +282,11 @@ void app(std::vector<std::string_view> args) {
 				}
 			});
 
+			params.emplace_back("-l");
 			for (auto const& l : systemLibraries) {
-				params.emplace_back("-l"+l);
+				params.emplace_back(l);
 			}
+
 			return params;
 		};
 
@@ -336,11 +305,13 @@ void app(std::vector<std::string_view> args) {
 							}
 							assert(false);
 						}();
-						if (executable) {
-							return linkExecutable(x);
-						} else {
-							return linkLibrary(x);
-						}
+						auto type       = std::string{executable?"executable":"static_library"};
+						auto targetName = [&]() -> std::filesystem::path {
+							if (executable) return std::filesystem::path{"bin"} / x.getName();
+							return (std::filesystem::path{"lib"} / x.getName()).replace_extension(".a");
+						}();
+
+						return createLinkTarget(x, type, targetName);
 					}
 					return {};
 				}();
