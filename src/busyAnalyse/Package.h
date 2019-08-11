@@ -58,4 +58,8 @@ public:
 	}
 };
 
+auto readPackage(std::filesystem::path const& _root, std::filesystem::path const& _path) -> std::vector<Project>;
+
+
+
 }
