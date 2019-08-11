@@ -21,76 +21,6 @@ auto exceptionToString(std::exception const& e, int level = 0) -> std::string {
 	return ret;
 }
 
-auto groupPackages(std::vector<busy::analyse::Package const*> packages) -> std::map<busy::analyse::Package const*, std::vector<busy::analyse::Package const*>> {
-	auto result = std::map<busy::analyse::Package const*, std::vector<busy::analyse::Package const*>>{};
-
-	// finds a place in result
-	// returns a pointer to an equivalent map key
-	auto find = [&](busy::analyse::Package const* p) -> std::vector<busy::analyse::Package const*>* {
-		for (auto& [id, list] : result) {
-			if (isEquivalent(*p, *id)) {
-				return &list;
-			}
-		}
-		return nullptr;
-	};
-
-	for (auto p : packages) {
-		auto listPtr = find(p);
-		if (listPtr) {
-			listPtr->emplace_back(p);
-		} else {
-			result[p].push_back(p);
-		}
-	}
-	return result;
-}
-
-auto getAllPackages(busy::analyse::Package const& package) {
-	auto ret = std::map<std::string, busy::analyse::Package const*>{};
-
-	auto queue = std::queue<busy::analyse::Package const*>();
-	queue.push(&package);
-	while(not queue.empty()) {
-		auto e = queue.front();
-		queue.pop();
-		ret.try_emplace(e->getName(), e);
-		for (auto const& p : e->getPackages()) {
-			queue.push(&p);
-		}
-	}
-	return ret;
-}
-
-auto findDependentProjects(busy::analyse::Package const& package, busy::analyse::Project const& project, std::map<std::string, busy::analyse::Package const*> packages) {
-	auto ret = std::set<std::tuple<busy::analyse::Package const*, busy::analyse::Project const*>>{};
-
-	auto _allIncludes = project.getIncludes();
-
-	for (auto const& [key, exPackage] : packages) {
-		for (auto const& exProject : exPackage->getProjects()) {
-			for (auto file : exProject.getFiles().at(busy::analyse::FileType::H)) {
-				// check if is includable by default path
-				{
-					auto path = exProject.getName() / relative(file.getPath(), exProject.getPath());
-					if (_allIncludes.count(path)) {
-						ret.emplace(nullptr, &exProject);
-					}
-				}
-				// check if it is includable by legacy include path
-				{
-					for (auto const& p : exProject.getLegacyIncludePaths()) {
-						auto path = relative(file.getPath(), p);
-						if (_allIncludes.count(path)) {
-							ret.emplace(nullptr, &exProject);
-						}
-					}
-				}
-			}
-		}
-	}
-	return ret;
-}
 auto findDependentProjects(busy::analyse::Project const& _project, std::vector<busy::analyse::Project> const& _projects) {
 	auto ret = std::set<busy::analyse::Project const*>{};
 	auto _allIncludes = _project.getIncludes();
@@ -119,49 +49,17 @@ auto findDependentProjects(busy::analyse::Project const& _project, std::vector<b
 	return ret;
 }
 
-auto getAllProjects(std::map<std::string, busy::analyse::Package const*> packages) {
-	auto ret = std::set<std::tuple<busy::analyse::Package const*, busy::analyse::Project const*>>{};
-	for (auto const& [key, package] : packages) {
-		for (auto const& project : package->getProjects()) {
-			ret.emplace(std::tuple{package, &project});
-		}
-	}
-	return ret;
-}
-
 struct Project {
-	busy::analyse::Package const* package;
 	busy::analyse::Project const* project;
 
 	std::set<Project const*> dependencies;
 	std::set<Project const*> dependOnThis;
 };
 
-auto createProjects(std::map<std::string, busy::analyse::Package const*> const& allPackages) {
-	std::vector<Project> projects;
-	for (auto const& [package, project] : getAllProjects(allPackages)) {
-		projects.push_back({package, project});
-	}
-	for (auto& p : projects) {
-		auto deps = findDependentProjects(*p.package, *p.project, allPackages);
-
-		for (auto& p2 : projects) {
-			if (deps.count({nullptr, p2.project}) > 0) {
-				if (&p != &p2) {
-					p.dependencies.insert(&p2);
-					p2.dependOnThis.insert(&p);
-				}
-			}
-		}
-	}
-
-	return projects;
-}
-
 auto createProjects(std::vector<busy::analyse::Project> const& _projects) {
 	auto projects = std::vector<Project>{};
 	for (auto const& p : _projects) {
-		projects.push_back({nullptr, &p});
+		projects.push_back({&p});
 	}
 
 	for (auto& p : projects) {
@@ -178,35 +76,6 @@ auto createProjects(std::vector<busy::analyse::Project> const& _projects) {
 	}
 
 	return projects;
-}
-
-
-//!TODO, should output a list, not do the output itself
-bool checkForCycle(Project const& project) {
-	auto projects = std::queue<Project const*>{};
-	for (auto d : project.dependencies) {
-		projects.push(d);
-	}
-	while (not projects.empty()) {
-		auto top = projects.front();
-		projects.pop();
-		for (auto d : top->dependencies) {
-			if (d == &project) {
-				return true;
-			}
-			projects.push(d);
-		}
-	}
-	return false;
-}
-bool checkForCycle(std::map<std::string, busy::analyse::Package const*> packages) {
-	auto projects = createProjects(packages);
-	for (auto const& p : projects) {
-		if (checkForCycle(p)) {
-			return true;
-		}
-	}
-	return false;
 }
 
 auto readFullFile(std::filesystem::path const& file) {
