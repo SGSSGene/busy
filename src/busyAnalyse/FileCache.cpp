@@ -5,11 +5,11 @@
 
 auto computeHash(std::filesystem::path const& path) -> std::string {
 	std::ifstream ifs(path, std::ios::binary);
-	using Hash = std::array<unsigned char, picosha2::k_digest_size>;
+	using Hash = std::array<char, picosha2::k_digest_size>;
 	Hash hash;
 	picosha2::hash256(ifs, hash.begin(), hash.end());
 	//std::cout << "computing hash of: " << path << "\n";
-	auto b64 = busy::base64_encode(&hash[0], picosha2::k_digest_size);
+	auto b64 = base64::encode(std::string_view{&hash[0], hash.size()});
 	return b64;
 }
 

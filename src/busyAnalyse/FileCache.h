@@ -1,13 +1,12 @@
 #pragma once
 
-#include "utils/base64.h"
 
-#include <picosha2/picosha2.h>
-
-#include <flattensObjectsNeatly/flattensObjectsNeatly.h>
+#include <base64/base64.h>
+#include <flattensObjectsNeatly/binary.h>
 #include <flattensObjectsNeatly/chrono.h>
 #include <flattensObjectsNeatly/filesystem.h>
-#include <flattensObjectsNeatly/binary.h>
+#include <flattensObjectsNeatly/flattensObjectsNeatly.h>
+#include <picosha2/picosha2.h>
 
 auto computeHash(std::filesystem::path const& path) -> std::string;
 auto getFileModificationTime(std::filesystem::path const& _file) -> std::filesystem::file_time_type;
