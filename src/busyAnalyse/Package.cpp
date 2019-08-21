@@ -1,7 +1,10 @@
 #include "Package.h"
+
 #include <yaml-cpp/yaml.h>
 
 namespace busy::analyse {
+
+constexpr std::string_view external{"external"};
 
 namespace fs = std::filesystem;
 
@@ -15,71 +18,6 @@ struct yaml_error : std::runtime_error {
 
 };
 
-
-Package::Package(std::filesystem::path const& _root, std::filesystem::path const& _path)
-	: mPath { relative(_path, _root).lexically_normal() } {
-
-	// read this package config
-	auto path = _root / mPath / "busy.yaml";
-
-	try {
-		auto node = YAML::LoadFile(path.string());
-
-		if (not node["name"].IsScalar()) {
-			throw yaml_error{path, node["name"], "expected 'name' as string"};
-		}
-
-		mName = node["name"].as<std::string>();
-
-		// add all project names based on directory entries
-		auto projectNames = std::set<std::string>{};
-		for(auto& p : fs::directory_iterator(_root / mPath / "src")) {
-			if (is_directory(p)) {
-				projectNames.insert(p.path().filename());
-			}
-		}
-
-		// scan all defined projects
-		if (node["projects"].IsDefined()) {
-			if (not node["projects"].IsSequence()) {
-				throw yaml_error{path, node["projects"], "expected 'projects' as sequence"};
-			}
-
-			for (auto n : node["projects"]) {
-				auto name = n["name"].as<std::string>();
-				projectNames.erase(name);
-				auto path = mPath / "src" / name;
-				auto legacyIncludePaths = std::vector<fs::path>{};
-				auto legacySystemLibraries    = std::set<std::string>{};
-
-				for (auto e : n["legacy"]["includes"]) {
-					legacyIncludePaths.push_back(mPath / e.as<std::string>());
-				}
-				for (auto e : n["legacy"]["systemLibraries"]) {
-					legacySystemLibraries.insert(e.as<std::string>());
-				}
-
-				mProjects.emplace_back(name, _root, path, legacyIncludePaths, legacySystemLibraries);
-			}
-		}
-
-		// add all projects that weren't defined in "projects" section of busy.yaml
-		for (auto const& p : projectNames) {
-			mProjects.emplace_back(p, _root, mPath / "src" / p, std::vector<fs::path>{}, std::set<std::string>{});
-		}
-
-
-		// adding entries to package
-		auto packages = std::vector<std::string>{};
-		if (is_directory(_root / mPath / external)) {
-			for (auto& p : fs::directory_iterator(_root / mPath / external)) {
-				mPackages.emplace_back(_root, p);
-			}
-		}
-	} catch(...) {
-		std::throw_with_nested(std::runtime_error{"failed loading " + path.string()});
-	}
-}
 
 auto readPackage(std::filesystem::path const& _root, std::filesystem::path const& _path) -> std::vector<Project> {
 	auto retProjects = std::vector<Project>{};
@@ -131,7 +69,6 @@ auto readPackage(std::filesystem::path const& _root, std::filesystem::path const
 
 		// adding entries to package
 		auto packages = std::vector<std::string>{};
-		auto const& external = Package::external;
 		if (is_directory(_root / _path / external)) {
 			for (auto& p : fs::directory_iterator(_root / _path / external)) {
 				if (not is_symlink(p)) {
