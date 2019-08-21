@@ -1,25 +1,13 @@
 #include "FileCache.h"
 #include "Package.h"
 #include "Queue.h"
+#include "utils/utils.h"
 
 #include <process/Process.h>
 #include <algorithm>
 #include <cstdlib>
 #include <filesystem>
-#include <fstream>
 #include <iostream>
-
-auto exceptionToString(std::exception const& e, int level = 0) -> std::string {
-	std::string ret = std::string(level, ' ') + e.what();
-	try {
-		std::rethrow_if_nested(e);
-	} catch(const std::exception& nested) {
-		ret += "\n" + exceptionToString(nested, level+1);
-	} catch(...) {
-		ret += "\nprintable exception";
-	}
-	return ret;
-}
 
 auto findDependentProjects(busy::analyse::Project const& _project, std::vector<busy::analyse::Project> const& _projects) {
 	auto ret = std::set<busy::analyse::Project const*>{};
@@ -78,15 +66,6 @@ auto createProjects(std::vector<busy::analyse::Project> const& _projects) {
 	return projects;
 }
 
-auto readFullFile(std::filesystem::path const& file) {
-	auto ifs = std::ifstream{file, std::ios::binary};
-	ifs.seekg(0, std::ios::end);
-	auto buffer = std::vector<std::byte>(ifs.tellg());
-	ifs.seekg(0, std::ios::beg);
-	ifs.read(reinterpret_cast<char*>(buffer.data()), buffer.size());
-	return buffer;
-}
-
 void app(std::vector<std::string_view> args) {
 	if (size(args) <= 1) {
 		throw std::runtime_error("please give path of busy.yaml");
@@ -98,7 +77,7 @@ void app(std::vector<std::string_view> args) {
 
 	getFileCache() = [&]() {
 		if (std::filesystem::exists(".filecache")) {
-			auto buffer = readFullFile(".filecache");
+			auto buffer = busy::utils::readFullFile(".filecache");
 			return fon::binary::deserialize<FileCache>(buffer);
 		} else if (std::filesystem::exists(".filecache.yaml")) {
 			return fon::yaml::deserialize<FileCache>(YAML::LoadFile(".filecache.yaml"));
@@ -364,7 +343,7 @@ int main(int argc, char const** argv) {
 		app(args);
 		return EXIT_SUCCESS;
 	} catch (std::exception const& e) {
-		std::cerr << "exception: " << exceptionToString(e) << "\n";
+		std::cerr << "exception: " << busy::utils::exceptionToString(e, 0) << "\n";
 	}
 	return EXIT_FAILURE;
 }

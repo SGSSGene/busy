@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cstdio>
 #include <fcntl.h>
+#include <fstream>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -33,4 +34,26 @@ void safeFileWrite(std::filesystem::path _dest, std::filesystem::path _src) {
 	::close(fd);
 	::rename(_src.string().c_str(), _dest.string().c_str());
 }
+
+auto exceptionToString(std::exception const& e, int level) -> std::string {
+	std::string ret = std::string(level, ' ') + e.what();
+	try {
+		std::rethrow_if_nested(e);
+	} catch(const std::exception& nested) {
+		ret += "\n" + exceptionToString(nested, level+1);
+	} catch(...) {
+		ret += "\nprintable exception";
+	}
+	return ret;
+}
+
+auto readFullFile(std::filesystem::path const& file) -> std::vector<std::byte> {
+	auto ifs = std::ifstream{file, std::ios::binary};
+	ifs.seekg(0, std::ios::end);
+	auto buffer = std::vector<std::byte>(ifs.tellg());
+	ifs.seekg(0, std::ios::beg);
+	ifs.read(reinterpret_cast<char*>(buffer.data()), buffer.size());
+	return buffer;
+}
+
 }
