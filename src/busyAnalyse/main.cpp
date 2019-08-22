@@ -9,29 +9,39 @@
 #include <filesystem>
 #include <iostream>
 
+// check if this _project is included by _allIncludes
+auto isDependentProject(std::set<std::filesystem::path> const& _allIncludes, busy::analyse::Project const& _project) -> bool {
+
+	//!TODO this should be a list of all files
+	auto files = _project.getFiles().at(busy::analyse::FileType::H);
+	for (auto const& file : files) {
+		// check if is includable by default path
+		{
+			auto path = _project.getName() / relative(file.getPath(), _project.getPath());
+			if (_allIncludes.count(path)) {
+				return true;
+			}
+		}
+		// check if it is includable by legacy include path
+		{
+			for (auto const& p : _project.getLegacyIncludePaths()) {
+				auto path = relative(file.getPath(), p);
+				if (_allIncludes.count(path)) {
+					return true;
+				}
+			}
+		}
+	}
+	return false;
+}
+
 auto findDependentProjects(busy::analyse::Project const& _project, std::vector<busy::analyse::Project> const& _projects) {
 	auto ret = std::set<busy::analyse::Project const*>{};
 	auto _allIncludes = _project.getIncludes();
+
 	for (auto const& project : _projects) {
-		//!TODO this should be a list of all files
-		auto files = project.getFiles().at(busy::analyse::FileType::H);
-		for (auto const& file : files) {
-			// check if is includable by default path
-			{
-				auto path = project.getName() / relative(file.getPath(), project.getPath());
-				if (_allIncludes.count(path)) {
-					ret.emplace(&project);
-				}
-			}
-			// check if it is includable by legacy include path
-			{
-				for (auto const& p : project.getLegacyIncludePaths()) {
-					auto path = relative(file.getPath(), p);
-					if (_allIncludes.count(path)) {
-						ret.emplace(&project);
-					}
-				}
-			}
+		if (isDependentProject(_allIncludes, project)) {
+			ret.emplace(&project);
 		}
 	}
 	return ret;
