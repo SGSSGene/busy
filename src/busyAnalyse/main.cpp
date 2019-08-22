@@ -37,33 +37,22 @@ auto findDependentProjects(busy::analyse::Project const& _project, std::vector<b
 	return ret;
 }
 
-struct Project {
-	busy::analyse::Project const* project;
-
-	std::set<Project const*> dependencies;
-	std::set<Project const*> dependOnThis;
-};
-
 auto createProjects(std::vector<busy::analyse::Project> const& _projects) {
-	auto projects = std::vector<Project>{};
+	using Project = busy::analyse::Project;
+
+	auto ret = std::map<Project const*, std::tuple<std::set<Project const*>, std::set<Project const*>>>{};
+
 	for (auto const& p : _projects) {
-		projects.push_back({&p});
-	}
-
-	for (auto& p : projects) {
-		auto deps = findDependentProjects(*p.project, _projects);
-
-		for (auto& p2 : projects) {
-			if (&p == &p2) continue;
-
-			if (deps.count(p2.project) > 0) {
-				p.dependencies.insert(&p2);
-				p2.dependOnThis.insert(&p);
-			}
+		ret[&p];
+		auto deps = findDependentProjects(p, _projects);
+		for (auto const& d : deps) {
+			if (d == &p) continue;
+			std::get<0>(ret[&p]).insert(d);
+			std::get<1>(ret[d]).insert(&p);
 		}
 	}
 
-	return projects;
+	return ret;
 }
 
 void app(std::vector<std::string_view> args) {
@@ -120,8 +109,9 @@ void app(std::vector<std::string_view> args) {
 
 	auto projects2 = createProjects(projects);
 
-	for (auto const& p : projects2) {
-		auto const& project = *p.project;
+	for (auto const& [i_project, dep] : projects2) {
+		auto const& project = *i_project;
+		auto const& dependencies = std::get<0>(dep);
 		std::cout << "\n";
 
 		std::cout << "  - project-name: " << project.getName() << "\n";
@@ -132,10 +122,10 @@ void app(std::vector<std::string_view> args) {
 				std::cout << "    - " << l << "\n";
 			}
 		}
-		if (not p.dependencies.empty()) {
+		if (not dependencies.empty()) {
 			std::cout << "    dependencies:\n";
-			for (auto const& d : p.dependencies) {
-				std::cout << "    - " << d->project->getName() << " (" << d->project->getPath() << ")\n";
+			for (auto const& d : dependencies) {
+				std::cout << "    - " << d->getName() << " (" << d->getPath() << ")\n";
 			}
 		}
 
@@ -146,16 +136,16 @@ void app(std::vector<std::string_view> args) {
 		auto nodes = Q::Nodes{};
 		auto edges = Q::Edges{};
 
-		for (auto& p : projects2) {
-			nodes.push_back(p.project);
-			for (auto& [fileType, list] : p.project->getFiles()) {
+		for (auto& [project, dep] : projects2) {
+			nodes.push_back(project);
+			for (auto& [fileType, list] : project->getFiles()) {
 				for (auto& file : list) {
 					nodes.emplace_back(&file);
-					edges.emplace_back(Q::Edge{&file, p.project});
+					edges.emplace_back(Q::Edge{&file, project});
 				}
 			}
-			for (auto& d : p.dependencies) {
-				edges.emplace_back(Q::Edge{d->project, p.project});
+			for (auto& d : std::get<0>(dep)) {
+				edges.emplace_back(Q::Edge{d, project});
 			}
 		}
 		auto queue = Q{nodes, edges};
@@ -277,9 +267,9 @@ void app(std::vector<std::string_view> args) {
 						return compileFile(x);
 					} else if constexpr (std::is_same_v<X, busy::analyse::Project>) {
 						auto executable = [&]() {
-							for (auto const& p : projects2) {
-								if (p.project == &x) {
-									return p.dependOnThis.empty();
+							for (auto const& [key, dep] : projects2) {
+								if (key == &x) {
+									return std::get<1>(dep).empty();
 								}
 							}
 							assert(false);
