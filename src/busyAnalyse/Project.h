@@ -48,10 +48,6 @@ public:
 		return mLegacyIncludePaths;
 	}
 
-	auto isHeaderOnly() const -> bool {
-		return mFiles.at(FileType::C).empty() and mFiles.at(FileType::Cpp).empty();
-	}
-
 	auto getIncludes() const -> std::set<std::filesystem::path> {
 		auto ret = std::set<std::filesystem::path>{};
 		for (auto const& [key, value] : getFiles()) {
