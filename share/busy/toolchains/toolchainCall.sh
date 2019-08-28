@@ -1,6 +1,12 @@
 #!/bin/bash
 
-# $ ./toolchainCall.sh --profile compile rootpath input.cpp output.o -I projectInclude2 projectInclude2 -isystem include/systeminclude1:systeminclude include/systeminclude2:systeminclude2
+# $ ./toolchainCall.sh compile input.cpp output.o -I <includes>... -isystem <system includes>...
+# $ ./toolchainCall.sh link static_library output.exe|output.a -i obj1.o obj2.o lib2.a -l pthread armadillo
+#
+# Return values:
+# 0 on success
+# 1 on nothing done (e.g. is header, or header only)
+# -1 error
 
 
 function parseMode {
@@ -73,8 +79,6 @@ if [ $# -lt 5 ]; then
 fi
 
 
-
-
 if [ "$1" == "compile" ]; then
 	shift; inputFile="$1"
 	shift; outputFile="$1"
@@ -100,7 +104,7 @@ if [ "$1" == "compile" ]; then
 	elif [ "${filetype}" = "c" ]; then
 		call="ccache g++ -O0 -std=c++11 -fPIC -MD -g3 -ggdb -fdiagnostics-color=always -c $inputFile -o $outputFile $projectIncludes $systemIncludes"
 	else
-		exit 0
+		exit 1
 	fi
 elif [ "$1" == "link" ]; then
 	shift; target="$1"
@@ -108,6 +112,7 @@ elif [ "$1" == "link" ]; then
 	shift
 
 	parse "-i       inputFiles" \
+	      "-il      inputLibraries" \
 	      "-l       libraries" \
 	      "--" "$@"
 
@@ -115,15 +120,16 @@ elif [ "$1" == "link" ]; then
 
 	# Header only
 	if [ "${#inputFiles[@]}" -eq 0 ]; then
-		call=""
-
+		exit 1
 	# Executable
 	elif [ "${target}" == "executable" ]; then
-		call="ccache g++ -rdynamic -g3 -ggdb -fdiagnostics-color=always -o $outputFile ${inputFiles[@]} ${libraries[@]}"
+		call="ccache g++ -rdynamic -g3 -ggdb -fdiagnostics-color=always -o $outputFile ${inputFiles[@]} ${inputLibraries[@]} ${libraries[@]}"
 
 	# Static library?
 	elif [ "${target}" == "static_library" ]; then
 		call="ccache ar rcs $outputFile ${inputFiles[@]}"
+	else
+		exit -1
 	fi
 else
 	exit -1
@@ -140,4 +146,7 @@ cat stderr.log | sed 's/^/    /'
 
 rm stdout.log
 rm stderr.log
-exit $errorCode
+if [ $errorCode -ne "0" ]; then
+	exit -1
+fi
+exit 0

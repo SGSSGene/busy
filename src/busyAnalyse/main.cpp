@@ -151,6 +151,7 @@ void app(std::vector<std::string_view> args) {
 		using Q = Queue<busy::analyse::Project const, busy::analyse::File const>;
 		auto nodes = Q::Nodes{};
 		auto edges = Q::Edges{};
+		auto colors = std::map<Q::Node, int>{};
 
 		for (auto& [project, dep] : projects2) {
 			nodes.push_back(project);
@@ -214,14 +215,14 @@ void app(std::vector<std::string_view> args) {
 
 			params.emplace_back("-i");
 			for (auto file : queue.find_incoming<busy::analyse::File>(&project)) {
-				auto ext = file->getPath().extension();
-				//!TODO this should be based on the error code of toolchain.sh call
-				if (ext == ".cpp" or ext == ".c") {
+				if (colors.at(file) == 0) {
 					auto objPath = "obj" / file->getPath();
 					objPath.replace_extension(".o");
 					params.emplace_back(objPath);
 				}
 			}
+
+			params.emplace_back("-il");
 
 			// add all legacy system libraries
 			std::vector<std::string> systemLibraries;
@@ -240,7 +241,7 @@ void app(std::vector<std::string_view> args) {
 			queue.visit_incoming(&project, [&](auto& project) {
 				using X = std::decay_t<decltype(project)>;
 				if constexpr (std::is_same_v<X, busy::analyse::Project>) {
-					if (not project.isHeaderOnly()) {
+					if (colors.at(&project) == 0) {
 						auto target = (std::filesystem::path{"lib"} / project.getName()).replace_extension(".a");
 						params.emplace_back(target);
 					}
@@ -298,10 +299,15 @@ void app(std::vector<std::string_view> args) {
 
 						std::cout << p.cout() << "\n";
 						std::cerr << p.cerr() << "\n";
-						if (p.getStatus() != 0) {
+						if (p.getStatus() != 0 and p.getStatus() != 1) {
 							std::cout << "error exit\n";
 							exit(1);
 						}
+					}
+					if (p.getStatus() == 1) {
+						colors[&x] = 1;
+					} else {
+						colors[&x] = 0;
 					}
 				}
 			});
