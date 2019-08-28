@@ -15,7 +15,6 @@ auto getFileCreationTime(std::filesystem::path const& _file) -> std::filesystem:
 
 struct FileCache {
 
-	using AllIncludes = std::tuple<std::set<std::filesystem::path>, std::set<std::filesystem::path>>;
 	using Hash = std::string;
 
 	template <typename T>
@@ -41,7 +40,7 @@ struct FileCache {
 		std::string                         hash{};
 
 		PairTuple<std::vector<std::filesystem::path>, // dependency of projects(?)
-		          AllIncludes,                        // includes
+		          std::set<std::filesystem::path>,    // includes
 		          Hash                                // hash
 		         > tuplePair;
 

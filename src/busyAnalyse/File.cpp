@@ -12,19 +12,6 @@ namespace {
 void skipAllWhiteSpaces(char const*& str) {
 	while (*str != '\0' and (*str == '\t' or *str == ' ')) ++str;
 }
-bool checkIfMakroEndif(char const* str) {
-	skipAllWhiteSpaces(str);
-	return strncmp(str, "#endif", 6) == 0;
-}
-bool checkIfMakroIfAndBusy(char const* str) {
-	skipAllWhiteSpaces(str);
-	if (strncmp(str, "#if", 3) != 0) {
-		return false;
-	}
-	str += 3;
-	skipAllWhiteSpaces(str);
-	return strncmp(str, "BUSY_", 5) == 0;
-}
 bool checkIfMakroSystemInclude(char const* str) {
 	skipAllWhiteSpaces(str);
 	if (strncmp(str, "#include", 8) != 0) {
@@ -35,49 +22,35 @@ bool checkIfMakroSystemInclude(char const* str) {
 	return *str == '<';
 }
 
-auto readIncludes(std::filesystem::path const& _file) -> std::tuple<std::set<std::filesystem::path>, std::set<std::filesystem::path>>{
-	std::ifstream ifs(_file);
-	std::string line;
+auto readIncludes(std::filesystem::path const& _file) -> std::set<std::filesystem::path>{
+	auto dependenciesAsString = std::set<std::string>{};
 
+	auto resIncludes          = std::set<std::filesystem::path>{};
 
-	std::set<std::string> dependenciesAsString;
-
-	bool optionalSection = false;
-
-	std::set<std::filesystem::path> resIncludes;
-	std::set<std::filesystem::path> resIncludesOptional;
-
+	auto ifs  = std::ifstream(_file);
+	auto line = std::string{};
 	while (std::getline(ifs, line)) {
-		// check if it is '#endif'
-		if (checkIfMakroEndif(line.c_str())) {
-			optionalSection = false;
-		} else if (checkIfMakroIfAndBusy(line.c_str())) {
-			optionalSection = true;
-		} else if (checkIfMakroSystemInclude(line.c_str())) {
+		if (checkIfMakroSystemInclude(line.c_str())) {
 			auto parts = utils::explode(line, {' ', '\t'});
 
-			std::string includeFile;
 			if (parts.size() == 0) continue;
-			if (parts.size() == 1) {
-				includeFile = parts[0];
-			} else {
-				includeFile = parts[1];
-			}
 
-			auto pos1 = includeFile.find("<")+1;
-			auto pos2 = includeFile.find(">")-pos1;
+			auto includeFile = [&]() -> std::string {
+				if (parts.size() == 1) {
+					return parts[0];
+				}
+				return parts[1];
+			}();
+
+			auto pos1 = includeFile.find("<") + 1;
+			auto pos2 = includeFile.find(">") - pos1;
 
 			auto file = includeFile.substr(pos1, pos2);
 
-			if (optionalSection) {
-				resIncludesOptional.insert(std::filesystem::path(file));
-				resIncludes.erase(file);
-			} else if (resIncludes.count(file) == 0) {
-				resIncludes.insert(file);
-			}
+			resIncludes.insert(file);
 		}
 	}
-	return {std::move(resIncludes), std::move(resIncludesOptional)};
+	return resIncludes;
 }
 }
 
@@ -91,15 +64,13 @@ auto File::getHash() const -> std::string {
 
 
 void File::readFile(std::filesystem::path const& _file) {
-	using AllIncludes = FileCache::AllIncludes;
+	using Includes = std::set<std::filesystem::path>;
 
-	if (getFileCache().hasTChange<AllIncludes>(_file)) {
-		getFileCache().updateT<AllIncludes>(_file, readIncludes(_file));
+	if (getFileCache().hasTChange<Includes>(_file)) {
+		getFileCache().updateT<Includes>(_file, readIncludes(_file));
 	}
 
-	auto const& [incl, optIncl] = getFileCache().getT<AllIncludes>(_file);
-	mIncludes = incl;
-	mIncludesOptional = optIncl;
+	mIncludes = getFileCache().getT<Includes>(_file);
 }
 
 }

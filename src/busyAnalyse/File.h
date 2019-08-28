@@ -19,7 +19,6 @@ private:
 	std::filesystem::path mPath;
 
 	std::set<std::filesystem::path> mIncludes;
-	std::set<std::filesystem::path> mIncludesOptional;
 public:
 
 	File(std::filesystem::path const& _root, std::filesystem::path _path)
@@ -37,17 +36,11 @@ public:
 		return mIncludes;
 	}
 
-	auto const& getIncludesOptional() const {
-		return mIncludesOptional;
-	}
 	auto getHash() const -> std::string;
 
 	auto isEquivalent(File const& _other) const -> bool {
 		//!TODO needs to compare name
 		if (mIncludes != _other.mIncludes) {
-			return false;
-		}
-		if (mIncludesOptional != _other.mIncludesOptional) {
 			return false;
 		}
 		auto info1 = getFileCache().getFileCache(mRoot / mPath);
