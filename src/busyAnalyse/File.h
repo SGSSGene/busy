@@ -43,6 +43,7 @@ public:
 	auto getHash() const -> std::string;
 
 	auto isEquivalent(File const& _other) const -> bool {
+		//!TODO needs to compare name
 		if (mIncludes != _other.mIncludes) {
 			return false;
 		}

@@ -9,18 +9,12 @@
 
 namespace busy::analyse {
 
-enum class FileType {
-	C,
-	Cpp,
-	H
-};
-
 class Project {
 private:
 	std::string mName;
 	std::filesystem::path mPath;
 
-	std::map<FileType, std::vector<File>> mFiles;
+	std::vector<File>                     mFiles;
 	std::vector<std::filesystem::path>    mLegacyIncludePaths;
 	std::set<std::string>                 mSystemLibraries;
 
@@ -50,11 +44,9 @@ public:
 
 	auto getIncludes() const -> std::set<std::filesystem::path> {
 		auto ret = std::set<std::filesystem::path>{};
-		for (auto const& [key, value] : getFiles()) {
-			for (auto const& f : value) {
-				for (auto const& i : f.getIncludes()) {
-					ret.emplace(i);
-				}
+		for (auto const& f : getFiles()) {
+			for (auto const& i : f.getIncludes()) {
+				ret.emplace(i);
 			}
 		}
 		return ret;
@@ -71,18 +63,20 @@ public:
 			return false;
 		}
 
-		for (auto const& e1 : mFiles) {
-			if (_other.mFiles.count(e1.first) == 0) {
-				return false;
-			}
-			auto const& e2 = *_other.mFiles.find(e1.first);
-			if (e2.second.size() != e1.second.size()) {
-				return false;
-			}
-			for (int i{0}; i < e2.second.size(); ++i) {
-				if (not e1.second[i].isEquivalent(e2.second[i])) {
-					return false;
+
+		auto hasSameFile = [&](auto const& _file) {
+			for (auto const& f : _other.mFiles) {
+				if (f.isEquivalent(_file)) {
+					return true;
 				}
+			}
+			return false;
+		};
+
+
+		for (auto const& file : mFiles) {
+			if (not hasSameFile(file)) {
+				return false;
 			}
 		}
 		return true;

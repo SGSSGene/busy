@@ -12,8 +12,7 @@
 // check if this _project is included by _allIncludes
 auto isDependentProject(std::set<std::filesystem::path> const& _allIncludes, busy::analyse::Project const& _project) -> bool {
 
-	//!TODO this should be a list of all files
-	auto files = _project.getFiles().at(busy::analyse::FileType::H);
+	auto files = _project.getFiles();
 	for (auto const& file : files) {
 		// check if is includable by default path
 		{
@@ -155,11 +154,9 @@ void app(std::vector<std::string_view> args) {
 
 		for (auto& [project, dep] : projects2) {
 			nodes.push_back(project);
-			for (auto& [fileType, list] : project->getFiles()) {
-				for (auto& file : list) {
-					nodes.emplace_back(&file);
-					edges.emplace_back(Q::Edge{&file, project});
-				}
+			for (auto& file : project->getFiles()) {
+				nodes.emplace_back(&file);
+				edges.emplace_back(Q::Edge{&file, project});
 			}
 			for (auto& d : std::get<0>(dep)) {
 				edges.emplace_back(Q::Edge{d, project});
