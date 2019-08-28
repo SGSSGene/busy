@@ -9,6 +9,9 @@
 #include <filesystem>
 #include <iostream>
 
+namespace busy {
+namespace analyse {
+
 // check if this _project is included by _allIncludes
 auto isDependentProject(std::set<std::filesystem::path> const& _allIncludes, busy::analyse::Project const& _project) -> bool {
 
@@ -64,42 +67,14 @@ auto createProjects(std::vector<busy::analyse::Project> const& _projects) {
 	return ret;
 }
 
-void app(std::vector<std::string_view> args) {
-	if (size(args) <= 1) {
-		throw std::runtime_error("please give path of busy.yaml");
-	}
-	auto rootPath = relative(std::filesystem::path(args[1]));
-	if (rootPath == ".") {
-		throw std::runtime_error("can't build in source, please create a `build` directory");
-	}
-
-	getFileCache() = [&]() {
-		if (std::filesystem::exists(".filecache")) {
-			auto buffer = busy::utils::readFullFile(".filecache");
-			return fon::binary::deserialize<FileCache>(buffer);
-		} else if (std::filesystem::exists(".filecache.yaml")) {
-			return fon::yaml::deserialize<FileCache>(YAML::LoadFile(".filecache.yaml"));
-		}
-		return FileCache{};
-	}();
-
-	auto projects = busy::analyse::readPackage(rootPath, ".");
-	for (auto const& p : projects) {
-		std::cout << p.getName() << " (" << p.getPath() << ")\n";
-	}
+void checkConsistency(std::vector<busy::analyse::Project> const& _projects) {
 	auto groupedProjects = std::map<std::string, std::vector<busy::analyse::Project const*>>{};
-	for (auto const& p : projects) {
+	for (auto const& p : _projects) {
 		groupedProjects[p.getName()].emplace_back(&p);
 	}
 
-	// check consistency of packages
-	std::cout << "check consistency\n";
 
 	for (auto const& [name, list] : groupedProjects) {
-		std::cout << "name: " << name << "\n";
-		for (auto const& p : list) {
-			std::cout << "  - " << p->getName() << "\n";
-		}
 		//!TODO this can be done much more efficient
 		if (size(list) > 1) {
 			for (auto const& p1 : list) {
@@ -107,18 +82,15 @@ void app(std::vector<std::string_view> args) {
 					if (p1 == p2) continue;
 					if (not p1->isEquivalent(*p2)) {
 						throw std::runtime_error("two projects don't seem to be the same: " + p1->getName());
-					} else {
-						std::cout << p1->getPath() << " and " << p2->getPath() << " are the same\n";
 					}
 				}
 			}
 		}
-
 	}
+}
 
-	auto projects2 = createProjects(projects);
-
-	for (auto const& [i_project, dep] : projects2) {
+void printProjects(std::map<Project const*, std::tuple<std::set<Project const*>, std::set<Project const*>>> const& _projects) {
+	for (auto const& [i_project, dep] : _projects) {
 		auto const& project = *i_project;
 		auto const& dependencies = std::get<0>(dep);
 		std::cout << "\n";
@@ -143,16 +115,49 @@ void app(std::vector<std::string_view> args) {
 				std::cout << "      - " << p << "\n";
 			}
 		}
-
 	}
+}
+
+void app(std::vector<std::string_view> args) {
+	if (size(args) <= 1) {
+		throw std::runtime_error("please give path of busy.yaml");
+	}
+	auto rootPath = relative(std::filesystem::path(args[1]));
+	if (rootPath == ".") {
+		throw std::runtime_error("can't build in source, please create a `build` directory");
+	}
+
+	getFileCache() = [&]() {
+		if (std::filesystem::exists(".filecache")) {
+			auto buffer = busy::utils::readFullFile(".filecache");
+			return fon::binary::deserialize<FileCache>(buffer);
+		} else if (std::filesystem::exists(".filecache.yaml")) {
+			return fon::yaml::deserialize<FileCache>(YAML::LoadFile(".filecache.yaml"));
+		}
+		return FileCache{};
+	}();
+
+	auto projects = busy::analyse::readPackage(rootPath, ".");
+//	for (auto const& p : projects) {
+//		std::cout << p.getName() << " (" << p.getPath() << ")\n";
+//	}
+
+	// check consistency of packages
+	std::cout << "checking consistency...\n";
+
+	checkConsistency(projects);
+
+	auto projects_with_deps = createProjects(projects);
+	printProjects(projects_with_deps);
 
 	{
 		using Q = Queue<busy::analyse::Project const, busy::analyse::File const>;
+
 		auto nodes = Q::Nodes{};
 		auto edges = Q::Edges{};
 		auto colors = std::map<Q::Node, int>{};
 
-		for (auto& [project, dep] : projects2) {
+		for (auto& [project, dep] : projects_with_deps) {
 			nodes.push_back(project);
 			for (auto& file : project->getFiles()) {
 				nodes.emplace_back(&file);
@@ -164,7 +169,8 @@ void app(std::vector<std::string_view> args) {
 		}
 		auto queue = Q{nodes, edges};
 
-		auto compileFile = [&](busy::analyse::File const& file) -> std::vector<std::string> {
+
+		auto setupCompiling = [&](busy::analyse::File const& file) -> std::vector<std::string> {
 			auto outFile = file.getPath().lexically_normal().replace_extension(".o");
 			auto inFile  = file.getPath();
 
@@ -202,7 +208,15 @@ void app(std::vector<std::string_view> args) {
 			return params;
 		};
 
-		auto createLinkTarget = [&](busy::analyse::Project const& project, std::string action, std::string const& target) {
+		auto setupLinking = [&](busy::analyse::Project const& project) {
+			auto [action, target] = [&]() -> std::tuple<std::string, std::filesystem::path> {
+				bool isExecutable = std::get<1>(projects_with_deps.at(&project)).empty();
+				if (isExecutable) {
+					return {"executable", std::filesystem::path{"bin"} / project.getName()};
+				}
+				return {"static_library", (std::filesystem::path{"lib"} / project.getName()).replace_extension(".a")};
+			}();
+
 			auto params = std::vector<std::string>{};
 			params.emplace_back("./toolchainCall.sh");
 			params.emplace_back("link");
@@ -253,59 +267,45 @@ void app(std::vector<std::string_view> args) {
 
 			return params;
 		};
+		auto setup = [&](auto & x) -> std::vector<std::string> {
+			using X = std::decay_t<decltype(x)>;
+			if constexpr (std::is_same_v<X, busy::analyse::File>) {
+				return setupCompiling(x);
+			} else if constexpr (std::is_same_v<X, busy::analyse::Project>) {
+				return setupLinking(x);
+			}
+			assert(false);
+		};
+
+
 
 		while (not queue.empty()) {
 			queue.dispatch([&](auto& x) {
-				auto params = [&]() -> std::vector<std::string> {
-					using X = std::decay_t<decltype(x)>;
-					if constexpr (std::is_same_v<X, busy::analyse::File>) {
-						return compileFile(x);
-					} else if constexpr (std::is_same_v<X, busy::analyse::Project>) {
-						auto executable = [&]() {
-							for (auto const& [key, dep] : projects2) {
-								if (key == &x) {
-									return std::get<1>(dep).empty();
-								}
-							}
-							assert(false);
-						}();
-						auto type       = std::string{executable?"executable":"static_library"};
-						auto targetName = [&]() -> std::filesystem::path {
-							if (executable) return std::filesystem::path{"bin"} / x.getName();
-							return (std::filesystem::path{"lib"} / x.getName()).replace_extension(".a");
-						}();
+				auto params = setup(x);
+				/*auto p = std::string{};
+				for (auto const& s : params) {
+					p += s + " ";
+				}
+				std::cout << "should run: " <<  p << "\n";*/
+				auto p = process::Process{params};
+				if (p.getStatus() != 0 and p.getStatus() != 1 or true) {
+					std::stringstream ss;
+					for (auto const& p : params) {
+						ss << p << " ";
+					}
+					std::cout << ss.str() << "\n";
 
-						return createLinkTarget(x, type, targetName);
+					std::cout << p.cout() << "\n";
+					std::cerr << p.cerr() << "\n";
+					if (p.getStatus() != 0 and p.getStatus() != 1) {
+						std::cout << "error exit\n";
+						exit(1);
 					}
-					return {};
-				}();
-
-				if (not params.empty()) {
-					/*auto p = std::string{};
-					for (auto const& s : params) {
-						p += s + " ";
-					}
-					std::cout << "should run: " <<  p << "\n";*/
-					auto p = process::Process{params};
-					if (p.getStatus() != 0 or true) {
-						std::stringstream ss;
-						for (auto const& p : params) {
-							ss << p << " ";
-						}
-						std::cout << ss.str() << "\n";
-
-						std::cout << p.cout() << "\n";
-						std::cerr << p.cerr() << "\n";
-						if (p.getStatus() != 0 and p.getStatus() != 1) {
-							std::cout << "error exit\n";
-							exit(1);
-						}
-					}
-					if (p.getStatus() == 1) {
-						colors[&x] = 1;
-					} else {
-						colors[&x] = 0;
-					}
+				}
+				if (p.getStatus() == 1) {
+					colors[&x] = 1;
+				} else {
+					colors[&x] = 0;
 				}
 			});
 		}
@@ -323,6 +323,8 @@ void app(std::vector<std::string_view> args) {
 		std::ofstream(".filecache.yaml") << out.c_str();
 	}
 }
+}
+}
 
 int main(int argc, char const** argv) {
 	try {
@@ -330,7 +332,7 @@ int main(int argc, char const** argv) {
 		for (int i{0}; i<argc; ++i) {
 			args[i] = argv[i];
 		}
-		app(args);
+		busy::analyse::app(args);
 		return EXIT_SUCCESS;
 	} catch (std::exception const& e) {
 		std::cerr << "exception: " << busy::utils::exceptionToString(e, 0) << "\n";
