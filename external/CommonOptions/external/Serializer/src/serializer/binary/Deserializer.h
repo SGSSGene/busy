@@ -1,7 +1,7 @@
 #pragma once
 
-#include <serializer/Converter.h>
-#include <serializer/has_serialize_function.h>
+#include "../Converter.h"
+#include "../has_serialize_function.h"
 
 #include <cassert>
 #include <cstring>

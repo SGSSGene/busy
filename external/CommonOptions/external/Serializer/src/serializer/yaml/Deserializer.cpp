@@ -1,6 +1,6 @@
 #include "Deserializer.h"
 
-#include <serializer/standardTypes.h>
+#include "../standardTypes.h"
 
 namespace serializer {
 namespace yaml {

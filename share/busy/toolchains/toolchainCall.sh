@@ -94,7 +94,14 @@ if [ "$1" == "compile" ]; then
 	projectIncludes=$(implode " -I " "${projectIncludes[@]}")
 	systemIncludes=$(implode " -isystem " "${systemIncludes[@]}")
 
-	call="ccache g++ -O0 -std=c++17 -fPIC -MD -g3 -ggdb -fdiagnostics-color=always -c $inputFile -o $outputFile $projectIncludes $systemIncludes"
+	filetype="$(echo "${inputFile}" | rev | cut -d "." -f 1 | rev)";
+	if [ "${filetype}" = "cpp" ]; then
+		call="ccache g++ -O0 -std=c++17 -fPIC -MD -g3 -ggdb -fdiagnostics-color=always -c $inputFile -o $outputFile $projectIncludes $systemIncludes"
+	elif [ "${filetype}" = "c" ]; then
+		call="ccache g++ -O0 -std=c++11 -fPIC -MD -g3 -ggdb -fdiagnostics-color=always -c $inputFile -o $outputFile $projectIncludes $systemIncludes"
+	else
+		exit 0
+	fi
 elif [ "$1" == "link" ]; then
 	shift; target="$1"
 	shift; outputFile="$1"

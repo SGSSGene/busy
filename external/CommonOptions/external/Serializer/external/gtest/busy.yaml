@@ -6,7 +6,3 @@ projects:
         - include
       systemLibraries:
         - pthread
-    noWarnings: true
-    warningsAsErrors: false
-    depLibraries:
-      - pthread

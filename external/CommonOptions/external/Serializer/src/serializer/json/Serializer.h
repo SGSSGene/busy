@@ -5,13 +5,13 @@
 #include <sstream>
 
 #include "Deserializer.h"
-#include <serializer/standardTypes.h>
+#include "../standardTypes.h"
 
 #ifdef BUSY_GENERICFACTORY
 	#include <genericFactory/genericFactory.h>
 #endif
 
-#include <serializer/is_copy_constructible_recursive.h>
+#include "../is_copy_constructible_recursive.h"
 
 namespace serializer {
 namespace json {

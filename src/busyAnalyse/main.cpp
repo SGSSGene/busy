@@ -138,6 +138,12 @@ void app(std::vector<std::string_view> args) {
 				std::cout << "    - " << d->getName() << " (" << d->getPath() << ")\n";
 			}
 		}
+		if (not project.getLegacyIncludePaths().empty()) {
+			std::cout << "    includePaths:\n";
+			for (auto const& p : project.getLegacyIncludePaths()) {
+				std::cout << "      - " << p << "\n";
+			}
+		}
 
 	}
 
@@ -160,62 +166,41 @@ void app(std::vector<std::string_view> args) {
 		}
 		auto queue = Q{nodes, edges};
 
-		struct SetupCompileFile {
-			std::filesystem::path in;
-			std::filesystem::path out;
-			std::vector<std::filesystem::path> projectIncludes;
-			std::vector<std::filesystem::path> systemIncludes;
-		};
-
-		auto compileFileSetup = [&](busy::analyse::File const& file) -> std::optional<SetupCompileFile> {
-			auto ext = file.getPath().extension();
-			if (ext != ".cpp" and ext != ".c") {
-				return std::nullopt;
-			}
-
+		auto compileFile = [&](busy::analyse::File const& file) -> std::vector<std::string> {
 			auto outFile = file.getPath().lexically_normal().replace_extension(".o");
 			auto inFile  = file.getPath();
 
+			auto params = std::vector<std::string>{};
+
+			params.emplace_back("./toolchainCall.sh");
+			params.emplace_back("compile");
+			params.emplace_back(inFile);
+			params.emplace_back("obj" / outFile);
+
+			// add all include paths
+			params.emplace_back("-I");
+
 			auto& project = queue.find_outgoing<busy::analyse::Project const>(&file);
 
-			auto projectIncludes = std::vector<std::filesystem::path>{};
-			projectIncludes.emplace_back(project.getPath());
-			projectIncludes.emplace_back(project.getPath().parent_path());
-			projectIncludes.emplace_back(project.getPath().parent_path().parent_path() / "include");
+			params.emplace_back(project.getPath());
+			for (auto const& p : project.getLegacyIncludePaths()) {
+				params.emplace_back(p);
+			}
 
+			// add all system include paths
+			params.emplace_back("-isystem");
 
 			auto systemIncludes = std::vector<std::filesystem::path>{};
 			queue.visit_incoming(&project, [&](auto& x) {
 				using X = std::decay_t<decltype(x)>;
 				if constexpr (std::is_same_v<X, busy::analyse::Project>) {
-					systemIncludes.emplace_back(x.getPath().parent_path());
+					params.emplace_back(x.getPath().parent_path());
 					for (auto const& i : x.getLegacyIncludePaths()) {
-						systemIncludes.emplace_back(i);
+						params.emplace_back(i);
 					}
 				}
 			});
 
-			return SetupCompileFile{inFile, outFile, projectIncludes, systemIncludes};
-		};
-		auto compileFile = [&](busy::analyse::File const& file) -> std::vector<std::string> {
-			auto result = compileFileSetup(file);
-			if (not result) {
-				return {};
-			}
-			auto params = std::vector<std::string>{};
-
-			params.emplace_back("./toolchainCall.sh");
-			params.emplace_back("compile");
-			params.emplace_back(result->in);
-			params.emplace_back("obj" / result->out);
-			params.emplace_back("-I");
-			for (auto const& p : result->projectIncludes) {
-				params.emplace_back(p.string());
-			}
-			params.emplace_back("-isystem");
-			for (auto const& p : result->systemIncludes) {
-				params.emplace_back(p.string());
-			}
 			return params;
 		};
 
@@ -230,6 +215,7 @@ void app(std::vector<std::string_view> args) {
 			params.emplace_back("-i");
 			for (auto file : queue.find_incoming<busy::analyse::File>(&project)) {
 				auto ext = file->getPath().extension();
+				//!TODO this should be based on the error code of toolchain.sh call
 				if (ext == ".cpp" or ext == ".c") {
 					auto objPath = "obj" / file->getPath();
 					objPath.replace_extension(".o");
@@ -237,6 +223,7 @@ void app(std::vector<std::string_view> args) {
 				}
 			}
 
+			// add all legacy system libraries
 			std::vector<std::string> systemLibraries;
 			auto addSystemLibraries = [&](busy::analyse::Project const& project) {
 				for (auto const& l : project.getSystemLibraries()) {

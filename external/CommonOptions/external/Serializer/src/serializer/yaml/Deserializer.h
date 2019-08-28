@@ -6,8 +6,8 @@
 #include <limits>
 #include <memory>
 
-#include <serializer/Converter.h>
-#include <serializer/has_serialize_function.h>
+#include "../Converter.h"
+#include "../has_serialize_function.h"
 
 #ifdef BUSY_GENERICFACTORY
 	#include <genericFactory/genericFactory.h>
