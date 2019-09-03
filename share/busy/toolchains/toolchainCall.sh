@@ -70,7 +70,7 @@ fi
 # todo check if platform macthes
 
 # check if ccache is available
-which ccache > /dev/null &>2
+which ccache > /dev/null 2>&1
 if [ "$?" != "0" ] && [ "${CHECK_CCACHE}" ]; then
 	exit -1
 fi
