@@ -19,8 +19,9 @@ struct yaml_error : std::runtime_error {
 };
 
 
-auto readPackage(std::filesystem::path const& _root, std::filesystem::path const& _path) -> std::vector<Project> {
+auto readPackage(std::filesystem::path const& _root, std::filesystem::path const& _path) -> std::tuple<std::vector<Project>, std::vector<std::filesystem::path>> {
 	auto retProjects = std::vector<Project>{};
+	auto retPackages = std::vector<std::filesystem::path>{};
 
 	// read this package configuration
 	auto path = _root / _path / "busy.yaml";
@@ -28,6 +29,7 @@ auto readPackage(std::filesystem::path const& _root, std::filesystem::path const
 	try {
 
 		auto node = YAML::LoadFile(path.string());
+		retPackages.emplace_back(_root / _path);
 
 		// add all project names based on directory entries
 		auto projectNames = std::set<std::string>{};
@@ -75,15 +77,16 @@ auto readPackage(std::filesystem::path const& _root, std::filesystem::path const
 		if (is_directory(_root / _path / external)) {
 			for (auto& p : fs::directory_iterator(_root / _path / external)) {
 				if (not is_symlink(p)) {
-					auto projects = readPackage(_root, relative(p, _root));
+					auto [projects, packages] = readPackage(_root, relative(p, _root));
 					retProjects.insert(end(retProjects), begin(projects), end(projects));
+					retPackages.insert(end(retPackages), begin(packages), end(packages));
 				}
 			}
 		}
 	} catch(...) {
 		std::throw_with_nested(std::runtime_error{"failed loading " + path.string()});
 	}
-	return retProjects;
+	return {retProjects, retPackages};
 }
 
 

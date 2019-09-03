@@ -50,21 +50,50 @@ function implode {
 	done
 }
 
+CXX=g++
+C=gcc
+AR=ar
+CHECK_CCACHE=1
+
+version=$(${C} --version | head -n 1 | perl -ne "s/\([^\)]*\)/()/g;print" | cut -d " " -f 3)
+
+version_major=$(echo ${version} | cut -d "." -f 1)
+version_minor=$(echo ${version} | cut -d "." -f 2)
+version_patch=$(echo ${version} | cut -d "." -f 3)
+
+
+# check if version numbers match
+if [ "${version_major}" != "9" ] || [ "${version_minor}" != "1" ]; then
+	exit -1
+fi
+
+# todo check if platform macthes
+
+# check if ccache is available
+which ccache > /dev/null &>2
+if [ "$?" != "0" ] && [ "${CHECK_CCACHE}" ]; then
+	exit -1
+fi
+
+if [ "${CHECK_CCACHE}" ]; then
+	CXX="ccache ${CXX}"
+	C="ccache ${C}"
+	AR="ccache ${AR}"
+fi
+
+
 if [ "$1" == "info" ]; then
 shift
-C=g++
-CXX=gcc
-AR=ar
 
 cat <<-END
-version: 0.1.0
 toolchains:
   - name: "gcc 9.1"
+    version: ${version}
     detail: "$(${CXX} --version | head -1)"
     which:
-      - "$(which ${CXX})"
-      - "$(which ${C})"
-      - "$(which ${AR})"
+      - "${CXX}"
+      - "${C}"
+      - "${AR}"
     options:
       - "release"
       - "release_with_symbols"
@@ -77,7 +106,6 @@ fi
 if [ $# -lt 5 ]; then
 	exit -1;
 fi
-
 
 if [ "$1" == "compile" ]; then
 	shift; inputFile="$1"
@@ -100,9 +128,9 @@ if [ "$1" == "compile" ]; then
 
 	filetype="$(echo "${inputFile}" | rev | cut -d "." -f 1 | rev)";
 	if [ "${filetype}" = "cpp" ]; then
-		call="ccache g++ -O0 -std=c++17 -fPIC -MD -g3 -ggdb -fdiagnostics-color=always -c $inputFile -o $outputFile $projectIncludes $systemIncludes"
+		call="${CXX} -O0 -std=c++17 -fPIC -MD -g3 -ggdb -fdiagnostics-color=always -c $inputFile -o $outputFile $projectIncludes $systemIncludes"
 	elif [ "${filetype}" = "c" ]; then
-		call="ccache g++ -O0 -std=c++11 -fPIC -MD -g3 -ggdb -fdiagnostics-color=always -c $inputFile -o $outputFile $projectIncludes $systemIncludes"
+		call="${C} -O0 -std=c11 -fPIC -MD -g3 -ggdb -fdiagnostics-color=always -c $inputFile -o $outputFile $projectIncludes $systemIncludes"
 	else
 		exit 1
 	fi
@@ -123,11 +151,11 @@ elif [ "$1" == "link" ]; then
 		exit 1
 	# Executable
 	elif [ "${target}" == "executable" ]; then
-		call="ccache g++ -rdynamic -g3 -ggdb -fdiagnostics-color=always -o $outputFile ${inputFiles[@]} ${inputLibraries[@]} ${libraries[@]}"
+		call="${CXX} -rdynamic -g3 -ggdb -fdiagnostics-color=always -o $outputFile ${inputFiles[@]} ${inputLibraries[@]} ${libraries[@]}"
 
 	# Static library?
 	elif [ "${target}" == "static_library" ]; then
-		call="ccache ar rcs $outputFile ${inputFiles[@]}"
+		call="${AR} rcs $outputFile ${inputFiles[@]}"
 	else
 		exit -1
 	fi

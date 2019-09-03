@@ -118,10 +118,49 @@ void printProjects(std::map<Project const*, std::tuple<std::set<Project const*>,
 	}
 }
 
+//!TODO should follow XDG variables (see cppman) and may be be not hard coded?
+static auto global_sharedPath = std::filesystem::path{"/usr/share/busy"};
+static auto user_sharedPath   = []() {
+	return std::filesystem::path{getenv("HOME")} / ".config/busy";
+}();
+
+auto searchForToolchains(std::filesystem::path _path) {
+	auto retList = std::vector<std::tuple<std::string, std::filesystem::path>>{};
+
+	_path /= "toolchains.d";
+	if (exists(_path)) {
+		for (auto f : std::filesystem::directory_iterator{_path}) {
+			auto params = std::vector<std::string>{f.path(), "info"};
+			auto p = process::Process{params};
+			if (p.getStatus() == 0) {
+				auto node = YAML::Load(p.cout());
+				if (node["toolchains"].IsSequence()) {
+					for (auto const& n : node["toolchains"]) {
+						retList.emplace_back(n["name"].as<std::string>(), f.path());
+					}
+				}
+			}
+		}
+	}
+
+
+	return retList;
+}
+auto searchForToolchains(std::vector<std::filesystem::path> const& _paths) {
+	auto retList = std::map<std::string, std::filesystem::path>{};
+	for (auto const& p : _paths) {
+		for (auto const& [name, path] : searchForToolchains(p)) {
+			retList[name] = path;
+		}
+	}
+	return retList;
+}
+
 void app(std::vector<std::string_view> args) {
 	if (size(args) <= 1) {
 		throw std::runtime_error("please give path of busy.yaml");
 	}
+
 	auto rootPath = relative(std::filesystem::path(args[1]));
 	if (rootPath == ".") {
 		throw std::runtime_error("can't build in source, please create a `build` directory");
@@ -137,7 +176,31 @@ void app(std::vector<std::string_view> args) {
 		return FileCache{};
 	}();
 
-	auto projects = busy::analyse::readPackage(rootPath, ".");
+	auto [projects, packages] = busy::analyse::readPackage(rootPath, ".");
+
+	packages.insert(begin(packages), user_sharedPath);
+	packages.insert(begin(packages), global_sharedPath);
+
+	if (args.size() > 2 and args[2] == "ls-toolchains") {
+		for (auto [name, path]  : searchForToolchains(packages)) {
+			std::cout << "  - " << name << " (" << path << ")\n";
+		}
+		return;
+	}
+
+	auto toolchainCall = std::string{"./toolchainCall.sh"};
+
+	if (args.size() > 3 and args[2] == "toolchain") {
+		auto toolchains = searchForToolchains(packages);
+		auto iter = toolchains.find(std::string{args[3]});
+		if (iter == toolchains.end()) {
+			throw std::runtime_error("could not find toolchain \"" + std::string{args[3]} + "\"");
+		}
+
+		toolchainCall = iter->second;
+		std::cout << "using toolchain: " << args[3] << " calling " << toolchainCall << "\n";
+	}
+
 //	for (auto const& p : projects) {
 //		std::cout << p.getName() << " (" << p.getPath() << ")\n";
 //	}
@@ -176,7 +239,7 @@ void app(std::vector<std::string_view> args) {
 
 			auto params = std::vector<std::string>{};
 
-			params.emplace_back("./toolchainCall.sh");
+			params.emplace_back(toolchainCall);
 			params.emplace_back("compile");
 			params.emplace_back(inFile);
 			params.emplace_back("obj" / outFile);
@@ -218,7 +281,7 @@ void app(std::vector<std::string_view> args) {
 			}();
 
 			auto params = std::vector<std::string>{};
-			params.emplace_back("./toolchainCall.sh");
+			params.emplace_back(toolchainCall);
 			params.emplace_back("link");
 			params.emplace_back(action);
 
