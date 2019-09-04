@@ -53,41 +53,13 @@ function implode {
 CXX=g++
 C=gcc
 AR=ar
-CHECK_CCACHE=1
-
-version=$(${C} --version | head -n 1 | perl -ne "s/\([^\)]*\)/()/g;print" | cut -d " " -f 3)
-
-version_major=$(echo ${version} | cut -d "." -f 1)
-version_minor=$(echo ${version} | cut -d "." -f 2)
-version_patch=$(echo ${version} | cut -d "." -f 3)
-
-
-# check if version numbers match
-if [ "${version_major}" != "9" ] || [ "${version_minor}" != "1" ]; then
-	exit -1
-fi
-
-# todo check if platform macthes
-
-# check if ccache is available
-which ccache > /dev/null 2>&1
-if [ "$?" != "0" ] && [ "${CHECK_CCACHE}" ]; then
-	exit -1
-fi
-
-if [ "${CHECK_CCACHE}" ]; then
-	CXX="ccache ${CXX}"
-	C="ccache ${C}"
-	AR="ccache ${AR}"
-fi
-
 
 if [ "$1" == "info" ]; then
 shift
 
 cat <<-END
 toolchains:
-  - name: "gcc 9.1"
+  - name: "bash script"
     version: ${version}
     detail: "$(${CXX} --version | head -1)"
     which:
@@ -102,15 +74,20 @@ END
 exit 0
 fi
 
+outFile="bashScript.sh"
+
 
 if [ $# -lt 5 ]; then
 	if [ "$1" == "begin" ]; then
-		if [ ! -e "external" ]; then
-			ln -s ../external external
-		fi
-		if [ ! -e "src" ]; then
-			ln -s ../src src
-		fi
+		cat > ${outFile} <<-END
+			#!/bin/bash
+			if [ ! -e "external" ]; then
+			    ln -s ../external external
+			fi
+			if [ ! -e "src" ]; then
+			    ln -s ../src src
+			fi
+		END
 		exit 0
 	elif [ "$1" == "end" ]; then
 		exit 0
@@ -167,18 +144,6 @@ else
 	exit -1
 fi
 
-mkdir -p $(dirname ${outputFile})
-$call 1>stdout.log 2>stderr.log
-errorCode=$?
-
-echo "stdout: |+"
-cat stdout.log | sed 's/^/    /'
-echo "stderr: |+"
-cat stderr.log | sed 's/^/    /'
-
-rm stdout.log
-rm stderr.log
-if [ $errorCode -ne "0" ]; then
-	exit -1
-fi
+echo "mkdir -p $(dirname ${outputFile})" >> ${outFile}
+echo "${call}" >> ${outFile}
 exit 0

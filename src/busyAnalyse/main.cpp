@@ -340,7 +340,22 @@ void app(std::vector<std::string_view> args) {
 			assert(false);
 		};
 
+		auto setupBegin = [&]() {
+			auto params = std::vector<std::string>{};
+			params.emplace_back(toolchainCall);
+			return params;
+		};
 
+
+		auto runToolchain = [&](std::string_view str) {
+			auto params = std::vector<std::string>{toolchainCall, std::string{str}};
+			auto p = process::Process{params};
+			if (p.getStatus() != 0) {
+				throw std::runtime_error{"failed running toolchain " + std::string{str}};
+			}
+		};
+
+		runToolchain("begin");
 
 		while (not queue.empty()) {
 			queue.dispatch([&](auto& x) {
@@ -372,6 +387,9 @@ void app(std::vector<std::string_view> args) {
 				}
 			});
 		}
+
+		runToolchain("end");
+
 	}
 
 	{ // write binary
