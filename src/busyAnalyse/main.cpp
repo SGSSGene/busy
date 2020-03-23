@@ -245,7 +245,7 @@ void app(std::vector<std::string_view> args) {
 			params.emplace_back("obj" / outFile);
 
 			// add all include paths
-			params.emplace_back("-I");
+			params.emplace_back("-ilocal");
 
 			auto& project = queue.find_outgoing<busy::analyse::Project const>(&file);
 
@@ -340,13 +340,6 @@ void app(std::vector<std::string_view> args) {
 			assert(false);
 		};
 
-		auto setupBegin = [&]() {
-			auto params = std::vector<std::string>{};
-			params.emplace_back(toolchainCall);
-			return params;
-		};
-
-
 		auto runToolchain = [&](std::string_view str) {
 			auto params = std::vector<std::string>{toolchainCall, std::string{str}};
 			auto p = process::Process{params};
@@ -410,6 +403,7 @@ void app(std::vector<std::string_view> args) {
 int main(int argc, char const** argv) {
 	try {
 		auto args = std::vector<std::string_view>(argc);
+
 		for (int i{0}; i<argc; ++i) {
 			args[i] = argv[i];
 		}
