@@ -359,7 +359,7 @@ void app(std::vector<std::string_view> args) {
 				}
 				std::cout << "should run: " <<  p << "\n";*/
 				auto p = process::Process{params};
-				if (p.getStatus() != 0 and p.getStatus() != 1 or true) {
+				if ((p.getStatus() != 0 and p.getStatus() != 1) or true) {
 					std::stringstream ss;
 					for (auto const& p : params) {
 						ss << p << " ";
