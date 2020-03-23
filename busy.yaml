@@ -1,6 +1,6 @@
 name: busy
 projects:
-  - name: busyAnalyse
+  - name: busy
     type: executable
     legacy:
       systemLibraries:
