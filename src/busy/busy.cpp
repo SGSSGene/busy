@@ -155,6 +155,16 @@ void app(std::vector<std::string_view> args) {
 		} else if (*paramIter == "ls-toolchains") {
 			cmdListToolchains = true;
 			++paramIter;
+		} else if (*paramIter == "--option") {
+			++paramIter;
+			if (paramIter == args.end()) throw std::runtime_error("missing --option value");
+			config.toolchain.options.insert(std::string{*paramIter});
+			++paramIter;
+		} else if (*paramIter == "--remove_option") {
+			++paramIter;
+			if (paramIter == args.end()) throw std::runtime_error("missing --remove_option value");
+			config.toolchain.options.erase(std::string{*paramIter});
+			++paramIter;
 		} else {
 			config.rootDir = relative(std::filesystem::path{*paramIter});
 			cmdSetRootPath = true;
@@ -179,7 +189,6 @@ void app(std::vector<std::string_view> args) {
 		listToolchains(packages);
 		return;
 	}
-
 	loadFileCache();
 
 	if (cmdSetToolchain) {
@@ -191,9 +200,25 @@ void app(std::vector<std::string_view> args) {
 
 		config.toolchain.call = iter->second;
 		std::cout << "setting toolchain to " << config.toolchain.name << " (" << config.toolchain.call << ")\n";
+
+	}
+	auto toolchainOptions = getToolchainOptions(config.toolchain.name, config.toolchain.call);
+	// copying config.toolchain.options for save erasure
+	for (auto const& o : std::set<std::string>{config.toolchain.options}) {
+		if (toolchainOptions.count(o) == 0) {
+			std::cout << "unknown toolchain option " << o << " (removed)\n";
+			config.toolchain.options.erase(o);
+		}
 	}
 
+
+
 	std::cout << "using toolchain " << config.toolchain.name << " (" << config.toolchain.call << ")\n";
+	std::cout << "  with options: ";
+	for (auto const& o : config.toolchain.options) {
+		std::cout << o << " ";
+	}
+	std::cout << "\n";
 
 
 //	for (auto const& p : projects) {
@@ -209,7 +234,7 @@ void app(std::vector<std::string_view> args) {
 	//printProjects(projects_with_deps);
 
 	{
-		auto pipe = CompilePipe{config.toolchain.call, projects_with_deps};
+		auto pipe = CompilePipe{config.toolchain.call, projects_with_deps, config.toolchain.options};
 
 		auto runToolchain = [&](std::string_view str) {
 			auto params = std::vector<std::string>{config.toolchain.call, std::string{str}};
@@ -225,6 +250,11 @@ void app(std::vector<std::string_view> args) {
 		while (not pipe.empty()) {
 			pipe.dispatch([&](auto const& params) {
 				auto p = process::Process{params};
+/*				std::cout << "call:";
+				for (auto p : params) {
+					std::cout << " " << p;
+				}
+				std::cout << "\n";*/
 				if (p.getStatus() != 0 and p.getStatus() != 1) {
 					std::stringstream ss;
 					for (auto const& p : params) {

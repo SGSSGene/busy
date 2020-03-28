@@ -1,5 +1,9 @@
 #pragma once
 
+#include <filesystem>
+#include <set>
+#include <string>
+
 namespace busy {
 
 //!TODO should follow XDG variables (see cppman) and may be be not hard coded?
@@ -16,6 +20,7 @@ struct Config {
 	struct {
 		std::string name {"default"};
 		std::string call {"toolchainCall.sh"};
+		std::set<std::string> options;
 	} toolchain;
 
 	std::string rootDir {};
@@ -23,9 +28,10 @@ struct Config {
 
 	template <typename Node>
 	void serialize(Node& node) {
-		node["toolchain_name"] % toolchain.name;
-		node["toolchain_call"] % toolchain.call;
-		node["rootDir"]        % rootDir;
+		node["toolchain_name"]    % toolchain.name;
+		node["toolchain_call"]    % toolchain.call;
+		node["toolchain_options"] % toolchain.options;
+		node["rootDir"]           % rootDir;
 	}
 };
 

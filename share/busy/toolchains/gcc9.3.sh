@@ -98,6 +98,7 @@ toolchains:
       - "release"
       - "release_with_symbols"
       - "debug"
+      - "ccache"
 END
 exit 0
 fi
@@ -125,7 +126,23 @@ if [ "$1" == "compile" ]; then
 
 	parse "-ilocal  projectIncludes" \
 	      "-isystem systemIncludes" \
+	      "-options options"\
 	      "--" "$@"
+
+	parameters=""
+	if [[ " ${options[@]} " =~ " release " ]]; then
+		parameters+=" -O2";
+	elif [[ " ${options[@]} " =~ " release_with_symbols " ]]; then
+		parameters+=" -O2 -ggdb";
+	elif [[ " ${options[@]} " =~ " debug " ]]; then
+		parameters+=" -O0 -ggdb";
+	fi
+	if [[ " ${options[@]} " =~ " ccache " ]]; then
+		CXX="ccache ${CXX}"
+		C="ccache ${C}"
+	fi
+
+
 
 	projectIncludes+=($(dirname ${projectIncludes[-1]}))
 	projectIncludes=$(implode " -I " "${projectIncludes[@]}")
@@ -133,9 +150,9 @@ if [ "$1" == "compile" ]; then
 
 	filetype="$(echo "${inputFile}" | rev | cut -d "." -f 1 | rev)";
 	if [ "${filetype}" = "cpp" ]; then
-		call="${CXX} -O0 -std=c++17 -fPIC -MD -g3 -ggdb -fdiagnostics-color=always -c $inputFile -o $outputFile $projectIncludes $systemIncludes"
+		call="${CXX} -O0 -std=c++17 -fPIC -MD ${parameters} -fdiagnostics-color=always -c $inputFile -o $outputFile $projectIncludes $systemIncludes"
 	elif [ "${filetype}" = "c" ]; then
-		call="${C} -O0 -std=c11 -fPIC -MD -g3 -ggdb -fdiagnostics-color=always -c $inputFile -o $outputFile $projectIncludes $systemIncludes"
+		call="${C} -O0 -std=c11 -fPIC -MD ${parameters} -fdiagnostics-color=always -c $inputFile -o $outputFile $projectIncludes $systemIncludes"
 	else
 		exit 1
 	fi
@@ -147,7 +164,14 @@ elif [ "$1" == "link" ]; then
 	parse "-i       inputFiles" \
 	      "-il      inputLibraries" \
 	      "-l       libraries" \
+	      "-options options" \
 	      "--" "$@"
+
+	if [[ " ${options[@]} " =~ " ccache " ]]; then
+		CXX="ccache ${CXX}"
+		C="ccache ${C}"
+	fi
+
 
 	libraries=($(implode " -l" "${libraries[@]}"))
 

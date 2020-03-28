@@ -14,14 +14,16 @@ struct CompilePipe {
 
 	std::string       toolchainCall;
 	ProjectMap const& projects_with_deps;
+	std::set<std::string> const& toolchainOptions;
 	Q::Nodes          nodes;
 	Q::Edges          edges;
 	Q                 queue;
 	ColorMap          colors;
 
-	CompilePipe(std::string _toolchainCall, ProjectMap const& _projects_with_deps)
+	CompilePipe(std::string _toolchainCall, ProjectMap const& _projects_with_deps, std::set<std::string> const& _toolchainOptions)
 		: toolchainCall      {move(_toolchainCall)}
 		, projects_with_deps {_projects_with_deps}
+		, toolchainOptions   {_toolchainOptions}
 		, queue {loadQueue()}
 	{}
 
@@ -49,6 +51,11 @@ struct CompilePipe {
 		params.emplace_back("compile");
 		params.emplace_back(inFile);
 		params.emplace_back("obj" / outFile);
+		// add all options
+		params.emplace_back("-options");
+		for (auto const& o : toolchainOptions) {
+			params.emplace_back(o);
+		}
 
 		// add all include paths
 		params.emplace_back("-ilocal");
@@ -91,6 +98,12 @@ struct CompilePipe {
 		params.emplace_back(action);
 
 		params.emplace_back(target);
+
+		params.emplace_back("-options");
+		for (auto const& o : toolchainOptions) {
+			params.emplace_back(o);
+		}
+
 
 		params.emplace_back("-i");
 		for (auto file : queue.find_incoming<busy::analyse::File>(&project)) {

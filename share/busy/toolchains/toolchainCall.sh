@@ -123,7 +123,7 @@ if [ "$1" == "compile" ]; then
 	shift; outputFile="$1"
 	shift
 
-	parse "-I       projectIncludes" \
+	parse "-ilocal  projectIncludes" \
 	      "-isystem systemIncludes" \
 	      "--" "$@"
 
