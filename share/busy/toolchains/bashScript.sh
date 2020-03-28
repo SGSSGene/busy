@@ -100,10 +100,11 @@ if [ "$1" == "compile" ]; then
 	shift; outputFile="$1"
 	shift
 
-	parse "-I       projectIncludes" \
+	parse "-ilocal  projectIncludes" \
 	      "-isystem systemIncludes" \
 	      "--" "$@"
 
+	projectIncludes+=($(dirname ${projectIncludes[-1]})) #!TODO this line should not be needed
 	projectIncludes=$(implode " -I " "${projectIncludes[@]}")
 	systemIncludes=$(implode " -isystem " "${systemIncludes[@]}")
 

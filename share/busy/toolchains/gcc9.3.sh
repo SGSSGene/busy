@@ -53,7 +53,6 @@ function implode {
 CXX=g++
 C=gcc
 AR=ar
-CHECK_CCACHE=1
 
 version=$(${C} --version | head -n 1 | perl -ne "s/\([^\)]*\)/()/g;print" | cut -d " " -f 3)
 
@@ -67,20 +66,22 @@ if [ "${version_major}" != "9" ] || [ "${version_minor}" != "3" ]; then
 	exit -1
 fi
 
-# todo check if platform macthes
+# todo check if platform matches
 
 # check if ccache is available
-which ccache > /dev/null 2>&1
-if [ "$?" != "0" ] && [ "${CHECK_CCACHE}" ]; then
-	exit -1
-fi
 
-if [ "${CHECK_CCACHE}" ]; then
+parse "-options options"\
+      "--" "$@"
+if [[ " ${options[@]} " =~ " ccache " ]]; then
+	which ccache > /dev/null 2>&1
+	if [ "$?" != "0" ]; then
+		exit -1
+	fi
+
 	CXX="ccache ${CXX}"
 	C="ccache ${C}"
 	AR="ccache ${AR}"
 fi
-
 
 if [ "$1" == "info" ]; then
 shift
@@ -137,14 +138,8 @@ if [ "$1" == "compile" ]; then
 	elif [[ " ${options[@]} " =~ " debug " ]]; then
 		parameters+=" -O0 -ggdb";
 	fi
-	if [[ " ${options[@]} " =~ " ccache " ]]; then
-		CXX="ccache ${CXX}"
-		C="ccache ${C}"
-	fi
 
-
-
-	projectIncludes+=($(dirname ${projectIncludes[-1]}))
+	projectIncludes+=($(dirname ${projectIncludes[-1]})) #!TODO this line should not be needed
 	projectIncludes=$(implode " -I " "${projectIncludes[@]}")
 	systemIncludes=$(implode " -isystem " "${systemIncludes[@]}")
 
@@ -166,12 +161,6 @@ elif [ "$1" == "link" ]; then
 	      "-l       libraries" \
 	      "-options options" \
 	      "--" "$@"
-
-	if [[ " ${options[@]} " =~ " ccache " ]]; then
-		CXX="ccache ${CXX}"
-		C="ccache ${C}"
-	fi
-
 
 	libraries=($(implode " -l" "${libraries[@]}"))
 
