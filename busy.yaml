@@ -1,4 +1,3 @@
-name: busy
 projects:
   - name: busy
     type: executable

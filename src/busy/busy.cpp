@@ -6,10 +6,12 @@
 #include "toolchains.h"
 #include "CompilePipe.h"
 
-#include <process/Process.h>
 #include <algorithm>
 #include <cstdlib>
 #include <iostream>
+#include <process/Process.h>
+#include <sargparse/ArgumentParsing.h>
+#include <sargparse/Parameter.h>
 
 namespace busy {
 namespace analyse {
@@ -128,8 +130,37 @@ void listToolchains(std::vector<std::filesystem::path> const& packages) {
 	}
 }
 
+auto cfgRootPath = sargp::Parameter<std::string>{"", "root", "path to directory containing busy.yaml"};
 
-void app(std::vector<std::string_view> args) {
+auto cmdLsToolchains = sargp::Command{"ls-toolchains", "list all available toolchains", []() {
+	auto config = [&]() {
+		if (exists(global_busyConfigFile)) {
+			return fon::yaml::deserialize<Config>(YAML::LoadFile(global_busyConfigFile));
+		}
+		return Config{};
+	}();
+
+	if (config.rootDir.empty()) {
+		throw std::runtime_error("please give path of busy.yaml");
+	}
+
+	if (config.rootDir == ".") {
+		throw std::runtime_error("can't build in source, please create a `build` directory");
+	}
+
+	auto [projects, packages] = busy::analyse::readPackage(config.rootDir, ".");
+
+	packages.insert(begin(packages), user_sharedPath);
+	packages.insert(begin(packages), global_sharedPath);
+
+	listToolchains(packages);
+}};
+
+auto cfgOptions   = sargp::Parameter<std::vector<std::string>>{{}, "option", "options for toolchains"};
+auto cfgToolchain = sargp::Parameter<std::string>{"", "toolchain", "set toolchain"};
+
+
+void app() {
 
 	auto config = [&]() {
 		if (exists(global_busyConfigFile)) {
@@ -138,37 +169,16 @@ void app(std::vector<std::string_view> args) {
 		return Config{};
 	}();
 
-	auto paramIter = ++args.begin();
+	if (cfgRootPath) {
+		config.rootDir = relative(std::filesystem::path{*cfgRootPath});
+	}
 
-	//!TODO replace with proper command parsing library
-	bool cmdSetToolchain   = false;
-	bool cmdListToolchains = false;
-	bool cmdSetRootPath    = false;
-
-	while (paramIter != args.end()) {
-		if (*paramIter == "toolchain") {
-			++paramIter;
-			if (paramIter == args.end()) throw std::runtime_error("missing toolchain parameter");
-			config.toolchain.name = *paramIter;
-			cmdSetToolchain = true;
-			++paramIter;
-		} else if (*paramIter == "ls-toolchains") {
-			cmdListToolchains = true;
-			++paramIter;
-		} else if (*paramIter == "--option") {
-			++paramIter;
-			if (paramIter == args.end()) throw std::runtime_error("missing --option value");
-			config.toolchain.options.insert(std::string{*paramIter});
-			++paramIter;
-		} else if (*paramIter == "--remove_option") {
-			++paramIter;
-			if (paramIter == args.end()) throw std::runtime_error("missing --remove_option value");
-			config.toolchain.options.erase(std::string{*paramIter});
-			++paramIter;
+	for (auto o : *cfgOptions) {
+		if (o.length() > 3 and o.substr(0, 3) == "no-") {
+			auto s = o.substr(3);
+			config.toolchain.options.erase(s);
 		} else {
-			config.rootDir = relative(std::filesystem::path{*paramIter});
-			cmdSetRootPath = true;
-			++paramIter;
+			config.toolchain.options.insert(o);
 		}
 	}
 
@@ -185,19 +195,16 @@ void app(std::vector<std::string_view> args) {
 	packages.insert(begin(packages), user_sharedPath);
 	packages.insert(begin(packages), global_sharedPath);
 
-	if (cmdListToolchains) {
-		listToolchains(packages);
-		return;
-	}
 	loadFileCache();
 
-	if (cmdSetToolchain) {
+	if (cfgToolchain) {
 		auto toolchains = searchForToolchains(packages);
-		auto iter = toolchains.find(config.toolchain.name);
+		auto iter = toolchains.find(*cfgToolchain);
 		if (iter == toolchains.end()) {
 			throw std::runtime_error("could not find toolchain \"" + config.toolchain.name + "\"");
 		}
 
+		config.toolchain.call = iter->first;
 		config.toolchain.call = iter->second;
 		std::cout << "setting toolchain to " << config.toolchain.name << " (" << config.toolchain.call << ")\n";
 
@@ -233,6 +240,7 @@ void app(std::vector<std::string_view> args) {
 	auto projects_with_deps = createProjects(projects);
 	//printProjects(projects_with_deps);
 
+	std::cout << "start compiling...";
 	{
 		auto pipe = CompilePipe{config.toolchain.call, projects_with_deps, config.toolchain.options};
 
@@ -277,8 +285,9 @@ void app(std::vector<std::string_view> args) {
 		}
 
 		runToolchain("end");
-
 	}
+	std::cout << "done\n";
+
 
 	// Save config
 	{
@@ -289,20 +298,41 @@ void app(std::vector<std::string_view> args) {
 
 	saveFileCache();
 }
+
+auto cmdCompile = sargp::Command{"compile", "compile everything (default)", []() {
+	app();
+}};
+auto cmdCompileDefault = sargp::Task{[]{
+	if (cmdLsToolchains) return;
+	app();
+}};
+
+
 }
+}
+
+namespace {
+	auto printHelp  = sargp::Parameter<std::optional<std::string>>{{}, "help", "print this help - add a string for  grep-like search"};
 }
 
 int main(int argc, char const** argv) {
 	try {
-		auto args = std::vector<std::string_view>(argc);
-
-		for (int i{0}; i<argc; ++i) {
-			args[i] = argv[i];
+		if (std::string_view{argv[argc-1]} == "--bash_completion") {
+			auto hint = sargp::compgen(argc-2, argv+1);
+			std::cout << hint << " ";
+			return 0;
 		}
-		busy::analyse::app(args);
+
+		sargp::parseArguments(argc-1, argv+1);
+		if (printHelp) {
+			std::cout << sargp::generateHelpString(std::regex{".*" + printHelp.get().value_or("") + ".*"});
+			return 0;
+		}
+		sargp::callCommands();
 		return EXIT_SUCCESS;
 	} catch (std::exception const& e) {
 		std::cerr << "exception: " << busy::utils::exceptionToString(e, 0) << "\n";
+		std::cerr << sargp::generateHelpString(std::regex{".*" + printHelp.get().value_or("") + ".*"});
 	}
 	return EXIT_FAILURE;
 }
