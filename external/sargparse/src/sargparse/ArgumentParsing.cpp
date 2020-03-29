@@ -235,7 +235,7 @@ std::string compgen(int argc, char const* const* argv) {
         auto useParam = [&] {
             auto [cur_canAcceptNextArg, cur_hints] = (*target)->getValueHints(lastArguments);
             canAcceptNextArg &= cur_canAcceptNextArg;
-            hints.insert(cur_hints.begin(), cur_hints.end());
+            hints.insert(begin(cur_hints), end(cur_hints));
         };
         if ((*target)->get_type() == typeid(File)) {
             useParam();
@@ -265,11 +265,9 @@ std::string compgen(int argc, char const* const* argv) {
         compgen_str += " -f ";
     }
     if (not hints.empty()) {
-        compgen_str += "-W ' ";
         compgen_str += std::accumulate(next(begin(hints)), end(hints), *begin(hints), [](std::string const& l , std::string const& r){
-            return l + " " + r;
+            return l + "\n" + r;
         });
-        compgen_str += " '";
     }
 	return compgen_str;
 }

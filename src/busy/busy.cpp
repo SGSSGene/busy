@@ -154,7 +154,31 @@ auto cmdLsToolchains = sargp::Command{"ls-toolchains", "list all available toolc
 }};
 
 auto cfgOptions   = sargp::Parameter<std::vector<std::string>>{{}, "option", "options for toolchains"};
-auto cfgToolchain = sargp::Parameter<std::string>{"", "toolchain", "set toolchain"};
+auto cfgToolchain = sargp::Parameter<std::string>{"", "toolchain", "set toolchain", [](){}, [](std::vector<std::string> const& str) -> std::pair<bool, std::set<std::string>> {
+	auto ret = std::pair<bool, std::set<std::string>>{false, {}};
+
+	auto config = [&]() {
+		if (exists(global_busyConfigFile)) {
+			return fon::yaml::deserialize<Config>(YAML::LoadFile(global_busyConfigFile));
+		}
+		return Config{};
+	}();
+
+	auto packages = std::vector<std::filesystem::path>{};
+	if (!config.rootDir.empty() and config.rootDir != "." and std::filesystem::exists(config.rootDir)) {
+		auto [pro, pack] = busy::analyse::readPackage(config.rootDir, ".");
+		for (auto p : pack) {
+			packages.emplace_back(p);
+		}
+	}
+
+	packages.insert(begin(packages), user_sharedPath);
+	packages.insert(begin(packages), global_sharedPath);
+	for (auto const&  [name, path] : searchForToolchains(packages)) {
+		ret.second.insert(name);
+	}
+	return ret;
+}};
 
 
 void app() {
@@ -255,7 +279,7 @@ void app() {
 //	}
 
 	// check consistency of packages
-	std::cout << "checking consistency...";
+	std::cout << "checking consistency..." << std::flush;
 	checkConsistency(projects);
 	std::cout << "done\n";
 
@@ -270,7 +294,7 @@ void app() {
 	}
 
 
-	std::cout << "start compiling...";
+	std::cout << "start compiling..." << std::flush;
 	{
 		auto pipe = CompilePipe{config.toolchain.call, projects_with_deps, config.toolchain.options};
 
@@ -342,7 +366,7 @@ int main(int argc, char const** argv) {
 	try {
 		if (std::string_view{argv[argc-1]} == "--bash_completion") {
 			auto hint = sargp::compgen(argc-2, argv+1);
-			std::cout << hint << " ";
+			std::cout << hint;
 			return 0;
 		}
 
