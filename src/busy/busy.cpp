@@ -122,15 +122,14 @@ void printProjects(std::map<Project const*, std::tuple<std::set<Project const*>,
 	}
 }
 
-
-
 void listToolchains(std::vector<std::filesystem::path> const& packages) {
 	for (auto [name, path]  : searchForToolchains(packages)) {
 		std::cout << "  - " << name << " (" << path << ")\n";
 	}
 }
 
-auto cfgRootPath = sargp::Parameter<std::string>{"", "root", "path to directory containing busy.yaml"};
+auto cfgRootPath  = sargp::Parameter<std::string>{"..", "root",  "path to directory containing busy.yaml"};
+auto cfgBuildPath = sargp::Parameter<std::string>{".",  "build", "path to build directory"};
 
 auto cmdLsToolchains = sargp::Command{"ls-toolchains", "list all available toolchains", []() {
 	auto config = [&]() {
@@ -140,15 +139,13 @@ auto cmdLsToolchains = sargp::Command{"ls-toolchains", "list all available toolc
 		return Config{};
 	}();
 
-	if (config.rootDir.empty()) {
-		throw std::runtime_error("please give path of busy.yaml");
+	auto packages = std::vector<std::filesystem::path>{};
+	if (!config.rootDir.empty() and config.rootDir != "." and std::filesystem::exists(config.rootDir)) {
+		auto [pro, pack] = busy::analyse::readPackage(config.rootDir, ".");
+		for (auto p : pack) {
+			packages.emplace_back(p);
+		}
 	}
-
-	if (config.rootDir == ".") {
-		throw std::runtime_error("can't build in source, please create a `build` directory");
-	}
-
-	auto [projects, packages] = busy::analyse::readPackage(config.rootDir, ".");
 
 	packages.insert(begin(packages), user_sharedPath);
 	packages.insert(begin(packages), global_sharedPath);
@@ -161,6 +158,13 @@ auto cfgToolchain = sargp::Parameter<std::string>{"", "toolchain", "set toolchai
 
 
 void app() {
+	auto workPath = std::filesystem::current_path();
+
+	if (cfgBuildPath and relative(std::filesystem::path{*cfgBuildPath}) != ".") {
+		std::filesystem::create_directories(*cfgBuildPath);
+		std::filesystem::current_path(*cfgBuildPath);
+		std::cout << "changing working directory to " << *cfgBuildPath << "\n";
+	}
 
 	auto config = [&]() {
 		if (exists(global_busyConfigFile)) {
@@ -168,9 +172,8 @@ void app() {
 		}
 		return Config{};
 	}();
-
 	if (cfgRootPath) {
-		config.rootDir = relative(std::filesystem::path{*cfgRootPath});
+		config.rootDir = relative(workPath / *cfgRootPath);
 	}
 
 	for (auto o : *cfgOptions) {
