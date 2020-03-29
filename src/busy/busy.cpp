@@ -176,15 +176,6 @@ void app() {
 		config.rootDir = relative(workPath / *cfgRootPath);
 	}
 
-	for (auto o : *cfgOptions) {
-		if (o.length() > 3 and o.substr(0, 3) == "no-") {
-			auto s = o.substr(3);
-			config.toolchain.options.erase(s);
-		} else {
-			config.toolchain.options.insert(o);
-		}
-	}
-
 	if (config.rootDir.empty()) {
 		throw std::runtime_error("please give path of busy.yaml");
 	}
@@ -207,20 +198,48 @@ void app() {
 			throw std::runtime_error("could not find toolchain \"" + config.toolchain.name + "\"");
 		}
 
-		config.toolchain.call = iter->first;
+		config.toolchain.name = iter->first;
 		config.toolchain.call = iter->second;
 		std::cout << "setting toolchain to " << config.toolchain.name << " (" << config.toolchain.call << ")\n";
 
 	}
 	auto toolchainOptions = getToolchainOptions(config.toolchain.name, config.toolchain.call);
-	// copying config.toolchain.options for save erasure
-	for (auto const& o : std::set<std::string>{config.toolchain.options}) {
-		if (toolchainOptions.count(o) == 0) {
-			std::cout << "unknown toolchain option " << o << " (removed)\n";
-			config.toolchain.options.erase(o);
+	{
+		// initialize queue
+		auto queue = std::queue<std::string>{};
+		auto processed = std::set<std::string>{};
+		for (auto o : *cfgOptions) {
+			queue.push(o);
+		}
+		while(not queue.empty()) {
+			auto o = queue.front();
+			queue.pop();
+
+			auto [opt, act] = [&]() -> std::tuple<std::string, bool> {
+				if (o.length() > 3 and o.substr(0, 3) == "no-") {
+					return {o.substr(3), false};
+				}
+				return {o, true};
+			}();
+
+			if (processed.count(o) > 0) continue;
+			processed.insert(o);
+
+			auto iter = toolchainOptions.find(opt);
+			if (iter == toolchainOptions.end()) {
+				std::cout << "unknown toolchain option " << o << " (removed)\n";
+			} else {
+				if (act) {
+					config.toolchain.options.insert(opt);
+					for (auto o2 : iter->second) {
+						queue.push(o2);
+					}
+				} else {
+					config.toolchain.options.erase(opt);
+				}
+			}
 		}
 	}
-
 
 
 	std::cout << "using toolchain " << config.toolchain.name << " (" << config.toolchain.call << ")\n";

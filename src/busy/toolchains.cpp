@@ -43,8 +43,8 @@ auto searchForToolchains(std::vector<std::filesystem::path> const& _paths) -> st
 	return retList;
 }
 
-auto getToolchainOptions(std::string_view _name, std::filesystem::path _path) -> std::set<std::string> {
-	auto options = std::set<std::string>{};
+auto getToolchainOptions(std::string_view _name, std::filesystem::path _path) -> std::map<std::string, std::vector<std::string>> {
+	auto options = std::map<std::string, std::vector<std::string>>{};
 
 	auto params = std::vector<std::string>{_path, "info"};
 	auto p = process::Process{params};
@@ -53,8 +53,16 @@ auto getToolchainOptions(std::string_view _name, std::filesystem::path _path) ->
 	if (node["toolchains"].IsSequence()) {
 		for (auto const& n : node["toolchains"]) {
 			if (n["name"].as<std::string>() != _name) continue;
-			for (auto const& o : n["options"]) {
-				options.insert(o.as<std::string>());
+
+			auto nodeOptions = n["options"];
+			if (not nodeOptions.IsMap()) continue;
+			for (auto iter = nodeOptions.begin(); iter != nodeOptions.end(); ++iter) {
+				auto& list = options[iter->first.as<std::string>()];
+				if (iter->second.IsSequence()) {
+					for (auto const& o : iter->second) {
+						list.emplace_back(o.as<std::string>());
+					}
+				}
 			}
 		}
 	}

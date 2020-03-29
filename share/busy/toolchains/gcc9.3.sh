@@ -96,10 +96,10 @@ toolchains:
       - "${C}"
       - "${AR}"
     options:
-      - "release"
-      - "release_with_symbols"
-      - "debug"
-      - "ccache"
+      release: [no-debug, no-release_with_symbols]
+      release_with_symbols: [no-release, no-debug]
+      debug: [no-release, no-release_with_symbols]
+      ccache: []
 END
 exit 0
 fi
