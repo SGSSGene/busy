@@ -262,6 +262,14 @@ void app() {
 	auto projects_with_deps = createProjects(projects);
 	//printProjects(projects_with_deps);
 
+	// Save config
+	{
+		YAML::Emitter out;
+		out << fon::yaml::serialize(config);
+		std::ofstream(global_busyConfigFile) << out.c_str();
+	}
+
+
 	std::cout << "start compiling...";
 	{
 		auto pipe = CompilePipe{config.toolchain.call, projects_with_deps, config.toolchain.options};
@@ -310,13 +318,6 @@ void app() {
 	}
 	std::cout << "done\n";
 
-
-	// Save config
-	{
-		YAML::Emitter out;
-		out << fon::yaml::serialize(config);
-		std::ofstream(global_busyConfigFile) << out.c_str();
-	}
 
 	saveFileCache();
 }
