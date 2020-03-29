@@ -180,6 +180,49 @@ auto cfgToolchain = sargp::Parameter<std::string>{"", "toolchain", "set toolchai
 	return ret;
 }};
 
+auto cmdShowDeps = sargp::Command{"show-deps", "show dependencies of projects", []() {
+	auto workPath = std::filesystem::current_path();
+
+	if (cfgBuildPath and relative(std::filesystem::path{*cfgBuildPath}) != ".") {
+		std::filesystem::create_directories(*cfgBuildPath);
+		std::filesystem::current_path(*cfgBuildPath);
+		std::cout << "changing working directory to " << *cfgBuildPath << "\n";
+	}
+
+	auto config = [&]() {
+		if (exists(global_busyConfigFile)) {
+			return fon::yaml::deserialize<Config>(YAML::LoadFile(global_busyConfigFile));
+		}
+		return Config{};
+	}();
+	if (cfgRootPath) {
+		config.rootDir = relative(workPath / *cfgRootPath);
+	}
+
+	if (config.rootDir.empty()) {
+		throw std::runtime_error("please give path of busy.yaml");
+	}
+
+	if (config.rootDir == ".") {
+		throw std::runtime_error("can't build in source, please create a `build` directory");
+	}
+
+	auto [projects, packages] = busy::analyse::readPackage(config.rootDir, ".");
+
+	packages.insert(begin(packages), user_sharedPath);
+	packages.insert(begin(packages), global_sharedPath);
+
+	// check consistency of packages
+	std::cout << "checking consistency..." << std::flush;
+	checkConsistency(projects);
+	std::cout << "done\n";
+
+	auto projects_with_deps = createProjects(projects);
+	printProjects(projects_with_deps);
+
+}};
+
+
 
 void app() {
 	auto workPath = std::filesystem::current_path();
@@ -350,7 +393,7 @@ auto cmdCompile = sargp::Command{"compile", "compile everything (default)", []()
 	app();
 }};
 auto cmdCompileDefault = sargp::Task{[]{
-	if (cmdLsToolchains) return;
+	if (cmdLsToolchains or cmdShowDeps) return;
 	app();
 }};
 
