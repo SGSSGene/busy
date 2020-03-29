@@ -17,13 +17,12 @@ auto searchForToolchains(std::filesystem::path _path) -> std::vector<std::tuple<
 	if (exists(_path)) {
 		for (auto f : std::filesystem::directory_iterator{_path}) {
 			auto params = std::vector<std::string>{f.path(), "info"};
-			auto canonical_relative_path = relative(f.path());
 			auto p = process::Process{params};
 			if (p.getStatus() == 0) {
 				auto node = YAML::Load(p.cout());
 				if (node["toolchains"].IsSequence()) {
 					for (auto const& n : node["toolchains"]) {
-						retList.emplace_back(n["name"].as<std::string>(), canonical_relative_path);
+						retList.emplace_back(n["name"].as<std::string>(), f.path());
 					}
 				}
 			}
