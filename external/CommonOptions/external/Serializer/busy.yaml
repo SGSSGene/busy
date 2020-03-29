@@ -1,4 +1,0 @@
-name: Serializer
-projects:
-    - name: exampleSerializer
-      type: executable
