@@ -1,0 +1,11 @@
+_GetBusy () {
+  mapfile -t HINTS <<< $(${COMP_LINE[0]} ${COMP_WORDS[@]:1} --bash_completion)
+  HINTS=$(printf "%q:" "${HINTS[@]}")
+
+  local IFS=":"
+  mapfile -t COMPREPLY <<< $(compgen -W '${HINTS}' -- "${COMP_WORDS[COMP_CWORD]}")
+
+  return 0
+}
+complete -F _GetBusy ./bin/busy
+complete -F _GetBusy busy
