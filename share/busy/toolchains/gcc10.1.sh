@@ -72,12 +72,15 @@ fi
 
 parse "-options options"\
       "--" "$@"
+CCACHE=0
 if [[ " ${options[@]} " =~ " ccache " ]]; then
 	which ccache > /dev/null 2>&1
 	if [ "$?" != "0" ]; then
 		exit -1
 	fi
 
+	CCACHE=1
+	export CCACHE_LOGFILE=ccache.log
 	CXX="ccache ${CXX}"
 	C="ccache ${C}"
 	AR="ccache ${AR}"
@@ -204,6 +207,18 @@ if [ "${errorCode}" -eq 0 ]; then
 	echo "dependencies:"
 	cat dependency.log | xargs -n1 echo "  -" | sort
 fi
+
+if [ "${CCACHE}" -eq 1 ]; then
+	if [ "$(cat ${CCACHE_LOGFILE} | grep 'Result: cache hit' | wc -l)" -eq 1 ]; then
+		echo "cached: true"
+	else
+		echo "cached: false"
+	fi
+	rm ${CCACHE_LOGFILE}
+else
+	echo "cached: false"
+fi
+
 
 rm stdout.log
 rm stderr.log

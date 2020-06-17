@@ -77,6 +77,7 @@ struct FileInfo {
 		node["compileTime"]     % compileTime;
 	}
 
+
 	bool hasChanged() const {
 		if (needRecompiling) {
 			return true;

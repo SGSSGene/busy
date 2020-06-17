@@ -14,6 +14,7 @@
 #include <sargparse/ArgumentParsing.h>
 #include <sargparse/Parameter.h>
 #include <yaml-cpp/yaml.h>
+#include <thread>
 
 namespace busy {
 namespace analyse {
@@ -238,7 +239,54 @@ auto cmdVersion = sargp::Command{"version", "show version", cmdVersionShow};
 auto cfgVersion = sargp::Flag{"version", "show version", cmdVersionShow};
 auto cfgClean   = sargp::Flag{"clean", "clean build, using no cache"};
 
+struct ConsoleTimer {
+	std::mutex mutex;
+	std::chrono::milliseconds totalTime{0};
+	int jobs{0};
+	int totalJobs{0};
+	std::string currentJob = "init";
+	std::condition_variable cv;
 
+	std::atomic_bool isRunning{true};
+	std::thread thread;
+	ConsoleTimer(std::chrono::milliseconds _total, int _totalJobs)
+	: totalTime {_total}
+	, totalJobs {_totalJobs}
+	, thread {[this]() {
+		auto startTime = std::chrono::steady_clock::now();
+		auto nextTime = startTime;
+		while(isRunning) {
+			auto g = std::unique_lock{mutex};
+			nextTime += std::chrono::milliseconds{1000};
+			cv.wait_until(g, nextTime);
+
+			auto now = std::chrono::steady_clock::now();
+			auto diff = duration_cast<std::chrono::milliseconds>(now - startTime);
+			std::cout << "Jobs " << jobs << "/" << totalJobs << " - ETA " << (diff.count() / 1000.) << "s/" << (totalTime.count() / 1000.) << "s - " << currentJob << "\n";
+		}
+	}}
+
+	{}
+
+	~ConsoleTimer() {
+		isRunning = false;
+		cv.notify_one();
+		thread.join();
+	}
+	void addTotalTime(std::chrono::milliseconds _total) {
+		auto g = std::unique_lock{mutex};
+		totalTime += _total;
+	}
+	void addJob(int _jobs) {
+		auto g = std::unique_lock{mutex};
+		jobs += _jobs;
+	}
+	void setCurrentJob(std::string _currentJob) {
+		auto g = std::unique_lock{mutex};
+		currentJob = std::move(_currentJob);
+	}
+
+};
 
 void app() {
 	auto workPath = std::filesystem::current_path();
@@ -360,11 +408,11 @@ void app() {
 		return path;
 	};
 
-
-	std::cout << "start compiling..." << std::flush;
-	auto recompilingFiles    = std::unordered_set<busy::analyse::File const*>{};
-	auto recompilingProjects = std::unordered_set<busy::analyse::Project const*>{};
+	std::cout << "start compiling...\n";
 	{
+		auto recompilingFiles    = std::unordered_set<busy::analyse::File const*>{};
+		auto recompilingProjects = std::unordered_set<busy::analyse::Project const*>{};
+
 		// precompute timings
 		auto total = std::chrono::milliseconds{0};
 		{
@@ -399,7 +447,8 @@ void app() {
 				});
 			}
 		}
-		std::cout << "Estimated Compile Time: " << total.count() / 1000. << "\n";
+		//std::cout << "Estimated Compile Time: " << total.count() / 1000. << "\n";
+		auto consoleTimer = ConsoleTimer{total, recompilingFiles.size() + recompilingProjects.size()};
 
 		auto pipe = CompilePipe{config.toolchain.call, projects_with_deps, config.toolchain.options};
 
@@ -456,7 +505,8 @@ void app() {
 					// check if file needs recompile
 					auto status = [&]() {
 						if (recompilingFiles.count(&file) > 0) {
-							std::cout << "compiling - " << path << "\n";
+							consoleTimer.setCurrentJob("compiling " + path.string());
+//							std::cout << "compiling - " << path << "\n";
 
 							fileInfo.needRecompiling = true;
 							// store file date before compiling
@@ -465,6 +515,7 @@ void app() {
 							// compiling
 							auto [status, cout] = execute(params);
 							auto dependencies = FileInfo::Dependencies{};
+							bool cached = false;
 							if (status == 0) {
 								auto node = YAML::Load(cout);
 								//!TODO should work with `auto`, but doesn't for some reason
@@ -486,6 +537,9 @@ void app() {
 									}
 									dependencies.emplace_back(path, hash);
 								}
+								if (YAML::Node{node["cached"]}.as<bool>()) {
+									cached = true;
+								}
 								fileInfo.dependencies = dependencies;
 							} else if (status == 1) {
 								fileInfo.compilable = false;
@@ -496,13 +550,22 @@ void app() {
 							if (status == 0) {
 								fileInfo.needRecompiling = false;
 							}
+
+
+							consoleTimer.addTotalTime(-fileInfo.compileTime);
 							auto stopTimer = std::chrono::steady_clock::now();
 							total -= fileInfo.compileTime;
 							totalCheckTime      += fileInfo.compileTime;
-							fileInfo.compileTime = duration_cast<std::chrono::milliseconds>(stopTimer - startTimer);;
+							auto compileTime = duration_cast<std::chrono::milliseconds>(stopTimer - startTimer);
+							if (not cached) {
+								fileInfo.compileTime = compileTime;
+							}
 							auto diff = duration_cast<std::chrono::milliseconds>(stopTimer - startCheckTime);
+							consoleTimer.addTotalTime(+compileTime);
+							consoleTimer.addJob(1);
+
 							total = std::max(total + fileInfo.compileTime, totalCheckTime);
-							std::cout << "estimate " << totalCheckTime.count() / 1000. << "s (" << diff.count() / 1000. <<  "s)/" << total.count() / 1000. << "s\n";
+//							std::cout << "estimate " << totalCheckTime.count() / 1000. << "s (" << diff.count() / 1000. <<  "s)/" << total.count() / 1000. << "s\n";
 							return status;
 						} else {
 							//std::cout << "\n===\nno change - skip - " << file.getPath() << "\n===\n";
@@ -521,19 +584,33 @@ void app() {
 
 					if (recompilingProjects.count(&project) > 0) {
 						auto startTimer = std::chrono::steady_clock::now();
-						std::cout << "linking: " << path << "\n";
+//						std::cout << "linking: " << path << "\n";
+						consoleTimer.setCurrentJob("linking " + path.string());
 						auto [status, cout] = execute(params);
+						bool cached = false;
+
 						if (status == 0) {
+							auto node = YAML::Load(cout);
+							if (YAML::Node{node["cached"]}.as<bool>()) {
+								cached = true;
+							}
+
+							consoleTimer.addTotalTime(-fileInfo.compileTime);
 							auto stopTimer = std::chrono::steady_clock::now();
 							total -= fileInfo.compileTime;
 							totalCheckTime      += fileInfo.compileTime;
-							fileInfo.compileTime = duration_cast<std::chrono::milliseconds>(stopTimer - startTimer);;
+							auto compileTime = duration_cast<std::chrono::milliseconds>(stopTimer - startTimer);
+							if (not cached) {
+								fileInfo.compileTime = compileTime;
+							}
 							auto diff = duration_cast<std::chrono::milliseconds>(stopTimer - startCheckTime);
+							consoleTimer.addTotalTime(+compileTime);
 							total = std::max(total + fileInfo.compileTime, totalCheckTime);
-							std::cout << "estimate " << totalCheckTime.count() / 1000. << "s (" << diff.count() / 1000. <<  "s)/" << total.count() / 1000. << "s\n";
+//							std::cout << "estimate " << totalCheckTime.count() / 1000. << "s (" << diff.count() / 1000. <<  "s)/" << total.count() / 1000. << "s\n";
 						} else if (status == 1) {
 							fileInfo.compilable = false;
 						}
+						consoleTimer.addJob(1);
 						return status;
 					}
 					if (not fileInfo.compilable) {
