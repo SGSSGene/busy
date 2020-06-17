@@ -49,6 +49,7 @@ auto getFileCache() -> FileCache&;
 struct FileInfo {
 	using Path         = std::filesystem::path;
 	using Time         = std::filesystem::file_time_type;
+	using Duration     = std::chrono::milliseconds;
 	using Hash         = std::string;
 	using Dependencies = std::vector<std::tuple<Path, Hash>>;
 
@@ -57,6 +58,7 @@ struct FileInfo {
 	Hash hash{};
 	bool compilable{true};
 	bool needRecompiling{true};
+	Duration compileTime{0};
 	Dependencies dependencies{};
 
 	FileInfo(fon::ctor) {};
@@ -72,13 +74,10 @@ struct FileInfo {
 		node["compilable"]      % compilable;
 		node["needRecompiling"] % needRecompiling;
 		node["dependencies"]    % dependencies;
+		node["compileTime"]     % compileTime;
 	}
 
-
 	bool hasChanged() const {
-		if (not compilable) {
-			return false;
-		}
 		if (needRecompiling) {
 			return true;
 		}

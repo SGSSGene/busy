@@ -353,8 +353,54 @@ void app() {
 	}
 
 
+	auto addRootDir = [&](std::filesystem::path path) {
+		if (path.is_relative()) {
+			path = std::filesystem::relative(config.rootDir / path);
+		}
+		return path;
+	};
+
+
 	std::cout << "start compiling..." << std::flush;
+	auto recompilingFiles    = std::unordered_set<busy::analyse::File const*>{};
+	auto recompilingProjects = std::unordered_set<busy::analyse::Project const*>{};
 	{
+		// precompute timings
+		auto total = std::chrono::milliseconds{0};
+		{
+			auto pipe = CompilePipe{config.toolchain.call, projects_with_deps, config.toolchain.options};
+			while (not pipe.empty()) {
+				pipe.dispatch(overloaded {
+					[&](busy::analyse::File const& file, auto const& params) {
+						auto path = addRootDir(file.getPath());
+						auto& fileInfo = getFileInfos().get(path);
+						if (*cfgClean or (fileInfo.hasChanged() and fileInfo.compilable)) {
+							recompilingFiles.insert(&file);
+							total += fileInfo.compileTime;
+						}
+						return 0;
+					}, [&](busy::analyse::Project const& project, auto const& params) {
+						auto path = addRootDir(project.getPath());
+						auto& fileInfo = getFileInfos().get(path);
+						auto anyChanges = [&]() {
+							for (auto const& file : project.getFiles()) {
+								if (recompilingFiles.count(&file) > 0) {
+									return true;
+								}
+							}
+							return false;
+						};
+						if (*cfgClean or (anyChanges() and fileInfo.compilable)) {
+							recompilingProjects.insert(&project);
+							total += fileInfo.compileTime;
+						}
+						return 0;
+					}
+				});
+			}
+		}
+		std::cout << "Estimated Compile Time: " << total.count() / 1000. << "\n";
+
 		auto pipe = CompilePipe{config.toolchain.call, projects_with_deps, config.toolchain.options};
 
 		auto runToolchain = [&](std::string_view str) {
@@ -383,7 +429,7 @@ void app() {
 					ss << p << " ";
 				}
 				std::cout << ss.str() << "\n";
-					std::cout << p.cout() << "\n";
+				std::cout << p.cout() << "\n";
 				std::cerr << p.cerr() << "\n";
 				if (p.getStatus() != 0 and p.getStatus() != 1) {
 					std::cout << "error exit\n";
@@ -396,21 +442,20 @@ void app() {
 			return {0, p.cout()};
 		};
 
+		auto totalCheckTime = std::chrono::milliseconds{0};
+		auto startCheckTime = std::chrono::steady_clock::now();
 		while (not pipe.empty()) {
 			pipe.dispatch(overloaded {
 				[&](busy::analyse::File const& file, auto const& params) {
-					auto startTime = std::chrono::file_clock::now();
-					auto path = file.getPath();
-					if (path.is_relative()) {
-						path = relative(config.rootDir / path);
-					}
+					auto startTimer = std::chrono::steady_clock::now();
+					auto startTime  = std::chrono::file_clock::now();
+					auto path = addRootDir(file.getPath());
 
 					auto& fileInfo = getFileInfos().get(path);
 
 					// check if file needs recompile
 					auto status = [&]() {
-						if (*cfgClean or fileInfo.hasChanged()) {
-
+						if (recompilingFiles.count(&file) > 0) {
 							std::cout << "compiling - " << path << "\n";
 
 							fileInfo.needRecompiling = true;
@@ -425,9 +470,7 @@ void app() {
 								//!TODO should work with `auto`, but doesn't for some reason
 								for (YAML::Node n : node["dependencies"]) {
 									auto path = FileInfo::Path{n.as<std::string>()};
-									if (path.is_relative()) {
-										path = relative(config.rootDir / path);
-									}
+									path = addRootDir(path);
 									auto hash    = computeHash(path);
 									auto modTime = getFileModificationTime(path);
 
@@ -436,7 +479,6 @@ void app() {
 										auto f = [](auto t) {
 											return std::chrono::duration_cast<std::chrono::seconds>(t.time_since_epoch()).count();
 										};
-
 
 										std::cout << "file changed??? " << f(modTime) << " " << f(startTime) << " " << path << " " << std::filesystem::current_path() << " " << hash << "\n";
 //										throw std::runtime_error("file changed");
@@ -454,6 +496,13 @@ void app() {
 							if (status == 0) {
 								fileInfo.needRecompiling = false;
 							}
+							auto stopTimer = std::chrono::steady_clock::now();
+							total -= fileInfo.compileTime;
+							totalCheckTime      += fileInfo.compileTime;
+							fileInfo.compileTime = duration_cast<std::chrono::milliseconds>(stopTimer - startTimer);;
+							auto diff = duration_cast<std::chrono::milliseconds>(stopTimer - startCheckTime);
+							total = std::max(total + fileInfo.compileTime, totalCheckTime);
+							std::cout << "estimate " << totalCheckTime.count() / 1000. << "s (" << diff.count() / 1000. <<  "s)/" << total.count() / 1000. << "s\n";
 							return status;
 						} else {
 							//std::cout << "\n===\nno change - skip - " << file.getPath() << "\n===\n";
@@ -463,12 +512,34 @@ void app() {
 							return 0;
 						}
 					}();
-					fileInfo.modTime = startTime;
+					auto stopTimer = std::chrono::steady_clock::now();
+					fileInfo.modTime     = startTime;
 					return status;
 				}, [&](busy::analyse::Project const& project, auto const& params) {
-					std::cout << "linking: " << project.getPath() << "\n";
-					auto [status, cout] = execute(params);
-					return status;
+					auto path = addRootDir(project.getPath());
+					auto& fileInfo = getFileInfos().get(path);
+
+					if (recompilingProjects.count(&project) > 0) {
+						auto startTimer = std::chrono::steady_clock::now();
+						std::cout << "linking: " << path << "\n";
+						auto [status, cout] = execute(params);
+						if (status == 0) {
+							auto stopTimer = std::chrono::steady_clock::now();
+							total -= fileInfo.compileTime;
+							totalCheckTime      += fileInfo.compileTime;
+							fileInfo.compileTime = duration_cast<std::chrono::milliseconds>(stopTimer - startTimer);;
+							auto diff = duration_cast<std::chrono::milliseconds>(stopTimer - startCheckTime);
+							total = std::max(total + fileInfo.compileTime, totalCheckTime);
+							std::cout << "estimate " << totalCheckTime.count() / 1000. << "s (" << diff.count() / 1000. <<  "s)/" << total.count() / 1000. << "s\n";
+						} else if (status == 1) {
+							fileInfo.compilable = false;
+						}
+						return status;
+					}
+					if (not fileInfo.compilable) {
+						return 1;
+					}
+					return 0;
 				}
 			});
 		}
