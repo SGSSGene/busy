@@ -43,9 +43,9 @@ public:
 		if (mIncludes != _other.mIncludes) {
 			return false;
 		}
-		auto info1 = getFileCache().getFileCache(mRoot / mPath);
-		auto info2 = getFileCache().getFileCache(_other.mRoot / _other.mPath);
-		return info1.hash == info2.hash;
+		auto h1 = getFileCache().getHash(mRoot / mPath);
+		auto h2 = getFileCache().getHash(_other.mRoot / _other.mPath);
+		return h1 == h2;
 	}
 
 

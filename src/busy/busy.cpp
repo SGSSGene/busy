@@ -5,6 +5,7 @@
 #include "config.h"
 #include "toolchains.h"
 #include "CompilePipe.h"
+#include "overloaded.h"
 
 #include <algorithm>
 #include <cstdlib>
@@ -12,9 +13,16 @@
 #include <process/Process.h>
 #include <sargparse/ArgumentParsing.h>
 #include <sargparse/Parameter.h>
+#include <yaml-cpp/yaml.h>
 
 namespace busy {
 namespace analyse {
+
+auto cfgVerbose = sargp::Flag{"verbose", "verbose output"};
+
+template <typename>
+class nothing;
+
 
 // check if this _project is included by _allIncludes
 auto isDependentProject(std::set<std::filesystem::path> const& _allIncludes, busy::analyse::Project const& _project) -> bool {
@@ -228,6 +236,7 @@ auto cmdVersionShow = []() {
 };
 auto cmdVersion = sargp::Command{"version", "show version", cmdVersionShow};
 auto cfgVersion = sargp::Flag{"version", "show version", cmdVersionShow};
+auto cfgClean   = sargp::Flag{"clean", "clean build, using no cache"};
 
 
 
@@ -359,32 +368,108 @@ void app() {
 
 		runToolchain("begin");
 
-		while (not pipe.empty()) {
-			pipe.dispatch([&](auto const& params) {
-				auto p = process::Process{params};
-/*				std::cout << "call:";
+		auto execute = [&](auto const& params) -> std::tuple<int, std::string> {
+			auto p = process::Process{params};
+			if (*cfgVerbose) {
+				std::cout << "call:";
 				for (auto p : params) {
 					std::cout << " " << p;
 				}
-				std::cout << "\n";*/
-				if (p.getStatus() != 0 and p.getStatus() != 1) {
-					std::stringstream ss;
-					for (auto const& p : params) {
-						ss << p << " ";
-					}
-					std::cout << ss.str() << "\n";
-
+				std::cout << "\n";
+			}
+			if (p.getStatus() != 0 and p.getStatus() != 1) {
+				std::stringstream ss;
+				for (auto const& p : params) {
+					ss << p << " ";
+				}
+				std::cout << ss.str() << "\n";
 					std::cout << p.cout() << "\n";
-					std::cerr << p.cerr() << "\n";
-					if (p.getStatus() != 0 and p.getStatus() != 1) {
-						std::cout << "error exit\n";
-						exit(1);
+				std::cerr << p.cerr() << "\n";
+				if (p.getStatus() != 0 and p.getStatus() != 1) {
+					std::cout << "error exit\n";
+					exit(1);
+				}
+			}
+			if (p.getStatus() == 1) {
+				return {1, ""};
+			}
+			return {0, p.cout()};
+		};
+
+		while (not pipe.empty()) {
+			pipe.dispatch(overloaded {
+				[&](busy::analyse::File const& file, auto const& params) {
+					auto startTime = std::chrono::file_clock::now();
+					auto path = file.getPath();
+					if (path.is_relative()) {
+						path = relative(config.rootDir / path);
 					}
+
+					auto& fileInfo = getFileInfos().get(path);
+
+					// check if file needs recompile
+					auto status = [&]() {
+						if (*cfgClean or fileInfo.hasChanged()) {
+
+							std::cout << "compiling - " << path << "\n";
+
+							fileInfo.needRecompiling = true;
+							// store file date before compiling
+							auto hash    = getFileCache().getHash(path);
+
+							// compiling
+							auto [status, cout] = execute(params);
+							auto dependencies = FileInfo::Dependencies{};
+							if (status == 0) {
+								auto node = YAML::Load(cout);
+								//!TODO should work with `auto`, but doesn't for some reason
+								for (YAML::Node n : node["dependencies"]) {
+									auto path = FileInfo::Path{n.as<std::string>()};
+									if (path.is_relative()) {
+										path = relative(config.rootDir / path);
+									}
+									auto hash    = computeHash(path);
+									auto modTime = getFileModificationTime(path);
+
+									//!TODO handle when files changes inbetween
+									if (modTime > startTime) {
+										auto f = [](auto t) {
+											return std::chrono::duration_cast<std::chrono::seconds>(t.time_since_epoch()).count();
+										};
+
+
+										std::cout << "file changed??? " << f(modTime) << " " << f(startTime) << " " << path << " " << std::filesystem::current_path() << " " << hash << "\n";
+//										throw std::runtime_error("file changed");
+										//status = 2; // file changed in between
+									}
+									dependencies.emplace_back(path, hash);
+								}
+								fileInfo.dependencies = dependencies;
+							} else if (status == 1) {
+								fileInfo.compilable = false;
+							}
+							// update caches
+							fileInfo.hash = hash;
+
+							if (status == 0) {
+								fileInfo.needRecompiling = false;
+							}
+							return status;
+						} else {
+							//std::cout << "\n===\nno change - skip - " << file.getPath() << "\n===\n";
+							if (not fileInfo.compilable) {
+								return 1;
+							}
+							return 0;
+						}
+					}();
+					fileInfo.modTime = startTime;
+					return status;
+				}, [&](busy::analyse::Project const& project, auto const& params) {
+					std::cout << "linking: " << project.getPath() << "\n";
+					auto [status, cout] = execute(params);
+					return status;
 				}
-				if (p.getStatus() == 1) {
-					return 1;
-				}
-				return 0;
 			});
 		}
 

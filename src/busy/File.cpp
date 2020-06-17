@@ -55,22 +55,17 @@ auto readIncludes(std::filesystem::path const& _file) -> std::set<std::filesyste
 }
 
 auto File::getHash() const -> std::string {
-
-	if (getFileCache().hasTChange<std::string>(mPath)) {
-		getFileCache().updateT<std::string>(mPath, computeHash(mPath));
-	}
-	return getFileCache().getT<std::string>(mPath);
+	return getFileCache().getHash(mPath);
 }
 
 
 void File::readFile(std::filesystem::path const& _file) {
 	using Includes = std::set<std::filesystem::path>;
-
-	if (getFileCache().hasTChange<Includes>(_file)) {
-		getFileCache().updateT<Includes>(_file, readIncludes(_file));
-	}
-
-	mIncludes = getFileCache().getT<Includes>(_file);
+	mIncludes = readIncludes(_file);
+	//!TODO needs to populate mIncludes from cache
+	/*mIncludes = getFileCache().get<Includes>().needUpdate(_file, [&]() {
+		return readIncludes(_file);
+	});*/
 }
 
 }

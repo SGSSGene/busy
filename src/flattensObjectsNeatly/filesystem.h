@@ -4,6 +4,11 @@
 
 #include <filesystem>
 
+
+// needs to include chrono for std::filesystem::file_time_type
+#include "chrono.h"
+
+
 namespace fon {
 
 // convertible
@@ -21,5 +26,5 @@ struct convert<Node, std::filesystem::path> {
 	convert(Node&, std::filesystem::path&) {}
 };
 
-
 }
+

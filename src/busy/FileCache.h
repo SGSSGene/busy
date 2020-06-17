@@ -1,6 +1,5 @@
 #pragma once
 
-
 #include <base64/base64.h>
 #include <flattensObjectsNeatly/binary.h>
 #include <flattensObjectsNeatly/chrono.h>
@@ -8,134 +7,133 @@
 #include <flattensObjectsNeatly/flattensObjectsNeatly.h>
 #include <picosha2/picosha2.h>
 
+namespace busy {
+
 auto computeHash(std::filesystem::path const& path) -> std::string;
 auto getFileModificationTime(std::filesystem::path const& _file) -> std::filesystem::file_time_type;
 auto getFileCreationTime(std::filesystem::path const& _file) -> std::filesystem::file_time_type;
 
-
 struct FileCache {
-
+	using Path = std::filesystem::path;
+	using Time = std::filesystem::file_time_type;
 	using Hash = std::string;
 
-	template <typename T>
-	struct Pair {
-		std::filesystem::file_time_type modTime{};
-		T                               value{};
+	std::unordered_map<std::string, std::tuple<Time, Hash>> files;
 
-		template <typename Node>
-		void serialize(Node& node) {
-			node["modTime"] % modTime;
-			node["value"]   % value;
-		}
-	};
-
-
-	template <typename ...Args>
-	using PairTuple = std::tuple<Pair<Args>...>;
-
-	struct Info {
-		std::filesystem::file_time_type     cTime{};
-		std::filesystem::file_time_type     modTime{};
-		std::uintmax_t                      size{0};
-		std::string                         hash{};
-
-		PairTuple<std::vector<std::filesystem::path>, // dependency of projects(?)
-		          std::set<std::filesystem::path>,    // includes
-		          Hash                                // hash
-		         > tuplePair;
-
-		template <typename Node>
-		void serialize(Node& node) {
-			node["cTime"]      % cTime;
-			node["modTime"]    % modTime;
-			node["size"]       % size;
-			node["hash"]       % hash;
-			node["values"]     % tuplePair;
-		}
-	};
-
-	std::map<std::string, Info> files;
-
-	auto getFileCache(std::filesystem::path path) -> Info {
-		auto iter = files.find(path);
+	auto getHash(Path const& _path) -> std::string {
+		auto str_path = std::string{_path};
+		auto iter = files.find(str_path);
 		if (iter == files.end()) {
-			updateFile(path);
-		} else if (hasChanged(path)) {
-			updateFile(path);
-		} else {
+			auto modTime = getFileModificationTime(_path);
+			auto hash    = computeHash(_path);
+			auto [succ, iter2] = files.try_emplace(str_path, modTime, hash);
+			return hash;
 		}
-		return files.at(path);
-	}
-
-
-
-	void updateFile(std::filesystem::path path) {
-		auto& info = files[path];
-		info.cTime   = getFileCreationTime(path);
-		info.modTime = last_write_time(path);
-		info.size = 0;
-		//info.size    = file_size(path);
-		info.hash    = computeHash(path);
-	}
-
-	template <typename T>
-	bool hasTChange(std::filesystem::path const& path) const {
-		auto iter = files.find(path);
-		if (iter == files.end()) {
-			return true;
+		if (std::get<Time>(iter->second) != getFileModificationTime(_path)) {
+			auto modTime = getFileModificationTime(_path);
+			auto hash    = computeHash(_path);
+			iter->second = {modTime, hash};
+			return hash;
 		}
-		auto modTime = last_write_time(path);
-		return modTime != std::get<Pair<T>>(iter->second.tuplePair).modTime;
-	}
-
-	template <typename T>
-	void updateT(std::filesystem::path const& path, T value) {
-		std::get<Pair<T>>(files[path].tuplePair).modTime = last_write_time(path);
-		std::get<Pair<T>>(files[path].tuplePair).value   = std::move(value);
-	}
-	template <typename T>
-	auto getT(std::filesystem::path const& path) -> T const& {
-		return std::get<Pair<T>>(files.at(path).tuplePair).value;
-	}
-
-
-	bool hasChanged(std::filesystem::path const& path) const {
-		auto iter = files.find(path);
-		if (iter == files.end()) {
-			return true;
-		}
-
-		auto modTime = last_write_time(path);
-		if (modTime != iter->second.modTime) {
-			return true;
-		}
-
-		/*auto size = file_size(path);
-		if (size != iter->second.size) {
-			return true;
-		}*/
-
-/*		std::ifstream ifs(path, std::ios::binary);
-		Hash hash;
-		picosha2::hash256(ifs, hash.begin(), hash.end());
-
-		if (hash != iter->second.hash) {
-			return true;
-		}*/
-
-		/*for (auto const& path : iter->second.dependent) {
-			if (hasChanged(path)) {
-				return true;
-			}
-			
-		}*/
-		return false;
+		return std::get<Hash>(iter->second);
 	}
 
 	template <typename Node>
 	void serialize(Node& node) {
-		node["files"] % files;
+		node["files"]   % files;
 	}
 };
 
 auto getFileCache() -> FileCache&;
+
+struct FileInfo {
+	using Path         = std::filesystem::path;
+	using Time         = std::filesystem::file_time_type;
+	using Hash         = std::string;
+	using Dependencies = std::vector<std::tuple<Path, Hash>>;
+
+	Path path{};
+	Time modTime{};
+	Hash hash{};
+	bool compilable{true};
+	bool needRecompiling{true};
+	Dependencies dependencies{};
+
+	FileInfo(fon::ctor) {};
+	FileInfo(Path _path)
+		: path{_path}
+	{}
+
+	template <typename Node>
+	void serialize(Node& node) {
+		node["path"]            % path;
+		node["modTime"]         % modTime;
+		node["hash"]            % hash;
+		node["compilable"]      % compilable;
+		node["needRecompiling"] % needRecompiling;
+		node["dependencies"]    % dependencies;
+	}
+
+
+	bool hasChanged() const {
+		if (not compilable) {
+			return false;
+		}
+		if (needRecompiling) {
+			return true;
+		}
+		if (modTime < getFileModificationTime(path) and getFileCache().getHash(path) != hash) {
+			return true;
+		}
+		for (auto const& [d_path, d_hash] : dependencies) {
+			if (modTime < getFileModificationTime(d_path) and getFileCache().getHash(d_path) != d_hash) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	void updateModTime(Time _modTime) {
+		modTime = _modTime;
+	}
+	void updateHash(Hash const& _hash) {
+		hash = _hash;
+	}
+	void updateDependencies(Dependencies const& _dependencies) {
+		dependencies = _dependencies;
+	}
+	void updateCompilable(bool _compilable) {
+		compilable = _compilable;
+	}
+
+	//!TODO remove when fixed?? otherwise not working with c++20
+	void uselessCode() {
+		FileInfo x{fon::ctor{}};
+		FileInfo y {x};
+	}
+};
+
+struct FileInfos {
+	std::unordered_map<std::string, FileInfo> fileInfos;
+
+	auto get(std::filesystem::path const& _path) -> FileInfo& {
+		auto str_path = std::string{_path};
+		auto iter = fileInfos.find(str_path);
+		if (iter == end(fileInfos)) {
+			auto [newIter, succ] = fileInfos.try_emplace(str_path, _path);
+			iter = newIter;
+		}
+		return iter->second;
+	}
+
+	template <typename Node>
+	void serialize(Node& node) {
+		node["fileInfos"]   % fileInfos;
+	}
+};
+
+auto getFileInfos() -> FileInfos&;
+
+
+
+}

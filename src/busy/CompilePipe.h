@@ -6,6 +6,7 @@
 #include <map>
 
 namespace busy::analyse {
+
 using ProjectMap = std::map<Project const*, std::tuple<std::set<Project const*>, std::set<Project const*>>>;
 
 struct CompilePipe {
@@ -163,7 +164,7 @@ struct CompilePipe {
 	void dispatch(CB cb) {
 		queue.dispatch([&](auto& x) {
 			auto params = extract(x);
-			colors[&x] = cb(params);
+			colors[&x] = cb(x, params);
 		});
 	}
 };

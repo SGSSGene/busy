@@ -125,6 +125,8 @@ if [ "$1" == "compile" ]; then
 	shift; outputFile="$1"
 	shift
 
+	dependencyFile=$(echo "${outputFile}" | rev | cut -b 3- | rev | xargs -I '{}' echo '{}.d')
+
 	parse "-ilocal  projectIncludes" \
 	      "-isystem systemIncludes" \
 	      "-options options"\
@@ -145,9 +147,12 @@ if [ "$1" == "compile" ]; then
 
 	filetype="$(echo "${inputFile}" | rev | cut -d "." -f 1 | rev)";
 	if [ "${filetype}" = "cpp" ]; then
-		call="${CXX} -O0 -std=c++17 -fPIC -MD ${parameters} -fdiagnostics-color=always -c $inputFile -o $outputFile $projectIncludes $systemIncludes"
+		call="${CXX} -O0 -std=c++20 -fPIC -MD ${parameters} -fdiagnostics-color=always -c ${inputFile} -o ${outputFile} $projectIncludes $systemIncludes"
+		depCall='cat "${dependencyFile}" | xargs -n1 echo | sed "/^$/d" | tail -n +2'
+
 	elif [ "${filetype}" = "c" ]; then
-		call="${C} -O0 -std=c11 -fPIC -MD ${parameters} -fdiagnostics-color=always -c $inputFile -o $outputFile $projectIncludes $systemIncludes"
+		call="${C} -O0 -std=c18 -fPIC -MD ${parameters} -fdiagnostics-color=always -c ${inputFile} -o ${outputFile} $projectIncludes $systemIncludes"
+		depCall='cat "${dependencyFile}" | xargs -n1 echo | sed "/^$/d" | tail -n +2'
 	else
 		exit 1
 	fi
@@ -167,13 +172,14 @@ elif [ "$1" == "link" ]; then
 	# Header only
 	if [ "${#inputFiles[@]}" -eq 0 ]; then
 		exit 1
+
 	# Executable
 	elif [ "${target}" == "executable" ]; then
-		call="${CXX} -rdynamic -g3 -ggdb -fdiagnostics-color=always -o $outputFile ${inputFiles[@]} ${inputLibraries[@]} ${libraries[@]}"
+		call="${CXX} -rdynamic -g3 -ggdb -fdiagnostics-color=always -o ${outputFile} ${inputFiles[@]} ${inputLibraries[@]} ${libraries[@]}"
 
 	# Static library?
 	elif [ "${target}" == "static_library" ]; then
-		call="${AR} rcs $outputFile ${inputFiles[@]}"
+		call="${AR} rcs ${outputFile} ${inputFiles[@]}"
 	else
 		exit -1
 	fi
@@ -182,16 +188,27 @@ else
 fi
 
 mkdir -p $(dirname ${outputFile})
-$call 1>stdout.log 2>stderr.log
+#echo $call
+eval $call 1>stdout.log 2>stderr.log
 errorCode=$?
+
+#echo $depCall
+eval $depCall 1>dependency.log
 
 echo "stdout: |+"
 cat stdout.log | sed 's/^/    /'
 echo "stderr: |+"
 cat stderr.log | sed 's/^/    /'
 
+if [ "${errorCode}" -eq 0 ]; then
+	echo "dependencies:"
+	cat dependency.log | xargs -n1 echo "  -" | sort
+fi
+
 rm stdout.log
 rm stderr.log
+rm dependency.log
+
 if [ $errorCode -ne "0" ]; then
 	exit -1
 fi
