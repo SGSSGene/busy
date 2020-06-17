@@ -50,9 +50,9 @@ function implode {
 	done
 }
 
-CXX=g++
-C=gcc
-AR=ar
+CXX=/usr/bin/g++
+C=/usr/bin/gcc
+AR=/usr/bin/ar
 
 version=$(${C} --version | head -n 1 | perl -ne "s/\([^\)]*\)/()/g;print" | cut -d " " -f 3)
 
