@@ -99,6 +99,7 @@ toolchains:
       - "${C}"
       - "${AR}"
     options:
+      default: [debug, ccache, no-default]
       release: [no-debug, no-release_with_symbols]
       release_with_symbols: [no-release, no-debug]
       debug: [no-release, no-release_with_symbols]

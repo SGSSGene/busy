@@ -13,11 +13,36 @@
 #include <process/Process.h>
 #include <sargparse/ArgumentParsing.h>
 #include <sargparse/Parameter.h>
+#include <sargparse/File.h>
 #include <yaml-cpp/yaml.h>
 
 namespace busy::analyse {
 
-auto cfgVerbose = sargp::Flag{"verbose", "verbose output"};
+auto completeDirectories(std::vector<std::string> const& str) {
+	auto ret = std::pair<bool, std::set<std::string>>{false, {}};
+	auto path = [&]() -> std::filesystem::path {
+		if (str.size() > 0) {
+			return str.back();
+		}
+		return {"."};
+	}();
+	if (not exists(path)) {
+		path = path.remove_filename();
+	}
+	if (not exists(path)) {
+		path = ".";
+	}
+	for (auto& p : std::filesystem::directory_iterator(path)) {
+		if (is_directory(p.path())) {
+			ret.second.insert(p.path().lexically_relative(".").string() + "/");
+		}
+	}
+	return ret;
+
+}
+auto cfgVerbose   = sargp::Flag{"verbose", "verbose output"};
+auto cfgRootPath  = sargp::Parameter<std::string>{"..", "root",  "path to directory containing busy.yaml", [](){}, &completeDirectories};
+auto cfgBuildPath = sargp::Parameter<std::string>{".",  "build", "path to build directory", [](){}, &completeDirectories};
 
 void printProjects(std::map<Project const*, std::tuple<std::set<Project const*>, std::set<Project const*>>> const& _projects) {
 	for (auto const& [i_project, dep] : _projects) {
@@ -54,67 +79,7 @@ void listToolchains(std::vector<std::filesystem::path> const& packages) {
 	}
 }
 
-auto cfgRootPath  = sargp::Parameter<std::string>{"..", "root",  "path to directory containing busy.yaml"};
-auto cfgBuildPath = sargp::Parameter<std::string>{".",  "build", "path to build directory"};
-
-auto cmdLsToolchains = sargp::Command{"ls-toolchains", "list all available toolchains", []() {
-	auto config = [&]() {
-		if (exists(global_busyConfigFile)) {
-			return fon::yaml::deserialize<Config>(YAML::LoadFile(global_busyConfigFile));
-		}
-		return Config{};
-	}();
-
-	auto packages = std::vector<std::filesystem::path>{};
-	if (!config.rootDir.empty() and config.rootDir != "." and std::filesystem::exists(config.rootDir)) {
-		auto [pro, pack] = busy::analyse::readPackage(config.rootDir, ".");
-		for (auto p : pack) {
-			packages.emplace_back(p);
-		}
-	}
-
-	packages.insert(begin(packages), user_sharedPath);
-	packages.insert(begin(packages), global_sharedPath);
-
-	listToolchains(packages);
-}};
-
-auto cfgOptions   = sargp::Parameter<std::vector<std::string>>{{}, "option", "options for toolchains"};
-auto cfgToolchain = sargp::Parameter<std::string>{"", "toolchain", "set toolchain", [](){}, [](std::vector<std::string> const& str) -> std::pair<bool, std::set<std::string>> {
-	auto ret = std::pair<bool, std::set<std::string>>{false, {}};
-
-	auto config = [&]() {
-		if (exists(global_busyConfigFile)) {
-			return fon::yaml::deserialize<Config>(YAML::LoadFile(global_busyConfigFile));
-		}
-		return Config{};
-	}();
-
-	auto packages = std::vector<std::filesystem::path>{};
-	if (!config.rootDir.empty() and config.rootDir != "." and std::filesystem::exists(config.rootDir)) {
-		auto [pro, pack] = busy::analyse::readPackage(config.rootDir, ".");
-		for (auto p : pack) {
-			packages.emplace_back(p);
-		}
-	}
-
-	packages.insert(begin(packages), user_sharedPath);
-	packages.insert(begin(packages), global_sharedPath);
-	for (auto const&  [name, path] : searchForToolchains(packages)) {
-		ret.second.insert(name);
-	}
-	return ret;
-}};
-
-auto cmdShowDeps = sargp::Command{"show-deps", "show dependencies of projects", []() {
-	auto workPath = std::filesystem::current_path();
-
-	if (cfgBuildPath and relative(std::filesystem::path{*cfgBuildPath}) != ".") {
-		std::filesystem::create_directories(*cfgBuildPath);
-		std::filesystem::current_path(*cfgBuildPath);
-		std::cout << "changing working directory to " << *cfgBuildPath << "\n";
-	}
-
+auto loadConfig(std::filesystem::path workPath) {
 	auto config = [&]() {
 		if (exists(global_busyConfigFile)) {
 			return fon::yaml::deserialize<Config>(YAML::LoadFile(global_busyConfigFile));
@@ -132,6 +97,112 @@ auto cmdShowDeps = sargp::Command{"show-deps", "show dependencies of projects", 
 	if (config.rootDir == ".") {
 		throw std::runtime_error("can't build in source, please create a `build` directory");
 	}
+	return config;
+}
+
+
+auto cmdLsToolchains = sargp::Command{"ls-toolchains", "list all available toolchains", []() {
+	auto workPath = std::filesystem::current_path();
+	auto config = loadConfig(workPath);
+
+	auto packages = std::vector<std::filesystem::path>{};
+	if (!config.rootDir.empty() and config.rootDir != "." and std::filesystem::exists(config.rootDir)) {
+		auto [pro, pack] = busy::analyse::readPackage(config.rootDir, ".");
+		for (auto p : pack) {
+			packages.emplace_back(p);
+		}
+	}
+
+	packages.insert(begin(packages), user_sharedPath);
+	packages.insert(begin(packages), global_sharedPath);
+
+	listToolchains(packages);
+}};
+
+auto cfgOptions = sargp::Parameter<std::vector<std::string>>{{}, "option", "options for toolchains", [](){}, [](std::vector<std::string> const& str) -> std::pair<bool, std::set<std::string>> {
+	auto ret = std::pair<bool, std::set<std::string>>{false, {}};
+	auto workPath = std::filesystem::current_path();
+	auto config = loadConfig(workPath);
+	auto toolchainOptions = getToolchainOptions(config.toolchain.name, config.toolchain.call);
+	for (auto opt : toolchainOptions) {
+		ret.second.insert(opt.first);
+	}
+	return ret;
+}};
+auto cfgToolchain = sargp::Parameter<std::string>{"", "toolchain", "set toolchain", [](){}, [](std::vector<std::string> const& str) -> std::pair<bool, std::set<std::string>> {
+	auto ret = std::pair<bool, std::set<std::string>>{false, {}};
+	auto workPath = std::filesystem::current_path();
+	auto config = loadConfig(workPath);
+
+	auto packages = std::vector<std::filesystem::path>{};
+	if (!config.rootDir.empty() and config.rootDir != "." and std::filesystem::exists(config.rootDir)) {
+		auto [pro, pack] = busy::analyse::readPackage(config.rootDir, ".");
+		for (auto p : pack) {
+			packages.emplace_back(p);
+		}
+	}
+
+	packages.insert(begin(packages), user_sharedPath);
+	packages.insert(begin(packages), global_sharedPath);
+	for (auto const&  [name, path] : searchForToolchains(packages)) {
+		ret.second.insert(name);
+	}
+	return ret;
+}};
+
+auto updateToolchainOptions(Config& config, bool reset) -> std::map<std::string, std::vector<std::string>> {
+	auto toolchainOptions = getToolchainOptions(config.toolchain.name, config.toolchain.call);
+
+	// initialize queue
+	auto queue = std::queue<std::string>{};
+	auto processed = std::set<std::string>{};
+	if (reset) {
+		queue.push("default");
+		config.toolchain.options.clear();
+	}
+	for (auto o : *cfgOptions) {
+		queue.push(o);
+	}
+	while(not queue.empty()) {
+		auto o = queue.front();
+		queue.pop();
+
+		auto [opt, act] = [&]() -> std::tuple<std::string, bool> {
+			if (o.length() > 3 and o.substr(0, 3) == "no-") {
+				return {o.substr(3), false};
+			}
+			return {o, true};
+		}();
+
+		if (processed.count(o) > 0) continue;
+		processed.insert(o);
+
+		auto iter = toolchainOptions.find(opt);
+		if (iter == toolchainOptions.end()) {
+			std::cout << "unknown toolchain option " << o << " (removed)\n";
+		} else {
+			if (act) {
+				config.toolchain.options.insert(opt);
+				for (auto o2 : iter->second) {
+					queue.push(o2);
+				}
+			} else {
+				config.toolchain.options.erase(opt);
+			}
+		}
+	}
+	return toolchainOptions;
+}
+
+auto cmdShowDeps = sargp::Command{"show-deps", "show dependencies of projects", []() {
+	auto workPath = std::filesystem::current_path();
+
+	if (cfgBuildPath and relative(std::filesystem::path{*cfgBuildPath}) != ".") {
+		std::filesystem::create_directories(*cfgBuildPath);
+		std::filesystem::current_path(*cfgBuildPath);
+		std::cout << "changing working directory to " << *cfgBuildPath << "\n";
+	}
+	auto config = loadConfig(workPath);
 
 	auto [projects, packages] = busy::analyse::readPackage(config.rootDir, ".");
 
@@ -165,25 +236,7 @@ void app() {
 		std::filesystem::current_path(*cfgBuildPath);
 		std::cout << "changing working directory to " << *cfgBuildPath << "\n";
 	}
-
-	auto config = [&]() {
-		if (exists(global_busyConfigFile)) {
-			return fon::yaml::deserialize<Config>(YAML::LoadFile(global_busyConfigFile));
-		}
-		return Config{};
-	}();
-	if (cfgRootPath) {
-		config.rootDir = relative(workPath / *cfgRootPath);
-	}
-
-	if (config.rootDir.empty()) {
-		throw std::runtime_error("please give path of busy.yaml");
-	}
-
-	if (config.rootDir == ".") {
-		throw std::runtime_error("can't build in source, please create a `build` directory");
-	}
-
+	auto config = loadConfig(workPath);
 	loadFileCache();
 
 	auto [projects, packages] = busy::analyse::readPackage(config.rootDir, ".");
@@ -201,47 +254,10 @@ void app() {
 
 		config.toolchain.name = iter->first;
 		config.toolchain.call = iter->second;
+		updateToolchainOptions(config, true);
 		std::cout << "setting toolchain to " << config.toolchain.name << " (" << config.toolchain.call << ")\n";
-
 	}
-	auto toolchainOptions = getToolchainOptions(config.toolchain.name, config.toolchain.call);
-	{
-		// initialize queue
-		auto queue = std::queue<std::string>{};
-		auto processed = std::set<std::string>{};
-		for (auto o : *cfgOptions) {
-			queue.push(o);
-		}
-		while(not queue.empty()) {
-			auto o = queue.front();
-			queue.pop();
-
-			auto [opt, act] = [&]() -> std::tuple<std::string, bool> {
-				if (o.length() > 3 and o.substr(0, 3) == "no-") {
-					return {o.substr(3), false};
-				}
-				return {o, true};
-			}();
-
-			if (processed.count(o) > 0) continue;
-			processed.insert(o);
-
-			auto iter = toolchainOptions.find(opt);
-			if (iter == toolchainOptions.end()) {
-				std::cout << "unknown toolchain option " << o << " (removed)\n";
-			} else {
-				if (act) {
-					config.toolchain.options.insert(opt);
-					for (auto o2 : iter->second) {
-						queue.push(o2);
-					}
-				} else {
-					config.toolchain.options.erase(opt);
-				}
-			}
-		}
-	}
-
+	auto toolchainOptions = updateToolchainOptions(config, false);
 
 	std::cout << "using toolchain " << config.toolchain.name << " (" << config.toolchain.call << ")\n";
 	std::cout << "  with options: ";
