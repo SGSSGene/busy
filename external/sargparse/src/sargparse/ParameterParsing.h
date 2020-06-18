@@ -103,10 +103,6 @@ T parseFromString(std::string str) {
 				if (not value) {
 					throw ParseError{"unknown suffix"};
 				}
-				if (__int128_t(ret) * value.value() > std::numeric_limits<T>::max()
-					or __int128_t(ret) * value.value() < std::numeric_limits<T>::min()) {
-						throw ParseError{"out of range"};
-				}
 				ret *= value.value();
 			}
 		}

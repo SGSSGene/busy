@@ -6,7 +6,8 @@
 [subrepo]
 	remote = git@github.com:gottliebtfreitag/sargparse.git
 	branch = master
-	commit = 1e998e255a605fb14a911afd0525d5480f4a397e
+	commit = d3bc3901b7ed70d5fdddf1e1d082477f7603a0e7
 	parent = 9555b99e3c7f48622c2aa877fbf102d19af7363f
 	method = merge
-	cmdver = 0.4.0
+	cmdver = 0.4.1
+	update = auto
