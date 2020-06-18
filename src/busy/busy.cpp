@@ -5,16 +5,15 @@
 #include "toolchains.h"
 #include "overloaded.h"
 #include "analyse.h"
+#include "ConsolePrinter.h"
 
 
 #include <algorithm>
 #include <cstdlib>
-#include <iostream>
 #include <process/Process.h>
 #include <sargparse/ArgumentParsing.h>
 #include <sargparse/Parameter.h>
 #include <yaml-cpp/yaml.h>
-#include <thread>
 
 namespace busy::analyse {
 
@@ -157,55 +156,6 @@ auto cmdVersion  = sargp::Command{"version", "show version", cmdVersionShow};
 auto cfgVersion  = sargp::Flag{"version", "show version", cmdVersionShow};
 auto cfgClean    = sargp::Flag{"clean", "clean build, using no cache"};
 auto cfgYamlCache = sargp::Flag{"yaml-cache", "save cache in yaml format"};
-
-struct ConsoleTimer {
-	std::mutex mutex;
-	std::chrono::milliseconds totalTime{0};
-	int jobs{0};
-	int totalJobs{0};
-	std::string currentJob = "init";
-	std::condition_variable cv;
-
-	std::atomic_bool isRunning{true};
-	std::thread thread;
-	ConsoleTimer(std::chrono::milliseconds _total, int _totalJobs)
-	: totalTime {_total}
-	, totalJobs {_totalJobs}
-	, thread {[this]() {
-		auto startTime = std::chrono::steady_clock::now();
-		auto nextTime = startTime;
-		while(isRunning) {
-			auto g = std::unique_lock{mutex};
-			nextTime += std::chrono::milliseconds{1000};
-			cv.wait_until(g, nextTime);
-
-			auto now = std::chrono::steady_clock::now();
-			auto diff = duration_cast<std::chrono::milliseconds>(now - startTime);
-			std::cout << "Jobs " << jobs << "/" << totalJobs << " - ETA " << (diff.count() / 1000.) << "s/" << (totalTime.count() / 1000.) << "s - " << currentJob << "\n";
-		}
-	}}
-
-	{}
-
-	~ConsoleTimer() {
-		isRunning = false;
-		cv.notify_one();
-		thread.join();
-	}
-	void addTotalTime(std::chrono::milliseconds _total) {
-		auto g = std::unique_lock{mutex};
-		totalTime += _total;
-	}
-	void addJob(int _jobs) {
-		auto g = std::unique_lock{mutex};
-		jobs += _jobs;
-	}
-	void setCurrentJob(std::string _currentJob) {
-		auto g = std::unique_lock{mutex};
-		currentJob = std::move(_currentJob);
-	}
-
-};
 
 void app() {
 	auto workPath = std::filesystem::current_path();
@@ -368,7 +318,7 @@ void app() {
 			}
 		}
 		//std::cout << "Estimated Compile Time: " << total.count() / 1000. << "\n";
-		auto consoleTimer = ConsoleTimer{total, recompilingFiles.size() + recompilingProjects.size()};
+		auto consolePrinter = ConsolePrinter{total, recompilingFiles.size() + recompilingProjects.size()};
 
 		auto pipe = CompilePipe{config.toolchain.call, projects_with_deps, config.toolchain.options};
 
@@ -425,7 +375,7 @@ void app() {
 					// check if file needs recompile
 					auto status = [&]() {
 						if (recompilingFiles.count(&file) > 0) {
-							consoleTimer.setCurrentJob("compiling " + path.string());
+							consolePrinter.setCurrentJob("compiling " + path.string());
 //							std::cout << "compiling - " << path << "\n";
 
 							fileInfo.needRecompiling = true;
@@ -472,7 +422,7 @@ void app() {
 							}
 
 
-							consoleTimer.addTotalTime(-fileInfo.compileTime);
+							consolePrinter.addTotalTime(-fileInfo.compileTime);
 							auto stopTimer = std::chrono::steady_clock::now();
 							total -= fileInfo.compileTime;
 							totalCheckTime      += fileInfo.compileTime;
@@ -481,8 +431,8 @@ void app() {
 								fileInfo.compileTime = compileTime;
 							}
 							auto diff = duration_cast<std::chrono::milliseconds>(stopTimer - startCheckTime);
-							consoleTimer.addTotalTime(+compileTime);
-							consoleTimer.addJob(1);
+							consolePrinter.addTotalTime(+compileTime);
+							consolePrinter.addJob(1);
 
 							total = std::max(total + fileInfo.compileTime, totalCheckTime);
 //							std::cout << "estimate " << totalCheckTime.count() / 1000. << "s (" << diff.count() / 1000. <<  "s)/" << total.count() / 1000. << "s\n";
@@ -505,7 +455,7 @@ void app() {
 					if (recompilingProjects.count(&project) > 0) {
 						auto startTimer = std::chrono::steady_clock::now();
 //						std::cout << "linking: " << path << "\n";
-						consoleTimer.setCurrentJob("linking " + path.string());
+						consolePrinter.setCurrentJob("linking " + path.string());
 						auto [status, cout] = execute(params);
 						bool cached = false;
 
@@ -515,7 +465,7 @@ void app() {
 								cached = true;
 							}
 
-							consoleTimer.addTotalTime(-fileInfo.compileTime);
+							consolePrinter.addTotalTime(-fileInfo.compileTime);
 							auto stopTimer = std::chrono::steady_clock::now();
 							total -= fileInfo.compileTime;
 							totalCheckTime      += fileInfo.compileTime;
@@ -524,13 +474,13 @@ void app() {
 								fileInfo.compileTime = compileTime;
 							}
 							auto diff = duration_cast<std::chrono::milliseconds>(stopTimer - startCheckTime);
-							consoleTimer.addTotalTime(+compileTime);
+							consolePrinter.addTotalTime(+compileTime);
 							total = std::max(total + fileInfo.compileTime, totalCheckTime);
 //							std::cout << "estimate " << totalCheckTime.count() / 1000. << "s (" << diff.count() / 1000. <<  "s)/" << total.count() / 1000. << "s\n";
 						} else if (status == 1) {
 							fileInfo.compilable = false;
 						}
-						consoleTimer.addJob(1);
+						consolePrinter.addJob(1);
 						return status;
 					}
 					if (not fileInfo.compilable) {
