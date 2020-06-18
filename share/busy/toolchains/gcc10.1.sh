@@ -191,20 +191,24 @@ else
 fi
 
 mkdir -p $(dirname ${outputFile})
-#echo $call
+if [ -n "${VERBOSE}" ]; then
+	echo $call
+fi
 eval $call 1>stdout.log 2>stderr.log
 errorCode=$?
 
 #echo $depCall
-eval $depCall 1>dependency.log
+if [ -n "${depCall}" ]; then
+	eval $depCall 1>dependency.log
+fi
 
 echo "stdout: |+"
 cat stdout.log | sed 's/^/    /'
 echo "stderr: |+"
 cat stderr.log | sed 's/^/    /'
 
-if [ "${errorCode}" -eq 0 ]; then
-	echo "dependencies:"
+echo "dependencies:"
+if [ "${errorCode}" -eq 0 ] && [ -n "${depCall}" ]; then
 	cat dependency.log | xargs -n1 echo "  -" | sort
 fi
 
@@ -222,7 +226,9 @@ fi
 
 rm stdout.log
 rm stderr.log
-rm dependency.log
+if [ -n "${depCall}" ]; then
+	rm dependency.log
+fi
 
 if [ $errorCode -ne "0" ]; then
 	exit -1
