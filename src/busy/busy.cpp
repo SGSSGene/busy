@@ -6,6 +6,7 @@
 #include "overloaded.h"
 #include "analyse.h"
 
+
 #include <algorithm>
 #include <cstdlib>
 #include <iostream>
@@ -18,7 +19,6 @@
 namespace busy::analyse {
 
 auto cfgVerbose = sargp::Flag{"verbose", "verbose output"};
-
 
 void printProjects(std::map<Project const*, std::tuple<std::set<Project const*>, std::set<Project const*>>> const& _projects) {
 	for (auto const& [i_project, dep] : _projects) {

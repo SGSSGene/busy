@@ -182,7 +182,7 @@ elif [ "$1" == "link" ]; then
 
 	# Static library?
 	elif [ "${target}" == "static_library" ]; then
-		call="${AR} rcs ${outputFile} ${inputFiles[@]}"
+		call="ld -Ur -o ${outputFile}.o ${inputFiles[@]} && ${AR} rcs ${outputFile} ${outputFile}.o"
 	else
 		exit -1
 	fi
@@ -192,9 +192,9 @@ fi
 
 mkdir -p $(dirname ${outputFile})
 if [ -n "${VERBOSE}" ]; then
-	echo $call
+	echo $call>>stdout.log
 fi
-eval $call 1>stdout.log 2>stderr.log
+eval $call 1>>stdout.log 2>stderr.log
 errorCode=$?
 
 #echo $depCall
