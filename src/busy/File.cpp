@@ -61,11 +61,9 @@ auto File::getHash() const -> std::string {
 
 void File::readFile(std::filesystem::path const& _file) {
 	using Includes = std::set<std::filesystem::path>;
-	mIncludes = readIncludes(_file);
-	//!TODO needs to populate mIncludes from cache
-	/*mIncludes = getFileCache().get<Includes>().needUpdate(_file, [&]() {
+	mIncludes = getFileData().checkAndRetrieve<Includes>(_file, [&]() {
 		return readIncludes(_file);
-	});*/
+	});
 }
 
 }

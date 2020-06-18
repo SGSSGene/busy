@@ -235,9 +235,10 @@ auto cmdVersionShow = []() {
 	std::cout << "busy 2.0.0-git-alpha\n";
 	std::cout << "Copyright (C) 2020 Simon Gene Gottlieb\n";
 };
-auto cmdVersion = sargp::Command{"version", "show version", cmdVersionShow};
-auto cfgVersion = sargp::Flag{"version", "show version", cmdVersionShow};
-auto cfgClean   = sargp::Flag{"clean", "clean build, using no cache"};
+auto cmdVersion  = sargp::Command{"version", "show version", cmdVersionShow};
+auto cfgVersion  = sargp::Flag{"version", "show version", cmdVersionShow};
+auto cfgClean    = sargp::Flag{"clean", "clean build, using no cache"};
+auto cfgYamlCache = sargp::Flag{"yaml-cache", "save cache in yaml format"};
 
 struct ConsoleTimer {
 	std::mutex mutex;
@@ -315,12 +316,13 @@ void app() {
 		throw std::runtime_error("can't build in source, please create a `build` directory");
 	}
 
+	loadFileCache();
+
 	auto [projects, packages] = busy::analyse::readPackage(config.rootDir, ".");
 
 	packages.insert(begin(packages), user_sharedPath);
 	packages.insert(begin(packages), global_sharedPath);
 
-	loadFileCache();
 
 	if (cfgToolchain) {
 		auto toolchains = searchForToolchains(packages);
@@ -557,7 +559,7 @@ void app() {
 							total -= fileInfo.compileTime;
 							totalCheckTime      += fileInfo.compileTime;
 							auto compileTime = duration_cast<std::chrono::milliseconds>(stopTimer - startTimer);
-							if (not cached) {
+							if (not cached or fileInfo.compileTime < compileTime) {
 								fileInfo.compileTime = compileTime;
 							}
 							auto diff = duration_cast<std::chrono::milliseconds>(stopTimer - startCheckTime);
@@ -600,7 +602,7 @@ void app() {
 							total -= fileInfo.compileTime;
 							totalCheckTime      += fileInfo.compileTime;
 							auto compileTime = duration_cast<std::chrono::milliseconds>(stopTimer - startTimer);
-							if (not cached) {
+							if (not cached or fileInfo.compileTime < compileTime) {
 								fileInfo.compileTime = compileTime;
 							}
 							auto diff = duration_cast<std::chrono::milliseconds>(stopTimer - startCheckTime);
@@ -626,7 +628,7 @@ void app() {
 	std::cout << "done\n";
 
 
-	saveFileCache();
+	saveFileCache(*cfgYamlCache);
 }
 
 auto cmdCompile = sargp::Command{"compile", "compile everything (default)", []() {

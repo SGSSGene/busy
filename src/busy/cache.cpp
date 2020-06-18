@@ -8,9 +8,9 @@
 
 namespace busy {
 
-using FileCacheStorage = std::tuple<FileCache, FileInfos>;
+using FileCacheStorage = std::tuple<FileCache, FileData, FileInfos>;
 void loadFileCache() {
-	std::tie(getFileCache(), getFileInfos()) = [&]() {
+	std::tie(getFileCache(), getFileData(), getFileInfos()) = [&]() {
 		// load binary cache
 		if (std::filesystem::exists(".filecache")) {
 			auto buffer = busy::utils::readFullFile(".filecache");
@@ -22,8 +22,9 @@ void loadFileCache() {
 		return FileCacheStorage{};
 	}();
 }
-void saveFileCache() {
-	auto data = FileCacheStorage{getFileCache(), getFileInfos()};
+void saveFileCache(bool _yamlCache) {
+	auto tmp_data = getFileData();
+	auto data = FileCacheStorage{getFileCache(), getFileData(), getFileInfos()};
 	// write binary cache
 	{
 		auto node = fon::binary::serialize(data);
@@ -32,7 +33,7 @@ void saveFileCache() {
 	}
 
 	// write yaml cache
-	if (false) {
+	if (_yamlCache) {
 		YAML::Emitter out;
 		out << fon::yaml::serialize(data);
 		std::ofstream(".filecache.yaml") << out.c_str();

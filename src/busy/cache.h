@@ -3,6 +3,6 @@
 namespace busy {
 
 void loadFileCache();
-void saveFileCache();
+void saveFileCache(bool _yamlCache);
 
 }

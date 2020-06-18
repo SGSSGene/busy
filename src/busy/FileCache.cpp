@@ -71,10 +71,17 @@ auto getFileCache() -> FileCache& {
 	static FileCache instance;
 	return instance;
 }
+
+auto getFileData() -> FileData& {
+	static FileData instance;
+	return instance;
+}
+
 auto getFileInfos() -> FileInfos& {
 	static FileInfos instance;
 	return instance;
 }
+
 
 
 }

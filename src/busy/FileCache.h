@@ -46,6 +46,53 @@ struct FileCache {
 
 auto getFileCache() -> FileCache&;
 
+struct FileData {
+	using Path     = std::filesystem::path;
+	using Includes = std::set<std::filesystem::path>;
+	using Hash = std::string;
+
+	template <typename Value>
+	struct Date {
+		Hash hash;
+		Value value;
+
+		template <typename Node>
+		void serialize(Node& node) {
+			node["hash"]  % hash;
+			node["value"] % value;
+		}
+	};
+	template <typename ...Args>
+	using Data = std::tuple<Date<Args>...>;
+
+	std::unordered_map<std::string, Data<Includes>> data;
+
+	template <typename T, typename CB>
+	auto checkAndRetrieve(Path const& _path, CB cb) -> T& {
+		auto str_path = _path.string();
+		auto hash     = getFileCache().getHash(str_path);
+		auto iter     = data.find(str_path);
+		if (iter != end(data)) {
+			auto& date = std::get<Date<T>>(iter->second);
+			if (date.hash == hash) {
+				return date.value;
+			}
+		}
+		auto& date = std::get<Date<T>>(data[str_path]);
+		date.hash = hash;
+		date.value = cb();
+		return date.value;
+	}
+
+	template <typename Node>
+	void serialize(Node& node) {
+		node["data"] % data;
+	}
+
+};
+
+auto getFileData() -> FileData&;
+
 struct FileInfo {
 	using Path         = std::filesystem::path;
 	using Time         = std::filesystem::file_time_type;
@@ -60,6 +107,7 @@ struct FileInfo {
 	bool needRecompiling{true};
 	Duration compileTime{0};
 	Dependencies dependencies{};
+
 
 	FileInfo(fon::ctor) {};
 	FileInfo(Path _path)
