@@ -6,7 +6,7 @@
 #include "overloaded.h"
 #include "analyse.h"
 #include "ConsolePrinter.h"
-
+#include "utils.h"
 
 #include <algorithm>
 #include <cstdlib>
@@ -22,67 +22,15 @@ auto cfgVerbose   = sargp::Flag{"verbose", "verbose output"};
 auto cfgRootPath  = sargp::Parameter<sargp::Directory>{"..", "root",  "path to directory containing busy.yaml"};
 auto cfgBuildPath = sargp::Parameter<sargp::Directory>{".",  "build", "path to build directory"};
 
-void printProjects(std::map<Project const*, std::tuple<std::set<Project const*>, std::set<Project const*>>> const& _projects) {
-	for (auto const& [i_project, dep] : _projects) {
-		auto const& project = *i_project;
-		auto const& dependencies = std::get<0>(dep);
-		std::cout << "\n";
-
-		std::cout << "  - project-name: " << project.getName() << "\n";
-		std::cout << "    path: " << project.getPath() << "\n";
-		if (not project.getSystemLibraries().empty()) {
-			std::cout << "    systemLibraries:\n";
-			for (auto const& l : project.getSystemLibraries()) {
-				std::cout << "    - " << l << "\n";
-			}
-		}
-		if (not dependencies.empty()) {
-			std::cout << "    dependencies:\n";
-			for (auto const& d : dependencies) {
-				std::cout << "    - name: " << d->getName() << "\n";
-				std::cout << "      path: " << d->getPath() << "\n";
-			}
-		}
-		if (not project.getLegacyIncludePaths().empty()) {
-			std::cout << "    includePaths:\n";
-			for (auto const& p : project.getLegacyIncludePaths()) {
-				std::cout << "      - " << p << "\n";
-			}
-		}
-	}
-}
-
 void listToolchains(std::vector<std::filesystem::path> const& packages) {
 	for (auto [name, path]  : searchForToolchains(packages)) {
 		std::cout << "  - " << name << " (" << path << ")\n";
 	}
 }
 
-auto loadConfig(std::filesystem::path workPath) {
-	auto config = [&]() {
-		if (exists(global_busyConfigFile)) {
-			return fon::yaml::deserialize<Config>(YAML::LoadFile(global_busyConfigFile));
-		}
-		return Config{};
-	}();
-	if (cfgRootPath) {
-		config.rootDir = relative(workPath / *cfgRootPath);
-	}
-
-	if (config.rootDir.empty()) {
-		throw std::runtime_error("please give path of busy.yaml");
-	}
-
-	if (config.rootDir == ".") {
-		throw std::runtime_error("can't build in source, please create a `build` directory");
-	}
-	return config;
-}
-
-
 auto cmdLsToolchains = sargp::Command{"ls-toolchains", "list all available toolchains", []() {
 	auto workPath = std::filesystem::current_path();
-	auto config = loadConfig(workPath);
+	auto config = loadConfig(workPath, cfgRootPath);
 
 	auto packages = std::vector<std::filesystem::path>{};
 	if (!config.rootDir.empty() and config.rootDir != "." and std::filesystem::exists(config.rootDir)) {
@@ -101,7 +49,7 @@ auto cmdLsToolchains = sargp::Command{"ls-toolchains", "list all available toolc
 auto cfgOptions = sargp::Parameter<std::vector<std::string>>{{}, "option", "options for toolchains", [](){}, [](std::vector<std::string> const& str) -> std::pair<bool, std::set<std::string>> {
 	auto ret = std::pair<bool, std::set<std::string>>{false, {}};
 	auto workPath = std::filesystem::current_path();
-	auto config = loadConfig(workPath);
+	auto config = loadConfig(workPath, cfgRootPath);
 	auto toolchainOptions = getToolchainOptions(config.toolchain.name, config.toolchain.call);
 	for (auto opt : toolchainOptions) {
 		if (config.toolchain.options.count(opt.first) == 0) {
@@ -115,7 +63,7 @@ auto cfgOptions = sargp::Parameter<std::vector<std::string>>{{}, "option", "opti
 auto cfgToolchain = sargp::Parameter<std::string>{"", "toolchain", "set toolchain", [](){}, [](std::vector<std::string> const& str) -> std::pair<bool, std::set<std::string>> {
 	auto ret = std::pair<bool, std::set<std::string>>{false, {}};
 	auto workPath = std::filesystem::current_path();
-	auto config = loadConfig(workPath);
+	auto config = loadConfig(workPath, cfgRootPath);
 
 	auto packages = std::vector<std::filesystem::path>{};
 	if (!config.rootDir.empty() and config.rootDir != "." and std::filesystem::exists(config.rootDir)) {
@@ -133,50 +81,6 @@ auto cfgToolchain = sargp::Parameter<std::string>{"", "toolchain", "set toolchai
 	return ret;
 }};
 
-auto updateToolchainOptions(Config& config, bool reset) -> std::map<std::string, std::vector<std::string>> {
-	auto toolchainOptions = getToolchainOptions(config.toolchain.name, config.toolchain.call);
-
-	// initialize queue
-	auto queue = std::queue<std::string>{};
-	auto processed = std::set<std::string>{};
-	if (reset) {
-		queue.push("default");
-		config.toolchain.options.clear();
-	}
-	for (auto o : *cfgOptions) {
-		queue.push(o);
-	}
-	while(not queue.empty()) {
-		auto o = queue.front();
-		queue.pop();
-
-		auto [opt, act] = [&]() -> std::tuple<std::string, bool> {
-			if (o.length() > 3 and o.substr(0, 3) == "no-") {
-				return {o.substr(3), false};
-			}
-			return {o, true};
-		}();
-
-		if (processed.count(o) > 0) continue;
-		processed.insert(o);
-
-		auto iter = toolchainOptions.find(opt);
-		if (iter == toolchainOptions.end()) {
-			std::cout << "unknown toolchain option " << o << " (removed)\n";
-		} else {
-			if (act) {
-				config.toolchain.options.insert(opt);
-				for (auto o2 : iter->second) {
-					queue.push(o2);
-				}
-			} else {
-				config.toolchain.options.erase(opt);
-			}
-		}
-	}
-	return toolchainOptions;
-}
-
 auto cmdShowDeps = sargp::Command{"show-deps", "show dependencies of projects", []() {
 	auto workPath = std::filesystem::current_path();
 
@@ -185,7 +89,7 @@ auto cmdShowDeps = sargp::Command{"show-deps", "show dependencies of projects", 
 		std::filesystem::current_path(*cfgBuildPath);
 		std::cout << "changing working directory to " << *cfgBuildPath << "\n";
 	}
-	auto config = loadConfig(workPath);
+	auto config = loadConfig(workPath, cfgRootPath);
 
 	auto [projects, packages] = busy::analyse::readPackage(config.rootDir, ".");
 
@@ -219,7 +123,7 @@ void app() {
 		std::filesystem::current_path(*cfgBuildPath);
 		std::cout << "changing working directory to " << *cfgBuildPath << "\n";
 	}
-	auto config = loadConfig(workPath);
+	auto config = loadConfig(workPath, cfgRootPath);
 	loadFileCache();
 
 	auto [projects, packages] = busy::analyse::readPackage(config.rootDir, ".");
@@ -237,10 +141,10 @@ void app() {
 
 		config.toolchain.name = iter->first;
 		config.toolchain.call = iter->second;
-		updateToolchainOptions(config, true);
+		updateToolchainOptions(config, true, cfgOptions);
 		std::cout << "setting toolchain to " << config.toolchain.name << " (" << config.toolchain.call << ")\n";
 	}
-	auto toolchainOptions = updateToolchainOptions(config, false);
+	auto toolchainOptions = updateToolchainOptions(config, false, cfgOptions);
 
 	std::cout << "using toolchain " << config.toolchain.name << " (" << config.toolchain.call << ")\n";
 	std::cout << "  with options: ";
@@ -268,42 +172,7 @@ void app() {
 
 	std::cout << "checking files...\n";
 	[&](){
-		auto estimatedTimes      = ConsolePrinter::EstimatedTimes{};
-
-		// precompute timings
-		{
-			auto pipe = CompilePipe{config.toolchain.call, projects_with_deps, config.toolchain.options};
-			while (not pipe.empty()) {
-				pipe.dispatch(overloaded {
-					[&](busy::analyse::File const& file, auto const& params, auto const& deps) {
-						auto& fileInfo = getFileInfos().get(file.getPath());
-						if (*cfgClean or (fileInfo.hasChanged() and fileInfo.compilable)) {
-							estimatedTimes.try_emplace(&file, fileInfo.compileTime);
-						}
-						return 0;
-					}, [&](busy::analyse::Project const& project, auto const& params, auto const& deps) {
-						auto& fileInfo = getFileInfos().get(project.getPath());
-						auto anyChanges = [&]() {
-							for (auto const& d : deps) {
-								if (estimatedTimes.count(d) > 0) {
-									return true;
-								}
-							}
-							for (auto const& file : project.getFiles()) {
-								if (estimatedTimes.count(&file) > 0) {
-									return true;
-								}
-							}
-							return false;
-						};
-						if (*cfgClean or (anyChanges() and fileInfo.compilable)) {
-							estimatedTimes.try_emplace(&project, fileInfo.compileTime);
-						}
-						return 0;
-					}
-				});
-			}
-		}
+		auto estimatedTimes = computeEstimationTimes(config, projects_with_deps, cfgClean);
 		if (estimatedTimes.empty()) {
 			return;
 		}

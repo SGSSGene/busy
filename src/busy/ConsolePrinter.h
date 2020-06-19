@@ -54,6 +54,7 @@ public:
 
 			auto now = std::chrono::steady_clock::now();
 			auto diff = duration_cast<std::chrono::milliseconds>(now - startTime);
+			totalTime = std::max(diff, totalTime);
 			std::cout << "Jobs " << jobs << "/" << totalJobs << " - ETA " << (diff.count() / 1000.) << "s/" << (totalTime.count() / 1000.) << "s - " << currentJob << "\n";
 		}
 	}}
