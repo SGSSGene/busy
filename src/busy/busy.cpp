@@ -283,7 +283,7 @@ void app() {
 			auto pipe = CompilePipe{config.toolchain.call, projects_with_deps, config.toolchain.options};
 			while (not pipe.empty()) {
 				pipe.dispatch(overloaded {
-					[&](busy::analyse::File const& file, auto const& params) {
+					[&](busy::analyse::File const& file, auto const& params, auto const& deps) {
 						auto path = addRootDir(file.getPath());
 						auto& fileInfo = getFileInfos().get(path);
 						if (*cfgClean or (fileInfo.hasChanged() and fileInfo.compilable)) {
@@ -291,10 +291,15 @@ void app() {
 							total += fileInfo.compileTime;
 						}
 						return 0;
-					}, [&](busy::analyse::Project const& project, auto const& params) {
+					}, [&](busy::analyse::Project const& project, auto const& params, auto const& deps) {
 						auto path = addRootDir(project.getPath());
 						auto& fileInfo = getFileInfos().get(path);
 						auto anyChanges = [&]() {
+							for (auto const& d : deps) {
+								if (recompilingProjects.count(d) > 0) {
+									return true;
+								}
+							}
 							for (auto const& file : project.getFiles()) {
 								if (recompilingFiles.count(&file) > 0) {
 									return true;
@@ -359,7 +364,7 @@ void app() {
 		auto startCheckTime = std::chrono::steady_clock::now();
 		while (not pipe.empty()) {
 			pipe.dispatch(overloaded {
-				[&](busy::analyse::File const& file, auto const& params) {
+				[&](busy::analyse::File const& file, auto const& params, auto const& deps) {
 					auto startTimer = std::chrono::steady_clock::now();
 					auto startTime  = std::chrono::file_clock::now();
 					auto path = addRootDir(file.getPath());
@@ -442,7 +447,7 @@ void app() {
 					auto stopTimer = std::chrono::steady_clock::now();
 					fileInfo.modTime     = startTime;
 					return status;
-				}, [&](busy::analyse::Project const& project, auto const& params) {
+				}, [&](busy::analyse::Project const& project, auto const& params, auto const& deps) {
 					auto path = addRootDir(project.getPath());
 					auto& fileInfo = getFileInfos().get(path);
 

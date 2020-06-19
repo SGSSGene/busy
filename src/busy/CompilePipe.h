@@ -131,6 +131,7 @@ struct CompilePipe {
 
 		addSystemLibraries(project);
 
+		auto dependencies = std::unordered_set<Project const*>{};
 		queue.visit_incoming(&project, [&](auto& project) {
 			using X = std::decay_t<decltype(project)>;
 			if constexpr (std::is_same_v<X, busy::analyse::Project>) {
@@ -139,6 +140,7 @@ struct CompilePipe {
 					params.emplace_back(target);
 				}
 				addSystemLibraries(project);
+				dependencies.insert(&project);
 			}
 		});
 
@@ -146,25 +148,25 @@ struct CompilePipe {
 		for (auto const& l : systemLibraries) {
 			params.emplace_back(l);
 		}
-		return params;
+		return std::tuple{params, dependencies};
 	}
 
 	bool empty() const {
 		return queue.empty();
 	}
 
-	auto extract(busy::analyse::File const& file) -> std::vector<std::string> {
-		return setupCompiling(file);
+	auto extract(busy::analyse::File const& file) -> std::tuple<std::vector<std::string>, nullptr_t> {
+		return {setupCompiling(file), nullptr};
 	};
-	auto extract(busy::analyse::Project const& project) -> std::vector<std::string> {
+	auto extract(busy::analyse::Project const& project) -> std::tuple<std::vector<std::string>, std::unordered_set<Project const*>> {
 		return setupLinking(project);
 	};
 
 	template <typename CB>
 	void dispatch(CB cb) {
 		queue.dispatch([&](auto& x) {
-			auto params = extract(x);
-			colors[&x] = cb(x, params);
+			auto [params, dependencies] = extract(x);
+			colors[&x] = cb(x, params, dependencies);
 		});
 	}
 };
