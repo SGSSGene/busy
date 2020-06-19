@@ -158,7 +158,7 @@ if [ "$1" == "compile" ]; then
 		call="${C} -O0 -std=c18 -fPIC -MD ${parameters} -fdiagnostics-color=always -c ${inputFile} -o ${outputFile} $projectIncludes $systemIncludes"
 		depCall='cat "${dependencyFile}" | xargs -n1 echo | sed "/^$/d" | tail -n +2'
 	else
-		exit 1
+		exit 0
 	fi
 elif [ "$1" == "link" ]; then
 	shift; target="$1"
@@ -175,7 +175,7 @@ elif [ "$1" == "link" ]; then
 
 	# Header only
 	if [ "${#inputFiles[@]}" -eq 0 ]; then
-		exit 1
+		exit 0
 
 	# Executable
 	elif [ "${target}" == "executable" ]; then
@@ -216,13 +216,10 @@ fi
 if [ "${CCACHE}" -eq 1 ]; then
 	if [ "$(cat ${CCACHE_LOGFILE} | grep 'Result: cache hit' | wc -l)" -eq 1 ]; then
 		echo "cached: true"
-	else
-		echo "cached: false"
 	fi
 	rm ${CCACHE_LOGFILE}
-else
-	echo "cached: false"
 fi
+echo "compilable: true"
 
 
 rm stdout.log

@@ -123,7 +123,7 @@ void app() {
 		std::cout << "changing working directory to " << *cfgBuildPath << "\n";
 	}
 	auto config = loadConfig(workPath, cfgRootPath);
-	loadFileCache();
+	auto cacheGuard = loadFileCache(*cfgYamlCache);
 
 	auto [projects, packages] = busy::analyse::readPackage(config.rootDir, ".");
 
@@ -159,7 +159,6 @@ void app() {
 	std::cout << "done\n";
 
 	auto projects_with_deps = createProjects(projects);
-	//printProjects(projects_with_deps);
 
 	// Save config
 	{
@@ -170,126 +169,95 @@ void app() {
 
 
 	std::cout << "checking files...\n";
-	[&](){
-		auto estimatedTimes = computeEstimationTimes(config, projects_with_deps, cfgClean);
-		if (estimatedTimes.empty()) {
-			return;
-		}
+	auto estimatedTimes = computeEstimationTimes(config, projects_with_deps, cfgClean);
+	if (estimatedTimes.empty()) {
+		return;
+	}
 
-		std::cout << "start compiling...\n";
-		auto consolePrinter = ConsolePrinter{estimatedTimes};
-		auto pipe           = CompilePipe{config.toolchain.call, projects_with_deps, config.toolchain.options};
+	std::cout << "start compiling...\n";
+	auto consolePrinter = ConsolePrinter{estimatedTimes};
+	auto pipe           = CompilePipe{config.toolchain.call, projects_with_deps, config.toolchain.options};
 
-		execute({config.toolchain.call, "begin"}, false);
+	execute({config.toolchain.call, "begin"}, false);
 
-		while (not pipe.empty()) {
-			pipe.dispatch(overloaded {
-				[&](busy::analyse::File const& file, auto const& params, auto const& deps) {
-					auto startTime  = std::chrono::file_clock::now();
-					auto path = file.getPath();
+	while (not pipe.empty()) {
+		pipe.dispatch(overloaded {
+			[&](busy::analyse::File const& file, auto const& params, auto const& deps) {
+				auto startTime  = std::chrono::file_clock::now();
+				auto path       = file.getPath();
 
-					auto& fileInfo = getFileInfos().get(path);
-
-					// check if file needs recompile
-					auto status = [&]() {
-						if (estimatedTimes.count(&file) > 0) {
-							consolePrinter.startJob(&file, "compiling " + path.string());
-
-							fileInfo.needRecompiling = true;
-							// store file date before compiling
-							auto hash    = getFileCache().getHash(path);
-
-							// compiling
-							auto [status, cout] = execute(params, cfgVerbose);
-							auto dependencies = FileInfo::Dependencies{};
-							bool cached = false;
-							if (status == 0) {
-								auto node = YAML::Load(cout);
-								//!TODO should work with `auto`, but doesn't for some reason
-								for (YAML::Node n : node["dependencies"]) {
-									auto path = FileInfo::Path{n.as<std::string>()};
-									auto hash    = computeHash(path);
-									auto modTime = getFileModificationTime(path);
-
-									//!TODO handle when files changes inbetween
-									if (modTime > startTime) {
-										auto f = [](auto t) {
-											return std::chrono::duration_cast<std::chrono::seconds>(t.time_since_epoch()).count();
-										};
-
-										std::cout << "file changed??? " << f(modTime) << " " << f(startTime) << " " << path << " " << std::filesystem::current_path() << " " << hash << "\n";
-//										throw std::runtime_error("file changed");
-										//status = 2; // file changed in between
-									}
-									dependencies.emplace_back(path, hash);
-								}
-								if (YAML::Node{node["cached"]}.as<bool>()) {
-									cached = true;
-								}
-								fileInfo.dependencies = dependencies;
-							} else if (status == 1) {
-								fileInfo.compilable = false;
-							}
-							// update caches
-							fileInfo.hash = hash;
-
-							if (status == 0) {
-								fileInfo.needRecompiling = false;
-							}
-
-							auto compileTime = consolePrinter.finishedJob(&file);
-							if (not cached or fileInfo.compileTime < compileTime) {
-								fileInfo.compileTime = compileTime;
-							}
-							return status;
-						} else {
-							//std::cout << "\n===\nno change - skip - " << file.getPath() << "\n===\n";
-							if (not fileInfo.compilable) {
-								return 1;
-							}
-							return 0;
-						}
-					}();
-					fileInfo.modTime = startTime;
-					return status;
-				}, [&](busy::analyse::Project const& project, auto const& params, auto const& deps) {
-					auto path = project.getPath();
-					auto& fileInfo = getFileInfos().get(path);
-
-					if (estimatedTimes.count(&project) > 0) {
-						consolePrinter.startJob(&project, "linking " + path.string());
-						auto [status, cout] = execute(params, cfgVerbose);
-						bool cached = false;
-
-						if (status == 0) {
-							auto node = YAML::Load(cout);
-							if (YAML::Node{node["cached"]}.as<bool>()) {
-								cached = true;
-							}
-
-						} else if (status == 1) {
-							fileInfo.compilable = false;
-						}
-
-						auto compileTime = consolePrinter.finishedJob(&project);
-						if (not cached or fileInfo.compileTime < compileTime) {
-							fileInfo.compileTime = compileTime;
-						}
-						return status;
-					}
-					if (not fileInfo.compilable) {
-						return 1;
-					}
-					return 0;
+				auto& fileInfo = getFileInfos().get(path);
+				if (estimatedTimes.count(&file) == 0) {
+					return fileInfo.compilable?0:1;
 				}
-			});
-		}
 
-		execute({config.toolchain.call, "end"}, false);
-	}();
+				consolePrinter.startJob(&file, "compiling " + path.string());
+
+				fileInfo.needRecompiling = true;
+				// store file date before compiling
+				auto hash    = getFileCache().getHash(path);
+
+				// compiling
+				auto cout = execute(params, cfgVerbose);
+				auto node = YAML::Load(cout);
+
+				bool cached         = YAML::Node{node["cached"]}.as<bool>(false);
+				fileInfo.compilable = YAML::Node{node["compilable"]}.as<bool>(false);
+
+				auto dependencies = FileInfo::Dependencies{};
+				//!TODO should work with `auto`, but doesn't for some reason
+				for (YAML::Node n : node["dependencies"]) {
+					auto path = FileInfo::Path{n.as<std::string>()};
+					auto hash    = computeHash(path);
+					auto modTime = getFileModificationTime(path);
+
+					//!TODO handle when files changes inbetween
+					if (modTime > startTime) {
+						auto f = [](auto t) {
+							return std::chrono::duration_cast<std::chrono::seconds>(t.time_since_epoch()).count();
+						};
+							std::cout << "file changed??? " << f(modTime) << " " << f(startTime) << " " << path << " " << std::filesystem::current_path() << " " << hash << "\n";
+					//		throw std::runtime_error("file changed");
+						//status = 2; // file changed in between
+					}
+					dependencies.emplace_back(path, hash);
+				}
+				fileInfo.dependencies    = dependencies;
+				fileInfo.hash            = hash;
+				fileInfo.needRecompiling = false;
+
+				auto compileTime = consolePrinter.finishedJob(&file);
+				if (not cached or fileInfo.compileTime < compileTime) {
+					fileInfo.compileTime = compileTime;
+				}
+				fileInfo.modTime = startTime;
+				return fileInfo.compilable?0:1;
+			}, [&](busy::analyse::Project const& project, auto const& params, auto const& deps) {
+				auto& fileInfo = getFileInfos().get(project.getPath());
+
+				if (estimatedTimes.count(&project) == 0) {
+					return fileInfo.compilable?0:1;
+				}
+
+				consolePrinter.startJob(&project, "linking " + project.getName());
+				auto cout = execute(params, cfgVerbose);
+				auto node = YAML::Load(cout);
+				bool cached         = YAML::Node{node["cached"]}.as<bool>(false);
+				fileInfo.compilable = YAML::Node{node["compilable"]}.as<bool>(false);
+
+				auto compileTime = consolePrinter.finishedJob(&project);
+				if (not cached or fileInfo.compileTime < compileTime) {
+					fileInfo.compileTime = compileTime;
+				}
+
+				return fileInfo.compilable?0:1;
+			}
+		});
+	}
+
+	execute({config.toolchain.call, "end"}, false);
 
 	std::cout << "done\n";
-	saveFileCache(*cfgYamlCache);
 }
 
 auto cmdCompile = sargp::Command{"compile", "compile everything (default)", []() {
@@ -299,7 +267,6 @@ auto cmdCompileDefault = sargp::Task{[]{
 	if (cmdLsToolchains or cmdShowDeps or cmdVersion or cfgVersion) return;
 	app();
 }};
-
 
 }
 
@@ -322,6 +289,7 @@ int main(int argc, char const** argv) {
 		}
 		sargp::callCommands();
 		return EXIT_SUCCESS;
+	} catch (busy::CompileError const& e) {
 	} catch (std::exception const& e) {
 		std::cerr << "exception: " << busy::utils::exceptionToString(e, 0) << "\n";
 		std::cerr << sargp::generateHelpString(std::regex{".*" + printHelp.get().value_or("") + ".*"});

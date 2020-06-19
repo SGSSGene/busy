@@ -133,7 +133,7 @@ auto computeEstimationTimes(Config const& config, analyse::ProjectMap const& pro
 					}
 					return false;
 				};
-				if (clean or (anyChanges() and fileInfo.compilable)) {
+				if (clean or (anyChanges())) {
 					estimatedTimes.try_emplace(&project, fileInfo.compileTime);
 				}
 				return 0;
@@ -143,32 +143,22 @@ auto computeEstimationTimes(Config const& config, analyse::ProjectMap const& pro
 	return estimatedTimes;
 }
 
-auto execute(std::vector<std::string> const& params, bool verbose) -> std::tuple<int, std::string> {
+auto execute(std::vector<std::string> const& params, bool verbose) -> std::string {
 	auto p = process::Process{params};
-	if (verbose) {
-		std::cout << "call:";
-		for (auto p : params) {
-			std::cout << " " << p;
-		}
-		std::cout << "\n";
+	auto call = std::stringstream{};
+	for (auto const& p : params) {
+		call << p << " ";
 	}
-	if (p.getStatus() != 0 and p.getStatus() != 1) {
-		std::stringstream ss;
-		for (auto const& p : params) {
-			ss << p << " ";
-		}
-		std::cout << ss.str() << "\n";
+
+	if (verbose or p.getStatus() != 0) {
+		std::cout << "call: " << call.str() << "\n";
+	}
+	if (p.getStatus() != 0) {
 		std::cout << p.cout() << "\n";
 		std::cerr << p.cerr() << "\n";
-		if (p.getStatus() != 0 and p.getStatus() != 1) {
-			std::cout << "error exit\n";
-			exit(1);
-		}
+		throw CompileError{};
 	}
-	if (p.getStatus() == 1) {
-		return {1, ""};
-	}
-	return {0, p.cout()};
+	return p.cout();
 };
 
 

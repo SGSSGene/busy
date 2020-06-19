@@ -40,4 +40,12 @@ void saveFileCache(bool _yamlCache) {
 	}
 }
 
+auto loadFileCache(bool _yamlCache) -> finally {
+	loadFileCache();
+	return finally{[_yamlCache]() {
+		saveFileCache(_yamlCache);
+	}};
+}
+
+
 }
