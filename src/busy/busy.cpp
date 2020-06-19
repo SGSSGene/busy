@@ -10,7 +10,6 @@
 
 #include <algorithm>
 #include <cstdlib>
-#include <process/Process.h>
 #include <sargparse/ArgumentParsing.h>
 #include <sargparse/Parameter.h>
 #include <sargparse/File.h>
@@ -179,47 +178,9 @@ void app() {
 
 		std::cout << "start compiling...\n";
 		auto consolePrinter = ConsolePrinter{estimatedTimes};
+		auto pipe           = CompilePipe{config.toolchain.call, projects_with_deps, config.toolchain.options};
 
-		auto pipe = CompilePipe{config.toolchain.call, projects_with_deps, config.toolchain.options};
-
-		auto runToolchain = [&](std::string_view str) {
-			auto params = std::vector<std::string>{config.toolchain.call, std::string{str}};
-			auto p = process::Process{params};
-
-			if (p.getStatus() != 0) {
-				throw std::runtime_error{"failed running toolchain " + std::string{str}};
-			}
-		};
-
-		runToolchain("begin");
-
-		auto execute = [&](auto const& params) -> std::tuple<int, std::string> {
-			auto p = process::Process{params};
-			if (*cfgVerbose) {
-				std::cout << "call:";
-				for (auto p : params) {
-					std::cout << " " << p;
-				}
-				std::cout << "\n";
-			}
-			if (p.getStatus() != 0 and p.getStatus() != 1) {
-				std::stringstream ss;
-				for (auto const& p : params) {
-					ss << p << " ";
-				}
-				std::cout << ss.str() << "\n";
-				std::cout << p.cout() << "\n";
-				std::cerr << p.cerr() << "\n";
-				if (p.getStatus() != 0 and p.getStatus() != 1) {
-					std::cout << "error exit\n";
-					exit(1);
-				}
-			}
-			if (p.getStatus() == 1) {
-				return {1, ""};
-			}
-			return {0, p.cout()};
-		};
+		execute({config.toolchain.call, "begin"}, false);
 
 		while (not pipe.empty()) {
 			pipe.dispatch(overloaded {
@@ -239,7 +200,7 @@ void app() {
 							auto hash    = getFileCache().getHash(path);
 
 							// compiling
-							auto [status, cout] = execute(params);
+							auto [status, cout] = execute(params, cfgVerbose);
 							auto dependencies = FileInfo::Dependencies{};
 							bool cached = false;
 							if (status == 0) {
@@ -289,8 +250,7 @@ void app() {
 							return 0;
 						}
 					}();
-					auto stopTimer = std::chrono::steady_clock::now();
-					fileInfo.modTime     = startTime;
+					fileInfo.modTime = startTime;
 					return status;
 				}, [&](busy::analyse::Project const& project, auto const& params, auto const& deps) {
 					auto path = project.getPath();
@@ -298,7 +258,7 @@ void app() {
 
 					if (estimatedTimes.count(&project) > 0) {
 						consolePrinter.startJob(&project, "linking " + path.string());
-						auto [status, cout] = execute(params);
+						auto [status, cout] = execute(params, cfgVerbose);
 						bool cached = false;
 
 						if (status == 0) {
@@ -325,10 +285,10 @@ void app() {
 			});
 		}
 
-		runToolchain("end");
+		execute({config.toolchain.call, "end"}, false);
 	}();
-	std::cout << "done\n";
 
+	std::cout << "done\n";
 	saveFileCache(*cfgYamlCache);
 }
 

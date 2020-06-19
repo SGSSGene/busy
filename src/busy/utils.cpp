@@ -4,7 +4,9 @@
 #include "overloaded.h"
 
 #include <iostream>
+#include <process/Process.h>
 #include <queue>
+
 
 namespace busy {
 
@@ -140,5 +142,34 @@ auto computeEstimationTimes(Config const& config, analyse::ProjectMap const& pro
 	}
 	return estimatedTimes;
 }
+
+auto execute(std::vector<std::string> const& params, bool verbose) -> std::tuple<int, std::string> {
+	auto p = process::Process{params};
+	if (verbose) {
+		std::cout << "call:";
+		for (auto p : params) {
+			std::cout << " " << p;
+		}
+		std::cout << "\n";
+	}
+	if (p.getStatus() != 0 and p.getStatus() != 1) {
+		std::stringstream ss;
+		for (auto const& p : params) {
+			ss << p << " ";
+		}
+		std::cout << ss.str() << "\n";
+		std::cout << p.cout() << "\n";
+		std::cerr << p.cerr() << "\n";
+		if (p.getStatus() != 0 and p.getStatus() != 1) {
+			std::cout << "error exit\n";
+			exit(1);
+		}
+	}
+	if (p.getStatus() == 1) {
+		return {1, ""};
+	}
+	return {0, p.cout()};
+};
+
 
 }
