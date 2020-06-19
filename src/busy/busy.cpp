@@ -188,7 +188,7 @@ void app() {
 
 				auto& fileInfo = getFileInfos().get(path);
 				if (estimatedTimes.count(&file) == 0) {
-					return fileInfo.compilable?0:1;
+					return fileInfo.compilable?analyse::CompilePipe::Color::Compilable:analyse::CompilePipe::Color::Ignored;
 				}
 
 				consolePrinter.startJob(&file, "compiling " + path.string());
@@ -231,12 +231,12 @@ void app() {
 					fileInfo.compileTime = compileTime;
 				}
 				fileInfo.modTime = startTime;
-				return fileInfo.compilable?0:1;
+				return fileInfo.compilable?analyse::CompilePipe::Color::Compilable:analyse::CompilePipe::Color::Ignored;
 			}, [&](busy::analyse::Project const& project, auto const& params, auto const& deps) {
 				auto& fileInfo = getFileInfos().get(project.getPath());
 
 				if (estimatedTimes.count(&project) == 0) {
-					return fileInfo.compilable?0:1;
+					return fileInfo.compilable?analyse::CompilePipe::Color::Compilable:analyse::CompilePipe::Color::Ignored;
 				}
 
 				consolePrinter.startJob(&project, "linking " + project.getName());
@@ -250,7 +250,7 @@ void app() {
 					fileInfo.compileTime = compileTime;
 				}
 
-				return fileInfo.compilable?0:1;
+				return fileInfo.compilable?analyse::CompilePipe::Color::Compilable:analyse::CompilePipe::Color::Ignored;
 			}
 		});
 	}

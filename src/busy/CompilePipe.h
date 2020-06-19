@@ -11,7 +11,8 @@ using ProjectMap = std::map<Project const*, std::tuple<std::set<Project const*>,
 
 struct CompilePipe {
 	using Q        = Queue<busy::analyse::Project const, busy::analyse::File const>;
-	using ColorMap = std::map<Q::Node, int>;
+	enum class Color { Ignored, Compilable };
+	using ColorMap = std::map<Q::Node, Color>;
 
 	std::string       toolchainCall;
 	ProjectMap const& projects_with_deps;
@@ -108,7 +109,7 @@ struct CompilePipe {
 
 		params.emplace_back("-i");
 		for (auto file : queue.find_incoming<busy::analyse::File>(&project)) {
-			if (colors.at(file) == 0) {
+			if (colors.at(file) == Color::Compilable) {
 				auto objPath = "obj" / file->getPath();
 				objPath.replace_extension(".o");
 				params.emplace_back(objPath);
@@ -135,7 +136,7 @@ struct CompilePipe {
 		queue.visit_incoming(&project, [&](auto& project) {
 			using X = std::decay_t<decltype(project)>;
 			if constexpr (std::is_same_v<X, busy::analyse::Project>) {
-				if (colors.at(&project) == 0) {
+				if (colors.at(&project) == Color::Compilable) {
 					auto target = (std::filesystem::path{"lib"} / project.getName()).replace_extension(".a");
 					params.emplace_back(target);
 				}

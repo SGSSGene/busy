@@ -117,7 +117,7 @@ auto computeEstimationTimes(Config const& config, analyse::ProjectMap const& pro
 				if (clean or (fileInfo.hasChanged() and fileInfo.compilable)) {
 					estimatedTimes.try_emplace(&file, fileInfo.compileTime);
 				}
-				return 0;
+				return analyse::CompilePipe::Color::Compilable;
 			}, [&](busy::analyse::Project const& project, auto const& params, auto const& deps) {
 				auto& fileInfo = getFileInfos().get(project.getPath());
 				auto anyChanges = [&]() {
@@ -136,7 +136,7 @@ auto computeEstimationTimes(Config const& config, analyse::ProjectMap const& pro
 				if (clean or (anyChanges())) {
 					estimatedTimes.try_emplace(&project, fileInfo.compileTime);
 				}
-				return 0;
+				return analyse::CompilePipe::Color::Compilable;
 			}
 		});
 	}
