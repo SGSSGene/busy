@@ -265,59 +265,50 @@ void app() {
 	}
 
 
-	auto addRootDir = [&](std::filesystem::path path) {
-		if (path.is_relative()) {
-			path = std::filesystem::relative(config.rootDir / path);
-		}
-		return path;
-	};
-
-	std::cout << "start compiling...\n";
-	{
-		auto recompilingFiles    = std::unordered_set<busy::analyse::File const*>{};
-		auto recompilingProjects = std::unordered_set<busy::analyse::Project const*>{};
+	std::cout << "checking files...\n";
+	[&](){
+		auto estimatedTimes      = ConsolePrinter::EstimatedTimes{};
 
 		// precompute timings
-		auto total = std::chrono::milliseconds{0};
 		{
 			auto pipe = CompilePipe{config.toolchain.call, projects_with_deps, config.toolchain.options};
 			while (not pipe.empty()) {
 				pipe.dispatch(overloaded {
 					[&](busy::analyse::File const& file, auto const& params, auto const& deps) {
-						auto path = addRootDir(file.getPath());
-						auto& fileInfo = getFileInfos().get(path);
+						auto& fileInfo = getFileInfos().get(file.getPath());
 						if (*cfgClean or (fileInfo.hasChanged() and fileInfo.compilable)) {
-							recompilingFiles.insert(&file);
-							total += fileInfo.compileTime;
+							estimatedTimes.try_emplace(&file, fileInfo.compileTime);
 						}
 						return 0;
 					}, [&](busy::analyse::Project const& project, auto const& params, auto const& deps) {
-						auto path = addRootDir(project.getPath());
-						auto& fileInfo = getFileInfos().get(path);
+						auto& fileInfo = getFileInfos().get(project.getPath());
 						auto anyChanges = [&]() {
 							for (auto const& d : deps) {
-								if (recompilingProjects.count(d) > 0) {
+								if (estimatedTimes.count(d) > 0) {
 									return true;
 								}
 							}
 							for (auto const& file : project.getFiles()) {
-								if (recompilingFiles.count(&file) > 0) {
+								if (estimatedTimes.count(&file) > 0) {
 									return true;
 								}
 							}
 							return false;
 						};
 						if (*cfgClean or (anyChanges() and fileInfo.compilable)) {
-							recompilingProjects.insert(&project);
-							total += fileInfo.compileTime;
+							estimatedTimes.try_emplace(&project, fileInfo.compileTime);
 						}
 						return 0;
 					}
 				});
 			}
 		}
-		//std::cout << "Estimated Compile Time: " << total.count() / 1000. << "\n";
-		auto consolePrinter = ConsolePrinter{total, recompilingFiles.size() + recompilingProjects.size()};
+		if (estimatedTimes.empty()) {
+			return;
+		}
+
+		std::cout << "start compiling...\n";
+		auto consolePrinter = ConsolePrinter{estimatedTimes};
 
 		auto pipe = CompilePipe{config.toolchain.call, projects_with_deps, config.toolchain.options};
 
@@ -360,22 +351,18 @@ void app() {
 			return {0, p.cout()};
 		};
 
-		auto totalCheckTime = std::chrono::milliseconds{0};
-		auto startCheckTime = std::chrono::steady_clock::now();
 		while (not pipe.empty()) {
 			pipe.dispatch(overloaded {
 				[&](busy::analyse::File const& file, auto const& params, auto const& deps) {
-					auto startTimer = std::chrono::steady_clock::now();
 					auto startTime  = std::chrono::file_clock::now();
-					auto path = addRootDir(file.getPath());
+					auto path = file.getPath();
 
 					auto& fileInfo = getFileInfos().get(path);
 
 					// check if file needs recompile
 					auto status = [&]() {
-						if (recompilingFiles.count(&file) > 0) {
-							consolePrinter.setCurrentJob("compiling " + path.string());
-//							std::cout << "compiling - " << path << "\n";
+						if (estimatedTimes.count(&file) > 0) {
+							consolePrinter.startJob(&file, "compiling " + path.string());
 
 							fileInfo.needRecompiling = true;
 							// store file date before compiling
@@ -390,7 +377,6 @@ void app() {
 								//!TODO should work with `auto`, but doesn't for some reason
 								for (YAML::Node n : node["dependencies"]) {
 									auto path = FileInfo::Path{n.as<std::string>()};
-									path = addRootDir(path);
 									auto hash    = computeHash(path);
 									auto modTime = getFileModificationTime(path);
 
@@ -420,21 +406,10 @@ void app() {
 								fileInfo.needRecompiling = false;
 							}
 
-
-							consolePrinter.addTotalTime(-fileInfo.compileTime);
-							auto stopTimer = std::chrono::steady_clock::now();
-							total -= fileInfo.compileTime;
-							totalCheckTime      += fileInfo.compileTime;
-							auto compileTime = duration_cast<std::chrono::milliseconds>(stopTimer - startTimer);
+							auto compileTime = consolePrinter.finishedJob(&file);
 							if (not cached or fileInfo.compileTime < compileTime) {
 								fileInfo.compileTime = compileTime;
 							}
-							auto diff = duration_cast<std::chrono::milliseconds>(stopTimer - startCheckTime);
-							consolePrinter.addTotalTime(+compileTime);
-							consolePrinter.addJob(1);
-
-							total = std::max(total + fileInfo.compileTime, totalCheckTime);
-//							std::cout << "estimate " << totalCheckTime.count() / 1000. << "s (" << diff.count() / 1000. <<  "s)/" << total.count() / 1000. << "s\n";
 							return status;
 						} else {
 							//std::cout << "\n===\nno change - skip - " << file.getPath() << "\n===\n";
@@ -448,13 +423,11 @@ void app() {
 					fileInfo.modTime     = startTime;
 					return status;
 				}, [&](busy::analyse::Project const& project, auto const& params, auto const& deps) {
-					auto path = addRootDir(project.getPath());
+					auto path = project.getPath();
 					auto& fileInfo = getFileInfos().get(path);
 
-					if (recompilingProjects.count(&project) > 0) {
-						auto startTimer = std::chrono::steady_clock::now();
-//						std::cout << "linking: " << path << "\n";
-						consolePrinter.setCurrentJob("linking " + path.string());
+					if (estimatedTimes.count(&project) > 0) {
+						consolePrinter.startJob(&project, "linking " + path.string());
 						auto [status, cout] = execute(params);
 						bool cached = false;
 
@@ -464,22 +437,14 @@ void app() {
 								cached = true;
 							}
 
-							consolePrinter.addTotalTime(-fileInfo.compileTime);
-							auto stopTimer = std::chrono::steady_clock::now();
-							total -= fileInfo.compileTime;
-							totalCheckTime      += fileInfo.compileTime;
-							auto compileTime = duration_cast<std::chrono::milliseconds>(stopTimer - startTimer);
-							if (not cached or fileInfo.compileTime < compileTime) {
-								fileInfo.compileTime = compileTime;
-							}
-							auto diff = duration_cast<std::chrono::milliseconds>(stopTimer - startCheckTime);
-							consolePrinter.addTotalTime(+compileTime);
-							total = std::max(total + fileInfo.compileTime, totalCheckTime);
-//							std::cout << "estimate " << totalCheckTime.count() / 1000. << "s (" << diff.count() / 1000. <<  "s)/" << total.count() / 1000. << "s\n";
 						} else if (status == 1) {
 							fileInfo.compilable = false;
 						}
-						consolePrinter.addJob(1);
+
+						auto compileTime = consolePrinter.finishedJob(&project);
+						if (not cached or fileInfo.compileTime < compileTime) {
+							fileInfo.compileTime = compileTime;
+						}
 						return status;
 					}
 					if (not fileInfo.compilable) {
@@ -491,9 +456,8 @@ void app() {
 		}
 
 		runToolchain("end");
-	}
+	}();
 	std::cout << "done\n";
-
 
 	saveFileCache(*cfgYamlCache);
 }
