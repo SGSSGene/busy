@@ -18,31 +18,9 @@
 
 namespace busy::analyse {
 
-auto completeDirectories(std::vector<std::string> const& str) {
-	auto ret = std::pair<bool, std::set<std::string>>{false, {}};
-	auto path = [&]() -> std::filesystem::path {
-		if (str.size() > 0) {
-			return str.back();
-		}
-		return {"."};
-	}();
-	if (not exists(path)) {
-		path = path.remove_filename();
-	}
-	if (not exists(path)) {
-		path = ".";
-	}
-	for (auto& p : std::filesystem::directory_iterator(path)) {
-		if (is_directory(p.path())) {
-			ret.second.insert(p.path().lexically_relative(".").string() + "/");
-		}
-	}
-	return ret;
-
-}
 auto cfgVerbose   = sargp::Flag{"verbose", "verbose output"};
-auto cfgRootPath  = sargp::Parameter<std::string>{"..", "root",  "path to directory containing busy.yaml", [](){}, &completeDirectories};
-auto cfgBuildPath = sargp::Parameter<std::string>{".",  "build", "path to build directory", [](){}, &completeDirectories};
+auto cfgRootPath  = sargp::Parameter<sargp::Directory>{"..", "root",  "path to directory containing busy.yaml"};
+auto cfgBuildPath = sargp::Parameter<sargp::Directory>{".",  "build", "path to build directory"};
 
 void printProjects(std::map<Project const*, std::tuple<std::set<Project const*>, std::set<Project const*>>> const& _projects) {
 	for (auto const& [i_project, dep] : _projects) {
