@@ -39,7 +39,8 @@ void printProjects(std::map<Project const*, std::tuple<std::set<Project const*>,
 		if (not dependencies.empty()) {
 			std::cout << "    dependencies:\n";
 			for (auto const& d : dependencies) {
-				std::cout << "    - " << d->getName() << " (" << d->getPath() << ")\n";
+				std::cout << "    - name: " << d->getName() << "\n";
+				std::cout << "      path: " << d->getPath() << "\n";
 			}
 		}
 		if (not project.getLegacyIncludePaths().empty()) {
