@@ -239,10 +239,12 @@ std::string compgen(int argc, char const* const* argv) {
         };
         if ((*target)->get_type() == typeid(File)) {
             useParam();
-            can_accept_file = not canAcceptNextArg;
+            can_accept_file = true;
+//            can_accept_file = not canAcceptNextArg;
         } else if ((*target)->get_type() == typeid(Directory)) {
             useParam();
-            can_accept_directory = not canAcceptNextArg;
+            can_accept_directory = true;
+//            can_accept_directory = not canAcceptNextArg;
         } else {
             useParam();
         }
@@ -259,10 +261,10 @@ std::string compgen(int argc, char const* const* argv) {
 	}
     std::string compgen_str;
     if (can_accept_directory) {
-        compgen_str += " -d ";
+        compgen_str += " -d \n";
     }
     if (can_accept_file) {
-        compgen_str += " -f ";
+        compgen_str += " -f \n";
     }
     if (not hints.empty()) {
         compgen_str += std::accumulate(next(begin(hints)), end(hints), *begin(hints), [](std::string const& l , std::string const& r){
