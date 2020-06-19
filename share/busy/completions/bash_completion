@@ -1,19 +1,11 @@
-_busy()
-{
-	local cur=${COMP_WORDS[COMP_CWORD]}
-	local prev=${COMP_WORDS[COMP_CWORD-1]}
-	if [ "$prev" = "toolchain" ]; then
-		COMPREPLY=( $(compgen -W "`busy ls-toolchains --noterminal`" -- $cur) )
-	elif [ "$prev" = "build" ]; then
-		COMPREPLY=( $(compgen -W "`busy ls-projects --noterminal`" -- $cur) )
-	elif [ "$prev" = "buildMode" ]; then
-		COMPREPLY=( $(compgen -W "`busy ls-buildModes --noterminal`" -- $cur) )
-	elif [ "$prev" = "--flavor" ]; then
-		COMPREPLY=( $(compgen -W "`busy ls-flavors --noterminal`" -- $cur) )
-	elif [ -z "$cur" ]; then
-		COMPREPLY=( $(compgen -W "`busy --help --noterminal | grep -v "^--" | cut -d ' ' -f 1`" -- $cur) )
-	else
-		COMPREPLY=( $(compgen -W "`busy --help --noterminal | cut -d ' ' -f 1`" -- $cur) )
-	fi
+_GetBusy () {
+  mapfile -t HINTS <<< $(${COMP_LINE[0]} ${COMP_WORDS[@]:1} --bash_completion)
+  HINTS=$(printf "%q:" "${HINTS[@]}")
+
+  local IFS=":"
+  mapfile -t COMPREPLY <<< $(compgen -W '${HINTS}' -- "${COMP_WORDS[COMP_CWORD]}")
+
+  return 0
 }
-complete -F _busy busy
+complete -F _GetBusy ./bin/busy
+complete -F _GetBusy busy
