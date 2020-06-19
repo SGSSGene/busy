@@ -112,6 +112,15 @@ public:
 	T& get() {
 		return _val;
 	}
+
+	template <typename Target>
+	operator std::optional<Target>() const {
+		if (not _valSpecified) {
+			return std::nullopt;
+		}
+		return {_val};
+	}
+
 };
 
 // an intermediate type broker to inject type specific specializations eg. for rendering
