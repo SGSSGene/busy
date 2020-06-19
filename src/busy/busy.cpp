@@ -103,7 +103,11 @@ auto cfgOptions = sargp::Parameter<std::vector<std::string>>{{}, "option", "opti
 	auto config = loadConfig(workPath);
 	auto toolchainOptions = getToolchainOptions(config.toolchain.name, config.toolchain.call);
 	for (auto opt : toolchainOptions) {
-		ret.second.insert(opt.first);
+		if (config.toolchain.options.count(opt.first) == 0) {
+			ret.second.insert(opt.first);
+		} else {
+			ret.second.insert("no-" + opt.first);
+		}
 	}
 	return ret;
 }};
@@ -244,10 +248,6 @@ void app() {
 	}
 	std::cout << "\n";
 
-
-//	for (auto const& p : projects) {
-//		std::cout << p.getName() << " (" << p.getPath() << ")\n";
-//	}
 
 	// check consistency of packages
 	std::cout << "checking consistency..." << std::flush;
