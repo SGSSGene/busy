@@ -164,13 +164,17 @@ auto computeEstimationTimes(Config const& config, analyse::ProjectMap const& pro
 }
 
 auto execute(std::vector<std::string> const& params, bool verbose) -> std::string {
-	auto p = process::Process{params};
 	auto call = std::stringstream{};
 	for (auto const& p : params) {
 		call << p << " ";
 	}
+	if (verbose) {
+		std::cout << "call: " << call.str() << "\n";
+	}
 
-	if (verbose or p.getStatus() != 0) {
+	auto p = process::Process{params};
+
+	if (not verbose and p.getStatus() != 0) {
 		std::cout << "call: " << call.str() << "\n";
 	}
 	if (p.getStatus() != 0) {

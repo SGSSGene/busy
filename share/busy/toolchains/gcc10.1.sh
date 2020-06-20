@@ -105,6 +105,7 @@ toolchains:
       - "${CXX}"
       - "${C}"
       - "${AR}"
+      - "${LD}"
     options:
       default: [debug, ccache, no-default]
       release: [no-debug, no-release_with_symbols]

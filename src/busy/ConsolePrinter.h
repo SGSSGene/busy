@@ -38,7 +38,7 @@ public:
 	ConsolePrinter(EstimatedTimes _estimatedTimes, std::chrono::milliseconds _totalTime)
 	: estimatedTimes   {std::move(_estimatedTimes)}
 	, totalTime {_totalTime}
-	, totalJobs {estimatedTimes.size()}
+	, totalJobs {int(estimatedTimes.size())}
 	, startTime {std::chrono::steady_clock::now()}
 	, thread {[this]() {
 		auto nextTime = startTime;

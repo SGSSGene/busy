@@ -177,7 +177,16 @@ void app() {
 		}
 		return *cfgJobs;
 	}();
-	auto [estimatedTimes, estimatedTotalTime] = computeEstimationTimes(config, projects_with_deps, cfgClean, jobs);
+
+	bool clean = cfgClean;
+	{
+		auto cout = execute({config.toolchain.call, "begin"}, false);
+		auto node = YAML::Load(cout);
+		clean = YAML::Node{node["clean"]}.as<bool>(clean);
+		jobs = std::min(jobs, YAML::Node{node["max_jobs"]}.as<int>(jobs));
+	}
+
+	auto [estimatedTimes, estimatedTotalTime] = computeEstimationTimes(config, projects_with_deps, clean, jobs);
 	if (estimatedTimes.empty()) {
 		return;
 	}
@@ -187,8 +196,6 @@ void app() {
 	std::cout << "start compiling...\n";
 	auto consolePrinter = ConsolePrinter{estimatedTimes, estimatedTotalTime};
 	auto pipe           = CompilePipe{config.toolchain.call, projects_with_deps, config.toolchain.options};
-
-	execute({config.toolchain.call, "begin"}, false);
 
 	auto multiPipe = MultiCompilePipe{pipe, jobs};
 

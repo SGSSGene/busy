@@ -59,6 +59,8 @@ struct CompilePipe {
 		for (auto const& o : toolchainOptions) {
 			params.emplace_back(o);
 		}
+		if (params.back() == "-options") params.pop_back();
+
 
 		// add all include paths
 		params.emplace_back("-ilocal");
@@ -67,8 +69,12 @@ struct CompilePipe {
 
 		params.emplace_back(project.getPath());
 		for (auto const& p : project.getLegacyIncludePaths()) {
-			params.emplace_back(p);
+			if (params.back() != p) {
+				params.emplace_back(p);
+			}
 		}
+		if (params.back() == "-ilocal") params.pop_back();
+
 
 		// add all system include paths
 		params.emplace_back("-isystem");
@@ -77,12 +83,17 @@ struct CompilePipe {
 		queue.visit_incoming(&project, [&](auto& x) {
 			using X = std::decay_t<decltype(x)>;
 			if constexpr (std::is_same_v<X, busy::analyse::Project>) {
-				params.emplace_back(x.getPath().parent_path());
+				if (params.back() != x.getPath().parent_path()) {
+					params.emplace_back(x.getPath().parent_path());
+				}
 				for (auto const& i : x.getLegacyIncludePaths()) {
-					params.emplace_back(i);
+					if (params.back() != i) {
+						params.emplace_back(i);
+					}
 				}
 			}
 		});
+		if (params.back() == "-isystem") params.pop_back();
 		return params;
 	}
 
@@ -106,6 +117,7 @@ struct CompilePipe {
 		for (auto const& o : toolchainOptions) {
 			params.emplace_back(o);
 		}
+		if (params.back() == "-options") params.pop_back();
 
 
 		params.emplace_back("-i");
@@ -113,12 +125,15 @@ struct CompilePipe {
 			if (colors.at(file) == Color::Compilable) {
 				auto objPath = "obj" / file->getPath();
 				objPath.replace_extension(".o");
-				params.emplace_back(objPath);
+				if (params.back() != objPath) {
+					params.emplace_back(objPath);
+				}
 			}
 		}
+		if (params.back() == "-i") params.pop_back();
+
 
 		params.emplace_back("-il");
-
 		// add all legacy system libraries
 		std::vector<std::string> systemLibraries;
 		auto addSystemLibraries = [&](busy::analyse::Project const& project) {
@@ -139,17 +154,25 @@ struct CompilePipe {
 			if constexpr (std::is_same_v<X, busy::analyse::Project>) {
 				if (colors.at(&project) == Color::Compilable) {
 					auto target = (std::filesystem::path{"lib"} / project.getName()).replace_extension(".a");
-					params.emplace_back(target);
+					if (params.back() != target) {
+						params.emplace_back(target);
+					}
 				}
 				addSystemLibraries(project);
 				dependencies.insert(&project);
 			}
 		});
+		if (params.back() == "-il") params.pop_back();
+
 
 		params.emplace_back("-l");
 		for (auto const& l : systemLibraries) {
-			params.emplace_back(l);
+			if (params.back() != l) {
+				params.emplace_back(l);
+			}
 		}
+		if (params.back() == "-l") params.pop_back();
+
 		return std::tuple{params, dependencies};
 	}
 

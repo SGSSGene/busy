@@ -53,6 +53,7 @@ function implode {
 CXX=g++
 C=gcc
 AR=ar
+LD=ld
 
 if [ "$1" == "info" ]; then
 shift
@@ -66,6 +67,7 @@ toolchains:
       - "${CXX}"
       - "${C}"
       - "${AR}"
+      - "${LD}"
     options:
       release: [no-debug, no-release_with_symbols]
       release_with_symbols: [no-release, no-debug]
@@ -78,25 +80,28 @@ fi
 outFile="bashScript.sh"
 
 
-if [ $# -lt 5 ]; then
-	if [ "$1" == "begin" ]; then
-		cat > ${outFile} <<-END
-			#!/bin/bash
-			if [ ! -e "external" ]; then
-			    ln -s ../external external
-			fi
-			if [ ! -e "src" ]; then
-			    ln -s ../src src
-			fi
-		END
-		exit 0
-	elif [ "$1" == "end" ]; then
-		exit 0
+if [ "$1" == "begin" ]; then
+	cat > ${outFile} <<-END
+		#!/bin/bash
+		if [ ! -e "external" ]; then
+		    ln -s ../external external
+		fi
+		if [ ! -e "src" ]; then
+		    ln -s ../src src
+		fi
+	END
+	if [ ! -e "external" ]; then
+	    ln -s ../external external
 	fi
-	exit -1;
-fi
-
-if [ "$1" == "compile" ]; then
+	if [ ! -e "src" ]; then
+	    ln -s ../src src
+	fi
+	echo "clean: true"
+	echo "max_jobs: 1"
+	exit 0
+elif [ "$1" == "end" ]; then
+	exit 0
+elif [ "$1" == "compile" ]; then
 	shift; inputFile="$1"
 	shift; outputFile="$1"
 	shift
@@ -111,11 +116,11 @@ if [ "$1" == "compile" ]; then
 
 	filetype="$(echo "${inputFile}" | rev | cut -d "." -f 1 | rev)";
 	if [ "${filetype}" = "cpp" ]; then
-		call="${CXX} -O0 -std=c++17 -fPIC -MD -g3 -ggdb -fdiagnostics-color=always -c $inputFile -o $outputFile $projectIncludes $systemIncludes"
+		call="${CXX} -O0 -std=c++20 -fPIC -MD -g3 -ggdb -fdiagnostics-color=always -c $inputFile -o $outputFile $projectIncludes $systemIncludes"
 	elif [ "${filetype}" = "c" ]; then
-		call="${C} -O0 -std=c11 -fPIC -MD -g3 -ggdb -fdiagnostics-color=always -c $inputFile -o $outputFile $projectIncludes $systemIncludes"
+		call="${C} -O0 -std=c18 -fPIC -MD -g3 -ggdb -fdiagnostics-color=always -c $inputFile -o $outputFile $projectIncludes $systemIncludes"
 	else
-		exit 1
+		exit 0
 	fi
 elif [ "$1" == "link" ]; then
 	shift; target="$1"
@@ -131,21 +136,25 @@ elif [ "$1" == "link" ]; then
 
 	# Header only
 	if [ "${#inputFiles[@]}" -eq 0 ]; then
-		exit 1
+		exit 0
 	# Executable
 	elif [ "${target}" == "executable" ]; then
 		call="${CXX} -rdynamic -g3 -ggdb -fdiagnostics-color=always -o $outputFile ${inputFiles[@]} ${inputLibraries[@]} ${libraries[@]}"
 
 	# Static library?
 	elif [ "${target}" == "static_library" ]; then
-		call="${AR} rcs $outputFile ${inputFiles[@]}"
+		call="${LD} -Ur -o ${outputFile}.o ${inputFiles[@]} && ${AR} rcs ${outputFile} ${outputFile}.o"
 	else
 		exit -1
 	fi
 else
 	exit -1
 fi
-
-echo "mkdir -p $(dirname ${outputFile})" >> ${outFile}
-echo "${call}" >> ${outFile}
+echo "compilable: true"
+lastDir=$(cat ${outFile} | grep "mkdir -p" | tail -n 1 | cut -b 10-)
+newDir="$(dirname ${outputFile})"
+if [ "${lastDir}" != "${newDir}" ]; then
+	echo "mkdir -p $(dirname ${outputFile})" >> ${outFile}
+fi
+echo "${call}" | sed -e 's/[[:space:]]*$//'>> ${outFile}
 exit 0
