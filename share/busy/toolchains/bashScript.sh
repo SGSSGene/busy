@@ -81,20 +81,24 @@ outFile="bashScript.sh"
 
 
 if [ "$1" == "begin" ]; then
+	rootDir="$2"
+	relPath="$(pwd)"
 	cat > ${outFile} <<-END
 		#!/bin/bash
+		cd ${relPath}
+
 		if [ ! -e "external" ]; then
-		    ln -s ../external external
+		    ln -s ${rootDir}/external external
 		fi
 		if [ ! -e "src" ]; then
-		    ln -s ../src src
+		    ln -s ${rootDir}/src src
 		fi
 	END
 	if [ ! -e "external" ]; then
-	    ln -s ../external external
+	    ln -s ${rootDir}/external external
 	fi
 	if [ ! -e "src" ]; then
-	    ln -s ../src src
+	    ln -s ${rootDir}/src src
 	fi
 	echo "clean: true"
 	echo "max_jobs: 1"

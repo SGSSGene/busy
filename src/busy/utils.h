@@ -17,7 +17,7 @@ namespace busy {
 struct CompileError {};
 
 void printProjects(std::map<analyse::Project const*, std::tuple<std::set<analyse::Project const*>, std::set<analyse::Project const*>>> const& _projects);
-auto loadConfig(std::filesystem::path workPath, std::filesystem::path buildPath, std::filesystem::path rootPath) -> Config;
+auto loadConfig(std::filesystem::path workPath, std::filesystem::path buildPath, std::tuple<bool, std::filesystem::path> rootPath) -> Config;
 
 auto updateToolchainOptions(Config& config, bool reset, std::optional<std::vector<std::string>> _options) -> std::map<std::string, std::vector<std::string>>;
 

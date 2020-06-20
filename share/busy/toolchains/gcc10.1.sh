@@ -86,7 +86,7 @@ if [[ " ${options[@]} " =~ " ccache " ]]; then
 	fi
 
 	CCACHE=1
-	export CCACHE_LOGFILE="ccache${process_id}.log"
+	export CCACHE_LOGFILE="log/ccache${process_id}.log"
 	CXX="ccache ${CXX}"
 	C="ccache ${C}"
 	LD="ccache ${LD}"
@@ -117,22 +117,21 @@ exit 0
 fi
 
 
-if [ $# -lt 5 ]; then
-	if [ "$1" == "begin" ]; then
-		if [ ! -e "external" ]; then
-			ln -s ../external external
-		fi
-		if [ ! -e "src" ]; then
-			ln -s ../src src
-		fi
-		exit 0
-	elif [ "$1" == "end" ]; then
-		exit 0
+if [ "$1" == "begin" ]; then
+	rootDir="$2"
+	if [ ! -e "external" ]; then
+		ln -s ${rootDir}/external external
 	fi
-	exit -1;
-fi
-
-if [ "$1" == "compile" ]; then
+	if [ ! -e "src" ]; then
+		ln -s ${rootDir}/src src
+	fi
+	if [ ! -e "log" ]; then
+		mkdir log
+	fi
+	exit 0
+elif [ "$1" == "end" ]; then
+	exit 0
+elif [ "$1" == "compile" ]; then
 	shift; inputFile="$1"
 	shift; outputFile="$1"
 	shift
@@ -201,9 +200,9 @@ else
 	exit -1
 fi
 
-stdout="stdout${process_id}.log"
-stderr="stderr${process_id}.log"
-dependency="dependency${process_id}.log"
+stdout="log/stdout${process_id}.log"
+stderr="log/stderr${process_id}.log"
+dependency="log/dependency${process_id}.log"
 
 mkdir -p $(dirname ${outputFile})
 if [ -n "${VERBOSE}" ]; then

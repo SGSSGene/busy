@@ -30,7 +30,7 @@ void listToolchains(std::vector<std::filesystem::path> const& packages) {
 
 auto cmdLsToolchains = sargp::Command{"ls-toolchains", "list all available toolchains", []() {
 	auto workPath = std::filesystem::current_path();
-	auto config = loadConfig(workPath, *cfgBuildPath, *cfgRootPath);
+	auto config = loadConfig(workPath, *cfgBuildPath, {cfgRootPath, *cfgRootPath});
 
 	auto packages = std::vector<std::filesystem::path>{};
 	if (!config.rootDir.empty() and config.rootDir != "." and std::filesystem::exists(config.rootDir)) {
@@ -49,7 +49,7 @@ auto cmdLsToolchains = sargp::Command{"ls-toolchains", "list all available toolc
 auto cfgOptions = sargp::Parameter<std::vector<std::string>>{{}, "option", "options for toolchains", [](){}, [](std::vector<std::string> const& str) -> std::pair<bool, std::set<std::string>> {
 	auto ret = std::pair<bool, std::set<std::string>>{false, {}};
 	auto workPath = std::filesystem::current_path();
-	auto config = loadConfig(workPath, *cfgBuildPath, *cfgRootPath);
+	auto config = loadConfig(workPath, *cfgBuildPath, {cfgRootPath, *cfgRootPath});
 	auto toolchainOptions = getToolchainOptions(config.toolchain.name, config.toolchain.call);
 	for (auto opt : toolchainOptions) {
 		if (config.toolchain.options.count(opt.first) == 0) {
@@ -63,7 +63,7 @@ auto cfgOptions = sargp::Parameter<std::vector<std::string>>{{}, "option", "opti
 auto cfgToolchain = sargp::Parameter<std::string>{"", "toolchain", "set toolchain", [](){}, [](std::vector<std::string> const& str) -> std::pair<bool, std::set<std::string>> {
 	auto ret = std::pair<bool, std::set<std::string>>{false, {}};
 	auto workPath = std::filesystem::current_path();
-	auto config = loadConfig(workPath, *cfgBuildPath, *cfgRootPath);
+	auto config = loadConfig(workPath, *cfgBuildPath, {cfgRootPath, *cfgRootPath});
 
 	auto packages = std::vector<std::filesystem::path>{};
 	if (!config.rootDir.empty() and config.rootDir != "." and std::filesystem::exists(config.rootDir)) {
@@ -83,7 +83,7 @@ auto cfgToolchain = sargp::Parameter<std::string>{"", "toolchain", "set toolchai
 
 auto cmdShowDeps = sargp::Command{"show-deps", "show dependencies of projects", []() {
 	auto workPath = std::filesystem::current_path();
-	auto config = loadConfig(workPath, *cfgBuildPath, *cfgRootPath);
+	auto config = loadConfig(workPath, *cfgBuildPath, {cfgRootPath, *cfgRootPath});
 
 	auto [projects, packages] = busy::analyse::readPackage(config.rootDir, ".");
 
@@ -112,7 +112,7 @@ auto cfgJobs      = sargp::Parameter<int>{0, "jobs", "thread count"};
 
 void app() {
 	auto workPath = std::filesystem::current_path();
-	auto config = loadConfig(workPath, *cfgBuildPath, *cfgRootPath);
+	auto config = loadConfig(workPath, *cfgBuildPath, {cfgRootPath, *cfgRootPath});
 	auto cacheGuard = loadFileCache(*cfgYamlCache);
 
 	auto [projects, packages] = busy::analyse::readPackage(config.rootDir, ".");
@@ -168,7 +168,7 @@ void app() {
 
 	bool clean = cfgClean;
 	{
-		auto cout = execute({config.toolchain.call, "begin"}, false);
+		auto cout = execute({config.toolchain.call, "begin", config.rootDir}, false);
 		auto node = YAML::Load(cout);
 		clean = YAML::Node{node["clean"]}.as<bool>(clean);
 		jobs = std::min(jobs, YAML::Node{node["max_jobs"]}.as<int>(jobs));

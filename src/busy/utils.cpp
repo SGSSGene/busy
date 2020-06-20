@@ -40,7 +40,7 @@ void printProjects(std::map<analyse::Project const*, std::tuple<std::set<analyse
 	}
 }
 
-auto loadConfig(std::filesystem::path workPath, std::filesystem::path buildPath, std::filesystem::path rootPath) -> Config {
+auto loadConfig(std::filesystem::path workPath, std::filesystem::path buildPath, std::tuple<bool, std::filesystem::path> rootPath) -> Config {
 
 	if (relative(buildPath) != ".") {
 		if (not exists(buildPath)) {
@@ -56,7 +56,9 @@ auto loadConfig(std::filesystem::path workPath, std::filesystem::path buildPath,
 		}
 		return Config{};
 	}();
-	config.rootDir = relative(workPath / rootPath);
+	if (std::get<0>(rootPath) or config.rootDir.empty()) {
+		config.rootDir = relative(workPath / std::get<1>(rootPath));
+	}
 
 	if (config.rootDir.empty()) {
 		throw std::runtime_error("please give path of busy.yaml");
