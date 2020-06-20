@@ -29,36 +29,34 @@ private:
 	std::string currentJob = "init";
 	std::condition_variable cv;
 
-
 	std::atomic_bool isRunning{true};
 	std::thread thread;
 
+	std::chrono::steady_clock::time_point const startTime;
+
 public:
-	ConsolePrinter(EstimatedTimes _estimatedTimes)
+	ConsolePrinter(EstimatedTimes _estimatedTimes, std::chrono::milliseconds _totalTime)
 	: estimatedTimes   {std::move(_estimatedTimes)}
-	, totalTime {[this]() {
-		auto acc = std::chrono::milliseconds{0};
-		for (auto const& [key, value] : estimatedTimes) acc += value;
-		return acc;
-	}()}
-	, totalJobs {[this]() {
-		return estimatedTimes.size();
-	}()}
+	, totalTime {_totalTime}
+	, totalJobs {estimatedTimes.size()}
+	, startTime {std::chrono::steady_clock::now()}
 	, thread {[this]() {
-		auto startTime = std::chrono::steady_clock::now();
 		auto nextTime = startTime;
 		while(isRunning) {
 			auto g = std::unique_lock{mutex};
 			nextTime += std::chrono::milliseconds{1000};
 			cv.wait_until(g, nextTime);
-
-			auto now = std::chrono::steady_clock::now();
-			auto diff = duration_cast<std::chrono::milliseconds>(now - startTime);
-			totalTime = std::max(diff, totalTime);
-			std::cout << "Jobs " << jobs << "/" << totalJobs << " - ETA " << (diff.count() / 1000.) << "s/" << (totalTime.count() / 1000.) << "s - " << currentJob << "\n";
+			print();
 		}
 	}}
 	{}
+
+	void print() {
+		auto now = std::chrono::steady_clock::now();
+		auto diff = duration_cast<std::chrono::milliseconds>(now - startTime);
+		totalTime = std::max(diff, totalTime);
+		std::cout << "Jobs " << jobs << "/" << totalJobs << "(" << startTimes.size() << ") - ETA " << (diff.count() / 1000.) << "s/" << (totalTime.count() / 1000.) << "s - " << currentJob << "\n";
+	}
 
 	~ConsolePrinter() {
 		isRunning = false;
@@ -73,6 +71,7 @@ public:
 		auto g = std::unique_lock{mutex};
 		startTimes.try_emplace(_key, start);
 		currentJob = std::move(_currentJob);
+		print();
 	}
 	template <typename T>
 	auto finishedJob(T const* _key) -> std::chrono::milliseconds {
@@ -81,11 +80,23 @@ public:
 
 		auto expectedTime = estimatedTimes.at(_key);
 		auto startTime    = startTimes.at(_key);
-		auto diff = std::chrono::duration_cast<std::chrono::milliseconds>(stop - startTime);
-		totalTime -= expectedTime;
-		totalTime += diff;
+		auto min_iter = begin(startTimes);
+		for (auto iter = begin(startTimes); iter != end(startTimes); ++iter) {
+			if (min_iter->second > iter->second) {
+				min_iter = iter;
+			}
+		}
+		auto this_iter = startTimes.find(_key);
+
+		auto actualTime = std::chrono::duration_cast<std::chrono::milliseconds>(stop - startTime);
+		if (this_iter == min_iter) {
+			totalTime = totalTime + (actualTime - actualTime) / int(startTimes.size());
+		}
+
+		startTimes.erase(this_iter);
+
 		jobs += 1;
-		return diff;
+		return actualTime;
 	}
 
 	template <typename T>

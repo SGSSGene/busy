@@ -107,15 +107,24 @@ auto updateToolchainOptions(Config& config, bool reset, std::optional<std::vecto
 	return toolchainOptions;
 }
 
-auto computeEstimationTimes(Config const& config, analyse::ProjectMap const& projects_with_deps, bool clean) -> ConsolePrinter::EstimatedTimes {
+auto computeEstimationTimes(Config const& config, analyse::ProjectMap const& projects_with_deps, bool clean, int jobs) -> std::tuple<ConsolePrinter::EstimatedTimes, std::chrono::milliseconds> {
 	auto estimatedTimes = ConsolePrinter::EstimatedTimes{};
 	auto pipe           = analyse::CompilePipe{config.toolchain.call, projects_with_deps, config.toolchain.options};
+	auto threadTimings = std::vector<std::chrono::milliseconds>(jobs, std::chrono::milliseconds{0});
+	auto readyTimings  = std::vector<std::chrono::milliseconds>{};
+	for (int i{0}; i < pipe.size(); ++i) {
+		readyTimings.push_back(std::chrono::milliseconds{0});
+	}
 	while (not pipe.empty()) {
-		pipe.dispatch(overloaded {
+		auto work = pipe.pop();
+		auto duration = std::chrono::milliseconds{};
+		int otherProcesses = pipe.size();
+		pipe.dispatch(work, overloaded {
 			[&](busy::analyse::File const& file, auto const& params, auto const& deps) {
 				auto& fileInfo = getFileInfos().get(file.getPath());
 				if (clean or (fileInfo.hasChanged() and fileInfo.compilable)) {
 					estimatedTimes.try_emplace(&file, fileInfo.compileTime);
+					duration = fileInfo.compileTime;
 				}
 				return analyse::CompilePipe::Color::Compilable;
 			}, [&](busy::analyse::Project const& project, auto const& params, auto const& deps) {
@@ -135,12 +144,23 @@ auto computeEstimationTimes(Config const& config, analyse::ProjectMap const& pro
 				};
 				if (clean or (anyChanges())) {
 					estimatedTimes.try_emplace(&project, fileInfo.compileTime);
+					duration = fileInfo.compileTime;
 				}
 				return analyse::CompilePipe::Color::Compilable;
 			}
 		});
+		// find smallest thread with timings
+		threadTimings[0] = std::max(readyTimings.front(), threadTimings.front()) + duration;
+		readyTimings.erase(begin(readyTimings));
+		auto newProcesses = pipe.size() - otherProcesses;
+		for (auto i{0}; i < newProcesses; ++i) {
+			readyTimings.push_back(threadTimings[0]);
+		}
+		std::sort(begin(threadTimings), end(threadTimings));
+		std::sort(begin(readyTimings), end(readyTimings));
 	}
-	return estimatedTimes;
+
+	return {estimatedTimes, threadTimings.back()};
 }
 
 auto execute(std::vector<std::string> const& params, bool verbose) -> std::string {

@@ -37,6 +37,15 @@ private:
 		}
 		assert(false);
 	}
+	auto const& findNode(Node v) const {
+		for (auto& n : nodes) {
+			if (n.value == v) {
+				return n;
+			}
+		}
+		assert(false);
+	}
+
 public:
 	Queue(Nodes const& _nodes, Edges const& _edges) {
 		for (auto n : _nodes) {
@@ -59,6 +68,9 @@ public:
 	bool empty() const {
 		return work.empty();
 	}
+	size_t size() const {
+		return work.size();
+	}
 
 	template <typename T>
 	auto find_outgoing(Node n) -> T& {
@@ -71,8 +83,20 @@ public:
 		assert(false);
 	}
 
+	template <typename T>
+	auto find_outgoing(Node n) const -> T const& {
+		auto& node = findNode(n);
+		for (auto const& n : node.outNode) {
+			if (std::holds_alternative<T*>(n->value)) {
+				return *std::get<T*>(n->value);
+			}
+		}
+		assert(false);
+	}
+
+
 	template <typename L>
-	void visit_incoming(Node n, L const& l) {
+	void visit_incoming(Node n, L const& l) const {
 		auto& node = findNode(n);
 
 		std::queue<IntNode*> work;
@@ -94,7 +118,7 @@ public:
 	}
 
 	template <typename T>
-	auto find_incoming(Node n) -> std::vector<T const*> {
+	auto find_incoming(Node n) const -> std::vector<T const*> {
 		std::vector<T const*> result;
 		auto& node = findNode(n);
 		for (auto const& n : node.inNode) {
@@ -105,26 +129,24 @@ public:
 		return result;
 	}
 
-	template <typename L>
-	void dispatch(L const& l) {
-		auto front = [&] {
-			auto g = std::lock_guard{mutex};
-			auto front = work.front();
-			work.pop();
-			return front;
-		}();
+	auto pop() {
+		auto g = std::lock_guard{mutex};
+		auto front = work.front();
+		work.pop();
+		return front;
+	}
 
+	template <typename L>
+	void dispatch(IntNode* node, L const& l) {
 		std::visit([&](auto ptr) {
 			l(*ptr);
-		}, front->value);
+		}, node->value);
 
-		{
-			auto g = std::lock_guard{mutex};
-			for (auto n : front->outNode) {
-				n->inNodeCt += 1;
-				if (n->inNode.size() == n->inNodeCt) {
-					work.push(n);
-				}
+		auto g = std::lock_guard{mutex};
+		for (auto n : node->outNode) {
+			n->inNodeCt += 1;
+			if (n->inNode.size() == n->inNodeCt) {
+				work.push(n);
 			}
 		}
 	}

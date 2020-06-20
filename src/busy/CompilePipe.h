@@ -21,6 +21,7 @@ struct CompilePipe {
 	Q::Edges          edges;
 	Q                 queue;
 	ColorMap          colors;
+	std::mutex        mutex;
 
 	CompilePipe(std::string _toolchainCall, ProjectMap const& _projects_with_deps, std::set<std::string> const& _toolchainOptions)
 		: toolchainCall      {move(_toolchainCall)}
@@ -43,7 +44,7 @@ struct CompilePipe {
 		return Queue{nodes, edges};
 	}
 
-	auto setupCompiling (busy::analyse::File const& file) -> std::vector<std::string> {
+	auto setupCompiling (busy::analyse::File const& file) const -> std::vector<std::string> {
 		auto outFile = file.getPath().lexically_normal().replace_extension(".o");
 		auto inFile  = file.getPath();
 
@@ -85,7 +86,7 @@ struct CompilePipe {
 		return params;
 	}
 
-	auto setupLinking(busy::analyse::Project const& project) {
+	auto setupLinking(busy::analyse::Project const& project) const {
 		auto [action, target] = [&]() -> std::tuple<std::string, std::filesystem::path> {
 			bool isExecutable = std::get<1>(projects_with_deps.at(&project)).empty();
 			if (isExecutable) {
@@ -155,19 +156,30 @@ struct CompilePipe {
 	bool empty() const {
 		return queue.empty();
 	}
+	size_t size() const {
+		return queue.size();
+	}
 
-	auto extract(busy::analyse::File const& file) -> std::tuple<std::vector<std::string>, nullptr_t> {
+
+	auto extract(busy::analyse::File const& file) const -> std::tuple<std::vector<std::string>, nullptr_t> {
 		return {setupCompiling(file), nullptr};
 	};
-	auto extract(busy::analyse::Project const& project) -> std::tuple<std::vector<std::string>, std::unordered_set<Project const*>> {
+	auto extract(busy::analyse::Project const& project) const -> std::tuple<std::vector<std::string>, std::unordered_set<Project const*>> {
 		return setupLinking(project);
 	};
 
-	template <typename CB>
-	void dispatch(CB cb) {
-		queue.dispatch([&](auto& x) {
+	auto pop() {
+		return queue.pop();
+	}
+	template <typename Work, typename CB>
+	void dispatch(Work work, CB const& cb) {
+		queue.dispatch(work, [&](auto& x) {
+			auto g = std::unique_lock{mutex};
 			auto [params, dependencies] = extract(x);
-			colors[&x] = cb(x, params, dependencies);
+			g.unlock();
+			auto color = cb(x, params, dependencies);
+			g.lock();
+			colors[&x] = color;
 		});
 	}
 };

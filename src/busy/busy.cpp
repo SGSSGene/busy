@@ -7,6 +7,7 @@
 #include "analyse.h"
 #include "ConsolePrinter.h"
 #include "utils.h"
+#include "MultiCompilePipe.h"
 
 #include <algorithm>
 #include <cstdlib>
@@ -109,10 +110,11 @@ auto cmdVersionShow = []() {
 	std::cout << "busy 2.0.0-git-alpha\n";
 	std::cout << "Copyright (C) 2020 Simon Gene Gottlieb\n";
 };
-auto cmdVersion  = sargp::Command{"version", "show version", cmdVersionShow};
-auto cfgVersion  = sargp::Flag{"version", "show version", cmdVersionShow};
-auto cfgClean    = sargp::Flag{"clean", "clean build, using no cache"};
+auto cmdVersion   = sargp::Command{"version", "show version", cmdVersionShow};
+auto cfgVersion   = sargp::Flag{"version", "show version", cmdVersionShow};
+auto cfgClean     = sargp::Flag{"clean", "clean build, using no cache"};
 auto cfgYamlCache = sargp::Flag{"yaml-cache", "save cache in yaml format"};
+auto cfgJobs      = sargp::Parameter<int>{0, "jobs", "thread count"};
 
 void app() {
 	auto workPath = std::filesystem::current_path();
@@ -169,24 +171,39 @@ void app() {
 
 
 	std::cout << "checking files...\n";
-	auto estimatedTimes = computeEstimationTimes(config, projects_with_deps, cfgClean);
+	auto jobs = [&]() -> int {
+		if (*cfgJobs == 0) {
+			return std::thread::hardware_concurrency();
+		}
+		return *cfgJobs;
+	}();
+	auto [estimatedTimes, estimatedTotalTime] = computeEstimationTimes(config, projects_with_deps, cfgClean, jobs);
 	if (estimatedTimes.empty()) {
 		return;
 	}
 
+
+	[&]() {
 	std::cout << "start compiling...\n";
-	auto consolePrinter = ConsolePrinter{estimatedTimes};
+	auto consolePrinter = ConsolePrinter{estimatedTimes, estimatedTotalTime};
 	auto pipe           = CompilePipe{config.toolchain.call, projects_with_deps, config.toolchain.options};
 
 	execute({config.toolchain.call, "begin"}, false);
 
-	while (not pipe.empty()) {
-		pipe.dispatch(overloaded {
+	auto multiPipe = MultiCompilePipe{pipe, jobs};
+
+	std::mutex mutex;
+	multiPipe.work(overloaded {
+//	while (not pipe.empty()) {
+//		auto work = pipe.pop();
+/*		pipe.dispatch(work, overloaded {*/
 			[&](busy::analyse::File const& file, auto const& params, auto const& deps) {
 				auto startTime  = std::chrono::file_clock::now();
 				auto path       = file.getPath();
 
+				auto g = std::unique_lock{mutex};
 				auto& fileInfo = getFileInfos().get(path);
+				g.unlock();
 				if (estimatedTimes.count(&file) == 0) {
 					return fileInfo.compilable?analyse::CompilePipe::Color::Compilable:analyse::CompilePipe::Color::Ignored;
 				}
@@ -194,8 +211,10 @@ void app() {
 				consolePrinter.startJob(&file, "compiling " + path.string());
 
 				fileInfo.needRecompiling = true;
-				// store file date before compiling
+				// store fiile date before compiling
+				g.lock();
 				auto hash    = getFileCache().getHash(path);
+				g.unlock();
 
 				// compiling
 				auto cout = execute(params, cfgVerbose);
@@ -253,10 +272,11 @@ void app() {
 				return fileInfo.compilable?analyse::CompilePipe::Color::Compilable:analyse::CompilePipe::Color::Ignored;
 			}
 		});
-	}
+//	}
+	multiPipe.join();
 
 	execute({config.toolchain.call, "end"}, false);
-
+	}();
 	std::cout << "done\n";
 }
 

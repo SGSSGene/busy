@@ -52,6 +52,7 @@ function implode {
 
 CXX=/usr/bin/g++
 C=/usr/bin/gcc
+LD=/usr/bin/ld
 AR=/usr/bin/ar
 
 version=$(${C} --version | head -n 1 | perl -ne "s/\([^\)]*\)/()/g;print" | cut -d " " -f 3)
@@ -70,8 +71,13 @@ fi
 
 # check if ccache is available
 
-parse "-options options"\
+parse "-options    options"\
       "--" "$@"
+
+process_id=$BASHPID
+#if [ "${#pid[@]}" -eq 1 ]; then
+#	process_id="${pid[0]}"
+#fi
 CCACHE=0
 if [[ " ${options[@]} " =~ " ccache " ]]; then
 	which ccache > /dev/null 2>&1
@@ -80,10 +86,11 @@ if [[ " ${options[@]} " =~ " ccache " ]]; then
 	fi
 
 	CCACHE=1
-	export CCACHE_LOGFILE=ccache.log
+	export CCACHE_LOGFILE="ccache${process_id}.log"
 	CXX="ccache ${CXX}"
 	C="ccache ${C}"
-	AR="ccache ${AR}"
+	LD="ccache ${LD}"
+#	AR="ccache ${AR}"
 fi
 
 if [ "$1" == "info" ]; then
@@ -180,10 +187,12 @@ elif [ "$1" == "link" ]; then
 	# Executable
 	elif [ "${target}" == "executable" ]; then
 		call="${CXX} -rdynamic -g3 -ggdb -fdiagnostics-color=always -o ${outputFile} ${inputFiles[@]} ${inputLibraries[@]} ${libraries[@]}"
+		depCall='cat "${dependencyFile}" | xargs -n1 echo | sed "/^$/d" | tail -n +2'
 
 	# Static library?
 	elif [ "${target}" == "static_library" ]; then
-		call="ld -Ur -o ${outputFile}.o ${inputFiles[@]} && ${AR} rcs ${outputFile} ${outputFile}.o"
+		call="${LD} -Ur -o ${outputFile}.o ${inputFiles[@]} && ${AR} rcs ${outputFile} ${outputFile}.o"
+		depCall='cat "${dependencyFile}" | xargs -n1 echo | sed "/^$/d" | tail -n +2'
 	else
 		exit -1
 	fi
@@ -191,26 +200,29 @@ else
 	exit -1
 fi
 
+stdout="stdout${process_id}.log"
+stderr="stderr${process_id}.log"
+dependency="dependency${process_id}.log"
+
 mkdir -p $(dirname ${outputFile})
 if [ -n "${VERBOSE}" ]; then
-	echo $call>>stdout.log
+	echo $call>>${stdout}
 fi
-eval $call 1>>stdout.log 2>stderr.log
+eval $call 1>>${stdout} 2>${stderr}
 errorCode=$?
 
-#echo $depCall
 if [ -n "${depCall}" ]; then
-	eval $depCall 1>dependency.log
+	eval $depCall 1>${dependency}
 fi
 
 echo "stdout: |+"
-cat stdout.log | sed 's/^/    /'
+cat ${stdout} | sed 's/^/    /'
 echo "stderr: |+"
-cat stderr.log | sed 's/^/    /'
+cat ${stderr} | sed 's/^/    /'
 
 echo "dependencies:"
 if [ "${errorCode}" -eq 0 ] && [ -n "${depCall}" ]; then
-	cat dependency.log | xargs -n1 echo "  -" | sort
+	cat ${dependency} | xargs -n1 echo "  -" | sort
 fi
 
 if [ "${CCACHE}" -eq 1 ]; then
@@ -222,10 +234,10 @@ fi
 echo "compilable: true"
 
 
-rm stdout.log
-rm stderr.log
+rm ${stdout}
+rm ${stderr}
 if [ -n "${depCall}" ]; then
-	rm dependency.log
+	rm ${dependency}
 fi
 
 if [ $errorCode -ne "0" ]; then

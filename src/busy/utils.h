@@ -20,7 +20,7 @@ void printProjects(std::map<analyse::Project const*, std::tuple<std::set<analyse
 auto loadConfig(std::filesystem::path workPath, std::optional<std::filesystem::path> rootPath) -> Config;
 auto updateToolchainOptions(Config& config, bool reset, std::optional<std::vector<std::string>> _options) -> std::map<std::string, std::vector<std::string>>;
 
-auto computeEstimationTimes(Config const& config, analyse::ProjectMap const& projects_with_deps, bool clean) -> ConsolePrinter::EstimatedTimes;
+auto computeEstimationTimes(Config const& config, analyse::ProjectMap const& projects_with_deps, bool clean, int jobs) -> std::tuple<ConsolePrinter::EstimatedTimes, std::chrono::milliseconds> ;
 
 auto execute(std::vector<std::string> const& params, bool verbose) -> std::string;
 
