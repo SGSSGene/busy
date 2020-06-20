@@ -30,7 +30,7 @@ void listToolchains(std::vector<std::filesystem::path> const& packages) {
 
 auto cmdLsToolchains = sargp::Command{"ls-toolchains", "list all available toolchains", []() {
 	auto workPath = std::filesystem::current_path();
-	auto config = loadConfig(workPath, cfgRootPath);
+	auto config = loadConfig(workPath, *cfgBuildPath, *cfgRootPath);
 
 	auto packages = std::vector<std::filesystem::path>{};
 	if (!config.rootDir.empty() and config.rootDir != "." and std::filesystem::exists(config.rootDir)) {
@@ -49,7 +49,7 @@ auto cmdLsToolchains = sargp::Command{"ls-toolchains", "list all available toolc
 auto cfgOptions = sargp::Parameter<std::vector<std::string>>{{}, "option", "options for toolchains", [](){}, [](std::vector<std::string> const& str) -> std::pair<bool, std::set<std::string>> {
 	auto ret = std::pair<bool, std::set<std::string>>{false, {}};
 	auto workPath = std::filesystem::current_path();
-	auto config = loadConfig(workPath, cfgRootPath);
+	auto config = loadConfig(workPath, *cfgBuildPath, *cfgRootPath);
 	auto toolchainOptions = getToolchainOptions(config.toolchain.name, config.toolchain.call);
 	for (auto opt : toolchainOptions) {
 		if (config.toolchain.options.count(opt.first) == 0) {
@@ -63,7 +63,7 @@ auto cfgOptions = sargp::Parameter<std::vector<std::string>>{{}, "option", "opti
 auto cfgToolchain = sargp::Parameter<std::string>{"", "toolchain", "set toolchain", [](){}, [](std::vector<std::string> const& str) -> std::pair<bool, std::set<std::string>> {
 	auto ret = std::pair<bool, std::set<std::string>>{false, {}};
 	auto workPath = std::filesystem::current_path();
-	auto config = loadConfig(workPath, cfgRootPath);
+	auto config = loadConfig(workPath, *cfgBuildPath, *cfgRootPath);
 
 	auto packages = std::vector<std::filesystem::path>{};
 	if (!config.rootDir.empty() and config.rootDir != "." and std::filesystem::exists(config.rootDir)) {
@@ -83,13 +83,7 @@ auto cfgToolchain = sargp::Parameter<std::string>{"", "toolchain", "set toolchai
 
 auto cmdShowDeps = sargp::Command{"show-deps", "show dependencies of projects", []() {
 	auto workPath = std::filesystem::current_path();
-
-	if (cfgBuildPath and relative(std::filesystem::path{*cfgBuildPath}) != ".") {
-		std::filesystem::create_directories(*cfgBuildPath);
-		std::filesystem::current_path(*cfgBuildPath);
-		std::cout << "changing working directory to " << *cfgBuildPath << "\n";
-	}
-	auto config = loadConfig(workPath, cfgRootPath);
+	auto config = loadConfig(workPath, *cfgBuildPath, *cfgRootPath);
 
 	auto [projects, packages] = busy::analyse::readPackage(config.rootDir, ".");
 
@@ -118,13 +112,7 @@ auto cfgJobs      = sargp::Parameter<int>{0, "jobs", "thread count"};
 
 void app() {
 	auto workPath = std::filesystem::current_path();
-
-	if (cfgBuildPath and relative(std::filesystem::path{*cfgBuildPath}) != ".") {
-		std::filesystem::create_directories(*cfgBuildPath);
-		std::filesystem::current_path(*cfgBuildPath);
-		std::cout << "changing working directory to " << *cfgBuildPath << "\n";
-	}
-	auto config = loadConfig(workPath, cfgRootPath);
+	auto config = loadConfig(workPath, *cfgBuildPath, *cfgRootPath);
 	auto cacheGuard = loadFileCache(*cfgYamlCache);
 
 	auto [projects, packages] = busy::analyse::readPackage(config.rootDir, ".");
@@ -170,7 +158,7 @@ void app() {
 	}
 
 
-	std::cout << "checking files...\n";
+	std::cout << "checking files...";
 	auto jobs = [&]() -> int {
 		if (*cfgJobs == 0) {
 			return std::thread::hardware_concurrency();
@@ -187,6 +175,7 @@ void app() {
 	}
 
 	auto [estimatedTimes, estimatedTotalTime] = computeEstimationTimes(config, projects_with_deps, clean, jobs);
+	std::cout << "done\n";
 	if (estimatedTimes.empty()) {
 		return;
 	}
