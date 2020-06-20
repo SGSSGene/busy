@@ -182,17 +182,14 @@ void app() {
 
 
 	[&]() {
-	std::cout << "start compiling...\n";
-	auto consolePrinter = ConsolePrinter{estimatedTimes, estimatedTotalTime};
-	auto pipe           = CompilePipe{config.toolchain.call, projects_with_deps, config.toolchain.options};
+		std::cout << "start compiling...\n";
+		auto consolePrinter = ConsolePrinter{estimatedTimes, estimatedTotalTime};
+		auto pipe           = CompilePipe{config.toolchain.call, projects_with_deps, config.toolchain.options};
 
-	auto multiPipe = MultiCompilePipe{pipe, jobs};
+		auto multiPipe = MultiCompilePipe{pipe, jobs};
 
-	std::mutex mutex;
-	multiPipe.work(overloaded {
-//	while (not pipe.empty()) {
-//		auto work = pipe.pop();
-/*		pipe.dispatch(work, overloaded {*/
+		std::mutex mutex;
+		multiPipe.work(overloaded {
 			[&](busy::analyse::File const& file, auto const& params, auto const& deps) {
 				auto startTime  = std::chrono::file_clock::now();
 				auto path       = file.getPath();
@@ -207,7 +204,7 @@ void app() {
 				consolePrinter.startJob(&file, "compiling " + path.string());
 
 				fileInfo.needRecompiling = true;
-				// store fiile date before compiling
+				// store file date before compiling
 				g.lock();
 				auto hash    = getFileCache().getHash(path);
 				g.unlock();
@@ -268,10 +265,9 @@ void app() {
 				return fileInfo.compilable?analyse::CompilePipe::Color::Compilable:analyse::CompilePipe::Color::Ignored;
 			}
 		});
-//	}
-	multiPipe.join();
+		multiPipe.join();
 
-	execute({config.toolchain.call, "end"}, false);
+		execute({config.toolchain.call, "end"}, false);
 	}();
 	std::cout << "done\n";
 }
