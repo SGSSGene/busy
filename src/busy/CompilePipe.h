@@ -99,7 +99,12 @@ struct CompilePipe {
 
 	auto setupLinking(busy::analyse::Project const& project) const {
 		auto [action, target] = [&]() -> std::tuple<std::string, std::filesystem::path> {
-			bool isExecutable = std::get<1>(projects_with_deps.at(&project)).empty();
+			bool isExecutable = [&]() {
+				if (project.getType() == "library") {
+					return false;
+				}
+				return std::get<1>(projects_with_deps.at(&project)).empty();
+			}();
 			if (isExecutable) {
 				return {"executable", std::filesystem::path{"bin"} / project.getName()};
 			}

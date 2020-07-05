@@ -50,6 +50,7 @@ auto readPackage(std::filesystem::path const& _root, std::filesystem::path const
 
 			for (auto n : node["projects"]) {
 				auto name = n["name"].as<std::string>();
+				auto type = n["type"].as<std::string>("");
 				projectNames.erase(name);
 				auto path = _path / "src" / name;
 				auto legacyIncludePaths = std::vector<fs::path>{};
@@ -61,14 +62,14 @@ auto readPackage(std::filesystem::path const& _root, std::filesystem::path const
 				for (auto e : n["legacy"]["systemLibraries"]) {
 					legacySystemLibraries.insert(e.as<std::string>());
 				}
-				retProjects.emplace_back(name, _root, path, legacyIncludePaths, legacySystemLibraries);
+				retProjects.emplace_back(name, type, _root, path, legacyIncludePaths, legacySystemLibraries);
 			}
 		}
 
 		// add all projects that weren't defined in "projects" section of busy.yaml
 		for (auto const& p : projectNames) {
 			auto path = _path / "src" / p;
-			retProjects.emplace_back(p, _root, path, std::vector<fs::path>{}, std::set<std::string>{});
+			retProjects.emplace_back(p, "", _root, path, std::vector<fs::path>{}, std::set<std::string>{});
 		}
 
 

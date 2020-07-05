@@ -12,6 +12,7 @@ namespace busy::analyse {
 class Project {
 private:
 	std::string mName;
+	std::string mType;
 	std::filesystem::path mPath;
 
 	std::vector<File>                     mFiles;
@@ -20,7 +21,7 @@ private:
 
 
 public:
-	Project(std::string _name, std::filesystem::path const& _root, std::filesystem::path _sourcePath, std::vector<std::filesystem::path> _legacyIncludePaths, std::set<std::string> _systemLibraries);
+	Project(std::string _name, std::string _type, std::filesystem::path const& _root, std::filesystem::path _sourcePath, std::vector<std::filesystem::path> _legacyIncludePaths, std::set<std::string> _systemLibraries);
 
 	auto const& getFiles() const {
 		return mFiles;
@@ -28,6 +29,9 @@ public:
 
 	auto getName() const -> std::string const& {
 		return mName;
+	}
+	auto getType() const -> std::string const& {
+		return mType;
 	}
 
 	auto getPath() const -> std::filesystem::path const& {
