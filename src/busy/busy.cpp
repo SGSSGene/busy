@@ -265,12 +265,14 @@ void app() {
 			}
 		});
 		multiPipe.join();
+		if (multiPipe.compileError) {
+			throw CompileError{};
+		}
 
 		execute({config.toolchain.call, "end"}, false);
 	}();
 	fmt::print("done\n");
 }
-
 auto cmdCompile = sargp::Command{"compile", "compile everything (default)", []() {
 	app();
 }};

@@ -10,6 +10,7 @@ struct MultiCompilePipe {
 	std::mutex               mutex;
 	std::condition_variable  cv;
 	std::size_t              idleThreads{0};
+	bool                     compileError{false};
 
 	MultiCompilePipe(analyse::CompilePipe& _pipe, int _threadCt)
 	: pipe {_pipe}
@@ -19,6 +20,7 @@ struct MultiCompilePipe {
 private:
 	template <typename CB>
 	void singleThread(CB const& cb) {
+		try {
 		while(true) {
 			auto g = std::unique_lock{mutex};
 			if (not isRunning) return;
@@ -37,6 +39,12 @@ private:
 				cv.wait(g);
 				idleThreads -= 1;
 			}
+		}
+		} catch(CompileError const& e) {
+			auto g = std::unique_lock{mutex};
+			compileError = true;
+			isRunning = false;
+			cv.notify_all();
 		}
 	}
 public:
