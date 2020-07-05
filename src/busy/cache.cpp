@@ -39,6 +39,11 @@ void saveFileCache(bool _yamlCache) {
 		std::ofstream(".filecache.yaml") << out.c_str();
 	}
 }
+void clearFileCache() {
+	getFileCache() = {};
+	getFileData() = {};
+	getFileInfos() = {};
+}
 
 auto loadFileCache(bool _yamlCache) -> finally {
 	loadFileCache();
