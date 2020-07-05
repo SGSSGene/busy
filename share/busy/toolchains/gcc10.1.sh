@@ -1,11 +1,10 @@
 #!/bin/bash
 
-# $ ./toolchainCall.sh compile input.cpp output.o -I <includes>... -isystem <system includes>...
-# $ ./toolchainCall.sh link static_library output.exe|output.a -i obj1.o obj2.o lib2.a -l pthread armadillo
+# $ <$0> compile input.cpp output.o -ilocal <includes>... -isystem <system includes>...
+# $ <$0> link static_library output.exe|output.a -i obj1.o obj2.o lib2.a -l pthread armadillo
 #
 # Return values:
 # 0 on success
-# 1 on nothing done (e.g. is header, or header only)
 # -1 error
 
 
@@ -48,6 +47,24 @@ function implode {
 	for i in "$@"; do
 		echo -n "$sep$i"
 	done
+}
+
+function parseDepFile {
+	file="$1"
+	shift
+	output="$2"
+	shift
+
+	cat ${file} | \
+		awk '{
+			split($0, a, " ");
+			for (key in a) {
+				x=a[key];
+				if (x != "\\") {
+					print "  - " x
+				}
+			}
+		}' | tail -n +2 | sort
 }
 
 CXX=/usr/bin/g++
@@ -160,15 +177,8 @@ elif [ "$1" == "compile" ]; then
 	filetype="$(echo "${inputFile}" | rev | cut -d "." -f 1 | rev)";
 	if [[ "${filetype}" =~ ^(cpp|cc)$ ]]; then
 		call="${CXX} -O0 -std=c++20 -fPIC -MD ${parameters} -fdiagnostics-color=always -c ${inputFile} -o ${outputFile} $projectIncludes $systemIncludes"
-		if [ -n "${dependencyFile}" ]; then
-			depCall='cat "${dependencyFile}" | xargs -n1 echo | sed "/^$/d" | tail -n +2'
-		fi
-
 	elif [ "${filetype}" = "c" ]; then
 		call="${C} -O0 -std=c18 -fPIC -MD ${parameters} -fdiagnostics-color=always -c ${inputFile} -o ${outputFile} $projectIncludes $systemIncludes"
-		if [ -n "${dependencyFile}" ]; then
-			depCall='cat "${dependencyFile}" | xargs -n1 echo | sed "/^$/d" | tail -n +2'
-		fi
 	else
 		exit 0
 	fi
@@ -193,16 +203,9 @@ elif [ "$1" == "link" ]; then
 	# Executable
 	elif [ "${target}" == "executable" ]; then
 		call="${CXX} -rdynamic -g3 -ggdb -fdiagnostics-color=always -o ${outputFile} ${inputFiles[@]} ${inputLibraries[@]} ${libraries[@]}"
-		if [ -n "${dependencyFile}" ]; then
-			depCall='cat "${dependencyFile}" | xargs -n1 echo | sed "/^$/d" | tail -n +2'
-		fi
-
 	# Static library?
 	elif [ "${target}" == "static_library" ]; then
 		call="${LD} -Ur -o ${outputFile}.o ${inputFiles[@]} && ${AR} rcs ${outputFile} ${outputFile}.o"
-		if [ -n "${dependencyFile}" ]; then
-			depCall='cat "${dependencyFile}" | xargs -n1 echo | sed "/^$/d" | tail -n +2'
-		fi
 	else
 		exit -1
 	fi
@@ -215,15 +218,12 @@ stderr="log/stderr${process_id}.log"
 dependency="log/dependency${process_id}.log"
 
 mkdir -p $(dirname ${outputFile})
+echo > ${stdout}
 if [ -n "${VERBOSE}" ]; then
 	echo $call>>${stdout}
 fi
 eval $call 1>>${stdout} 2>${stderr}
 errorCode=$?
-
-if [ -n "${depCall}" ]; then
-	eval $depCall 1>${dependency}
-fi
 
 echo "stdout: |+"
 cat ${stdout} | sed 's/^/    /'
@@ -231,8 +231,8 @@ echo "stderr: |+"
 cat ${stderr} | sed 's/^/    /'
 
 echo "dependencies:"
-if [ "${errorCode}" -eq 0 ] && [ -n "${depCall}" ]; then
-	cat ${dependency} | xargs -n1 echo "  -" | sort
+if [ "${errorCode}" -eq 0 ] && [ -n "${dependencyFile}" ]; then
+	parseDepFile ${dependencyFile}
 fi
 
 is_cached="false"
