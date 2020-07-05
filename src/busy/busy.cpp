@@ -185,7 +185,9 @@ void app() {
 		jobs = std::min(jobs, YAML::Node{node["max_jobs"]}.as<int>(jobs));
 	}
 
-	auto [estimatedTimes, estimatedTotalTime] = computeEstimationTimes(config, projects_with_deps, clean, jobs);
+	auto [_estimatedTimes, _estimatedTotalTime] = computeEstimationTimes(config, projects_with_deps, clean, jobs);
+	auto estimatedTimes     = _estimatedTimes;
+	auto estimatedTotalTime = _estimatedTotalTime;
 	fmt::print("done\n");
 	fmt::print("{} files need processing\n", estimatedTimes.size());
 	if (not estimatedTimes.empty()) {

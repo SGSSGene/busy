@@ -3,6 +3,7 @@
 #include "Package.h"
 #include "Queue.h"
 
+#include <cstddef>
 #include <map>
 
 namespace busy::analyse {
@@ -190,7 +191,7 @@ struct CompilePipe {
 	}
 
 
-	auto extract(busy::analyse::File const& file) const -> std::tuple<std::vector<std::string>, nullptr_t> {
+	auto extract(busy::analyse::File const& file) const -> std::tuple<std::vector<std::string>, std::nullptr_t> {
 		return {setupCompiling(file), nullptr};
 	};
 	auto extract(busy::analyse::Project const& project) const -> std::tuple<std::vector<std::string>, std::unordered_set<Project const*>> {
