@@ -226,6 +226,7 @@ void app() {
 
 				bool cached         = YAML::Node{node["cached"]}.as<bool>(false);
 				fileInfo.compilable = YAML::Node{node["compilable"]}.as<bool>(false);
+				fileInfo.outputFile = YAML::Node{node["output_file"]}.as<std::string>("");
 
 				auto dependencies = FileInfo::Dependencies{};
 				//!TODO should work with `auto`, but doesn't for some reason
@@ -267,6 +268,7 @@ void app() {
 				auto node = YAML::Load(cout);
 				bool cached         = YAML::Node{node["cached"]}.as<bool>(false);
 				fileInfo.compilable = YAML::Node{node["compilable"]}.as<bool>(false);
+				fileInfo.outputFile = YAML::Node{node["output_file"]}.as<std::string>("");
 
 				auto compileTime = consolePrinter.finishedJob(&project);
 				if (not cached or fileInfo.compileTime < compileTime) {

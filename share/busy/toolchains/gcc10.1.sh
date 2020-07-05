@@ -186,6 +186,7 @@ elif [ "$1" == "link" ]; then
 
 	# Header only
 	if [ "${#inputFiles[@]}" -eq 0 ]; then
+		echo "compilable: false"
 		exit 0
 
 	# Executable
@@ -233,13 +234,16 @@ if [ "${errorCode}" -eq 0 ] && [ -n "${depCall}" ]; then
 	cat ${dependency} | xargs -n1 echo "  -" | sort
 fi
 
+is_cached="false"
 if [ "${CCACHE}" -eq 1 ]; then
 	if [ "$(cat ${CCACHE_LOGFILE} | grep 'Result: cache hit' | wc -l)" -eq 1 ]; then
-		echo "cached: true"
+		is_cached="true"
 	fi
 	rm ${CCACHE_LOGFILE}
 fi
+echo "cached: ${is_cached}"
 echo "compilable: true"
+echo "output_file: ${outputFile}"
 
 
 rm ${stdout}

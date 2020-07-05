@@ -153,7 +153,7 @@ auto computeEstimationTimes(Config const& config, analyse::ProjectMap const& pro
 					}
 					return false;
 				};
-				if (clean or (anyChanges())) {
+				if (clean or (not exists(fileInfo.outputFile) and fileInfo.compilable) or anyChanges()) {
 					estimatedTimes.try_emplace(&project, fileInfo.compileTime);
 					duration = fileInfo.compileTime;
 				}

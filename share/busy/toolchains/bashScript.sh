@@ -119,7 +119,7 @@ elif [ "$1" == "compile" ]; then
 	systemIncludes=$(implode " -isystem " "${systemIncludes[@]}")
 
 	filetype="$(echo "${inputFile}" | rev | cut -d "." -f 1 | rev)";
-	if [ "${filetype}" = "cpp" ]; then
+	if [[ "${filetype}" =~ ^(cpp|cc)$ ]]; then
 		call="${CXX} -O0 -std=c++20 -fPIC -MD -g3 -ggdb -fdiagnostics-color=always -c $inputFile -o $outputFile $projectIncludes $systemIncludes"
 	elif [ "${filetype}" = "c" ]; then
 		call="${C} -O0 -std=c18 -fPIC -MD -g3 -ggdb -fdiagnostics-color=always -c $inputFile -o $outputFile $projectIncludes $systemIncludes"

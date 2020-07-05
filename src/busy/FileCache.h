@@ -101,6 +101,7 @@ struct FileInfo {
 	using Dependencies = std::vector<std::tuple<Path, Hash>>;
 
 	Path path{};
+	Path outputFile{};
 	Time modTime{};
 	Hash hash{};
 	bool compilable{true};
@@ -117,6 +118,7 @@ struct FileInfo {
 	template <typename Node>
 	void serialize(Node& node) {
 		node["path"]            % path;
+		node["outputFile"]      % outputFile;
 		node["modTime"]         % modTime;
 		node["hash"]            % hash;
 		node["compilable"]      % compilable;
@@ -128,6 +130,9 @@ struct FileInfo {
 
 	bool hasChanged() const {
 		if (needRecompiling) {
+			return true;
+		}
+		if (not exists(outputFile) and compilable) {
 			return true;
 		}
 		if (modTime < getFileModificationTime(path) and getFileCache().getHash(path) != hash) {
