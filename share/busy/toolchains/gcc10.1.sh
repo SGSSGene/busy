@@ -157,13 +157,17 @@ elif [ "$1" == "compile" ]; then
 	systemIncludes=$(implode " -isystem " "${systemIncludes[@]}")
 
 	filetype="$(echo "${inputFile}" | rev | cut -d "." -f 1 | rev)";
-	if [ "${filetype}" = "cpp" ]; then
+	if [[ "${filetype}" =~ ^(cpp|cc)$ ]]; then
 		call="${CXX} -O0 -std=c++20 -fPIC -MD ${parameters} -fdiagnostics-color=always -c ${inputFile} -o ${outputFile} $projectIncludes $systemIncludes"
-		depCall='cat "${dependencyFile}" | xargs -n1 echo | sed "/^$/d" | tail -n +2'
+		if [ -n "${dependencyFile}" ]; then
+			depCall='cat "${dependencyFile}" | xargs -n1 echo | sed "/^$/d" | tail -n +2'
+		fi
 
 	elif [ "${filetype}" = "c" ]; then
 		call="${C} -O0 -std=c18 -fPIC -MD ${parameters} -fdiagnostics-color=always -c ${inputFile} -o ${outputFile} $projectIncludes $systemIncludes"
-		depCall='cat "${dependencyFile}" | xargs -n1 echo | sed "/^$/d" | tail -n +2'
+		if [ -n "${dependencyFile}" ]; then
+			depCall='cat "${dependencyFile}" | xargs -n1 echo | sed "/^$/d" | tail -n +2'
+		fi
 	else
 		exit 0
 	fi
@@ -187,12 +191,16 @@ elif [ "$1" == "link" ]; then
 	# Executable
 	elif [ "${target}" == "executable" ]; then
 		call="${CXX} -rdynamic -g3 -ggdb -fdiagnostics-color=always -o ${outputFile} ${inputFiles[@]} ${inputLibraries[@]} ${libraries[@]}"
-		depCall='cat "${dependencyFile}" | xargs -n1 echo | sed "/^$/d" | tail -n +2'
+		if [ -n "${dependencyFile}" ]; then
+			depCall='cat "${dependencyFile}" | xargs -n1 echo | sed "/^$/d" | tail -n +2'
+		fi
 
 	# Static library?
 	elif [ "${target}" == "static_library" ]; then
 		call="${LD} -Ur -o ${outputFile}.o ${inputFiles[@]} && ${AR} rcs ${outputFile} ${outputFile}.o"
-		depCall='cat "${dependencyFile}" | xargs -n1 echo | sed "/^$/d" | tail -n +2'
+		if [ -n "${dependencyFile}" ]; then
+			depCall='cat "${dependencyFile}" | xargs -n1 echo | sed "/^$/d" | tail -n +2'
+		fi
 	else
 		exit -1
 	fi
