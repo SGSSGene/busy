@@ -110,9 +110,13 @@ auto cmdVersionShow = []() {
 	fmt::print("Copyright (C) 2020 Simon Gene Gottlieb\n");
 };
 auto cmdCleanCache = []() {
-	auto cacheGuard = loadFileCache(*cfgYamlCache);
-	clearFileCache();
-	fmt::print("cleaned busy caches\n");
+	auto allRemovedFiles = std::uintmax_t{};
+	for (auto& p : std::filesystem::directory_iterator{"."}) {
+		if (p.path() != "./.busy.yaml") {
+			allRemovedFiles += std::filesystem::remove_all(p.path());
+		}
+	}
+	fmt::print("cleaned busy caches - removed {} files\n", allRemovedFiles);
 };
 
 auto cmdVersion   = sargp::Command{"version", "show version", cmdVersionShow};

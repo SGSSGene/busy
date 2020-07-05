@@ -35,7 +35,7 @@ auto readPackage(std::filesystem::path const& _root, std::filesystem::path const
 		auto projectNames = std::set<std::string>{};
 		auto sourcePath = _root / _path / "src";
 		if (exists(sourcePath)) {
-			for(auto& p : fs::directory_iterator(sourcePath)) {
+			for (auto& p : fs::directory_iterator(sourcePath)) {
 				if (is_directory(p)) {
 					projectNames.insert(p.path().filename());
 				}
