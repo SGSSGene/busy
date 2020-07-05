@@ -7,6 +7,7 @@
 
 namespace busy::analyse {
 
+// first tuple entry in going edges, second entry outgoing edges
 using ProjectMap = std::map<Project const*, std::tuple<std::set<Project const*>, std::set<Project const*>>>;
 
 struct CompilePipe {

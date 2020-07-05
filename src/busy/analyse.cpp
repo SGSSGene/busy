@@ -54,8 +54,33 @@ auto createProjects(std::vector<busy::analyse::Project> const& _projects) -> Pro
 		}
 	}
 
+	return normalizeProjects(ret);
+}
+auto normalizeProjects(ProjectMap const& _projectMap) -> ProjectMap {
+	auto duplicateList = std::map<std::string, busy::analyse::Project const*>{};
+	auto ret = ProjectMap{};
+	for (auto [key, deps] : _projectMap) {
+		auto iter = duplicateList.find(key->getName());
+		if (iter == end(duplicateList)) {
+			duplicateList[key->getName()] = key;
+			ret[key] = deps;
+		}
+	}
+	for (auto& [key, deps] : ret) {
+		auto ingoing  = std::get<0>(deps);
+		auto outgoing = std::get<1>(deps);
+		deps = {};
+
+		for (auto v : ingoing) {
+			std::get<0>(deps).insert(duplicateList.at(v->getName()));
+		}
+		for (auto v : outgoing) {
+			std::get<1>(deps).insert(duplicateList.at(v->getName()));
+		}
+	}
 	return ret;
 }
+
 
 void checkConsistency(std::vector<busy::analyse::Project> const& _projects) {
 	auto groupedProjects = std::map<std::string, std::vector<busy::analyse::Project const*>>{};
