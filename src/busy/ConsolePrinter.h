@@ -2,9 +2,10 @@
 
 #include "analyse.h"
 
-#include <condition_variable>
 #include <chrono>
-#include <iostream>
+#include <condition_variable>
+#include <fmt/format.h>
+#include <fmt/ostream.h>
 #include <thread>
 
 namespace busy {
@@ -55,7 +56,7 @@ public:
 		auto now = std::chrono::steady_clock::now();
 		auto diff = duration_cast<std::chrono::milliseconds>(now - startTime);
 		totalTime = std::max(diff, totalTime);
-		std::cout << "Jobs " << jobs << "/" << totalJobs << "(" << startTimes.size() << ") - ETA " << (diff.count() / 1000.) << "s/" << (totalTime.count() / 1000.) << "s - " << currentJob << "\n";
+		fmt::print("Jobs {:3}/{:3} ({:3}) - ETA {:.1f}s/{:.1f}s - {}\n", jobs, totalJobs, startTimes.size(), diff.count() / 1000., totalTime.count() / 1000., currentJob);
 	}
 
 	~ConsolePrinter() {

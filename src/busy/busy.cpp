@@ -11,9 +11,12 @@
 
 #include <algorithm>
 #include <cstdlib>
+#include <fmt/format.h>
+#include <fmt/ostream.h>
+#include <iostream>
 #include <sargparse/ArgumentParsing.h>
-#include <sargparse/Parameter.h>
 #include <sargparse/File.h>
+#include <sargparse/Parameter.h>
 #include <yaml-cpp/yaml.h>
 
 namespace busy::analyse {
@@ -24,7 +27,7 @@ auto cfgBuildPath = sargp::Parameter<sargp::Directory>{".",  "build", "path to b
 
 void listToolchains(std::vector<std::filesystem::path> const& packages) {
 	for (auto [name, path]  : searchForToolchains(packages)) {
-		std::cout << "  - " << name << " (" << path << ")\n";
+		fmt::print("  - {} ({})\n", name, path);
 	}
 }
 
@@ -91,9 +94,9 @@ auto cmdShowDeps = sargp::Command{"show-deps", "show dependencies of projects", 
 	packages.insert(begin(packages), global_sharedPath);
 
 	// check consistency of packages
-	std::cout << "checking consistency..." << std::flush;
+	fmt::print("checking consistency...");
 	checkConsistency(projects);
-	std::cout << "done\n";
+	fmt::print("done\n");
 
 	auto projects_with_deps = createProjects(projects);
 	printProjects(projects_with_deps);
@@ -101,8 +104,8 @@ auto cmdShowDeps = sargp::Command{"show-deps", "show dependencies of projects", 
 }};
 
 auto cmdVersionShow = []() {
-	std::cout << "busy 2.0.0-git-alpha\n";
-	std::cout << "Copyright (C) 2020 Simon Gene Gottlieb\n";
+	fmt::print("busy 2.0.0-git-alpha\n");
+	fmt::print("Copyright (C) 2020 Simon Gene Gottlieb\n");
 };
 auto cmdVersion   = sargp::Command{"version", "show version", cmdVersionShow};
 auto cfgVersion   = sargp::Flag{"version", "show version", cmdVersionShow};
@@ -131,22 +134,18 @@ void app() {
 		config.toolchain.name = iter->first;
 		config.toolchain.call = iter->second;
 		updateToolchainOptions(config, true, cfgOptions);
-		std::cout << "setting toolchain to " << config.toolchain.name << " (" << config.toolchain.call << ")\n";
+		fmt::print("Setting toolchain to {} ({})\n", config.toolchain.name, config.toolchain.call);
 	}
 	auto toolchainOptions = updateToolchainOptions(config, false, cfgOptions);
 
-	std::cout << "using toolchain " << config.toolchain.name << " (" << config.toolchain.call << ")\n";
-	std::cout << "  with options: ";
-	for (auto const& o : config.toolchain.options) {
-		std::cout << o << " ";
-	}
-	std::cout << "\n";
+	fmt::print("using toolchain {} ({})\n", config.toolchain.name, config.toolchain.call);
+	fmt::print("  with options: {}\n", fmt::join(config.toolchain.options, " "));
 
 
 	// check consistency of packages
-	std::cout << "checking consistency..." << std::flush;
+	fmt::print("checking consistency...");
 	checkConsistency(projects);
-	std::cout << "done\n";
+	fmt::print("done\n");
 
 	auto projects_with_deps = createProjects(projects);
 
@@ -158,7 +157,7 @@ void app() {
 	}
 
 
-	std::cout << "checking files...";
+	fmt::print("checking files...");
 	auto jobs = [&]() -> int {
 		if (*cfgJobs == 0) {
 			return std::thread::hardware_concurrency();
@@ -175,14 +174,14 @@ void app() {
 	}
 
 	auto [estimatedTimes, estimatedTotalTime] = computeEstimationTimes(config, projects_with_deps, clean, jobs);
-	std::cout << "done\n";
+	fmt::print("done\n");
 	if (estimatedTimes.empty()) {
 		return;
 	}
 
 
 	[&]() {
-		std::cout << "start compiling...\n";
+		fmt::print("start compiling...\n");
 		auto consolePrinter = ConsolePrinter{estimatedTimes, estimatedTotalTime};
 		auto pipe           = CompilePipe{config.toolchain.call, projects_with_deps, config.toolchain.options};
 
@@ -228,7 +227,7 @@ void app() {
 						auto f = [](auto t) {
 							return std::chrono::duration_cast<std::chrono::seconds>(t.time_since_epoch()).count();
 						};
-							std::cout << "file changed??? " << f(modTime) << " " << f(startTime) << " " << path << " " << std::filesystem::current_path() << " " << hash << "\n";
+							fmt::print("file changed??? {} {} {} {} {}\n", f(modTime), f(startTime), path, std::filesystem::current_path(), hash);
 					//		throw std::runtime_error("file changed");
 						//status = 2; // file changed in between
 					}
@@ -269,7 +268,7 @@ void app() {
 
 		execute({config.toolchain.call, "end"}, false);
 	}();
-	std::cout << "done\n";
+	fmt::print("done\n");
 }
 
 auto cmdCompile = sargp::Command{"compile", "compile everything (default)", []() {
@@ -290,21 +289,21 @@ int main(int argc, char const** argv) {
 	try {
 		if (std::string_view{argv[argc-1]} == "--bash_completion") {
 			auto hint = sargp::compgen(argc-2, argv+1);
-			std::cout << hint;
+			fmt::print("{}", hint);
 			return 0;
 		}
 
 		sargp::parseArguments(argc-1, argv+1);
 		if (printHelp) {
-			std::cout << sargp::generateHelpString(std::regex{".*" + printHelp.get().value_or("") + ".*"});
+			fmt::print("{}", sargp::generateHelpString(std::regex{".*" + printHelp.get().value_or("") + ".*"}));
 			return 0;
 		}
 		sargp::callCommands();
 		return EXIT_SUCCESS;
 	} catch (busy::CompileError const& e) {
 	} catch (std::exception const& e) {
-		std::cerr << "exception: " << busy::utils::exceptionToString(e, 0) << "\n";
-		std::cerr << sargp::generateHelpString(std::regex{".*" + printHelp.get().value_or("") + ".*"});
+		fmt::print(std::cerr, "exception {}\n", busy::utils::exceptionToString(e, 0));
+		fmt::print(std::cerr, "{}", sargp::generateHelpString(std::regex{".*" + printHelp.get().value_or("") + ".*"}));
 	}
 	return EXIT_FAILURE;
 }

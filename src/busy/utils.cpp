@@ -3,6 +3,8 @@
 #include "toolchains.h"
 #include "overloaded.h"
 
+#include <fmt/format.h>
+#include <fmt/ostream.h>
 #include <iostream>
 #include <process/Process.h>
 #include <queue>
@@ -14,27 +16,27 @@ void printProjects(std::map<analyse::Project const*, std::tuple<std::set<analyse
 	for (auto const& [i_project, dep] : _projects) {
 		auto const& project = *i_project;
 		auto const& dependencies = std::get<0>(dep);
-		std::cout << "\n";
+		fmt::print("\n");
 
-		std::cout << "  - project-name: " << project.getName() << "\n";
-		std::cout << "    path: " << project.getPath() << "\n";
+		fmt::print("  - project-name: {}\n", project.getName());
+		fmt::print("    path: {}\n", project.getPath());
 		if (not project.getSystemLibraries().empty()) {
-			std::cout << "    systemLibraries:\n";
+			fmt::print("    systemLibraries:\n");
 			for (auto const& l : project.getSystemLibraries()) {
-				std::cout << "    - " << l << "\n";
+				fmt::print("   - {}\n", l);
 			}
 		}
 		if (not dependencies.empty()) {
-			std::cout << "    dependencies:\n";
+			fmt::print("    dependencies:\n");
 			for (auto const& d : dependencies) {
-				std::cout << "    - name: " << d->getName() << "\n";
-				std::cout << "      path: " << d->getPath() << "\n";
+				fmt::print("    - name: {}\n", d->getName());
+				fmt::print("      path: {}\n", d->getPath());
 			}
 		}
 		if (not project.getLegacyIncludePaths().empty()) {
-			std::cout << "    includePaths:\n";
+			fmt::print("    includePath:\n");
 			for (auto const& p : project.getLegacyIncludePaths()) {
-				std::cout << "      - " << p << "\n";
+				fmt::print("    - {}\n", p);
 			}
 		}
 	}
@@ -47,7 +49,7 @@ auto loadConfig(std::filesystem::path workPath, std::filesystem::path buildPath,
 			std::filesystem::create_directories(buildPath);
 		}
 		std::filesystem::current_path(buildPath);
-		std::cout << "changing working directory to " << buildPath << "\n";
+		fmt::print("changing working directory to {}\n", buildPath);
 	}
 
 	auto config = [&]() {
@@ -101,7 +103,7 @@ auto updateToolchainOptions(Config& config, bool reset, std::optional<std::vecto
 
 		auto iter = toolchainOptions.find(opt);
 		if (iter == toolchainOptions.end()) {
-			std::cout << "unknown toolchain option " << o << " (removed)\n";
+			fmt::print("unknown toolchain option {} (removed)\n", o);
 		} else {
 			if (act) {
 				config.toolchain.options.insert(opt);
@@ -178,17 +180,17 @@ auto execute(std::vector<std::string> const& params, bool verbose) -> std::strin
 		call << p << " ";
 	}
 	if (verbose) {
-		std::cout << "call: " << call.str() << "\n";
+		fmt::print("call: {}\n", call.str());
 	}
 
 	auto p = process::Process{params};
 
 	if (not verbose and p.getStatus() != 0) {
-		std::cout << "call: " << call.str() << "\n";
+		fmt::print("call: {}\n", call.str());
 	}
 	if (p.getStatus() != 0) {
-		std::cout << p.cout() << "\n";
-		std::cerr << p.cerr() << "\n";
+		fmt::print(std::cout, "{}\n", p.cout());
+		fmt::print(std::cerr, "{}\n", p.cerr());
 		throw CompileError{};
 	}
 	return p.cout();
