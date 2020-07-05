@@ -80,6 +80,7 @@ if [ "$1" == "begin" ]; then
 	echo "max_jobs: 1"
 	exit 0
 elif [ "$1" == "end" ]; then
+	rm ${cacheFile}
 	exit 0
 elif [ "$1" == "compile" ]; then
 	shift; inputFile="$1"
@@ -110,8 +111,6 @@ elif [ "$1" == "link" ]; then
 	      "-il      inputLibraries" \
 	      "-l       libraries" \
 	      "--" "$@"
-
-	libraries=($(implode " -l" "${libraries[@]}"))
 
 	targetType=
 	# Header only

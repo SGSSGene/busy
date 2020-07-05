@@ -188,11 +188,8 @@ void app() {
 	auto [estimatedTimes, estimatedTotalTime] = computeEstimationTimes(config, projects_with_deps, clean, jobs);
 	fmt::print("done\n");
 	fmt::print("{} files need processing\n", estimatedTimes.size());
-	if (estimatedTimes.empty()) {
-		return;
-	}
+	if (not estimatedTimes.empty()) {
 
-	[&]() {
 		fmt::print("start compiling...\n");
 		auto consolePrinter = ConsolePrinter{estimatedTimes, estimatedTotalTime};
 		auto pipe           = CompilePipe{config.toolchain.call, projects_with_deps, config.toolchain.options};
@@ -282,9 +279,8 @@ void app() {
 		if (multiPipe.compileError) {
 			throw CompileError{};
 		}
-
-		execute({config.toolchain.call, "end"}, false);
-	}();
+	}
+	execute({config.toolchain.call, "end"}, false);
 	fmt::print("done\n");
 }
 auto cmdCompile = sargp::Command{"compile", "compile everything (default)", []() {

@@ -130,6 +130,7 @@ if [ "$1" == "begin" ]; then
 	fi
 	exit 0
 elif [ "$1" == "end" ]; then
+	rmdir log
 	exit 0
 elif [ "$1" == "compile" ]; then
 	shift; inputFile="$1"
