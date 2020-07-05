@@ -175,10 +175,10 @@ void app() {
 
 	auto [estimatedTimes, estimatedTotalTime] = computeEstimationTimes(config, projects_with_deps, clean, jobs);
 	fmt::print("done\n");
+	fmt::print("{} files need processing\n", estimatedTimes.size());
 	if (estimatedTimes.empty()) {
 		return;
 	}
-
 
 	[&]() {
 		fmt::print("start compiling...\n");
