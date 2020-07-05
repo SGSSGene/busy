@@ -1,0 +1,6 @@
+projects:
+  - name: fmt
+    type: library
+    legacy:
+      includes:
+        - include
