@@ -12,7 +12,7 @@
 
 namespace busy {
 
-void printProjects(std::map<analyse::Project const*, std::tuple<std::set<analyse::Project const*>, std::set<analyse::Project const*>>> const& _projects) {
+void printProjects(std::map<Project const*, std::tuple<std::set<Project const*>, std::set<Project const*>>> const& _projects) {
 	for (auto const& [i_project, dep] : _projects) {
 		auto const& project = *i_project;
 		auto const& dependencies = std::get<0>(dep);
@@ -118,9 +118,9 @@ auto updateToolchainOptions(Config& config, bool reset, std::optional<std::vecto
 	return toolchainOptions;
 }
 
-auto computeEstimationTimes(Config const& config, analyse::ProjectMap const& projects_with_deps, bool clean, int jobs) -> std::tuple<ConsolePrinter::EstimatedTimes, std::chrono::milliseconds> {
+auto computeEstimationTimes(Config const& config, ProjectMap const& projects_with_deps, bool clean, int jobs) -> std::tuple<ConsolePrinter::EstimatedTimes, std::chrono::milliseconds> {
 	auto estimatedTimes = ConsolePrinter::EstimatedTimes{};
-	auto pipe           = analyse::CompilePipe{config.toolchain.call, projects_with_deps, config.toolchain.options};
+	auto pipe           = CompilePipe{config.toolchain.call, projects_with_deps, config.toolchain.options};
 	auto threadTimings = std::vector<std::chrono::milliseconds>(jobs, std::chrono::milliseconds{0});
 	auto readyTimings  = std::vector<std::chrono::milliseconds>{};
 	for (int i{0}; i < pipe.size(); ++i) {
@@ -131,14 +131,14 @@ auto computeEstimationTimes(Config const& config, analyse::ProjectMap const& pro
 		auto duration = std::chrono::milliseconds{};
 		int otherProcesses = pipe.size();
 		pipe.dispatch(work, overloaded {
-			[&](busy::analyse::File const& file, auto const& params, auto const& deps) {
+			[&](busy::File const& file, auto const& params, auto const& deps) {
 				auto& fileInfo = getFileInfos().get(file.getPath());
 				if (clean or (fileInfo.hasChanged() and fileInfo.compilable)) {
 					estimatedTimes.try_emplace(&file, fileInfo.compileTime);
 					duration = fileInfo.compileTime;
 				}
-				return analyse::CompilePipe::Color::Compilable;
-			}, [&](busy::analyse::Project const& project, auto const& params, auto const& deps) {
+				return CompilePipe::Color::Compilable;
+			}, [&](busy::Project const& project, auto const& params, auto const& deps) {
 				auto& fileInfo = getFileInfos().get(project.getPath());
 				auto anyChanges = [&]() {
 					for (auto const& d : deps) {
@@ -157,7 +157,7 @@ auto computeEstimationTimes(Config const& config, analyse::ProjectMap const& pro
 					estimatedTimes.try_emplace(&project, fileInfo.compileTime);
 					duration = fileInfo.compileTime;
 				}
-				return analyse::CompilePipe::Color::Compilable;
+				return CompilePipe::Color::Compilable;
 			}
 		});
 		// find smallest thread with timings

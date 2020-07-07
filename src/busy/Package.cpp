@@ -2,7 +2,7 @@
 
 #include <yaml-cpp/yaml.h>
 
-namespace busy::analyse {
+namespace busy {
 
 constexpr std::string_view external{"external"};
 

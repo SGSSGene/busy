@@ -7,7 +7,7 @@
 #include <string>
 
 
-namespace busy::analyse {
+namespace busy {
 
 /**
  *

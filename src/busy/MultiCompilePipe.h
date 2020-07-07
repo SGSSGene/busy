@@ -3,7 +3,7 @@
 
 namespace busy {
 struct MultiCompilePipe {
-	analyse::CompilePipe&    pipe;
+	CompilePipe&    pipe;
 
 	std::vector<std::thread> threads;
 	bool                     isRunning{true};
@@ -12,7 +12,7 @@ struct MultiCompilePipe {
 	std::size_t              idleThreads{0};
 	bool                     compileError{false};
 
-	MultiCompilePipe(analyse::CompilePipe& _pipe, int _threadCt)
+	MultiCompilePipe(CompilePipe& _pipe, int _threadCt)
 	: pipe {_pipe}
 	{
 		threads.resize(_threadCt);

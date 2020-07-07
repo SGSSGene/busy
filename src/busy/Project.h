@@ -7,7 +7,7 @@
 #include <string>
 #include <vector>
 
-namespace busy::analyse {
+namespace busy {
 
 class Project {
 private:

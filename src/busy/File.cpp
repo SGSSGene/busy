@@ -5,7 +5,7 @@
 #include <cstring>
 #include <fstream>
 
-namespace busy::analyse {
+namespace busy {
 
 namespace {
 

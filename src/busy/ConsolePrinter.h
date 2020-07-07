@@ -12,8 +12,8 @@ namespace busy {
 
 class ConsolePrinter {
 public:
-	using File    = busy::analyse::File;
-	using Project = busy::analyse::Project;
+	using File    = busy::File;
+	using Project = busy::Project;
 	using Variant = std::variant<File const*, Project const*>;
 
 	using EstimatedTimes = std::unordered_map<Variant, std::chrono::milliseconds>;

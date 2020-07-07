@@ -1,9 +1,9 @@
 #include "analyse.h"
 
-namespace busy::analyse {
+namespace busy {
 
 // check if this _project is included by _allIncludes
-auto isDependentProject(std::set<std::filesystem::path> const& _allIncludes, busy::analyse::Project const& _project) -> bool {
+auto isDependentProject(std::set<std::filesystem::path> const& _allIncludes, busy::Project const& _project) -> bool {
 
 	auto files = _project.getFiles();
 	for (auto const& file : files) {
@@ -27,8 +27,8 @@ auto isDependentProject(std::set<std::filesystem::path> const& _allIncludes, bus
 	return false;
 }
 
-auto findDependentProjects(busy::analyse::Project const& _project, std::vector<busy::analyse::Project> const& _projects) -> std::set<busy::analyse::Project const*> {
-	auto ret = std::set<busy::analyse::Project const*>{};
+auto findDependentProjects(busy::Project const& _project, std::vector<busy::Project> const& _projects) -> std::set<busy::Project const*> {
+	auto ret = std::set<busy::Project const*>{};
 	auto _allIncludes = _project.getIncludes();
 
 	for (auto const& project : _projects) {
@@ -39,8 +39,8 @@ auto findDependentProjects(busy::analyse::Project const& _project, std::vector<b
 	return ret;
 }
 
-auto createProjects(std::vector<busy::analyse::Project> const& _projects) -> ProjectMap {
-	using Project = busy::analyse::Project;
+auto createProjects(std::vector<busy::Project> const& _projects) -> ProjectMap {
+	using Project = busy::Project;
 
 	auto ret = ProjectMap{};
 
@@ -57,7 +57,7 @@ auto createProjects(std::vector<busy::analyse::Project> const& _projects) -> Pro
 	return normalizeProjects(ret);
 }
 auto normalizeProjects(ProjectMap const& _projectMap) -> ProjectMap {
-	auto duplicateList = std::map<std::string, busy::analyse::Project const*>{};
+	auto duplicateList = std::map<std::string, busy::Project const*>{};
 	auto ret = ProjectMap{};
 	for (auto [key, deps] : _projectMap) {
 		auto iter = duplicateList.find(key->getName());
@@ -82,8 +82,8 @@ auto normalizeProjects(ProjectMap const& _projectMap) -> ProjectMap {
 }
 
 
-void checkConsistency(std::vector<busy::analyse::Project> const& _projects) {
-	auto groupedProjects = std::map<std::string, std::vector<busy::analyse::Project const*>>{};
+void checkConsistency(std::vector<busy::Project> const& _projects) {
+	auto groupedProjects = std::map<std::string, std::vector<busy::Project const*>>{};
 	for (auto const& p : _projects) {
 		groupedProjects[p.getName()].emplace_back(&p);
 	}

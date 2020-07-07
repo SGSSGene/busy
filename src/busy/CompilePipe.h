@@ -6,13 +6,13 @@
 #include <cstddef>
 #include <map>
 
-namespace busy::analyse {
+namespace busy {
 
 // first tuple entry in going edges, second entry outgoing edges
 using ProjectMap = std::map<Project const*, std::tuple<std::set<Project const*>, std::set<Project const*>>>;
 
 struct CompilePipe {
-	using Q        = Queue<busy::analyse::Project const, busy::analyse::File const>;
+	using Q        = Queue<busy::Project const, busy::File const>;
 	enum class Color { Ignored, Compilable };
 	using ColorMap = std::map<Q::Node, Color>;
 
@@ -46,7 +46,7 @@ struct CompilePipe {
 		return Queue{nodes, edges};
 	}
 
-	auto setupCompiling (busy::analyse::File const& file) const -> std::vector<std::string> {
+	auto setupCompiling (busy::File const& file) const -> std::vector<std::string> {
 		auto outFile = file.getPath().lexically_normal().replace_extension(".o");
 		auto inFile  = file.getPath();
 
@@ -67,7 +67,7 @@ struct CompilePipe {
 		// add all include paths
 		params.emplace_back("-ilocal");
 
-		auto& project = queue.find_outgoing<busy::analyse::Project const>(&file);
+		auto& project = queue.find_outgoing<busy::Project const>(&file);
 
 		params.emplace_back(project.getPath());
 		for (auto const& p : project.getLegacyIncludePaths()) {
@@ -84,7 +84,7 @@ struct CompilePipe {
 		auto systemIncludes = std::vector<std::filesystem::path>{};
 		queue.visit_incoming(&project, [&](auto& x) {
 			using X = std::decay_t<decltype(x)>;
-			if constexpr (std::is_same_v<X, busy::analyse::Project>) {
+			if constexpr (std::is_same_v<X, busy::Project>) {
 				if (params.back() != x.getPath().parent_path()) {
 					params.emplace_back(x.getPath().parent_path());
 				}
@@ -99,7 +99,7 @@ struct CompilePipe {
 		return params;
 	}
 
-	auto setupLinking(busy::analyse::Project const& project) const {
+	auto setupLinking(busy::Project const& project) const {
 		auto [action, target] = [&]() -> std::tuple<std::string, std::filesystem::path> {
 			bool isExecutable = [&]() {
 				if (project.getType() == "library") {
@@ -128,7 +128,7 @@ struct CompilePipe {
 
 
 		params.emplace_back("-i");
-		for (auto file : queue.find_incoming<busy::analyse::File>(&project)) {
+		for (auto file : queue.find_incoming<busy::File>(&project)) {
 			if (colors.at(file) == Color::Compilable) {
 				auto objPath = "obj" / file->getPath();
 				objPath.replace_extension(".o");
@@ -143,7 +143,7 @@ struct CompilePipe {
 		params.emplace_back("-il");
 		// add all legacy system libraries
 		std::vector<std::string> systemLibraries;
-		auto addSystemLibraries = [&](busy::analyse::Project const& project) {
+		auto addSystemLibraries = [&](busy::Project const& project) {
 			for (auto const& l : project.getSystemLibraries()) {
 				auto iter = std::find(begin(systemLibraries), end(systemLibraries), l);
 				if (iter != end(systemLibraries)) {
@@ -158,7 +158,7 @@ struct CompilePipe {
 		auto dependencies = std::unordered_set<Project const*>{};
 		queue.visit_incoming(&project, [&](auto& project) {
 			using X = std::decay_t<decltype(project)>;
-			if constexpr (std::is_same_v<X, busy::analyse::Project>) {
+			if constexpr (std::is_same_v<X, busy::Project>) {
 				if (colors.at(&project) == Color::Compilable) {
 					auto target = (std::filesystem::path{"lib"} / project.getName()).replace_extension(".a");
 					if (params.back() != target) {
@@ -191,10 +191,10 @@ struct CompilePipe {
 	}
 
 
-	auto extract(busy::analyse::File const& file) const -> std::tuple<std::vector<std::string>, std::nullptr_t> {
+	auto extract(busy::File const& file) const -> std::tuple<std::vector<std::string>, std::nullptr_t> {
 		return {setupCompiling(file), nullptr};
 	};
-	auto extract(busy::analyse::Project const& project) const -> std::tuple<std::vector<std::string>, std::unordered_set<Project const*>> {
+	auto extract(busy::Project const& project) const -> std::tuple<std::vector<std::string>, std::unordered_set<Project const*>> {
 		return setupLinking(project);
 	};
 
