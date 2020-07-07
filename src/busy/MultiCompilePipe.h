@@ -1,7 +1,13 @@
 #pragma once
+
 #include "CompilePipe.h"
+#include "utils.h"
+
+#include <condition_variable>
+#include <thread>
 
 namespace busy {
+
 struct MultiCompilePipe {
 	CompilePipe&    pipe;
 
@@ -65,4 +71,3 @@ public:
 };
 
 }
-

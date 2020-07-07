@@ -1,13 +1,13 @@
-#include "compile.h"
-
-#include "../overloaded.h"
-#include "../utils.h"
 #include "../FileCache.h"
-#include "../cache.h"
-#include "../toolchains.h"
 #include "../MultiCompilePipe.h"
+#include "../cache.h"
+#include "../config.h"
+#include "../overloaded.h"
+#include "../toolchains.h"
+#include "../utils.h"
 
 namespace busy::cmd {
+namespace {
 
 void compile() {
 	auto workPath = std::filesystem::current_path();
@@ -169,7 +169,6 @@ void compile() {
 	execute({config.toolchain.call, "end"}, false);
 	fmt::print("done\n");
 }
-namespace {
 
 auto _cmd        = sargp::Command{"compile", "compile everything (default)", &compile};
 auto _cmdDefault = sargp::Task{[]{

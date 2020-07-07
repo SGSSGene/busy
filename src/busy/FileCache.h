@@ -139,6 +139,9 @@ struct FileInfo {
 			return true;
 		}
 		for (auto const& [d_path, d_hash] : dependencies) {
+			if (not exists(d_path)) {
+				return true;
+			}
 			if (modTime < getFileModificationTime(d_path) and getFileCache().getHash(d_path) != d_hash) {
 				return true;
 			}

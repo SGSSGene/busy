@@ -1,7 +1,5 @@
 #include "completion.h"
 
-
-#include "cmd/compile.h"
 #include "utils.h"
 #include "toolchains.h"
 
