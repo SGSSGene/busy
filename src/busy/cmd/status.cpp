@@ -78,7 +78,17 @@ void status() {
 		fmt::print("this will take {} using {} threads\n",
 			fmt::format(fg_yellow, "{:0.1f}s", (estimatedTotalTime.count())/1000.f),
 			fmt::format(fg_yellow, "{}", jobs));
-
+	}
+	if (*cfgVerbose) {
+		for (auto const& [target, time] : estimatedTimes) {
+			std::visit(overloaded{
+				[](File const* file) {
+					fmt::print("  - {}\n", file->getPath());
+				}, [](Project const* project) {
+					fmt::print("  - {}\n", project->getName());
+				}
+			}, target);
+		}
 	}
 }
 
