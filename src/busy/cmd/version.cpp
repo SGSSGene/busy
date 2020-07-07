@@ -12,7 +12,7 @@ auto version() {
 	fmt::print("Copyright (C) 2020 Simon Gene Gottlieb\n");
 }
 
-auto cmd = sargp::Flag{"version", "show version", &version};
+auto cmd = sargp::Flag{"version", "show version", version};
 
 }
 }

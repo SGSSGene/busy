@@ -17,7 +17,7 @@ void clean() {
 	fmt::print("cleaned busy caches - removed {} files\n", allRemovedFiles);
 }
 
-auto cmd = sargp::Command{"clean", "cleans cache", &clean};
+auto cmd = sargp::Command{"clean", "cleans cache", clean};
 
 }
 }

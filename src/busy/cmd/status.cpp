@@ -11,7 +11,7 @@ void status() {
 	fmt::print("print status\n");
 }
 
-auto cmd = sargp::Command("status", "show status", &status);
+auto cmd = sargp::Command("status", "show status", status);
 
 }
 }

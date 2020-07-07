@@ -24,7 +24,7 @@ void showDeps() {
 	printProjects(projects_with_deps);
 }
 
-auto cmd = sargp::Command{"show-deps", "show dependencies of projects", &showDeps};
+auto cmd = sargp::Command{"show-deps", "show dependencies of projects", showDeps};
 
 }
 }

@@ -27,7 +27,7 @@ void lsToolchains() {
 	}
 }
 
-auto cmd = sargp::Command{"ls-toolchains", "list all available toolchains", &lsToolchains};
+auto cmd = sargp::Command{"ls-toolchains", "list all available toolchains", lsToolchains};
 
 }
 }

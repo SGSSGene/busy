@@ -170,8 +170,9 @@ void compile() {
 	fmt::print("done\n");
 }
 
-auto _cmd        = sargp::Command{"compile", "compile everything (default)", &compile};
-auto _cmdDefault = sargp::Task{[]{
+auto cmd        = sargp::Command{"compile", "compile everything (default)", compile};
+auto cmdDefault = sargp::Task{[]{
+	return;
 	// only run if no children are active
 	for (auto cmd : sargp::getDefaultCommand().getSubCommands()) {
 		if (*cmd) return;
