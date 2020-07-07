@@ -1,54 +1,15 @@
 #!/bin/bash
 
-# $ ./toolchainCall.sh compile input.cpp output.o -I <includes>... -isystem <system includes>...
-# $ ./toolchainCall.sh link static_library output.exe|output.a -i obj1.o obj2.o lib2.a -l pthread armadillo
-#
+# $ <$0> info
+# $ <$0> compile input.cpp output.o -ilocal <includes>... -isystem <system includes>...
+# $ <$0> link static_library output.a -i obj1.o obj2.o lib2.a -l pthread armadillo
+# $ <$0> link executable output.exe -i obj1.o obj2.o lib2.a -l pthread armadillo
+
 # Return values:
 # 0 on success
-# 1 on nothing done (e.g. is header, or header only)
 # -1 error
 
-
-function parseMode {
-	var="$2"
-	if [ "${1}" = "${3}" ]; then
-		parseMode="${var}"
-		eval ${var}="${!var:-()}"
-		r="1"
-	fi
-}
-function parseValue {
-	if [ -n "${parseMode}" ]; then
-		eval "${parseMode}+=(${1})"
-		r="1"
-	fi
-}
-function parse {
-	parsePairs=()
-	while [ "$1" != "--" ]; do
-		parsePairs+=("$1")
-		shift
-	done
-	while [ $# -gt 0 ]; do
-		shift
-		r=
-		for x in "${parsePairs[@]}"; do
-			if [ -z "$r" ]; then
-				parseMode $x "$1"
-			fi
-		done
-		if [ -z "$r" ]; then
-			parseValue "$1"
-		fi
-	done
-}
-function implode {
-	sep="$1"
-	shift;
-	for i in "$@"; do
-		echo -n "$sep$i"
-	done
-}
+source "${0%/*}"/helper_utils.sh
 
 CXX=g++
 C=gcc
@@ -100,7 +61,7 @@ if [ "$1" == "begin" ]; then
 	if [ ! -e "src" ]; then
 	    ln -s ${rootDir}/src src
 	fi
-	echo "clean: true"
+	echo "rebuild: true"
 	echo "max_jobs: 1"
 	exit 0
 elif [ "$1" == "end" ]; then

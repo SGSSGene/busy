@@ -5,7 +5,6 @@
 # $ <$0> link static_library output.a -i obj1.o obj2.o lib2.a -l pthread armadillo
 # $ <$0> link executable output.exe -i obj1.o obj2.o lib2.a -l pthread armadillo
 
-#
 # Return values:
 # 0 on success
 # -1 error
