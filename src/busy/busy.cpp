@@ -24,6 +24,10 @@ namespace busy::analyse {
 auto cfgVerbose   = sargp::Flag{"verbose", "verbose output"};
 auto cfgRootPath  = sargp::Parameter<sargp::Directory>{"..", "root",  "path to directory containing busy.yaml"};
 auto cfgBuildPath = sargp::Parameter<sargp::Directory>{".",  "build", "path to build directory"};
+auto cfgJobs      = sargp::Parameter<int>{0, "jobs", "thread count"};
+auto cfgClean     = sargp::Flag{"clean", "clean build, using no cache"};
+auto cfgYamlCache = sargp::Flag{"yaml-cache", "save cache in yaml format"};
+
 
 void listToolchains(std::vector<std::filesystem::path> const& packages) {
 	for (auto [name, path]  : searchForToolchains(packages)) {
@@ -103,12 +107,13 @@ auto cmdShowDeps = sargp::Command{"show-deps", "show dependencies of projects", 
 
 }};
 
-auto cfgYamlCache = sargp::Flag{"yaml-cache", "save cache in yaml format"};
-
 auto cmdVersionShow = []() {
 	fmt::print("busy 2.0.0-git-alpha\n");
 	fmt::print("Copyright (C) 2020 Simon Gene Gottlieb\n");
 };
+auto cfgVersion   = sargp::Flag{"version", "show version", cmdVersionShow};
+auto cmdVersion   = sargp::Flag{"version", "show version", cmdVersionShow};
+
 auto cmdCleanCache = []() {
 	auto allRemovedFiles = std::uintmax_t{};
 	for (auto& p : std::filesystem::directory_iterator{"."}) {
@@ -118,14 +123,18 @@ auto cmdCleanCache = []() {
 	}
 	fmt::print("cleaned busy caches - removed {} files\n", allRemovedFiles);
 };
-
-auto cmdVersion   = sargp::Command{"version", "show version", cmdVersionShow};
-auto cfgVersion   = sargp::Flag{"version", "show version", cmdVersionShow};
-auto cfgClean     = sargp::Flag{"clean", "clean build, using no cache"};
 auto cmdClean     = sargp::Command{"clean", "cleans cache", cmdCleanCache};
-auto cfgJobs      = sargp::Parameter<int>{0, "jobs", "thread count"};
 
-void app() {
+auto cmdStatusShow = []() {
+	fmt::print("print status");
+};
+auto cmdStatus    = sargp::Command("status", "show status", cmdStatusShow);
+
+void cmdBuildRun() {
+	if (cfgVersion) {
+		return;
+	}
+
 	auto workPath = std::filesystem::current_path();
 	auto config = loadConfig(workPath, *cfgBuildPath, {cfgRootPath, *cfgRootPath});
 	auto cacheGuard = loadFileCache(*cfgYamlCache);
@@ -285,13 +294,8 @@ void app() {
 	execute({config.toolchain.call, "end"}, false);
 	fmt::print("done\n");
 }
-auto cmdCompile = sargp::Command{"compile", "compile everything (default)", []() {
-	app();
-}};
-auto cmdCompileDefault = sargp::Task{[]{
-	if (cmdLsToolchains or cmdShowDeps or cmdVersion or cfgVersion or cmdClean) return;
-	app();
-}};
+auto cmdCompile = sargp::Command{"compile", "compile everything (default)", cmdBuildRun};
+auto cmdCompileDefault = sargp::Task{cmdBuildRun};
 
 }
 
