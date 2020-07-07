@@ -174,7 +174,10 @@ auto computeEstimationTimes(Config const& config, analyse::ProjectMap const& pro
 	return {estimatedTimes, threadTimings.back()};
 }
 
-auto execute(std::vector<std::string> const& params, bool verbose) -> std::string {
+auto execute(std::vector<std::string> params, bool verbose) -> std::string {
+	if (verbose) {
+		params.push_back("-verbose");
+	}
 	auto call = std::stringstream{};
 	for (auto const& p : params) {
 		call << p << " ";
@@ -188,9 +191,11 @@ auto execute(std::vector<std::string> const& params, bool verbose) -> std::strin
 	if (not verbose and p.getStatus() != 0) {
 		fmt::print("call: {}\n", call.str());
 	}
+	if (verbose or p.getStatus() != 0) {
+		if (not p.cout().empty()) fmt::print(std::cout, "{}\n", p.cout());
+		if (not p.cerr().empty()) fmt::print(std::cerr, "{}\n", p.cerr());
+	}
 	if (p.getStatus() != 0) {
-		fmt::print(std::cout, "{}\n", p.cout());
-		fmt::print(std::cerr, "{}\n", p.cerr());
 		throw CompileError{};
 	}
 	return p.cout();

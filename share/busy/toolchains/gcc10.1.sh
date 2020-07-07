@@ -1,78 +1,24 @@
 #!/bin/bash
 
+# $ <$0> info
 # $ <$0> compile input.cpp output.o -ilocal <includes>... -isystem <system includes>...
-# $ <$0> link static_library output.exe|output.a -i obj1.o obj2.o lib2.a -l pthread armadillo
+# $ <$0> link static_library output.a -i obj1.o obj2.o lib2.a -l pthread armadillo
+# $ <$0> link executable output.exe -i obj1.o obj2.o lib2.a -l pthread armadillo
+
 #
 # Return values:
 # 0 on success
 # -1 error
 
-
-function parseMode {
-	var="$2"
-	if [ "${1}" = "${3}" ]; then
-		parseMode="${var}"
-		eval ${var}="${!var:-()}"
-		r="1"
-	fi
-}
-function parseValue {
-	if [ -n "${parseMode}" ]; then
-		eval "${parseMode}+=(${1})"
-		r="1"
-	fi
-}
-function parse {
-	parsePairs=()
-	while [ "$1" != "--" ]; do
-		parsePairs+=("$1")
-		shift
-	done
-	while [ $# -gt 0 ]; do
-		shift
-		r=
-		for x in "${parsePairs[@]}"; do
-			if [ -z "$r" ]; then
-				parseMode $x "$1"
-			fi
-		done
-		if [ -z "$r" ]; then
-			parseValue "$1"
-		fi
-	done
-}
-function implode {
-	sep="$1"
-	shift;
-	for i in "$@"; do
-		echo -n "$sep$i"
-	done
-}
-
-function parseDepFile {
-	file="$1"
-	shift
-	output="$2"
-	shift
-
-	cat ${file} | \
-		awk '{
-			split($0, a, " ");
-			for (key in a) {
-				x=a[key];
-				if (x != "\\") {
-					print "  - " x
-				}
-			}
-		}' | tail -n +2 | sort
-}
+source "${0%/*}"/helper_utils.sh
 
 CXX=/usr/bin/g++
 C=/usr/bin/gcc
 LD=/usr/bin/ld
 AR=/usr/bin/ar
 
-version=$(${C} --version | head -n 1 | perl -ne "s/\([^\)]*\)/()/g;print" | cut -d " " -f 3)
+version_detailed="$(${C} --version | head -n 1)"
+version=$(echo ${version_detailed} | perl -ne "s/\([^\)]*\)/()/g;print" | cut -d " " -f 3)
 
 version_major=$(echo ${version} | cut -d "." -f 1)
 version_minor=$(echo ${version} | cut -d "." -f 2)
@@ -80,21 +26,17 @@ version_patch=$(echo ${version} | cut -d "." -f 3)
 
 
 # check if version numbers match
-if [ "${version_major}" != "10" ] || [ "${version_minor}" != "1" ]; then
+if [ "${version_major}" != "10" ] || [ "${version_minor}" -lt "1" ]; then
 	exit -1
 fi
 
-# todo check if platform matches
-
-# check if ccache is available
 
 parse "-options    options"\
       "--" "$@"
 
 process_id=$BASHPID
-#if [ "${#pid[@]}" -eq 1 ]; then
-#	process_id="${pid[0]}"
-#fi
+
+# check if ccache is available
 CCACHE=0
 if [[ " ${options[@]} " =~ " ccache " ]]; then
 	which ccache > /dev/null 2>&1
@@ -107,7 +49,7 @@ if [[ " ${options[@]} " =~ " ccache " ]]; then
 	CXX="ccache ${CXX}"
 	C="ccache ${C}"
 	LD="ccache ${LD}"
-#	AR="ccache ${AR}"
+	AR="ccache ${AR}"
 fi
 
 if [ "$1" == "info" ]; then
@@ -116,8 +58,8 @@ shift
 cat <<-END
 toolchains:
   - name: "gcc 10.1"
-    version: ${version}
-    detail: "$(${CXX} --version | head -1)"
+    version: "${version}"
+    detail: "${version_detailed}"
     which:
       - "${CXX}"
       - "${C}"
@@ -128,6 +70,8 @@ toolchains:
       release: [no-debug, no-release_with_symbols]
       release_with_symbols: [no-release, no-debug]
       debug: [no-release, no-release_with_symbols]
+      profile: []
+      analyze: []
       ccache: []
 END
 exit 0
@@ -164,11 +108,20 @@ elif [ "$1" == "compile" ]; then
 	parameters=""
 	if [[ " ${options[@]} " =~ " release " ]]; then
 		parameters+=" -O2";
-	elif [[ " ${options[@]} " =~ " release_with_symbols " ]]; then
+	fi
+	if [[ " ${options[@]} " =~ " release_with_symbols " ]]; then
 		parameters+=" -O2 -ggdb";
-	elif [[ " ${options[@]} " =~ " debug " ]]; then
+	fi
+	if [[ " ${options[@]} " =~ " debug " ]]; then
 		parameters+=" -O0 -ggdb";
 	fi
+	if [[ " ${options[@]} " =~ " profile " ]]; then
+		parameters+=" -fprofile-arcs -ftest-coverage"
+	fi
+	if [[ " ${options[@]} " =~ " analyze " ]]; then
+		CXX="scan-build ${CXX}"
+	fi
+
 
 	projectIncludes+=($(dirname ${projectIncludes[-1]})) #!TODO this line should not be needed
 	projectIncludes=$(implode " -I " "${projectIncludes[@]}")
@@ -176,9 +129,9 @@ elif [ "$1" == "compile" ]; then
 
 	filetype="$(echo "${inputFile}" | rev | cut -d "." -f 1 | rev)";
 	if [[ "${filetype}" =~ ^(cpp|cc)$ ]]; then
-		call="${CXX} -O0 -std=c++20 -fPIC -MD ${parameters} -fdiagnostics-color=always -c ${inputFile} -o ${outputFile} $projectIncludes $systemIncludes"
+		call="${CXX} -std=c++20 -fPIC -MD ${parameters} -fdiagnostics-color=always -c ${inputFile} -o ${outputFile} $projectIncludes $systemIncludes"
 	elif [ "${filetype}" = "c" ]; then
-		call="${C} -O0 -std=c18 -fPIC -MD ${parameters} -fdiagnostics-color=always -c ${inputFile} -o ${outputFile} $projectIncludes $systemIncludes"
+		call="${C} -std=c18 -fPIC -MD ${parameters} -fdiagnostics-color=always -c ${inputFile} -o ${outputFile} $projectIncludes $systemIncludes"
 	else
 		exit 0
 	fi
@@ -195,6 +148,22 @@ elif [ "$1" == "link" ]; then
 
 	libraries=($(implode " -l" "${libraries[@]}"))
 
+
+	parameters=""
+	if [[ " ${options[@]} " =~ " release " ]]; then
+		parameters+="";
+	fi
+	if [[ " ${options[@]} " =~ " release_with_symbols " ]]; then
+		parameters+=" -g3 -ggdb";
+	fi
+	if [[ " ${options[@]} " =~ " debug " ]]; then
+		parameters+=" -g3 -ggdb";
+	fi
+	if [[ " ${options[@]} " =~ " profile " ]]; then
+		libraries+=("-lgcov")
+	fi
+
+
 	# Header only
 	if [ "${#inputFiles[@]}" -eq 0 ]; then
 		echo "compilable: false"
@@ -202,7 +171,7 @@ elif [ "$1" == "link" ]; then
 
 	# Executable
 	elif [ "${target}" == "executable" ]; then
-		call="${CXX} -rdynamic -g3 -ggdb -fdiagnostics-color=always -o ${outputFile} ${inputFiles[@]} ${inputLibraries[@]} ${libraries[@]}"
+		call="${CXX} -rdynamic ${parameters} -fdiagnostics-color=always -o ${outputFile} ${inputFiles[@]} ${inputLibraries[@]} ${libraries[@]}"
 	# Static library?
 	elif [ "${target}" == "static_library" ]; then
 		call="${LD} -Ur -o ${outputFile}.o ${inputFiles[@]} && ${AR} rcs ${outputFile} ${outputFile}.o"
@@ -219,7 +188,7 @@ dependency="log/dependency${process_id}.log"
 
 mkdir -p $(dirname ${outputFile})
 echo > ${stdout}
-if [ -n "${VERBOSE}" ]; then
+if [ -n "${set_verbose}" ]; then
 	echo $call>>${stdout}
 fi
 eval $call 1>>${stdout} 2>${stderr}

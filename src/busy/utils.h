@@ -23,6 +23,6 @@ auto updateToolchainOptions(Config& config, bool reset, std::optional<std::vecto
 
 auto computeEstimationTimes(Config const& config, analyse::ProjectMap const& projects_with_deps, bool clean, int jobs) -> std::tuple<ConsolePrinter::EstimatedTimes, std::chrono::milliseconds> ;
 
-auto execute(std::vector<std::string> const& params, bool verbose) -> std::string;
+auto execute(std::vector<std::string> params, bool verbose) -> std::string;
 
 }

@@ -8,7 +8,7 @@ namespace fon {
 
 template <typename Cb, typename T>
 void visit(Cb cb, T& obj) {
-	auto node = Node{cb, std::make_tuple(), (Node<Cb, std::nullptr_t> const*)nullptr};
+	auto node = Node{cb, std::make_tuple(), (std::nullptr_t const*)nullptr};
 	node % obj;
 }
 
