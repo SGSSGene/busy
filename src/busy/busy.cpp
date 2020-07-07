@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <fmt/format.h>
 #include <fmt/ostream.h>
+#include <fmt/color.h>
 #include <iostream>
 #include <sargparse/ArgumentParsing.h>
 #include <sargparse/File.h>
@@ -26,6 +27,8 @@ int main(int argc, char const** argv) {
 	try {
 		sargp::parseArguments(argc-1, argv+1);
 	} catch(std::exception const& e) {
+		fmt::print(std::cerr, "failed parsing arguments: {}\n\n",
+			fmt::format(fg(fmt::color::red), "{}", busy::utils::exceptionToString(e, 0)));
 		help();
 		return EXIT_FAILURE;
 	}
