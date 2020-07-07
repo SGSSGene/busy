@@ -172,7 +172,13 @@ void compile() {
 namespace {
 
 auto _cmd        = sargp::Command{"compile", "compile everything (default)", &compile};
-auto _cmdDefault = sargp::Task{&compile};
+auto _cmdDefault = sargp::Task{[]{
+	// only run if no children are active
+	for (auto cmd : sargp::getDefaultCommand().getSubCommands()) {
+		if (*cmd) return;
+	}
+	compile();
+}};
 
 }
 }

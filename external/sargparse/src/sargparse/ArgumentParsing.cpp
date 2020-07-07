@@ -53,10 +53,6 @@ std::vector<Command*> getActiveCommands() {
         }
         activeCommands.emplace_back(*it);
     }
-    //!TODO hack
-    if (activeCommands.size() > 1) {
-        activeCommands.erase(begin(activeCommands));
-    }
     return activeCommands;
 }
 
@@ -69,20 +65,7 @@ void parseArguments(int argc, char const* const* argv) {
             return cmd->getName() == commandName;
         });
 		if (target == subC.end()) {
-			bool non_empty_pre=false;
-			auto ss = std::stringstream{};
-			for (auto a : argProviders) {
-				if (non_empty_pre) {
-					ss << " ";
-				}
-				ss << a->getName();
-				non_empty_pre = not a->getName().empty();
-			}
-			if (non_empty_pre) {
-				ss << " ";
-			}
-			ss << commandName;
-			throw std::invalid_argument("command '" + ss.str() + "' is not implemented");
+			throw std::invalid_argument("command '" + commandName + "' is not implemented");
 		}
         (*target)->setActive(true);
         argProviders.push_back(*target);
