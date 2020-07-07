@@ -104,4 +104,26 @@ void checkConsistency(std::vector<busy::Project> const& _projects) {
 	}
 }
 
+auto listConsistencyIssues(std::vector<busy::Project> const& _projects) -> std::vector<std::tuple<busy::Project const*, busy::Project const*>> {
+	auto groupedProjects = std::map<std::string, std::vector<busy::Project const*>>{};
+	for (auto const& p : _projects) {
+		groupedProjects[p.getName()].emplace_back(&p);
+	}
+
+	auto retList = std::vector<std::tuple<busy::Project const*, busy::Project const*>>{};
+	for (auto const& [name, list] : groupedProjects) {
+		if (size(list) > 1) {
+			for (auto const& p1 : list) {
+				for (auto const& p2 : list) {
+					if (p1 == p2) continue;
+					if (not p1->isEquivalent(*p2)) {
+						retList.emplace_back(p1, p2);
+					}
+				}
+			}
+		}
+	}
+	return retList;
+}
+
 }

@@ -17,5 +17,6 @@ auto findDependentProjects(busy::Project const& _project, std::vector<busy::Proj
 auto createProjects(std::vector<busy::Project> const& _projects) -> ProjectMap;
 auto normalizeProjects(ProjectMap const& _projectMap) -> ProjectMap;
 void checkConsistency(std::vector<busy::Project> const& _projects);
+auto listConsistencyIssues(std::vector<busy::Project> const& _projects) -> std::vector<std::tuple<busy::Project const*, busy::Project const*>>;
 
 }
