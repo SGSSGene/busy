@@ -108,6 +108,7 @@ struct FileInfo {
 	bool needRecompiling{true};
 	Duration compileTime{0};
 	Dependencies dependencies{};
+	bool hasWarnings{false};
 
 
 	FileInfo(fon::ctor) {};
@@ -125,6 +126,7 @@ struct FileInfo {
 		node["needRecompiling"] % needRecompiling;
 		node["dependencies"]    % dependencies;
 		node["compileTime"]     % compileTime;
+		node["hasWarnings"]     % hasWarnings;
 	}
 
 
@@ -147,19 +149,6 @@ struct FileInfo {
 			}
 		}
 		return false;
-	}
-
-	void updateModTime(Time _modTime) {
-		modTime = _modTime;
-	}
-	void updateHash(Hash const& _hash) {
-		hash = _hash;
-	}
-	void updateDependencies(Dependencies const& _dependencies) {
-		dependencies = _dependencies;
-	}
-	void updateCompilable(bool _compilable) {
-		compilable = _compilable;
 	}
 
 	//!TODO remove when fixed?? otherwise not working with c++20

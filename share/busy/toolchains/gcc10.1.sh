@@ -31,9 +31,8 @@ fi
 
 
 parse "-options    options"\
+      "-verbose    verbose"\
       "--" "$@"
-
-process_id=$BASHPID
 
 # check if ccache is available
 CCACHE=0
@@ -44,7 +43,6 @@ if [[ " ${options[@]} " =~ " ccache " ]]; then
 	fi
 
 	CCACHE=1
-	export CCACHE_LOGFILE="log/ccache${process_id}.log"
 	CXX="ccache ${CXX}"
 	C="ccache ${C}"
 	LD="ccache ${LD}"
@@ -70,7 +68,7 @@ toolchains:
       release_with_symbols: [no-release, no-debug]
       debug: [no-release, no-release_with_symbols]
       profile: []
-      analyze: []
+      strict: []
       ccache: []
 END
 exit 0
@@ -85,12 +83,8 @@ if [ "$1" == "begin" ]; then
 	if [ ! -e "src" ]; then
 		ln -s ${rootDir}/src src
 	fi
-	if [ ! -e "log" ]; then
-		mkdir log
-	fi
 	exit 0
 elif [ "$1" == "end" ]; then
-	rmdir log
 	exit 0
 elif [ "$1" == "compile" ]; then
 	shift; inputFile="$1"
@@ -98,6 +92,10 @@ elif [ "$1" == "compile" ]; then
 	shift
 
 	dependencyFile=$(echo "${outputFile}" | rev | cut -b 3- | rev | xargs -I '{}' echo '{}.d')
+	stdoutFile="${outputFile}.stdout"
+	stderrFile="${outputFile}.stderr"
+	export CCACHE_LOGFILE="${outputFile}.ccache"
+
 
 	parse "-ilocal  projectIncludes" \
 	      "-isystem systemIncludes" \
@@ -117,8 +115,8 @@ elif [ "$1" == "compile" ]; then
 	if [[ " ${options[@]} " =~ " profile " ]]; then
 		parameters+=" -fprofile-arcs -ftest-coverage"
 	fi
-	if [[ " ${options[@]} " =~ " analyze " ]]; then
-		CXX="scan-build ${CXX}"
+	if [[ " ${options[@]} " =~ " strict " ]]; then
+		parameters+=" -Wall -Wextra -Wpedantic"
 	fi
 
 
@@ -126,11 +124,13 @@ elif [ "$1" == "compile" ]; then
 	projectIncludes=$(implode " -I " "${projectIncludes[@]}")
 	systemIncludes=$(implode " -isystem " "${systemIncludes[@]}")
 
+	diagnostic="-fdiagnostics-color=always -fdiagnostics-show-template-tree -fdiagnostics-format=text"
+
 	filetype="$(echo "${inputFile}" | rev | cut -d "." -f 1 | rev)";
 	if [[ "${filetype}" =~ ^(cpp|cc)$ ]]; then
-		call="${CXX} -std=c++20 -fPIC -MD ${parameters} -fdiagnostics-color=always -c ${inputFile} -o ${outputFile} $projectIncludes $systemIncludes"
+		call="${CXX} -std=c++20 -fPIC -MD ${parameters} ${diagnostic} -c ${inputFile} -o ${outputFile} $projectIncludes $systemIncludes"
 	elif [ "${filetype}" = "c" ]; then
-		call="${C} -std=c18 -fPIC -MD ${parameters} -fdiagnostics-color=always -c ${inputFile} -o ${outputFile} $projectIncludes $systemIncludes"
+		call="${C} -std=c18 -fPIC -MD ${parameters} ${diagnostic} -c ${inputFile} -o ${outputFile} $projectIncludes $systemIncludes"
 	else
 		exit 0
 	fi
@@ -138,6 +138,10 @@ elif [ "$1" == "link" ]; then
 	shift; target="$1"
 	shift; outputFile="$1"
 	shift
+
+	stdoutFile="${outputFile}.stdout"
+	stderrFile="${outputFile}.stderr"
+	export CCACHE_LOGFILE="${outputFile}.ccache"
 
 	parse "-i       inputFiles" \
 	      "-il      inputLibraries" \
@@ -181,22 +185,18 @@ else
 	exit -1
 fi
 
-stdout="log/stdout${process_id}.log"
-stderr="log/stderr${process_id}.log"
-dependency="log/dependency${process_id}.log"
-
 mkdir -p $(dirname ${outputFile})
-echo > ${stdout}
+: > ${stdoutFile}
 if [ -n "${set_verbose}" ]; then
-	echo $call>>${stdout}
+	echo $call>>${stdoutFile}
 fi
-eval $call 1>>${stdout} 2>${stderr}
+eval $call 1>>${stdoutFile} 2>${stderrFile}
 errorCode=$?
 
 echo "stdout: |+"
-cat ${stdout} | sed 's/^/    /'
+cat ${stdoutFile} | sed 's/^/    /'
 echo "stderr: |+"
-cat ${stderr} | sed 's/^/    /'
+cat ${stderrFile} | sed 's/^/    /'
 
 echo "dependencies:"
 if [ "${errorCode}" -eq 0 ] && [ -n "${dependencyFile}" ]; then
@@ -208,18 +208,10 @@ if [ "${CCACHE}" -eq 1 ]; then
 	if [ "$(cat ${CCACHE_LOGFILE} | grep 'Result: cache hit' | wc -l)" -eq 1 ]; then
 		is_cached="true"
 	fi
-	rm ${CCACHE_LOGFILE}
 fi
 echo "cached: ${is_cached}"
 echo "compilable: true"
 echo "output_file: ${outputFile}"
-
-
-rm ${stdout}
-rm ${stderr}
-if [ -n "${depCall}" ]; then
-	rm ${dependency}
-fi
 
 if [ $errorCode -ne "0" ]; then
 	exit -1

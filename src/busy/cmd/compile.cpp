@@ -129,16 +129,20 @@ void compile() {
 					}
 					dependencies.emplace_back(path, hash);
 				}
+				auto std_out = YAML::Node{node["stdout"]}.as<std::string>("");
+				auto std_err = YAML::Node{node["stderr"]}.as<std::string>("");
+
 				fileInfo.dependencies    = dependencies;
 				fileInfo.hash            = hash;
 				fileInfo.needRecompiling = false;
+				fileInfo.hasWarnings     = not std_err.empty();
 
 				auto compileTime = consolePrinter.finishedJob(&file);
 				if (not cached or fileInfo.compileTime < compileTime) {
 					fileInfo.compileTime = compileTime;
 				}
 				fileInfo.modTime = startTime;
-				return fileInfo.compilable?CompilePipe::Color::Compilable:CompilePipe::Color::Ignored;
+				return fileInfo.compilable? CompilePipe::Color::Compilable: CompilePipe::Color::Ignored;
 			}, [&](busy::Project const& project, auto const& params, auto const& deps) {
 				auto& fileInfo = getFileInfos().get(project.getPath());
 

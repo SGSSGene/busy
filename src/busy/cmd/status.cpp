@@ -90,6 +90,53 @@ void status() {
 			}, target);
 		}
 	}
+
+	int warnings = 0;
+	auto pipe = CompilePipe{config.toolchain.call, projects_with_deps, config.toolchain.options};
+	while (not pipe.empty()) {
+		auto work = pipe.pop();
+		pipe.dispatch(work, overloaded {
+			[&](busy::File const& file, auto const& params, auto const& deps) {
+				auto& fileInfo = getFileInfos().get(file.getPath());
+				if (fileInfo.hasWarnings) {
+					warnings += 1;
+				}
+				return CompilePipe::Color::Compilable;
+			}, [&](busy::Project const& project, auto const& params, auto const& deps) {
+				auto& fileInfo = getFileInfos().get(project.getPath());
+				if (fileInfo.hasWarnings) {
+					warnings += 1;
+				}
+				return CompilePipe::Color::Compilable;
+			}
+		});
+	}
+	if (warnings == 0) {
+		fmt::print("all files {}\n", fmt::format(fg_green, "warning free"));
+	} else {
+		fmt::print("{} files with {}\n", warnings, fmt::format(fg_red, "warnings"));
+		if (*cfgVerbose) {
+			auto pipe = CompilePipe{config.toolchain.call, projects_with_deps, config.toolchain.options};
+			while (not pipe.empty()) {
+				auto work = pipe.pop();
+				pipe.dispatch(work, overloaded {
+					[&](busy::File const& file, auto const& params, auto const& deps) {
+						auto& fileInfo = getFileInfos().get(file.getPath());
+						if (fileInfo.hasWarnings) {
+							fmt::print("  - {}\n", file.getPath());
+						}
+						return CompilePipe::Color::Compilable;
+					}, [&](busy::Project const& project, auto const& params, auto const& deps) {
+						auto& fileInfo = getFileInfos().get(project.getPath());
+						if (fileInfo.hasWarnings) {
+							fmt::print("  - {}\n", project.getPath());
+						}
+						return CompilePipe::Color::Compilable;
+					}
+				});
+			}
+		}
+	}
 }
 
 auto cmd = sargp::Command("status", "show status", status);
