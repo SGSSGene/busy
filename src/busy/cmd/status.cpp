@@ -13,7 +13,7 @@
 #include <sargparse/Parameter.h>
 #include <sargparse/ArgumentParsing.h>
 #include <unistd.h>
-//!TODO test
+
 namespace busy::cmd {
 namespace {
 

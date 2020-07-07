@@ -22,7 +22,7 @@ auto searchForToolchains(std::filesystem::path _path) -> std::vector<std::tuple<
 				auto node = YAML::Load(p.cout());
 				if (node["toolchains"].IsSequence()) {
 					for (auto const& n : node["toolchains"]) {
-						retList.emplace_back(n["name"].as<std::string>(), f.path());
+						retList.emplace_back(n["name"].as<std::string>(), f.path().lexically_normal());
 					}
 				}
 			}
