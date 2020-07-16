@@ -5,6 +5,7 @@
 #include "../overloaded.h"
 #include "../toolchains.h"
 #include "../utils.h"
+#include "../utils/utils.h"
 
 #include <fmt/format.h>
 #include <fmt/chrono.h>
@@ -15,9 +16,12 @@
 namespace busy::cmd {
 namespace {
 
-void status() {
-	bool isInteractive = isatty(fileno(stdout));
+void status();
+auto cmd         = sargp::Command("status", "show status", status);
+auto cfgFiles    = cmd.Parameter<std::vector<std::filesystem::path>>({}, "files", "show warnings of given files", []{}, sargp::completeFile("", sargp::File::Multi));
+auto cfgAllFiles = cmd.Flag("all_files", "show warnings of all files with warnings");
 
+void status() {
 	auto workPath   = std::filesystem::current_path();
 	auto config     = loadConfig(workPath, *cfgBuildPath, {cfgRootPath, *cfgRootPath});
 	auto cacheGuard = loadFileCache(*cfgYamlCache);
@@ -27,9 +31,9 @@ void status() {
 	packages.insert(begin(packages), user_sharedPath);
 	packages.insert(begin(packages), global_sharedPath);
 
-	auto fg_green  = isInteractive? fg(fmt::terminal_color::green): fmt::text_style{};
-	auto fg_yellow = isInteractive? fg(fmt::terminal_color::yellow): fmt::text_style{};
-	auto fg_red    = isInteractive? fg(fmt::terminal_color::red): fmt::text_style{};
+	auto fg_green  = isInteractive()? fg(fmt::terminal_color::green): fmt::text_style{};
+	auto fg_yellow = isInteractive()? fg(fmt::terminal_color::yellow): fmt::text_style{};
+	auto fg_red    = isInteractive()? fg(fmt::terminal_color::red): fmt::text_style{};
 
 	fmt::print("using toolchain {} ({})\n",
 		fmt::format(fg_green, "{}", config.toolchain.name),
@@ -77,67 +81,53 @@ void status() {
 			fmt::format(fg_yellow, "{:0.1f}s", (estimatedTotalTime.count())/1000.f),
 			fmt::format(fg_yellow, "{}", jobs));
 	}
-	if (*cfgVerbose) {
-		for (auto const& [target, time] : estimatedTimes) {
-			std::visit(overloaded{
-				[](File const* file) {
-					fmt::print("  - {}\n", file->getPath());
-				}, [](Project const* project) {
-					fmt::print("  - {}\n", project->getName());
-				}
-			}, target);
-		}
+	for (auto const& [target, time] : estimatedTimes) {
+		std::visit(overloaded{
+			[](File const* file) {
+				fmt::print("  - {}\n", file->getPath());
+			}, [](Project const* project) {
+				fmt::print("  - {}\n", project->getName());
+			}
+		}, target);
 	}
 
 	int warnings = 0;
-	auto pipe = CompilePipe{config.toolchain.call, projects_with_deps, config.toolchain.options};
-	while (not pipe.empty()) {
-		auto work = pipe.pop();
-		pipe.dispatch(work, overloaded {
-			[&](busy::File const& file, auto const& params, auto const& deps) {
-				auto& fileInfo = getFileInfos().get(file.getPath());
-				if (fileInfo.hasWarnings) {
-					warnings += 1;
-				}
-				return CompilePipe::Color::Compilable;
-			}, [&](busy::Project const& project, auto const& params, auto const& deps) {
-				auto& fileInfo = getFileInfos().get(project.getPath());
-				if (fileInfo.hasWarnings) {
-					warnings += 1;
-				}
-				return CompilePipe::Color::Compilable;
-			}
-		});
+	visitFilesWithWarnings(config, projects_with_deps, [&](File const& file, FileInfo const& fileInfo) {
+		warnings += 1;
+		if (cfgAllFiles) {
+			auto filePath = file.getPath();
+			filePath = "obj" / filePath;
+			filePath.replace_extension(".o.stderr");
+
+			auto data = utils::readFullFile(filePath);
+			data.push_back(std::byte(0));
+			fmt::print("{}:\n", filePath);
+			fmt::print("{}\n", (char*)data.data());
+		}
+	}, nullptr);
+
+	for (auto file : *cfgFiles) {
+		file = "obj" / file;
+		file.replace_extension(".o.stderr");
+
+		auto data = utils::readFullFile(file);
+		data.push_back(std::byte(0));
+		fmt::print("{}:\n", file);
+		fmt::print("{}\n", (char*)data.data());
 	}
+
+
 	if (warnings == 0) {
 		fmt::print("all files {}\n", fmt::format(fg_green, "warning free"));
 	} else {
 		fmt::print("{} files with {}\n", warnings, fmt::format(fg_red, "warnings"));
-		if (*cfgVerbose) {
-			auto pipe = CompilePipe{config.toolchain.call, projects_with_deps, config.toolchain.options};
-			while (not pipe.empty()) {
-				auto work = pipe.pop();
-				pipe.dispatch(work, overloaded {
-					[&](busy::File const& file, auto const& params, auto const& deps) {
-						auto& fileInfo = getFileInfos().get(file.getPath());
-						if (fileInfo.hasWarnings) {
-							fmt::print("  - {}\n", file.getPath());
-						}
-						return CompilePipe::Color::Compilable;
-					}, [&](busy::Project const& project, auto const& params, auto const& deps) {
-						auto& fileInfo = getFileInfos().get(project.getPath());
-						if (fileInfo.hasWarnings) {
-							fmt::print("  - {}\n", project.getPath());
-						}
-						return CompilePipe::Color::Compilable;
-					}
-				});
-			}
+		if (not cfgFiles) {
+			visitFilesWithWarnings(config, projects_with_deps, [&](File const& file, FileInfo const& fileInfo) {
+				fmt::print("  - {}\n", file.getPath());
+			}, nullptr);
 		}
 	}
 }
-
-auto cmd = sargp::Command("status", "show status", status);
 
 }
 }

@@ -8,6 +8,7 @@
 #include <iostream>
 #include <process/Process.h>
 #include <queue>
+#include <unistd.h>
 
 
 namespace busy {
@@ -201,5 +202,32 @@ auto execute(std::vector<std::string> params, bool verbose) -> std::string {
 	return p.cout();
 };
 
+void visitFilesWithWarnings(Config const& config, ProjectMap const& projects_with_deps, std::function<void(File const&, FileInfo const&)> fileF, std::function<void(Project const&, FileInfo const&)> projectF) {
+	auto pipe = CompilePipe{config.toolchain.call, projects_with_deps, config.toolchain.options};
+	while (not pipe.empty()) {
+		auto work = pipe.pop();
+		pipe.dispatch(work, overloaded {
+			[&](busy::File const& file, auto const& params, auto const& deps) {
+				auto& fileInfo = getFileInfos().get(file.getPath());
+				if (fileInfo.hasWarnings and fileF) {
+					fileF(file, fileInfo);
+				}
+				return CompilePipe::Color::Compilable;
+			}, [&](busy::Project const& project, auto const& params, auto const& deps) {
+				auto& fileInfo = getFileInfos().get(project.getPath());
+				if (fileInfo.hasWarnings and projectF) {
+					projectF(project, fileInfo);
+				}
+				return CompilePipe::Color::Compilable;
+			}
+		});
+	}
+}
+
+bool isInteractive() {
+	static bool interactive = isatty(fileno(stdout));
+	return interactive;
+
+}
 
 }

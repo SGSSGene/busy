@@ -25,4 +25,7 @@ auto computeEstimationTimes(Config const& config, ProjectMap const& projects_wit
 
 auto execute(std::vector<std::string> params, bool verbose) -> std::string;
 
+void visitFilesWithWarnings(Config const& config, ProjectMap const& projects_with_deps, std::function<void(File const&, FileInfo const&)> fileF, std::function<void(Project const&, FileInfo const&)> projectF);
+bool isInteractive();
+
 }

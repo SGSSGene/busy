@@ -6,6 +6,8 @@
 #include "../toolchains.h"
 #include "../utils.h"
 
+#include <fmt/color.h>
+
 namespace busy::cmd {
 namespace {
 
@@ -172,6 +174,20 @@ void compile() {
 	}
 	execute({config.toolchain.call, "end"}, false);
 	fmt::print("done\n");
+
+	int warnings = 0;
+	visitFilesWithWarnings(config, projects_with_deps, [&](File const& file, FileInfo const& fileInfo) {
+		warnings += 1;
+	}, nullptr);
+
+	auto fg_green  = isInteractive()? fg(fmt::terminal_color::green): fmt::text_style{};
+	auto fg_red    = isInteractive()? fg(fmt::terminal_color::red): fmt::text_style{};
+	if (warnings == 0) {
+		fmt::print("all files {}\n", fmt::format(fg_green, "warning free"));
+	} else {
+		fmt::print("{} files with {}\n", warnings, fmt::format(fg_red, "warnings"));
+	}
+
 }
 
 auto cmd        = sargp::Command{"compile", "compile everything (default)", compile};
