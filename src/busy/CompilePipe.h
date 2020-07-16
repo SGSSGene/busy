@@ -71,9 +71,7 @@ struct CompilePipe {
 
 		params.emplace_back(project.getPath());
 		for (auto const& p : project.getLegacyIncludePaths()) {
-			if (params.back() != p) {
-				params.emplace_back(p);
-			}
+			params.emplace_back(p);
 		}
 		if (params.back() == "-ilocal") params.pop_back();
 
@@ -82,31 +80,27 @@ struct CompilePipe {
 		params.emplace_back("-isystem");
 
 		auto systemIncludes = std::vector<std::filesystem::path>{};
-		queue.visit_incoming(&project, [&](auto& x) {
-			using X = std::decay_t<decltype(x)>;
-			if constexpr (std::is_same_v<X, busy::Project>) {
-				if (params.back() != x.getPath().parent_path()) {
-					params.emplace_back(x.getPath().parent_path());
-				}
-				for (auto const& i : x.getLegacyIncludePaths()) {
-					if (params.back() != i) {
-						params.emplace_back(i);
-					}
-				}
+		queue.visit_incoming<Project const>(&project, [&](Project const& project) {
+			params.emplace_back(project.getPath().parent_path());
+			for (auto const& i : project.getLegacyIncludePaths()) {
+				params.emplace_back(i);
 			}
 		});
 		if (params.back() == "-isystem") params.pop_back();
+
+		params.erase(std::unique(begin(params), end(params)), end(params));
 		return params;
 	}
 
 	auto setupLinking(busy::Project const& project) const {
+
+		bool isExecutable = [&]() {
+			if (project.getType() == "library") {
+				return false;
+			}
+			return std::get<1>(projects_with_deps.at(&project)).empty();
+		}();
 		auto [action, target] = [&]() -> std::tuple<std::string, std::filesystem::path> {
-			bool isExecutable = [&]() {
-				if (project.getType() == "library") {
-					return false;
-				}
-				return std::get<1>(projects_with_deps.at(&project)).empty();
-			}();
 			if (isExecutable) {
 				return {"executable", std::filesystem::path{"bin"} / project.getName()};
 			}
@@ -132,9 +126,7 @@ struct CompilePipe {
 			if (colors.at(file) == Color::Compilable) {
 				auto objPath = "obj" / file->getPath();
 				objPath.replace_extension(".o");
-				if (params.back() != objPath) {
-					params.emplace_back(objPath);
-				}
+				params.emplace_back(objPath);
 			}
 		}
 		if (params.back() == "-i") params.pop_back();
@@ -156,30 +148,24 @@ struct CompilePipe {
 		addSystemLibraries(project);
 
 		auto dependencies = std::unordered_set<Project const*>{};
-		queue.visit_incoming(&project, [&](auto& project) {
-			using X = std::decay_t<decltype(project)>;
-			if constexpr (std::is_same_v<X, busy::Project>) {
-				if (colors.at(&project) == Color::Compilable) {
-					auto target = (std::filesystem::path{"lib"} / project.getName()).replace_extension(".a");
-					if (params.back() != target) {
-						params.emplace_back(target);
-					}
-				}
-				addSystemLibraries(project);
-				dependencies.insert(&project);
+		queue.visit_incoming<Project const>(&project, [&](Project const& project) {
+			if (colors.at(&project) == Color::Compilable) {
+				auto target = (std::filesystem::path{"lib"} / project.getName()).replace_extension(".a");
+				params.emplace_back(target);
 			}
+			addSystemLibraries(project);
+			dependencies.insert(&project);
 		});
 		if (params.back() == "-il") params.pop_back();
 
 
 		params.emplace_back("-l");
 		for (auto const& l : systemLibraries) {
-			if (params.back() != l) {
-				params.emplace_back(l);
-			}
+			params.emplace_back(l);
 		}
 		if (params.back() == "-l") params.pop_back();
 
+		params.erase(std::unique(begin(params), end(params)), end(params));
 		return std::tuple{params, dependencies};
 	}
 

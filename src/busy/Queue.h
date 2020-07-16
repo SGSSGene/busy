@@ -95,7 +95,7 @@ public:
 	}
 
 
-	template <typename L>
+	template <typename T=void, typename L>
 	void visit_incoming(Node n, L const& l) const {
 		auto& node = findNode(n);
 
@@ -108,9 +108,15 @@ public:
 		while (not work.empty()) {
 			auto front = work.front();
 			work.pop();
-			std::visit([&](auto& ptr) {
-				l(*ptr);
-			}, front->value);
+			if constexpr (std::is_void_v<T>) {
+				std::visit([&](auto& ptr) {
+					l(*ptr);
+				}, front->value);
+			} else {
+				if (std::holds_alternative<T*>(front->value)) {
+					l(*std::get<T*>(front->value));
+				}
+			}
 			for (auto n : front->inNode) {
 				work.push(n);
 			}
