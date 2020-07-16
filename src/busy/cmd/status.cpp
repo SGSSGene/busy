@@ -92,7 +92,7 @@ void status() {
 	}
 
 	int warnings = 0;
-	visitFilesWithWarnings(config, projects_with_deps, [&](File const& file, FileInfo const& fileInfo) {
+	visitFilesWithWarnings(config, projects_with_deps, [&](File const& file, FileInfo const&) {
 		warnings += 1;
 		if (cfgAllFiles) {
 			auto filePath = file.getPath();
@@ -122,7 +122,7 @@ void status() {
 	} else {
 		fmt::print("{} files with {}\n", warnings, fmt::format(fg_red, "warnings"));
 		if (not cfgFiles) {
-			visitFilesWithWarnings(config, projects_with_deps, [&](File const& file, FileInfo const& fileInfo) {
+			visitFilesWithWarnings(config, projects_with_deps, [&](File const& file, FileInfo const&) {
 				fmt::print("  - {}\n", file.getPath());
 			}, nullptr);
 		}

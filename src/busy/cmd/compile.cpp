@@ -92,7 +92,7 @@ void compile() {
 
 		std::mutex mutex;
 		multiPipe.work(overloaded {
-			[&](busy::File const& file, auto const& params, auto const& deps) {
+			[&](busy::File const& file, auto const& params, auto const&) {
 				auto startTime  = std::chrono::file_clock::now();
 				auto path       = file.getPath();
 
@@ -156,7 +156,7 @@ void compile() {
 				g.unlock();
 
 				return fileInfo.compilable? CompilePipe::Color::Compilable: CompilePipe::Color::Ignored;
-			}, [&](busy::Project const& project, auto const& params, auto const& deps) {
+			}, [&](busy::Project const& project, auto const& params, auto const&) {
 				auto& fileInfo = getFileInfos().get(project.getPath());
 
 				if (estimatedTimes.count(&project) == 0) {
@@ -191,7 +191,7 @@ void compile() {
 	fmt::print("done\n");
 
 	int warnings = 0;
-	visitFilesWithWarnings(config, projects_with_deps, [&](File const& file, FileInfo const& fileInfo) {
+	visitFilesWithWarnings(config, projects_with_deps, [&](File const&, FileInfo const&) {
 		warnings += 1;
 	}, nullptr);
 

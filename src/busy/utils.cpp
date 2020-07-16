@@ -124,22 +124,22 @@ auto computeEstimationTimes(Config const& config, ProjectMap const& projects_wit
 	auto pipe           = CompilePipe{config.toolchain.call, projects_with_deps, config.toolchain.options};
 	auto threadTimings = std::vector<std::chrono::milliseconds>(jobs, std::chrono::milliseconds{0});
 	auto readyTimings  = std::vector<std::chrono::milliseconds>{};
-	for (int i{0}; i < pipe.size(); ++i) {
+	for (std::size_t i{0}; i < pipe.size(); ++i) {
 		readyTimings.push_back(std::chrono::milliseconds{0});
 	}
 	while (not pipe.empty()) {
 		auto work = pipe.pop();
 		auto duration = std::chrono::milliseconds{};
-		int otherProcesses = pipe.size();
+		auto otherProcesses = pipe.size();
 		pipe.dispatch(work, overloaded {
-			[&](busy::File const& file, auto const& params, auto const& deps) {
+			[&](busy::File const& file, auto const& /*params*/, auto const& /*deps*/) {
 				auto& fileInfo = getFileInfos().get(file.getPath());
 				if (clean or (fileInfo.hasChanged() and fileInfo.compilable)) {
 					estimatedTimes.try_emplace(&file, fileInfo.compileTime);
 					duration = fileInfo.compileTime;
 				}
 				return CompilePipe::Color::Compilable;
-			}, [&](busy::Project const& project, auto const& params, auto const& deps) {
+			}, [&](busy::Project const& project, auto const& /*params*/, auto const& deps) {
 				auto& fileInfo = getFileInfos().get(project.getPath());
 				auto anyChanges = [&]() {
 					for (auto const& d : deps) {
@@ -165,7 +165,7 @@ auto computeEstimationTimes(Config const& config, ProjectMap const& projects_wit
 		threadTimings[0] = std::max(readyTimings.front(), threadTimings.front()) + duration;
 		readyTimings.erase(begin(readyTimings));
 		auto newProcesses = pipe.size() - otherProcesses;
-		for (auto i{0}; i < newProcesses; ++i) {
+		for (std::size_t i{0}; i < newProcesses; ++i) {
 			readyTimings.push_back(threadTimings[0]);
 		}
 		std::sort(begin(threadTimings), end(threadTimings));
@@ -200,20 +200,20 @@ auto execute(std::vector<std::string> params, bool verbose) -> std::string {
 		throw CompileError{};
 	}
 	return p.cout();
-};
+}
 
 void visitFilesWithWarnings(Config const& config, ProjectMap const& projects_with_deps, std::function<void(File const&, FileInfo const&)> fileF, std::function<void(Project const&, FileInfo const&)> projectF) {
 	auto pipe = CompilePipe{config.toolchain.call, projects_with_deps, config.toolchain.options};
 	while (not pipe.empty()) {
 		auto work = pipe.pop();
 		pipe.dispatch(work, overloaded {
-			[&](busy::File const& file, auto const& params, auto const& deps) {
+			[&](busy::File const& file, auto const& /*params*/, auto const& /*deps*/) {
 				auto& fileInfo = getFileInfos().get(file.getPath());
 				if (fileInfo.hasWarnings and fileF) {
 					fileF(file, fileInfo);
 				}
 				return CompilePipe::Color::Compilable;
-			}, [&](busy::Project const& project, auto const& params, auto const& deps) {
+			}, [&](busy::Project const& project, auto const& /*params*/, auto const& /*deps*/) {
 				auto& fileInfo = getFileInfos().get(project.getPath());
 				if (fileInfo.hasWarnings and projectF) {
 					projectF(project, fileInfo);

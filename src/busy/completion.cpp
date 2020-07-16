@@ -7,7 +7,7 @@
 
 namespace busy::comp {
 
-auto toolchain(std::vector<std::string> const& str) -> std::pair<bool, std::set<std::string>> {
+auto toolchain(std::vector<std::string> const& /*str*/) -> std::pair<bool, std::set<std::string>> {
 	auto ret = std::pair<bool, std::set<std::string>>{false, {}};
 	auto workPath = std::filesystem::current_path();
 	auto config = loadConfig(workPath, *cfgBuildPath, {cfgRootPath, *cfgRootPath});
@@ -28,7 +28,7 @@ auto toolchain(std::vector<std::string> const& str) -> std::pair<bool, std::set<
 	return ret;
 }
 
-auto options(std::vector<std::string> const& str) -> std::pair<bool, std::set<std::string>> {
+auto options(std::vector<std::string> const& /*str*/) -> std::pair<bool, std::set<std::string>> {
 	auto ret = std::pair<bool, std::set<std::string>>{false, {}};
 	auto workPath = std::filesystem::current_path();
 	auto config = loadConfig(workPath, *cfgBuildPath, {cfgRootPath, *cfgRootPath});

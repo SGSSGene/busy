@@ -9,10 +9,10 @@ Project::Project(std::string _name, std::string _type, std::filesystem::path con
 	, mLegacyIncludePaths { std::move(_legacyIncludePaths) }
 	, mSystemLibraries    { std::move(_systemLibraries) }
 {
-	analyseFiles(mName, _root, mPath, mLegacyIncludePaths);
+	analyseFiles(_root, mPath, mLegacyIncludePaths);
 }
 
-void Project::analyseFiles(std::string const& _name, std::filesystem::path const& _root, std::filesystem::path const& _sourcePath, std::vector<std::filesystem::path> const& _legacyIncludePaths) {
+void Project::analyseFiles(std::filesystem::path const& _root, std::filesystem::path const& _sourcePath, std::vector<std::filesystem::path> const& _legacyIncludePaths) {
 	// Discover header, cpp and c files
 	for (auto const &e : std::filesystem::recursive_directory_iterator(_root / _sourcePath)) {
 		if (not is_regular_file(e)) {

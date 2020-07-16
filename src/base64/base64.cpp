@@ -71,7 +71,7 @@ void decode_block(char const* _input, char* _output, std::size_t len) {
 
 	decode_block(&input[0], &output[0]);
 
-	for (auto i{0}; i < len; ++i) {
+	for (std::size_t i{0}; i < len; ++i) {
 		_output[i] = output[i];
 	}
 }
@@ -85,7 +85,7 @@ auto encoded_len(std::string_view _decoded) -> std::size_t {
 auto encode(std::string_view _decoded) -> std::string {
 
 	auto ret = std::string(encoded_len(_decoded), '=');
-	for (int i{0}; i < _decoded.size() / 3; i += 1) {
+	for (std::size_t i{0}; i < _decoded.size() / 3; i += 1) {
 		encode_block(&_decoded[i*3], &ret[i*4]);
 	}
 	auto rest_len = _decoded.size() % 3;
@@ -102,7 +102,7 @@ auto encoded_valid(std::string_view _encoded) -> bool {
 		return false;
 	}
 
-	for (auto i{0}; i < _encoded.size()-2; ++i) {
+	for (std::size_t i{0}; i < _encoded.size()-2; ++i) {
 		if (not is_base64(_encoded[i])) {
 			return false;
 		}
@@ -144,7 +144,7 @@ auto decode(std::string_view _encoded) -> std::string {
 
 	auto ret = std::string(decoded_len(_encoded), '\0');
 
-	for (auto i{0}; i<_encoded.size()/4; ++i) {
+	for (std::size_t i{0}; i<_encoded.size()/4; ++i) {
 		decode_block(&_encoded[i*4], &ret[i*3]);
 	}
 

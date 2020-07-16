@@ -3,7 +3,7 @@
 namespace busy {
 
 // check if this _project is included by _allIncludes
-auto isDependentProject(std::set<std::filesystem::path> const& _allIncludes, busy::Project const& _project) -> bool {
+auto isDependentProject(std::set<std::filesystem::path> const& _allIncludes, Project const& _project) -> bool {
 
 	auto files = _project.getFiles();
 	for (auto const& file : files) {
@@ -27,8 +27,8 @@ auto isDependentProject(std::set<std::filesystem::path> const& _allIncludes, bus
 	return false;
 }
 
-auto findDependentProjects(busy::Project const& _project, std::vector<busy::Project> const& _projects) -> std::set<busy::Project const*> {
-	auto ret = std::set<busy::Project const*>{};
+auto findDependentProjects(Project const& _project, std::vector<Project> const& _projects) -> std::set<Project const*> {
+	auto ret = std::set<Project const*>{};
 	auto _allIncludes = _project.getIncludes();
 
 	for (auto const& project : _projects) {
@@ -39,9 +39,7 @@ auto findDependentProjects(busy::Project const& _project, std::vector<busy::Proj
 	return ret;
 }
 
-auto createProjects(std::vector<busy::Project> const& _projects) -> ProjectMap {
-	using Project = busy::Project;
-
+auto createProjects(std::vector<Project> const& _projects) -> ProjectMap {
 	auto ret = ProjectMap{};
 
 	for (auto const& p : _projects) {
@@ -57,7 +55,7 @@ auto createProjects(std::vector<busy::Project> const& _projects) -> ProjectMap {
 	return normalizeProjects(ret);
 }
 auto normalizeProjects(ProjectMap const& _projectMap) -> ProjectMap {
-	auto duplicateList = std::map<std::string, busy::Project const*>{};
+	auto duplicateList = std::map<std::string, Project const*>{};
 	auto ret = ProjectMap{};
 	for (auto [key, deps] : _projectMap) {
 		auto iter = duplicateList.find(key->getName());
@@ -82,8 +80,8 @@ auto normalizeProjects(ProjectMap const& _projectMap) -> ProjectMap {
 }
 
 
-void checkConsistency(std::vector<busy::Project> const& _projects) {
-	auto groupedProjects = std::map<std::string, std::vector<busy::Project const*>>{};
+void checkConsistency(std::vector<Project> const& _projects) {
+	auto groupedProjects = std::map<std::string, std::vector<Project const*>>{};
 	for (auto const& p : _projects) {
 		groupedProjects[p.getName()].emplace_back(&p);
 	}
@@ -104,13 +102,13 @@ void checkConsistency(std::vector<busy::Project> const& _projects) {
 	}
 }
 
-auto listConsistencyIssues(std::vector<busy::Project> const& _projects) -> std::vector<std::tuple<busy::Project const*, busy::Project const*>> {
-	auto groupedProjects = std::map<std::string, std::vector<busy::Project const*>>{};
+auto listConsistencyIssues(std::vector<Project> const& _projects) -> std::vector<std::tuple<Project const*, Project const*>> {
+	auto groupedProjects = std::map<std::string, std::vector<Project const*>>{};
 	for (auto const& p : _projects) {
 		groupedProjects[p.getName()].emplace_back(&p);
 	}
 
-	auto retList = std::vector<std::tuple<busy::Project const*, busy::Project const*>>{};
+	auto retList = std::vector<std::tuple<Project const*, Project const*>>{};
 	for (auto const& [name, list] : groupedProjects) {
 		if (size(list) > 1) {
 			for (auto const& p1 : list) {

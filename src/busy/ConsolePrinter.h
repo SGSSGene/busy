@@ -30,10 +30,11 @@ private:
 	std::string currentJob = "init";
 	std::condition_variable cv;
 
+	std::chrono::steady_clock::time_point const startTime;
+
 	std::atomic_bool isRunning{true};
 	std::thread thread;
 
-	std::chrono::steady_clock::time_point const startTime;
 
 public:
 	ConsolePrinter(EstimatedTimes _estimatedTimes, std::chrono::milliseconds _totalTime)

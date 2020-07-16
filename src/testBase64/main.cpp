@@ -11,7 +11,7 @@ void test(std::string s) {
 	assert(base64::encoded_valid(encoded));
 	assert(len2 == decoded.size());
 }
-int main(int argc, char const** argv) {
+int main() {
 	test("Hallo Welt");
 	test("mehr tests");
 	test("");

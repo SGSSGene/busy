@@ -20,7 +20,7 @@ private:
 
 	struct IntNode {
 		Node value;
-		int inNodeCt{0};
+		std::size_t inNodeCt{0};
 		std::vector<IntNode*> inNode;
 		std::vector<IntNode*> outNode;
 	};
@@ -49,7 +49,7 @@ private:
 public:
 	Queue(Nodes const& _nodes, Edges const& _edges) {
 		for (auto n : _nodes) {
-			nodes.emplace_back(IntNode{n, {}, {}});
+			nodes.emplace_back(IntNode{n, 0, {}, {}});
 		}
 		for (auto [src, dst] : _edges) {
 			auto& srcNode = findNode(src);

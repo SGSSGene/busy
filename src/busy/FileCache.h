@@ -26,7 +26,7 @@ struct FileCache {
 		if (iter == files.end()) {
 			auto modTime = getFileModificationTime(_path);
 			auto hash    = computeHash(_path);
-			auto [succ, iter2] = files.try_emplace(str_path, modTime, hash);
+			files.try_emplace(str_path, modTime, hash);
 			return hash;
 		}
 		if (std::get<Time>(iter->second) != getFileModificationTime(_path)) {
