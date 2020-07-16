@@ -28,7 +28,7 @@ auto explode(std::string const& _str, std::vector<char> const& _dels) -> std::ve
 	return retList;
 }
 
-void safeFileWrite(std::filesystem::path _dest, std::filesystem::path _src) {
+void safeFileWrite(std::filesystem::path const& _dest, std::filesystem::path const& _src) {
 	int fd = ::open(_src.string().c_str(), O_APPEND);
 	::fsync(fd);
 	::close(fd);

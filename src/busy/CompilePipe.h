@@ -32,6 +32,7 @@ struct CompilePipe {
 		, queue {loadQueue()}
 	{}
 
+	[[nodiscard]]
 	auto loadQueue() -> Q {
 		for (auto& [project, dep] : projects_with_deps) {
 			nodes.push_back(project);
@@ -46,6 +47,7 @@ struct CompilePipe {
 		return Queue{nodes, edges};
 	}
 
+	[[nodiscard]]
 	auto setupCompiling (busy::File const& file) const -> std::vector<std::string> {
 		auto outFile = file.getPath().lexically_normal().replace_extension(".o");
 		auto inFile  = file.getPath();
@@ -92,6 +94,7 @@ struct CompilePipe {
 		return params;
 	}
 
+	[[nodiscard]]
 	auto setupLinking(busy::Project const& project) const {
 
 		bool isExecutable = [&]() {
@@ -169,20 +172,26 @@ struct CompilePipe {
 		return std::tuple{params, dependencies};
 	}
 
-	bool empty() const {
+	[[nodiscard]]
+	auto empty() const -> bool {
 		return queue.empty();
 	}
-	size_t size() const {
+
+	[[nodiscard]]
+	auto size() const -> size_t {
 		return queue.size();
 	}
 
 
+	[[nodiscard]]
 	auto extract(busy::File const& file) const -> std::tuple<std::vector<std::string>, std::nullptr_t> {
 		return {setupCompiling(file), nullptr};
-	};
+	}
+
+	[[nodiscard]]
 	auto extract(busy::Project const& project) const -> std::tuple<std::vector<std::string>, std::unordered_set<Project const*>> {
 		return setupLinking(project);
-	};
+	}
 
 	auto pop() {
 		return queue.pop();

@@ -17,15 +17,15 @@ namespace busy {
 struct CompileError {};
 
 void printProjects(std::map<Project const*, std::tuple<std::set<Project const*>, std::set<Project const*>>> const& _projects);
-auto loadConfig(std::filesystem::path workPath, std::filesystem::path buildPath, std::tuple<bool, std::filesystem::path> rootPath) -> Config;
+auto loadConfig(std::filesystem::path const& workPath, std::filesystem::path const& buildPath, std::tuple<bool, std::filesystem::path> const& rootPath) -> Config;
 
-auto updateToolchainOptions(Config& config, bool reset, std::vector<std::string> _options) -> std::map<std::string, std::vector<std::string>>;
+auto updateToolchainOptions(Config& config, bool reset, std::vector<std::string> const& _options) -> std::map<std::string, std::vector<std::string>>;
 
-auto computeEstimationTimes(Config const& config, ProjectMap const& projects_with_deps, bool clean, int jobs) -> std::tuple<ConsolePrinter::EstimatedTimes, std::chrono::milliseconds> ;
+auto computeEstimationTimes(Config const& config, ProjectMap const& projects_with_deps, bool clean, std::size_t jobs) -> std::tuple<ConsolePrinter::EstimatedTimes, std::chrono::milliseconds> ;
 
 auto execute(std::vector<std::string> params, bool verbose) -> std::string;
 
 void visitFilesWithWarnings(Config const& config, ProjectMap const& projects_with_deps, std::function<void(File const&, FileInfo const&)> fileF, std::function<void(Project const&, FileInfo const&)> projectF);
-bool isInteractive();
+auto isInteractive() -> bool;
 
 }

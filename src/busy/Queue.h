@@ -29,7 +29,8 @@ private:
 	std::queue<IntNode*> work;
 	std::mutex mutex;
 
-	auto& findNode(Node v) {
+	[[nodiscard]]
+	auto findNode(Node v) -> auto&{
 		for (auto& n : nodes) {
 			if (n.value == v) {
 				return n;
@@ -37,7 +38,9 @@ private:
 		}
 		assert(false);
 	}
-	auto const& findNode(Node v) const {
+
+	[[nodiscard]]
+	auto findNode(Node v) const -> auto const& {
 		for (auto& n : nodes) {
 			if (n.value == v) {
 				return n;
@@ -65,14 +68,18 @@ public:
 		}
 	}
 
-	bool empty() const {
+	[[nodiscard]]
+	auto empty() const -> bool{
 		return work.empty();
 	}
-	size_t size() const {
+
+	[[nodiscard]]
+	auto size() const -> std::size_t {
 		return work.size();
 	}
 
 	template <typename T>
+	[[nodiscard]]
 	auto find_outgoing(Node n) -> T& {
 		auto& node = findNode(n);
 		for (auto const& n : node.outNode) {
@@ -84,6 +91,7 @@ public:
 	}
 
 	template <typename T>
+	[[nodiscard]]
 	auto find_outgoing(Node n) const -> T const& {
 		auto& node = findNode(n);
 		for (auto const& n : node.outNode) {
@@ -124,6 +132,7 @@ public:
 	}
 
 	template <typename T>
+	[[nodiscard]]
 	auto find_incoming(Node n) const -> std::vector<T const*> {
 		std::vector<T const*> result;
 		auto& node = findNode(n);

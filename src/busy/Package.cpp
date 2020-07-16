@@ -9,10 +9,10 @@ constexpr std::string_view external{"external"};
 namespace fs = std::filesystem;
 
 struct yaml_error : std::runtime_error {
-	yaml_error(std::filesystem::path file, YAML::Node const& node)
+	yaml_error(std::filesystem::path const& file, YAML::Node const& node)
 		: runtime_error(file.string() + " in line " + std::to_string(node.Mark().line) + ":" + std::to_string(node.Mark().column) + " (" + std::to_string(node.Mark().pos) + ")")
 	{}
-	yaml_error(std::filesystem::path file, YAML::Node const& node, std::string msg)
+	yaml_error(std::filesystem::path const& file, YAML::Node const& node, std::string const& msg)
 		: runtime_error(file.string() + " in line " + std::to_string(node.Mark().line) + ":" + std::to_string(node.Mark().column) + " (" + std::to_string(node.Mark().pos) + ") - " + msg)
 	{}
 
@@ -56,10 +56,10 @@ auto readPackage(std::filesystem::path const& _root, std::filesystem::path const
 				auto legacyIncludePaths = std::vector<fs::path>{};
 				auto legacySystemLibraries    = std::set<std::string>{};
 
-				for (auto e : n["legacy"]["includes"]) {
+				for (auto const& e : n["legacy"]["includes"]) {
 					legacyIncludePaths.push_back(_path / e.as<std::string>());
 				}
-				for (auto e : n["legacy"]["systemLibraries"]) {
+				for (auto const& e : n["legacy"]["systemLibraries"]) {
 					legacySystemLibraries.insert(e.as<std::string>());
 				}
 				retProjects.emplace_back(name, type, _root, path, legacyIncludePaths, legacySystemLibraries);

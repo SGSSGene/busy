@@ -1,29 +1,29 @@
 #include "Process.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h> /* for fork */
-#include <sys/types.h> /* for pid_t */
-#include <sys/wait.h> /* for wait */
-#include <iostream>
+#include <cstdio>
+#include <cstdlib>
 #include <fstream>
+#include <iostream>
 #include <mutex>
-#include <string>
 #include <sstream>
+#include <string>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <thread>
+#include <unistd.h>
 
 #define READ_END 0
 #define WRITE_END 1
 
 namespace process {
 
-static std::vector<std::string> explode(std::string const& _str, std::vector<std::string> const& _del) {
+static auto explode(std::string const& _str, std::vector<std::string> const& _del) -> std::vector<std::string> {
 	auto str = _str;
-	std::vector<std::string> retList;
+	auto retList = std::vector<std::string>{};
 	while (str.length() > 0) {
 		auto p = str.find(_del[0]);
 		int delSize = _del[0].length();
-		for (auto const s : _del) {
+		for (auto const& s : _del) {
 			auto _p = str.find(s);
 			if (_p == std::string::npos) continue;
 			if (_p < p) {
@@ -42,16 +42,16 @@ static std::vector<std::string> explode(std::string const& _str, std::vector<std
 }
 
 
-static bool fileExists(std::string const& _file) {
+static auto fileExists(std::string const& _file) -> bool {
 	return std::ifstream(_file).good();
 }
-static std::string cwd() {
-	char buf[512]; //!TODO risky
-	char* ret = ::getcwd(buf, sizeof(buf));
+static auto cwd() -> std::string {
+	std::array<char, 512> buf{};
+	char* ret = ::getcwd(buf.data(), buf.size());
 	if (ret == nullptr) {
 		throw std::runtime_error("getcwd faild");
 	}
-	return buf;
+	return buf.data();
 }
 static void cwd(std::string const& _string) {
 	int ret = ::chdir(_string.c_str());
@@ -65,8 +65,8 @@ static void cwd(std::string const& _string) {
 
 class ProcessPImpl final {
 	pid_t pid;
-	int stdoutpipe[2];
-	int stderrpipe[2];
+	std::array<int, 2> stdoutpipe;
+	std::array<int, 2> stderrpipe;
 	int status;
 
 	std::string stdcout;
@@ -74,9 +74,9 @@ class ProcessPImpl final {
 
 	std::string oldCwd {"."};
 public:
-	ProcessPImpl(std::vector<std::string> const& prog, std::string _cwd) {
-		int ret1 = pipe(stdoutpipe);
-		int ret2 = pipe(stderrpipe);
+	ProcessPImpl(std::vector<std::string> const& prog, std::string const& _cwd) {
+		int ret1 = pipe(stdoutpipe.data());
+		int ret2 = pipe(stderrpipe.data());
 		if (ret1 == -1 || ret2 == -1) {
 			throw std::runtime_error("couldn't create pipes");
 		}
@@ -91,18 +91,25 @@ public:
 		}
 	}
 
+	// NOLINTNEXTLINE(bugprone-exception-escape)
 	~ProcessPImpl() {
 		close(stdoutpipe[READ_END]);
 		close(stderrpipe[READ_END]);
 		cwd(oldCwd);
 	}
+
+	[[nodiscard]]
 	auto cout() const -> std::string const& {
 		return stdcout;
 	}
+
+	[[nodiscard]]
 	auto cerr() const -> std::string const& {
 		return stdcerr;
 	}
-	int getStatus() const {
+
+	[[nodiscard]]
+	auto getStatus() const -> int {
 		return status;
 	}
 private:
@@ -111,14 +118,17 @@ private:
 		auto s       = _prog[0];
 		auto execStr = s;
 
-		for (auto const& _s : explode(envPath, {":"})) {
-			if (fileExists(_s+"/"+s)) {
-				execStr = _s+"/"+s;
+		for (auto _s : explode(envPath, {":"})) {
+			_s += "/";
+			_s += s;
+			if (fileExists(_s)) {
+				execStr = _s;
 				break;
 			}
 		}
 
 		std::vector<char*> argv;
+		argv.reserve(_prog.size());
 		for (auto& a : _prog) {
 			argv.push_back(const_cast<char*>(a.c_str()));
 		}
@@ -138,27 +148,26 @@ private:
 
 		std::thread t1 {[&] {
 			while (true) {
-				char buffer[4097];
-
+				std::array<char, 4097> buffer;
 				buffer[0] = 0;
 				int size;
-				if ((size = read(stdoutpipe[READ_END], buffer, sizeof(buffer)-1)) >= 0) {
+				if ((size = read(stdoutpipe[READ_END], buffer.data(), buffer.size() - 1)) >= 0) {
 					buffer[size] = 0;
-					_stdcout += buffer;
+					_stdcout += buffer.data();
 				} else return;
 				if (size == 0) return;
 			}
 		}};
 		std::thread t2 {[&] {
 			while (true) {
-				char buffer[4097];
+				std::array<char, 4097> buffer;
 
 				buffer[0] = 0;
 				int size;
-				if ((size = read(stderrpipe[READ_END], buffer, sizeof(buffer)-1)) >= 0) {
+				if ((size = read(stderrpipe[READ_END], buffer.data(), buffer.size() - 1)) >= 0) {
 					buffer[size] = 0;
 
-					_stdcerr += buffer;
+					_stdcerr += buffer.data();
 				} else return;
 				if (size == 0) return;
 			}
@@ -177,23 +186,20 @@ private:
 };
 
 Process::Process(std::vector<std::string> const& prog)
-	: pimpl { new ProcessPImpl(prog, cwd()) } {
+	: pimpl { std::make_unique<ProcessPImpl>(prog, cwd()) } {
 }
 Process::Process(std::vector<std::string> const& prog, std::string const& _cwd)
-	: pimpl { new ProcessPImpl(prog, _cwd) } {
+	: pimpl { std::make_unique<ProcessPImpl>(prog, _cwd) } {
 }
+Process::~Process() = default;
 
-
-
-Process::~Process() {
-}
 auto Process::cout() const -> std::string const& {
 	return pimpl->cout();
 }
 auto Process::cerr() const -> std::string const& {
 	return pimpl->cerr();
 }
-int Process::getStatus() const {
+auto Process::getStatus() const -> int {
 	return pimpl->getStatus();
 }
 

@@ -8,8 +8,8 @@ SELFTEST(Test5, "3", 0, "hello\n", "")
 SELFTEST(Test6, "4", 0, "", "world\n")
 SELFTEST(Test7, "5 6", 0, "", "")
 
-int main(int argc, char** argv) {
-	SELFTESTMAIN(argv);
+auto main(int argc, char** argv) -> int {
+	SELFTESTMAIN(argv[0]);
 
 
 

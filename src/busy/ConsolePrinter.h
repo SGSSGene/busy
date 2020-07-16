@@ -82,12 +82,10 @@ public:
 
 		auto expectedTime = estimatedTimes.at(_key);
 		auto startTime    = startTimes.at(_key);
-		auto min_iter = begin(startTimes);
-		for (auto iter = begin(startTimes); iter != end(startTimes); ++iter) {
-			if (min_iter->second > iter->second) {
-				min_iter = iter;
-			}
-		}
+		auto min_iter = std::min_element(begin(startTimes), end(startTimes), [](auto const& l, auto const& r) {
+			// NOLINTNEXTLINE(modernize-use-nullptr)
+			return l.second < r.second;
+		});
 		auto this_iter = startTimes.find(_key);
 
 		auto actualTime = std::chrono::duration_cast<std::chrono::milliseconds>(stop - startTime);

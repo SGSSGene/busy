@@ -1,7 +1,7 @@
 #pragma once
 
 #include <process/Process.h>
-#include <stdlib.h>
+#include <cstdlib>
 #include <iostream>
 
 namespace selfTest {
@@ -14,19 +14,20 @@ private:
 	std::string stdcout;
 	std::string stdcerr;
 public:
-	TestCase(std::string const& _name, std::vector<std::string> const& _params, int _status, std::string const& _stdcout, std::string const& _stdcerr)
-		: name    { _name    }
-		, params  { _params  }
+	TestCase(std::string _name, std::vector<std::string> _params, int _status, std::string _stdcout, std::string _stdcerr)
+		: name    { std::move(_name)    }
+		, params  { std::move(_params)  }
 		, status  { _status  }
-		, stdcout { _stdcout }
-		, stdcerr { _stdcerr } {
+		, stdcout { std::move(_stdcout) }
+		, stdcerr { std::move(_stdcerr) } {
 	}
 
-	std::string const& getName() const {
+	[[nodiscard]]
+	auto getName() const -> std::string const& {
 		return name;
 	}
 
-	bool run(std::string const& _prog) {
+	auto run(std::string const& _prog) -> bool {
 		params.insert(params.begin(), _prog);
 		setenv("selfTestRunning", "1", 1);
 		process::Process p { params };
@@ -47,15 +48,15 @@ public:
 class SelfTest {
 private:
 public:
-	static SelfTest& getInstance() {
+	static auto getInstance() -> SelfTest& {
 		static SelfTest instance;;
 		return instance;
 	}
 	std::vector<TestCase> testCase;
 
-	bool addCase(std::string _name, std::string _params, int _status, std::string _stdcout, std::string _stdcerr);
+	auto addCase(std::string const& _name, std::string const& _params, int _status, std::string const& _stdcout, std::string const& _stdcerr) -> bool;
 
-	bool runTests(std::string _prog) {
+	auto runTests(std::string const& _prog) -> bool {
 		bool success = true;
 		for (auto& t : testCase) {
 			if (not t.run(_prog)) {
@@ -67,15 +68,15 @@ public:
 	}
 };
 
-#define SELFTESTMAIN(argv) \
+#define SELFTESTMAIN(prog_name) \
 { \
 	char* c = getenv("selfTestRunning"); \
 	if (c == nullptr || std::string(c) != "1") { \
-		bool success = selfTest::SelfTest::getInstance().runTests(argv[0]); \
+		bool success = selfTest::SelfTest::getInstance().runTests(prog_name); \
 		if (not success) { \
-			return -1; \
+			return EXIT_FAILURE; \
 		} \
-		return 0; \
+		return EXIT_SUCCESS; \
 	} \
 }
 #define SELFTEST(Name, Params, Status, Cout, Cerr) \

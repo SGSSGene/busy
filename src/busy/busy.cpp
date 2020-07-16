@@ -16,7 +16,7 @@ void help() {
 }
 }
 
-int main(int argc, char const** argv) {
+auto main(int argc, char const** argv) -> int {
 	if (std::string_view{argv[argc-1]} == "--bash_completion") {
 		auto hint = sargp::compgen(argc-2, argv+1);
 		fmt::print("{}", hint);

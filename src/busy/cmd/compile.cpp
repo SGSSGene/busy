@@ -56,7 +56,7 @@ void compile() {
 
 
 	fmt::print("checking files...");
-	auto jobs = [&]() -> int {
+	auto jobs = [&]() -> std::size_t {
 		if (*cfgJobs == 0) {
 			return std::thread::hardware_concurrency();
 		}
@@ -72,7 +72,7 @@ void compile() {
 		auto cout = execute({config.toolchain.call, "begin", config.rootDir}, false);
 		auto node = YAML::Load(cout);
 		rebuild = YAML::Node{node["rebuild"]}.as<bool>(rebuild);
-		jobs = std::min(jobs, YAML::Node{node["max_jobs"]}.as<int>(jobs));
+		jobs = std::min(jobs, YAML::Node{node["max_jobs"]}.as<std::size_t>(jobs));
 	}
 
 	auto [_estimatedTimes, _estimatedTotalTime] = computeEstimationTimes(config, projects_with_deps, rebuild, jobs);
@@ -122,7 +122,7 @@ void compile() {
 
 				auto dependencies = FileInfo::Dependencies{};
 				//!TODO should work with `auto`, but doesn't for some reason
-				for (YAML::Node n : node["dependencies"]) {
+				for (YAML::Node const& n : node["dependencies"]) {
 					auto path = FileInfo::Path{n.as<std::string>()};
 					auto hash    = computeHash(path);
 					auto modTime = getFileModificationTime(path);
@@ -181,7 +181,7 @@ void compile() {
 		multiPipe.join();
 		if (multiPipe.compileError) {
 			fmt::print("{} files with {}:\n", failedCompilations.size(), fmt::format(fg_red, "errors"));
-			for (auto f : failedCompilations) {
+			for (auto const& f : failedCompilations) {
 				fmt::print("  - {}\n", fmt::format(fg_yellow, "{}", f));
 			}
 			throw CompileError{};

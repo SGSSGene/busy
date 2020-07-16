@@ -1,7 +1,7 @@
 #include <base64/base64.h>
 #include <cassert>
 
-void test(std::string s) {
+void test(std::string const& s) {
 	auto encoded = base64::encode(s);
 	auto decoded = base64::decode(encoded);
 	auto len = base64::encoded_len(s);
@@ -11,7 +11,7 @@ void test(std::string s) {
 	assert(base64::encoded_valid(encoded));
 	assert(len2 == decoded.size());
 }
-int main() {
+auto main() -> int {
 	test("Hallo Welt");
 	test("mehr tests");
 	test("");

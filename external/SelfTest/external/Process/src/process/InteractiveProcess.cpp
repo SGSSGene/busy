@@ -1,16 +1,16 @@
 #include "InteractiveProcess.h"
 
-#include <errno.h>
+#include <cerrno>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <fcntl.h>
 #include <fstream>
 #include <iostream>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <sys/ioctl.h>
 #include <sys/select.h>
-#include <sys/types.h> /* for pid_t */
-#include <sys/wait.h> /* for wait */
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <termios.h>
 #include <unistd.h>
 
@@ -19,12 +19,12 @@ namespace process {
 
 namespace utils {
 	auto cwd() -> std::string {
-		char buf[512]; //!TODO risky
-		char* ret = ::getcwd(buf, sizeof(buf));
+		std::array<char, 512> buf; //!TODO risky
+		char* ret = ::getcwd(buf.data(), buf.size());
 		if (ret == nullptr) {
 			throw std::runtime_error("getcwd faild");
 		}
-		return buf;
+		return buf.data();
 	}
 	void cwd(std::string const& _cwd) {
 		int ret = ::chdir(_cwd.c_str());
@@ -65,7 +65,7 @@ namespace fileSystem {
 class InteractiveProcessPImpl final {
 	int   fdm, fds;
 	int   rc;
-	char  input[65536];
+	std::array<char, 65536> input;
 	pid_t pid;
 	int   status;
 
@@ -98,6 +98,7 @@ public:
 		}
 	}
 
+	// NOLINTNEXTLINE(bugprone-exception-escape)
 	~InteractiveProcessPImpl() {
 		utils::cwd(oldCwd);
 	}
@@ -153,14 +154,17 @@ private:
 		auto s       = _prog[0];
 		auto execStr = s;
 
-		for (auto const& _s : utils::explode(envPath, {":"})) {
-			if (fileSystem::fileExists(_s+"/"+s)) {
-				execStr = _s+"/"+s;
+		for (auto _s : utils::explode(envPath, {":"})) {
+			_s += "/";
+			_s += s;
+			if (fileSystem::fileExists(_s)) {
+				execStr = _s;
 				break;
 			}
 		}
 
-		std::vector<char*> argv;
+		auto argv = std::vector<char*>{};
+		argv.reserve(_prog.size());
 		for (auto& a : _prog) {
 			argv.push_back(const_cast<char*>(a.c_str()));
 		}
@@ -170,7 +174,7 @@ private:
 		exit(127); /* only if execv fails */
 	}
 	void parentProcess() {
-		fd_set fd_in;
+		fd_set fd_in{};
 
 		// Close the slave side of the PTY
 		close(fds);
@@ -181,19 +185,19 @@ private:
 			FD_SET(0, &fd_in);
 			FD_SET(fdm, &fd_in);
 
-			rc = select(fdm + 1, &fd_in, NULL, NULL, NULL);
+			rc = select(fdm + 1, &fd_in, nullptr, nullptr, nullptr);
 			if (rc == -1) {
 				throw std::runtime_error("InteractiveProcess: error on select()");
 			}
 
 			// If data on standard input
 			if (FD_ISSET(0, &fd_in)) {
-				rc = read(0, input, sizeof(input));
+				rc = read(0, input.data(), input.size());
 				if (rc <= 0) {
 					throw std::runtime_error("error on reading standard input");
 				}
 				// Send data on the master side of PTY
-				int error = write(fdm, input, rc);
+				int error = write(fdm, input.data(), rc);
 				if (error == -1) {
 					throw std::runtime_error(std::string("Error reading standard input: (") + std::to_string(errno) + ") " + strerror(errno));
 				}
@@ -202,14 +206,14 @@ private:
 			// If data on master side of PTY
 			if (FD_ISSET(fdm, &fd_in)) {
 
-				rc = read(fdm, input, sizeof(input));
+				rc = read(fdm, input.data(), input.size());
 				if (rc < 0) {
 					waitpid(pid, &status, 0); /* wait for child to exit */
 					return;
 				}
 				if (rc > 0) {
 					// Send data on standard output
-					int error = write(1, input, rc);
+					int error = write(1, input.data(), rc);
 					if (error == -1) {
 						throw std::runtime_error(std::string("Error reading standard input: (") + std::to_string(errno) + ") " + strerror(errno));
 					}
@@ -221,13 +225,11 @@ private:
 
 
 InteractiveProcess::InteractiveProcess(std::vector<std::string> const& prog)
-	: pimpl { new InteractiveProcessPImpl(prog, utils::cwd()) } {
+	: pimpl {std::make_unique<InteractiveProcessPImpl>(prog, utils::cwd()) } {
 }
 InteractiveProcess::InteractiveProcess(std::vector<std::string> const& prog, std::string const& _cwd)
-	: pimpl { new InteractiveProcessPImpl(prog, _cwd) } {
+	: pimpl {std::make_unique<InteractiveProcessPImpl>(prog, _cwd) } {
 }
 
-InteractiveProcess::~InteractiveProcess() {
-}
 
 }

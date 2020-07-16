@@ -21,31 +21,39 @@ private:
 
 
 public:
-	Project(std::string _name, std::string _type, std::filesystem::path const& _root, std::filesystem::path _sourcePath, std::vector<std::filesystem::path> _legacyIncludePaths, std::set<std::string> _systemLibraries);
+	Project(std::string _name, std::string _type, std::filesystem::path const& _root, std::filesystem::path const& _sourcePath, std::vector<std::filesystem::path> _legacyIncludePaths, std::set<std::string> _systemLibraries);
 
-	auto const& getFiles() const {
+	[[nodiscard]]
+	auto getFiles() const -> auto const&{
 		return mFiles;
 	}
 
+	[[nodiscard]]
 	auto getName() const -> std::string const& {
 		return mName;
 	}
+
+	[[nodiscard]]
 	auto getType() const -> std::string const& {
 		return mType;
 	}
 
+	[[nodiscard]]
 	auto getPath() const -> std::filesystem::path const& {
 		return mPath;
 	}
 
+	[[nodiscard]]
 	auto getSystemLibraries() const -> std::set<std::string> const& {
 		return mSystemLibraries;
 	}
 
+	[[nodiscard]]
 	auto getLegacyIncludePaths() const -> std::vector<std::filesystem::path> const& {
 		return mLegacyIncludePaths;
 	}
 
+	[[nodiscard]]
 	auto getIncludes() const -> std::set<std::filesystem::path> {
 		auto ret = std::set<std::filesystem::path>{};
 		for (auto const& f : getFiles()) {
@@ -56,6 +64,7 @@ public:
 		return ret;
 	}
 
+	[[nodiscard]]
 	auto isEquivalent(Project const& _other) const -> bool {
 		if (mName != _other.mName) {
 			return false;

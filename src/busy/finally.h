@@ -21,8 +21,8 @@ public:
 	finally()                          = default;
 	finally(finally const&)            = default;
 	finally(finally&&)                 = default;
-	finally& operator=(finally const&) = default;
-	finally& operator=(finally&&)      = default;
+	auto operator=(finally const&) -> finally& = default;
+	auto operator=(finally&&)      -> finally& = default;
 };
 
 }

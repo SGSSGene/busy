@@ -48,8 +48,11 @@ void decode_block(char const* _input, char* _output) {
 	for (std::size_t i{0}; i < input.size(); ++i) {
 		input[i] = base64_chars.find(_input[i]);
 	}
+	// NOLINTNEXTLINE(bugprone-narrowing-conversions)
 	_output[0] = ( input[0] << 2       ) + ((input[1] & 0x30) >> 4);
+	// NOLINTNEXTLINE(bugprone-narrowing-conversions)
 	_output[1] = ((input[1] & 0xf) << 4) + ((input[2] & 0x3c) >> 2);
+	// NOLINTNEXTLINE(bugprone-narrowing-conversions)
 	_output[2] = ((input[2] & 0x3) << 6) +   input[3];
 }
 
@@ -89,7 +92,7 @@ auto encode(std::string_view _decoded) -> std::string {
 		encode_block(&_decoded[i*3], &ret[i*4]);
 	}
 	auto rest_len = _decoded.size() % 3;
-	int i = _decoded.size() / 3;
+	std::size_t i = _decoded.size() / 3;
 	encode_block(&_decoded[i * 3], &ret[i * 4], rest_len);
 	return ret;
 }
@@ -149,7 +152,7 @@ auto decode(std::string_view _encoded) -> std::string {
 	}
 
 	auto rest_len = ret.size() % 3;
-	int i = _encoded.size()/4;
+	std::size_t i = _encoded.size()/4;
 	decode_block(&_encoded[i*4], &ret[i*3], rest_len);
 	return ret;
 }

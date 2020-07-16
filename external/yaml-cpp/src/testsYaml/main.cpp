@@ -1,6 +1,6 @@
 
 #include <yaml-cpp/yaml.h>
 
-int main() {
-	return 0;
+auto main() -> int {
+	return EXIT_SUCCESS;
 }

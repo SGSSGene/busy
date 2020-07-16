@@ -12,7 +12,7 @@ namespace {
 void skipAllWhiteSpaces(char const*& str) {
 	while (*str != '\0' and (*str == '\t' or *str == ' ')) ++str;
 }
-bool checkIfMakroSystemInclude(char const* str) {
+auto checkIfMakroSystemInclude(char const* str) -> bool {
 	skipAllWhiteSpaces(str);
 	if (strncmp(str, "#include", 8) != 0) {
 		return false;
@@ -42,8 +42,8 @@ auto readIncludes(std::filesystem::path const& _file) -> std::set<std::filesyste
 				return parts[1];
 			}();
 
-			auto pos1 = includeFile.find("<") + 1;
-			auto pos2 = includeFile.find(">") - pos1;
+			auto pos1 = includeFile.find('<') + 1;
+			auto pos2 = includeFile.find('>') - pos1;
 
 			auto file = includeFile.substr(pos1, pos2);
 

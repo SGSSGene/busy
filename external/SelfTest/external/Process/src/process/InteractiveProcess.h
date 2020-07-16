@@ -16,11 +16,10 @@ public:
 	InteractiveProcess(std::vector<std::string> const& prog);
 	InteractiveProcess(std::vector<std::string> const& prog, std::string const& _cwd);
 
-	~InteractiveProcess();
 	InteractiveProcess(InteractiveProcess const&) = delete;
 	InteractiveProcess(InteractiveProcess&&) = delete;
-	InteractiveProcess& operator=(InteractiveProcess const&) = delete;
-	InteractiveProcess& operator=(InteractiveProcess&&) = delete;
+	auto operator=(InteractiveProcess const&) -> InteractiveProcess& = delete;
+	auto operator=(InteractiveProcess&&) -> InteractiveProcess& = delete;
 };
 
 

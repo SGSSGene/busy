@@ -113,7 +113,7 @@ struct FileInfo {
 
 	FileInfo(fon::ctor) {};
 	FileInfo(Path _path)
-		: path{_path}
+		: path{std::move(_path)}
 	{}
 
 	template <typename Node>
@@ -130,13 +130,15 @@ struct FileInfo {
 	}
 
 
-	bool hasChanged() const {
+	[[nodiscard]]
+	auto hasChanged() const -> bool {
 		if (needRecompiling) {
 			return true;
 		}
 		if (not exists(outputFile) and compilable) {
 			return true;
 		}
+		// NOLINTNEXTLINE(modernize-use-nullptr)
 		if (modTime < getFileModificationTime(path) and getFileCache().getHash(path) != hash) {
 			return true;
 		}
@@ -144,6 +146,7 @@ struct FileInfo {
 			if (not exists(d_path)) {
 				return true;
 			}
+			// NOLINTNEXTLINE(modernize-use-nullptr)
 			if (modTime < getFileModificationTime(d_path) and getFileCache().getHash(d_path) != d_hash) {
 				return true;
 			}
@@ -154,6 +157,7 @@ struct FileInfo {
 	//!TODO remove when fixed?? otherwise not working with c++20
 	void uselessCode() {
 		FileInfo x{fon::ctor{}};
+		// NOLINTNEXTLINE(performance-unnecessary-copy-initialization)
 		FileInfo y {x};
 	}
 };
@@ -161,6 +165,7 @@ struct FileInfo {
 struct FileInfos {
 	std::unordered_map<std::string, FileInfo> fileInfos;
 
+	[[nodiscard]]
 	auto get(std::filesystem::path const& _path) -> FileInfo& {
 		auto str_path = std::string{_path};
 		auto iter = fileInfos.find(str_path);

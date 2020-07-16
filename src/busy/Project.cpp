@@ -2,7 +2,7 @@
 
 namespace busy {
 
-Project::Project(std::string _name, std::string _type, std::filesystem::path const& _root, std::filesystem::path _sourcePath, std::vector<std::filesystem::path> _legacyIncludePaths, std::set<std::string> _systemLibraries)
+Project::Project(std::string _name, std::string _type, std::filesystem::path const& _root, std::filesystem::path const& _sourcePath, std::vector<std::filesystem::path> _legacyIncludePaths, std::set<std::string> _systemLibraries)
 	: mName               { std::move(_name) }
 	, mType               { std::move(_type) }
 	, mPath               { _sourcePath.lexically_normal() }

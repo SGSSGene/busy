@@ -28,16 +28,20 @@ public:
 		readFile(_root / mPath);
 	}
 
-	auto const& getPath() const {
+	[[nodiscard]]
+	auto getPath() const -> auto const& {
 		return mPath;
 	}
 
-	auto const& getIncludes() const {
+	[[nodiscard]]
+	auto getIncludes() const -> auto const& {
 		return mIncludes;
 	}
 
+	[[nodiscard]]
 	auto getHash() const -> std::string;
 
+	[[nodiscard]]
 	auto isEquivalent(File const& _other) const -> bool {
 		//!TODO needs to compare name
 		if (mIncludes != _other.mIncludes) {

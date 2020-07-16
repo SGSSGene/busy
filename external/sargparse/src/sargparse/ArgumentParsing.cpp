@@ -124,7 +124,7 @@ std::string generateHelpString(std::regex const& filter) {
 			}))->getName().size();
 		maxCommandStrLen += 2;// +2 cause we print two spaces at the beginning
 		for (auto const& subC : subCommands) {
-			std::string name = subC->getName();
+			auto const& name = subC->getName();
 			helpString += "  " + name + std::string(maxCommandStrLen - name.size()+1, ' ') + subC->getDescription() + "\n";
 		}
 		helpString += "\n";

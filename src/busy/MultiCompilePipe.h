@@ -18,7 +18,7 @@ struct MultiCompilePipe {
 	std::size_t              idleThreads{0};
 	bool                     compileError{false};
 
-	MultiCompilePipe(CompilePipe& _pipe, int _threadCt)
+	MultiCompilePipe(CompilePipe& _pipe, std::size_t _threadCt)
 	: pipe {_pipe}
 	{
 		threads.resize(_threadCt);

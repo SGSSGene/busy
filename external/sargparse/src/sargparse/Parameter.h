@@ -63,7 +63,7 @@ struct ParameterBase {
 		return type_info;
 	}
 protected:
-	ParameterBase(std::string const& argName, DescribeFunc const& describeFunc, Callback cb, ValueHintFunc const& hintFunc, Command& command, std::type_info const& type_info);
+	ParameterBase(std::string argName, DescribeFunc describeFunc, Callback cb, ValueHintFunc hintFunc, Command& command, std::type_info const& type_info);
 
 	std::string _argName;
 	DescribeFunc _describeFunc;
@@ -82,10 +82,18 @@ protected:
 
 	value_type _val;
 public:
-	TypedParameter(T const& defaultVal, std::string const& argName, std::string const& description, Callback cb=Callback{}, ValueHintFunc hintFunc=ValueHintFunc{}, Command& command=getDefaultCommand())
-	: TypedParameter(defaultVal, argName, [=]{return description;}, cb, hintFunc, command)
+	// NOLINTNEXTLINE(performance-unnecessary-value-param)
+	TypedParameter(T defaultVal, std::string argName, std::string description, Callback cb=Callback{}, ValueHintFunc hintFunc=ValueHintFunc{}, Command& command=getDefaultCommand())
+	: SuperClass(std::move(argName), [description=std::move(description)]{return description;}, std::move(cb), std::move(hintFunc), command, typeid(T))
+	, _val{std::move(defaultVal)}
 	{}
-	TypedParameter(T const& defaultVal, std::string const& argName, DescribeFunc const& description, Callback cb=Callback{}, ValueHintFunc hintFunc=ValueHintFunc{}, Command& command=getDefaultCommand());
+
+	// NOLINTNEXTLINE(performance-unnecessary-value-param)
+	TypedParameter(T defaultVal, std::string argName, DescribeFunc describeFunc, Callback cb=Callback{}, ValueHintFunc hintFunc=ValueHintFunc{}, Command& command=getDefaultCommand())
+	: SuperClass(std::move(argName), std::move(describeFunc), std::move(cb), std::move(hintFunc), command, typeid(T))
+	, _val{std::move(defaultVal)}
+	{}
+
 
 	void parse(std::vector<std::string> const& args) override {
 		_val = parsing::parse<T>(args);
@@ -190,8 +198,8 @@ struct Parameter : SpeciallyTypedParameter<T> {
 struct Flag final : Parameter<bool> {
 	using SuperClass = Parameter<bool>;
 	using Callback = typename SuperClass::Callback;
-	Flag(std::string const& argName, std::string const& description, Callback cb=Callback{}, Command& command=getDefaultCommand())
-	: Parameter<bool>(false, argName, description, cb, ValueHintFunc{}, command)
+	Flag(std::string argName, std::string description, Callback cb=Callback{}, Command& command=getDefaultCommand())
+	: Parameter<bool>(false, std::move(argName), std::move(description), std::move(cb), ValueHintFunc{}, command)
 	{}
 
 	std::string stringifyValue() const override {
@@ -207,9 +215,11 @@ struct Choice final : TypedParameter<T> {
 private:
 	std::map<std::string, T> _name2ValMap;
 public:
-	Choice(T const& defaultVal, std::string const& argName, std::map<std::string, T> const& namedValues, std::string const& description, Callback cb=Callback{}, Command& command=getDefaultCommand())
-	: SuperClass(defaultVal, argName, description, cb, {}, command)
-	, _name2ValMap(namedValues)
+
+	// NOLINTNEXTLINE(performance-unnecessary-value-param)
+	Choice(T defaultVal, std::string argName, std::map<std::string, T> namedValues, std::string description, Callback cb=Callback{}, Command& command=getDefaultCommand())
+	: SuperClass(std::move(defaultVal), std::move(argName), std::move(description), std::move(cb), {}, command)
+	, _name2ValMap(std::move(namedValues))
 	{}
 
 	void parse(std::vector<std::string> const& args) override {
@@ -267,27 +277,20 @@ public:
 	{}
 
 	template<typename T, typename... Args>
-	[[nodiscard]] auto Parameter(T const& defaultVal, std::string const& argName, Args &&... args) const -> Parameter<T> {
-		return ::sargp::Parameter<T>{defaultVal, _name + argName, std::forward<Args>(args)...};
+	[[nodiscard]] auto Parameter(T&& defaultVal, std::string const& argName, Args &&... args) const -> Parameter<T> {
+		return ::sargp::Parameter<T>{std::forward<T>(defaultVal), _name + argName, std::forward<Args>(args)...};
 	}
 	template<typename... Args>
 	[[nodiscard]] auto Flag(std::string const& argName, Args &&... args) const -> Flag {
 		return ::sargp::Flag{_name + argName, std::forward<Args>(args)...};
 	}
 	template<typename T, typename... Args>
-	[[nodiscard]] auto Choice(T const& defaultVal, std::string const& argName, std::map<std::string, T> const& namedValues, Args &&... args) const -> Choice<T> {
-		return ::sargp::Choice<T>{defaultVal, _name + argName, namedValues, std::forward<Args>(args)...};
+	[[nodiscard]] auto Choice(T&& defaultVal, std::string const& argName, std::map<std::string, T> namedValues, Args &&... args) const -> Choice<T> {
+		return ::sargp::Choice<T>{std::forward<T>(defaultVal), _name + argName, std::move(namedValues), std::forward<Args>(args)...};
 	}
 };
 
-struct TaskBase {
-	TaskBase(Command& c);
-	virtual ~TaskBase();
-	virtual void operator()() = 0;
-
-protected:
-	Command& _command;
-};
+struct Task;
 
 struct Command final {
 	using DescribeFunc  = ParameterBase::DescribeFunc;
@@ -297,26 +300,24 @@ struct Command final {
 private:
 	std::string               _name;
 	std::string               _description;
-	std::vector<TaskBase*>    _tasks;
-	std::unique_ptr<TaskBase> _defaultTask;
+	std::vector<Task*>        _tasks;
+	std::unique_ptr<Task>     _defaultTask;
 	bool                      _isActive {false};
 
 	std::vector<ParameterBase*> parameters;
 	std::vector<Command*>       subcommands;
 	Command* _parentCommand {nullptr};
 
-	template<typename CB>
-	Command(Command* parentCommand, std::string const& name, std::string const& description, CB&& cb);
+	Command(Command* parentCommand, std::string name, std::string description, Callback cb);
 
 	struct DefaultCommand {};
 	Command(DefaultCommand);
 public:
-	Command(std::string const& name, std::string const& description)
-		: Command{nullptr, name, description, []{}} {}
+	Command(std::string name, std::string description)
+		: Command{nullptr, std::move(name), std::move(description), []{}} {}
 
-	template<typename CB>
-	Command(std::string const& name, std::string const& description, CB&& cb)
-		: Command(nullptr, name, description, cb) {}
+	Command(std::string name, std::string description, Callback cb)
+		: Command(nullptr, std::move(name), std::move(description), std::move(cb)) {}
 
 	~Command() {
 		if (not _parentCommand) {
@@ -347,10 +348,10 @@ public:
 		parameters.erase(std::remove(begin(parameters), end(parameters), &parameter), end(parameters));
 	}
 
-	void registerTask(TaskBase& task) {
+	void registerTask(Task& task) {
 		_tasks.emplace_back(&task);
 	}
-	void deregisterTask(TaskBase& task) {
+	void deregisterTask(Task& task) {
 		_tasks.erase(std::remove(begin(_tasks), end(_tasks), &task), end(_tasks));
 	}
 
@@ -366,70 +367,54 @@ public:
 		return _isActive;
 	}
 
-	void callCBs() {
-		for (auto task : _tasks) {
-			(*task)();
-		}
-	}
+	void callCBs() const;
 
 	static Command& getDefaultCommand();
 
 	// parameters that are enabled if this Command is active
 	template<typename T>
-	[[nodiscard]] auto Parameter(T const& defaultVal, std::string const& argName, std::string const& description, Callback cb={}, ValueHintFunc hintFunc=ValueHintFunc{}) -> ::sargp::Parameter<T> {
-		return ::sargp::Parameter<T>{defaultVal, argName, description, cb, hintFunc, *this};
+	// NOLINTNEXTLINE(performance-unnecessary-value-param)
+	[[nodiscard]] auto Parameter(T&& defaultVal, std::string argName, std::string description, Callback cb={}, ValueHintFunc hintFunc=ValueHintFunc{}) -> ::sargp::Parameter<T> {
+		return ::sargp::Parameter<T>{std::forward<T>(defaultVal), std::move(argName), std::move(description), std::move(cb), std::move(hintFunc), *this};
 	}
 	template<typename T>
-	[[nodiscard]] auto Parameter(T const& defaultVal, std::string const& argName, DescribeFunc const& description, Callback cb={}, ValueHintFunc hintFunc=ValueHintFunc{}) -> ::sargp::Parameter<T> {
-		return ::sargp::Parameter<T>{defaultVal, argName, description, cb, hintFunc, *this};
+	// NOLINTNEXTLINE(performance-unnecessary-value-param)
+	[[nodiscard]] auto Parameter(T&& defaultVal, std::string argName, DescribeFunc description, Callback cb={}, ValueHintFunc hintFunc=ValueHintFunc{}) -> ::sargp::Parameter<T> {
+		return ::sargp::Parameter<T>{std::forward<T>(defaultVal), std::move(argName), std::move(description), std::move(cb), std::move(hintFunc), *this};
 	}
 
-	[[nodiscard]] auto Flag(std::string const& argName, std::string const& description, Callback cb={}) -> ::sargp::Flag {
-		return ::sargp::Flag{argName, description, cb, *this};
+	// NOLINTNEXTLINE(performance-unnecessary-value-param)
+	[[nodiscard]] auto Flag(std::string argName, std::string description, Callback cb={}) -> ::sargp::Flag {
+		return ::sargp::Flag{std::move(argName), std::move(description), std::move(cb), *this};
 	}
+
 	template<typename T, typename... Args>
-	[[nodiscard]] auto Choice(T const& defaultVal, std::string const& argName, std::map<std::string, T> const& namedValues, std::string const& description, Callback cb=Callback{}) -> ::sargp::Choice<T> {
-		return ::sargp::Choice<T>{defaultVal, argName, namedValues, description, cb, *this};
+	// NOLINTNEXTLINE(performance-unnecessary-value-param)
+	[[nodiscard]] auto Choice(T defaultVal, std::string argName, std::map<std::string, T> namedValues, std::string description, Callback cb=Callback{}) -> ::sargp::Choice<T> {
+		return ::sargp::Choice<T>{std::forward<T>(defaultVal), std::move(argName), std::move(namedValues), std::move(description), std::move(cb), *this};
 	}
 	[[nodiscard]] auto Section(std::string const& name) -> Section {
 		return ::sargp::Section(name);
 	}
 
-	template<typename CB>
-	[[nodiscard]] auto SubCommand(std::string const& name, std::string const& description, CB&& cb) -> Command {
-		return ::sargp::Command(this, name, description, std::forward<CB>(cb));
+	[[nodiscard]] auto SubCommand(std::string name, std::string description, Callback cb) -> Command {
+		return ::sargp::Command(this, std::move(name), std::move(description), std::move(cb));
 	}
 };
 
-template<typename CB>
-struct Task final : TaskBase {
-	Task(CB&& cb, Command& command = Command::getDefaultCommand())
-	: TaskBase{command}, _cb{std::forward<CB>(cb)} {}
-	virtual ~Task() = default;
+struct Task final {
+	using Callback = std::function<void()>;
 
-	void operator()() override {
-		return _cb();
+	Task(Callback cb, Command& command = Command::getDefaultCommand());
+	~Task();
+
+	void operator()() {
+		_cb();
 	}
 private:
-	CB _cb;
+	Command& _command;
+	Callback _cb;
 };
-template<typename CB> Task(CB) -> Task<CB>;
 
-template<typename CB>
-Command::Command(Command* parentCommand, std::string const& name, std::string const& description, CB&& cb) 
-	: _name(name)
-	, _description(description)
-	, _tasks{}
-	, _defaultTask{std::make_unique<Task<CB>>(std::forward<CB>(cb), *this)}
-	, _parentCommand{parentCommand?nullptr:&Command::getDefaultCommand()}
-{
-	_parentCommand->subcommands.emplace_back(this);
-}
-
-template<typename T>
-TypedParameter<T>::TypedParameter(T const& defaultVal, std::string const& argName, DescribeFunc const& description, Callback cb, ValueHintFunc hintFunc, Command& command)
-	: SuperClass(argName, description, cb, hintFunc, command, typeid(T))
-	, _val{defaultVal}
-{}
 
 }

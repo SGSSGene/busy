@@ -15,15 +15,12 @@ public:
 	~Process();
 	Process(Process const&) = delete;
 	Process(Process&&) = delete;
-	Process& operator=(Process const&) = delete;
-	Process& operator=(Process&&) = delete;
+	auto operator=(Process const&) -> Process& = delete;
+	auto operator=(Process&&) -> Process& = delete;
 
-	auto cout() const -> std::string const&;
-	auto cerr() const -> std::string const&;
-	int  getStatus() const;
+	[[nodiscard]] auto cout() const -> std::string const&;
+	[[nodiscard]] auto cerr() const -> std::string const&;
+	[[nodiscard]] auto getStatus() const -> int;
 };
-
-
-
 
 }

@@ -43,7 +43,7 @@ void printProjects(std::map<Project const*, std::tuple<std::set<Project const*>,
 	}
 }
 
-auto loadConfig(std::filesystem::path workPath, std::filesystem::path buildPath, std::tuple<bool, std::filesystem::path> rootPath) -> Config {
+auto loadConfig(std::filesystem::path const& workPath, std::filesystem::path const& buildPath, std::tuple<bool, std::filesystem::path> const& rootPath) -> Config {
 
 	if (relative(buildPath) != ".") {
 		if (not exists(buildPath)) {
@@ -73,7 +73,7 @@ auto loadConfig(std::filesystem::path workPath, std::filesystem::path buildPath,
 	return config;
 }
 
-auto updateToolchainOptions(Config& config, bool reset, std::vector<std::string> _options) -> std::map<std::string, std::vector<std::string>> {
+auto updateToolchainOptions(Config& config, bool reset, std::vector<std::string> const& _options) -> std::map<std::string, std::vector<std::string>> {
 	auto toolchainOptions = getToolchainOptions(config.toolchain.name, config.toolchain.call);
 
 	// initialize queue
@@ -83,7 +83,7 @@ auto updateToolchainOptions(Config& config, bool reset, std::vector<std::string>
 		queue.push("default");
 		config.toolchain.options.clear();
 	}
-	for (auto o : _options) {
+	for (auto const& o : _options) {
 		queue.push(o);
 	}
 	while(not queue.empty()) {
@@ -106,7 +106,7 @@ auto updateToolchainOptions(Config& config, bool reset, std::vector<std::string>
 		} else {
 			if (act) {
 				config.toolchain.options.insert(opt);
-				for (auto o2 : iter->second) {
+				for (auto const& o2 : iter->second) {
 					queue.push(o2);
 				}
 			} else {
@@ -117,13 +117,13 @@ auto updateToolchainOptions(Config& config, bool reset, std::vector<std::string>
 	return toolchainOptions;
 }
 
-auto computeEstimationTimes(Config const& config, ProjectMap const& projects_with_deps, bool clean, int jobs) -> std::tuple<ConsolePrinter::EstimatedTimes, std::chrono::milliseconds> {
+auto computeEstimationTimes(Config const& config, ProjectMap const& projects_with_deps, bool clean, std::size_t jobs) -> std::tuple<ConsolePrinter::EstimatedTimes, std::chrono::milliseconds> {
 	auto estimatedTimes = ConsolePrinter::EstimatedTimes{};
 	auto pipe           = CompilePipe{config.toolchain.call, projects_with_deps, config.toolchain.options};
 	auto threadTimings = std::vector<std::chrono::milliseconds>(jobs, std::chrono::milliseconds{0});
 	auto readyTimings  = std::vector<std::chrono::milliseconds>{};
 	for (std::size_t i{0}; i < pipe.size(); ++i) {
-		readyTimings.push_back(std::chrono::milliseconds{0});
+		readyTimings.emplace_back(std::chrono::milliseconds{0});
 	}
 	while (not pipe.empty()) {
 		auto work = pipe.pop();
@@ -175,7 +175,7 @@ auto computeEstimationTimes(Config const& config, ProjectMap const& projects_wit
 
 auto execute(std::vector<std::string> params, bool verbose) -> std::string {
 	if (verbose) {
-		params.push_back("-verbose");
+		params.emplace_back("-verbose");
 	}
 	auto call = std::stringstream{};
 	for (auto const& p : params) {
@@ -222,7 +222,7 @@ void visitFilesWithWarnings(Config const& config, ProjectMap const& projects_wit
 	}
 }
 
-bool isInteractive() {
+auto isInteractive() -> bool {
 	static bool interactive = isatty(fileno(stdout));
 	return interactive;
 

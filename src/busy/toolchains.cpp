@@ -15,7 +15,7 @@ auto searchForToolchains(std::filesystem::path _path) -> std::vector<std::tuple<
 	_path /= global_toolchainDir;
 
 	if (exists(_path)) {
-		for (auto f : std::filesystem::directory_iterator{_path}) {
+		for (auto const& f : std::filesystem::directory_iterator{_path}) {
 			auto params = std::vector<std::string>{f.path(), "info"};
 			auto p = process::Process{params};
 			if (p.getStatus() == 0) {
@@ -43,7 +43,7 @@ auto searchForToolchains(std::vector<std::filesystem::path> const& _paths) -> st
 	return retList;
 }
 
-auto getToolchainOptions(std::string_view _name, std::filesystem::path _path) -> std::map<std::string, std::vector<std::string>> {
+auto getToolchainOptions(std::string_view _name, std::filesystem::path const& _path) -> std::map<std::string, std::vector<std::string>> {
 	auto options = std::map<std::string, std::vector<std::string>>{};
 
 	auto params = std::vector<std::string>{_path, "info"};

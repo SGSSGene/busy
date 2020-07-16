@@ -55,7 +55,7 @@ void status() {
 	}
 	auto projects_with_deps = createProjects(projects);
 
-	auto jobs = [&]() -> int {
+	auto jobs = [&]() -> std::size_t {
 		if (*cfgJobs == 0) {
 			return std::thread::hardware_concurrency();
 		}
@@ -67,7 +67,7 @@ void status() {
 		auto cout = execute({config.toolchain.call, "begin", config.rootDir}, false);
 		auto node = YAML::Load(cout);
 		rebuild = YAML::Node{node["rebuild"]}.as<bool>(rebuild);
-		jobs = std::min(jobs, YAML::Node{node["max_jobs"]}.as<int>(jobs));
+		jobs = std::min(jobs, YAML::Node{node["max_jobs"]}.as<std::size_t>(jobs));
 	}
 
 	auto [_estimatedTimes, _estimatedTotalTime] = computeEstimationTimes(config, projects_with_deps, rebuild, jobs);
@@ -91,29 +91,30 @@ void status() {
 		}, target);
 	}
 
+	auto echo = [](std::filesystem::path filePath, std::string const& ext) {
+		filePath = "obj" / filePath;
+		filePath.replace_extension(ext);
+		auto data = utils::readFullFile(filePath);
+		data.push_back(std::byte(0));
+		fmt::print("{}\n", (char*)data.data());
+	};
+
+
 	int warnings = 0;
 	visitFilesWithWarnings(config, projects_with_deps, [&](File const& file, FileInfo const&) {
 		warnings += 1;
 		if (cfgAllFiles) {
 			auto filePath = file.getPath();
-			filePath = "obj" / filePath;
-			filePath.replace_extension(".o.stderr");
-
-			auto data = utils::readFullFile(filePath);
-			data.push_back(std::byte(0));
 			fmt::print("{}:\n", filePath);
-			fmt::print("{}\n", (char*)data.data());
+			echo(filePath, ".o.stdout");
+			echo(filePath, ".o.stderr");
 		}
 	}, nullptr);
 
-	for (auto file : *cfgFiles) {
-		file = "obj" / file;
-		file.replace_extension(".o.stderr");
-
-		auto data = utils::readFullFile(file);
-		data.push_back(std::byte(0));
-		fmt::print("{}:\n", file);
-		fmt::print("{}\n", (char*)data.data());
+	for (auto const& filePath : *cfgFiles) {
+		fmt::print("{}:\n", filePath);
+		echo(filePath, ".o.stdout");
+		echo(filePath, ".o.stderr");
 	}
 
 

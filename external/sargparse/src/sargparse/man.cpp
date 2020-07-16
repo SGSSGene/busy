@@ -1,12 +1,12 @@
 #include "ArgumentParsing.h"
 #include "Parameter.h"
 
+#include <array>
 #include <csignal>
+#include <cstdlib>
 #include <iostream>
-#include <stdlib.h>
 #include <string>
 #include <unistd.h>
-#include <array>
 
 namespace sargp {
 
@@ -93,7 +93,7 @@ void printManPage() {
 	pid_t childPID = fork();
 	if (not childPID) {
 		// wait for parent process to terminate
-		while (1) {
+		while (true) {
 			sleep(1);
 			if (parentPID != getppid()) {
 				break;
@@ -107,6 +107,7 @@ void printManPage() {
 
 	exit(e);
 }
+
 
 }
 }

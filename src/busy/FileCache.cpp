@@ -14,7 +14,7 @@ struct Cache {
 	CB cb;
 	std::unordered_map<RKey, Value> cache{};
 
-	Cache(CB _cb) : cb {_cb} {}
+	Cache(CB _cb) : cb {std::move(_cb)} {}
 
 	auto operator()(Key const& key) -> Value const& {
 		auto iter = cache.find(RKey{key});

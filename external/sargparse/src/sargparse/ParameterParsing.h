@@ -23,7 +23,7 @@ struct ParseError : std::invalid_argument {
 };
 
 template <uint64_t maxValue, typename T>
-auto parseSuffixHelper(std::string str, std::string_view suffix) -> T {
+auto parseSuffixHelper(std::string const& str, std::string_view suffix) -> T {
 	if (str != suffix) {
 		return 1;
 	}
@@ -214,12 +214,11 @@ std::string stringify(T const& t) {
 			return stringify(*t);
 		}
 		return "[]";
-	} else if constexpr (std::is_same_v<std::string, T>) {
+	} else if constexpr (std::is_same_v<std::string, T>
+	                  or std::is_same_v<std::filesystem::path, T>) {
 		return t;
 	} else if constexpr (std::is_same_v<bool, T>) {
 		return t?"true":"false";
-	} else if constexpr (std::is_base_of_v<std::filesystem::path, T>) {
-		return t;
 	} else {
 		return std::to_string(t);
 	}

@@ -1,7 +1,7 @@
 #include <process/Process.h>
 #include <iostream>
 
-int main(int argc, char** argv) {
+auto main(int argc, char** argv) -> int {
 	if (argc == 1) {
 		process::Process p({argv[0], "para1"});
 		if (p.getStatus() != 0) {

@@ -15,7 +15,7 @@ auto toolchain(std::vector<std::string> const& /*str*/) -> std::pair<bool, std::
 	auto packages = std::vector<std::filesystem::path>{};
 	if (!config.rootDir.empty() and config.rootDir != "." and std::filesystem::exists(config.rootDir)) {
 		auto [pro, pack] = busy::readPackage(config.rootDir, ".");
-		for (auto p : pack) {
+		for (auto const& p : pack) {
 			packages.emplace_back(p);
 		}
 	}
@@ -34,7 +34,7 @@ auto options(std::vector<std::string> const& /*str*/) -> std::pair<bool, std::se
 	auto config = loadConfig(workPath, *cfgBuildPath, {cfgRootPath, *cfgRootPath});
 
 	auto toolchainOptions = getToolchainOptions(config.toolchain.name, config.toolchain.call);
-	for (auto opt : toolchainOptions) {
+	for (auto const& opt : toolchainOptions) {
 		if (config.toolchain.options.count(opt.first) == 0) {
 			ret.second.insert(opt.first);
 		} else {
