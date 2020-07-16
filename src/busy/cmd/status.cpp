@@ -9,9 +9,7 @@
 #include <fmt/format.h>
 #include <fmt/chrono.h>
 #include <fmt/color.h>
-#include <sargparse/File.h>
-#include <sargparse/Parameter.h>
-#include <sargparse/ArgumentParsing.h>
+#include <sargparse/sargparse.h>
 #include <unistd.h>
 
 namespace busy::cmd {

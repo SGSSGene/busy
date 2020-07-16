@@ -1,8 +1,5 @@
-#include <sargparse/ArgumentParsing.h>
-#include <sargparse/File.h>
-#include <sargparse/Parameter.h>
-
 #include <fmt/format.h>
+#include <sargparse/sargparse.h>
 
 namespace busy::cmd {
 namespace {

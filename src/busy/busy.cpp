@@ -7,8 +7,7 @@
 #include <fmt/color.h>
 #include <iostream>
 #include <sargparse/ArgumentParsing.h>
-#include <sargparse/File.h>
-#include <sargparse/Parameter.h>
+#include <sargparse/sargparse.h>
 
 namespace {
 auto printHelp  = sargp::Parameter<std::optional<std::string>>{{}, "help", "print this help - add a string for  grep-like search"};
