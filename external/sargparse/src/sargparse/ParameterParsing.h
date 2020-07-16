@@ -12,12 +12,9 @@
 #include <optional>
 #include <filesystem>
 
-namespace sargp
-{
-namespace parsing
-{
-namespace detail
-{
+namespace sargp {
+namespace parsing {
+namespace detail {
 
 struct ParseError : std::invalid_argument {
 	ParseError(std::string const& msg="")
@@ -230,5 +227,3 @@ std::string stringify(T const& t) {
 
 }
 }
-
-
