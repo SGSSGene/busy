@@ -63,6 +63,10 @@ void compile() {
 		return *cfgJobs;
 	}();
 
+	auto fg_green  = isInteractive()? fg(fmt::terminal_color::green): fmt::text_style{};
+	auto fg_yellow = isInteractive()? fg(fmt::terminal_color::yellow): fmt::text_style{};
+	auto fg_red    = isInteractive()? fg(fmt::terminal_color::red): fmt::text_style{};
+
 	bool rebuild = cfgRebuild;
 	{
 		auto cout = execute({config.toolchain.call, "begin", config.rootDir}, false);
@@ -74,6 +78,8 @@ void compile() {
 	auto [_estimatedTimes, _estimatedTotalTime] = computeEstimationTimes(config, projects_with_deps, rebuild, jobs);
 	auto estimatedTimes     = _estimatedTimes;
 	auto estimatedTotalTime = _estimatedTotalTime;
+
+	auto failedCompilations = std::unordered_set<std::string>{};
 	fmt::print("done\n");
 	fmt::print("{} files need processing\n", estimatedTimes.size());
 	if (not estimatedTimes.empty()) {
@@ -103,6 +109,7 @@ void compile() {
 				// store file date before compiling
 				g.lock();
 				auto hash    = getFileCache().getHash(path);
+				failedCompilations.insert(file.getPath());
 				g.unlock();
 
 				// compiling
@@ -144,6 +151,10 @@ void compile() {
 					fileInfo.compileTime = compileTime;
 				}
 				fileInfo.modTime = startTime;
+				g.lock();
+				failedCompilations.erase(file.getPath());
+				g.unlock();
+
 				return fileInfo.compilable? CompilePipe::Color::Compilable: CompilePipe::Color::Ignored;
 			}, [&](busy::Project const& project, auto const& params, auto const& deps) {
 				auto& fileInfo = getFileInfos().get(project.getPath());
@@ -169,6 +180,10 @@ void compile() {
 		});
 		multiPipe.join();
 		if (multiPipe.compileError) {
+			fmt::print("{} files with {}:\n", failedCompilations.size(), fmt::format(fg_red, "errors"));
+			for (auto f : failedCompilations) {
+				fmt::print("  - {}\n", fmt::format(fg_yellow, "{}", f));
+			}
 			throw CompileError{};
 		}
 	}
@@ -180,14 +195,11 @@ void compile() {
 		warnings += 1;
 	}, nullptr);
 
-	auto fg_green  = isInteractive()? fg(fmt::terminal_color::green): fmt::text_style{};
-	auto fg_red    = isInteractive()? fg(fmt::terminal_color::red): fmt::text_style{};
 	if (warnings == 0) {
 		fmt::print("all files {}\n", fmt::format(fg_green, "warning free"));
 	} else {
 		fmt::print("{} files with {}\n", warnings, fmt::format(fg_red, "warnings"));
 	}
-
 }
 
 auto cmd        = sargp::Command{"compile", "compile everything (default)", compile};
