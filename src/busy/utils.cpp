@@ -73,7 +73,7 @@ auto loadConfig(std::filesystem::path workPath, std::filesystem::path buildPath,
 	return config;
 }
 
-auto updateToolchainOptions(Config& config, bool reset, std::optional<std::vector<std::string>> _options) -> std::map<std::string, std::vector<std::string>> {
+auto updateToolchainOptions(Config& config, bool reset, std::vector<std::string> _options) -> std::map<std::string, std::vector<std::string>> {
 	auto toolchainOptions = getToolchainOptions(config.toolchain.name, config.toolchain.call);
 
 	// initialize queue
@@ -83,10 +83,8 @@ auto updateToolchainOptions(Config& config, bool reset, std::optional<std::vecto
 		queue.push("default");
 		config.toolchain.options.clear();
 	}
-	if (_options) {
-		for (auto o : *_options) {
-			queue.push(o);
-		}
+	for (auto o : _options) {
+		queue.push(o);
 	}
 	while(not queue.empty()) {
 		auto o = queue.front();

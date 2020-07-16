@@ -31,10 +31,10 @@ void compile() {
 
 		config.toolchain.name = iter->first;
 		config.toolchain.call = iter->second;
-		updateToolchainOptions(config, true, cfgOptions);
+		updateToolchainOptions(config, true, *cfgOptions);
 		fmt::print("Setting toolchain to {} ({})\n", config.toolchain.name, config.toolchain.call);
 	}
-	auto toolchainOptions = updateToolchainOptions(config, false, cfgOptions);
+	auto toolchainOptions = updateToolchainOptions(config, false, *cfgOptions);
 
 	fmt::print("using toolchain {} ({})\n", config.toolchain.name, config.toolchain.call);
 	fmt::print("  with options: {}\n", fmt::join(config.toolchain.options, " "));

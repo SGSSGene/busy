@@ -111,15 +111,6 @@ public:
 	T& get() {
 		return _val;
 	}
-
-	template <typename Target>
-	operator std::optional<Target>() const {
-		if (not _valSpecified) {
-			return std::nullopt;
-		}
-		return {_val};
-	}
-
 };
 
 // an intermediate type broker to inject type specific specializations eg. for rendering
@@ -430,7 +421,7 @@ Command::Command(Command* parentCommand, std::string const& name, std::string co
 	, _description(description)
 	, _tasks{}
 	, _defaultTask{std::make_unique<Task<CB>>(std::forward<CB>(cb), *this)}
-	, _parentCommand{parentCommand?:&Command::getDefaultCommand()}
+	, _parentCommand{parentCommand?nullptr:&Command::getDefaultCommand()}
 {
 	_parentCommand->subcommands.emplace_back(this);
 }
