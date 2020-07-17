@@ -66,7 +66,14 @@ void status() {
 	bool rebuild = cfgRebuild;
 	auto compilerHash = std::string{};
 	{
-		auto cout = execute({config.toolchain.call, "begin", config.rootDir}, false);
+		auto args = std::vector<std::string>{config.toolchain.call, "begin", config.rootDir};
+		if (not config.toolchain.options.empty()) {
+			args.emplace_back("--options");
+			for (auto const& o : config.toolchain.options) {
+				args.emplace_back(o);
+			}
+		}
+		auto cout = execute(args, false);
 		auto node = YAML::Load(cout);
 		rebuild      = YAML::Node{node["rebuild"]}.as<bool>(rebuild);
 		jobs         = std::min(jobs, YAML::Node{node["max_jobs"]}.as<std::size_t>(jobs));
