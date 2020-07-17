@@ -59,15 +59,15 @@ struct CompilePipe {
 		params.emplace_back(inFile);
 		params.emplace_back("obj" / outFile);
 		// add all options
-		params.emplace_back("-options");
+		params.emplace_back("--options");
 		for (auto const& o : toolchainOptions) {
 			params.emplace_back(o);
 		}
-		if (params.back() == "-options") params.pop_back();
+		if (params.back() == "--options") params.pop_back();
 
 
 		// add all include paths
-		params.emplace_back("-ilocal");
+		params.emplace_back("--ilocal");
 
 		auto& project = queue.find_outgoing<busy::Project const>(&file);
 
@@ -75,11 +75,11 @@ struct CompilePipe {
 		for (auto const& p : project.getLegacyIncludePaths()) {
 			params.emplace_back(p);
 		}
-		if (params.back() == "-ilocal") params.pop_back();
+		if (params.back() == "--ilocal") params.pop_back();
 
 
 		// add all system include paths
-		params.emplace_back("-isystem");
+		params.emplace_back("--isystem");
 
 		auto systemIncludes = std::vector<std::filesystem::path>{};
 		queue.visit_incoming<Project const>(&project, [&](Project const& project) {
@@ -88,7 +88,7 @@ struct CompilePipe {
 				params.emplace_back(i);
 			}
 		});
-		if (params.back() == "-isystem") params.pop_back();
+		if (params.back() == "--isystem") params.pop_back();
 
 		params.erase(std::unique(begin(params), end(params)), end(params));
 		return params;
@@ -117,14 +117,14 @@ struct CompilePipe {
 
 		params.emplace_back(target);
 
-		params.emplace_back("-options");
+		params.emplace_back("--options");
 		for (auto const& o : toolchainOptions) {
 			params.emplace_back(o);
 		}
-		if (params.back() == "-options") params.pop_back();
+		if (params.back() == "--options") params.pop_back();
 
 
-		params.emplace_back("-i");
+		params.emplace_back("--input");
 		for (auto file : queue.find_incoming<busy::File>(&project)) {
 			if (colors.at(file) == Color::Compilable) {
 				auto objPath = "obj" / file->getPath();
@@ -132,10 +132,10 @@ struct CompilePipe {
 				params.emplace_back(objPath);
 			}
 		}
-		if (params.back() == "-i") params.pop_back();
+		if (params.back() == "--input") params.pop_back();
 
 
-		params.emplace_back("-il");
+		params.emplace_back("--llibraries");
 		// add all legacy system libraries
 		std::vector<std::string> systemLibraries;
 		auto addSystemLibraries = [&](busy::Project const& project) {
@@ -159,14 +159,14 @@ struct CompilePipe {
 			addSystemLibraries(project);
 			dependencies.insert(&project);
 		});
-		if (params.back() == "-il") params.pop_back();
+		if (params.back() == "--llibraries") params.pop_back();
 
 
-		params.emplace_back("-l");
+		params.emplace_back("--syslibraries");
 		for (auto const& l : systemLibraries) {
 			params.emplace_back(l);
 		}
-		if (params.back() == "-l") params.pop_back();
+		if (params.back() == "--syslibraries") params.pop_back();
 
 		params.erase(std::unique(begin(params), end(params)), end(params));
 		return std::tuple{params, dependencies};

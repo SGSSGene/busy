@@ -84,7 +84,7 @@ void compile() {
 	{
 		auto args = std::vector<std::string>{config.toolchain.call, "begin", config.rootDir};
 		if (not config.toolchain.options.empty()) {
-			args.emplace_back("-option");
+			args.emplace_back("--options");
 			for (auto const& o : config.toolchain.options) {
 				args.emplace_back(o);
 			}

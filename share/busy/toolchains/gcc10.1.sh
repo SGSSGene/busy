@@ -29,8 +29,8 @@ if [ "${version_major}" != "10" ] || [ "${version_minor}" -lt "1" ]; then
 	exit -1
 fi
 
-parse "-options    options"\
-      "-verbose    verbose"\
+parse "--options    options"\
+      "--verbose    verbose"\
       "--" "$@"
 
 # check if ccache is available
@@ -105,9 +105,8 @@ elif [ "$1" == "compile" ]; then
 
 
 
-	parse "-ilocal  projectIncludes" \
-	      "-isystem systemIncludes" \
-	      "-options options"\
+	parse "--ilocal  projectIncludes" \
+	      "--isystem systemIncludes" \
 	      "--" "$@"
 
 	parameters=""
@@ -156,10 +155,9 @@ elif [ "$1" == "link" ]; then
 		outputFiles+=(${outputFile}.ccache)
 	fi
 
-	parse "-i       inputFiles" \
-	      "-il      inputLibraries" \
-	      "-l       libraries" \
-	      "-options options" \
+	parse "--input         inputFiles" \
+	      "--llibraries    inputLibraries" \
+	      "--syslibraries  libraries" \
 	      "--" "$@"
 
 	libraries=($(implode " -l" "${libraries[@]}"))

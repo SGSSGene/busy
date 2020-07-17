@@ -30,10 +30,6 @@ toolchains:
       - "${AR}"
       - "${LD}"
     options:
-      release: [no-debug, no-release_with_symbols]
-      release_with_symbols: [no-release, no-debug]
-      debug: [no-release, no-release_with_symbols]
-      ccache: []
 END
 exit 0
 fi
@@ -71,8 +67,8 @@ elif [ "$1" == "compile" ]; then
 	shift; outputFile="$1"
 	shift
 
-	parse "-ilocal  projectIncludes" \
-	      "-isystem systemIncludes" \
+	parse "--ilocal  projectIncludes" \
+	      "--isystem systemIncludes" \
 	      "--" "$@"
 
 	projectIncludes+=($(dirname ${projectIncludes[-1]})) #!TODO this line should not be needed
@@ -92,9 +88,9 @@ elif [ "$1" == "link" ]; then
 	shift; outputFile="$1"
 	shift
 
-	parse "-i       inputFiles" \
-	      "-il      inputLibraries" \
-	      "-l       libraries" \
+	parse "--input        inputFiles" \
+	      "--llibraries   inputLibraries" \
+	      "--syslibraries libraries" \
 	      "--" "$@"
 
 	libraries=($(implode " -l" "${libraries[@]}"))
