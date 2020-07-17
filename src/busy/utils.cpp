@@ -133,7 +133,7 @@ auto updateToolchainOptions(Config& config, bool reset, std::vector<std::string>
 	return toolchainOptions;
 }
 
-auto computeEstimationTimes(Config const& config, ProjectMap const& projects_with_deps, bool clean, std::size_t jobs) -> std::tuple<ConsolePrinter::EstimatedTimes, std::chrono::milliseconds> {
+auto computeEstimationTimes(Config const& config, ProjectMap const& projects_with_deps, bool clean, std::string const& _compilerHash, std::size_t jobs) -> std::tuple<ConsolePrinter::EstimatedTimes, std::chrono::milliseconds> {
 	auto estimatedTimes = ConsolePrinter::EstimatedTimes{};
 	auto pipe           = CompilePipe{config.toolchain.call, projects_with_deps, config.toolchain.options};
 	auto threadTimings = std::vector<std::chrono::milliseconds>(jobs, std::chrono::milliseconds{0});
@@ -148,7 +148,9 @@ auto computeEstimationTimes(Config const& config, ProjectMap const& projects_wit
 		pipe.dispatch(work, overloaded {
 			[&](busy::File const& file, auto const& /*params*/, auto const& /*deps*/) {
 				auto& fileInfo = getFileInfos().get(file.getPath());
-				if (clean or (fileInfo.hasChanged() and fileInfo.compilable)) {
+				if (clean
+				    or (fileInfo.hasChanged() and fileInfo.compilable)
+				    or fileInfo.compilerHash != _compilerHash) {
 					estimatedTimes.try_emplace(&file, fileInfo.compileTime);
 					duration = fileInfo.compileTime;
 				}
@@ -176,7 +178,10 @@ auto computeEstimationTimes(Config const& config, ProjectMap const& projects_wit
 					}
 					return true;
 				}();
-				if (clean or (not existsAllOutputFiles and fileInfo.compilable) or anyChanges()) {
+				if (clean 
+				    or (not existsAllOutputFiles and fileInfo.compilable)
+				    or anyChanges()
+				    or fileInfo.compilerHash != _compilerHash) {
 					estimatedTimes.try_emplace(&project, fileInfo.compileTime);
 					duration = fileInfo.compileTime;
 				}

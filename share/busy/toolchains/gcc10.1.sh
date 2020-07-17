@@ -29,7 +29,6 @@ if [ "${version_major}" != "10" ] || [ "${version_minor}" -lt "1" ]; then
 	exit -1
 fi
 
-
 parse "-options    options"\
       "-verbose    verbose"\
       "--" "$@"
@@ -84,6 +83,8 @@ if [ "$1" == "begin" ]; then
 	if [ ! -e "src" ]; then
 		ln -s ${rootDir}/src src
 	fi
+	hash="$(echo "${@}" | cat - ${0} ${0%/*}/helper_utils.sh ${CXX} ${C} ${LD} ${LD} | shasum)"
+	echo "hash: ${hash}";
 	exit 0
 elif [ "$1" == "end" ]; then
 	exit 0

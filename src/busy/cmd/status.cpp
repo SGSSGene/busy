@@ -64,14 +64,16 @@ void status() {
 	}();
 
 	bool rebuild = cfgRebuild;
+	auto compilerHash = std::string{};
 	{
 		auto cout = execute({config.toolchain.call, "begin", config.rootDir}, false);
 		auto node = YAML::Load(cout);
-		rebuild = YAML::Node{node["rebuild"]}.as<bool>(rebuild);
-		jobs = std::min(jobs, YAML::Node{node["max_jobs"]}.as<std::size_t>(jobs));
+		rebuild      = YAML::Node{node["rebuild"]}.as<bool>(rebuild);
+		jobs         = std::min(jobs, YAML::Node{node["max_jobs"]}.as<std::size_t>(jobs));
+		compilerHash = YAML::Node{node["hash"]}.as<std::string>(compilerHash);
 	}
 
-	auto [_estimatedTimes, _estimatedTotalTime] = computeEstimationTimes(config, projects_with_deps, rebuild, jobs);
+	auto [_estimatedTimes, _estimatedTotalTime] = computeEstimationTimes(config, projects_with_deps, rebuild, compilerHash, jobs);
 	auto estimatedTimes     = _estimatedTimes;
 	auto estimatedTotalTime = _estimatedTotalTime;
 	if (estimatedTimes.empty()) {

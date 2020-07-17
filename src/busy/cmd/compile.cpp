@@ -80,14 +80,23 @@ void compile() {
 	auto fg_red    = isInteractive()? fg(fmt::terminal_color::red): fmt::text_style{};
 
 	bool rebuild = cfgRebuild;
+	auto compilerHash = std::string{};
 	{
-		auto cout = execute({config.toolchain.call, "begin", config.rootDir}, false);
+		auto args = std::vector<std::string>{config.toolchain.call, "begin", config.rootDir};
+		if (not config.toolchain.options.empty()) {
+			args.emplace_back("-option");
+			for (auto const& o : config.toolchain.options) {
+				args.emplace_back(o);
+			}
+		}
+		auto cout = execute(args, false);
 		auto node = YAML::Load(cout);
-		rebuild = YAML::Node{node["rebuild"]}.as<bool>(rebuild);
-		jobs = std::min(jobs, YAML::Node{node["max_jobs"]}.as<std::size_t>(jobs));
+		rebuild      = YAML::Node{node["rebuild"]}.as<bool>(rebuild);
+		jobs         = std::min(jobs, YAML::Node{node["max_jobs"]}.as<std::size_t>(jobs));
+		compilerHash = YAML::Node{node["hash"]}.as<std::string>(compilerHash);
 	}
 
-	auto [_estimatedTimes, _estimatedTotalTime] = computeEstimationTimes(config, projects_with_deps, rebuild, jobs);
+	auto [_estimatedTimes, _estimatedTotalTime] = computeEstimationTimes(config, projects_with_deps, rebuild, compilerHash, jobs);
 	auto estimatedTimes     = _estimatedTimes;
 	auto estimatedTotalTime = _estimatedTotalTime;
 
@@ -160,6 +169,8 @@ void compile() {
 				fileInfo.hash            = hash;
 				fileInfo.needRecompiling = false;
 				fileInfo.hasWarnings     = not std_err.empty();
+				fileInfo.compilerHash    = compilerHash;
+
 
 				auto compileTime = consolePrinter.finishedJob(&file);
 				if (not cached or fileInfo.compileTime < compileTime) {
@@ -187,6 +198,8 @@ void compile() {
 				for (YAML::Node const& n : node["output_files"]) {
 					fileInfo.outputFiles.push_back(n.as<std::string>());
 				}
+
+				fileInfo.compilerHash    = compilerHash;
 
 				auto compileTime = consolePrinter.finishedJob(&project);
 				if (not cached or fileInfo.compileTime < compileTime) {

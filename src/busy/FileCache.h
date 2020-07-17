@@ -109,6 +109,7 @@ struct FileInfo {
 	Duration compileTime{0};
 	Dependencies dependencies{};
 	bool hasWarnings{false};
+	std::string compilerHash{};
 
 
 	FileInfo(fon::ctor) {};
@@ -127,6 +128,7 @@ struct FileInfo {
 		node["dependencies"]    % dependencies;
 		node["compileTime"]     % compileTime;
 		node["hasWarnings"]     % hasWarnings;
+		node["compilerHash"]    % compilerHash;
 	}
 
 
