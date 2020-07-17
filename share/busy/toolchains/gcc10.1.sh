@@ -75,6 +75,7 @@ exit 0
 fi
 
 
+outputFiles=()
 if [ "$1" == "begin" ]; then
 	rootDir="$2"
 	if [ ! -e "external" ]; then
@@ -95,6 +96,12 @@ elif [ "$1" == "compile" ]; then
 	stdoutFile="${outputFile}.stdout"
 	stderrFile="${outputFile}.stderr"
 	export CCACHE_LOGFILE="${outputFile}.ccache"
+
+	outputFiles+=("${outputFile}" "${dependencyFile}" "${stdoutFile}" "${stderrFile}")
+	if [ "${CCACHE}" -eq 1 ]; then
+		outputFiles+=(${outputFile}.ccache)
+	fi
+
 
 
 	parse "-ilocal  projectIncludes" \
@@ -143,6 +150,11 @@ elif [ "$1" == "link" ]; then
 	stderrFile="${outputFile}.stderr"
 	export CCACHE_LOGFILE="${outputFile}.ccache"
 
+	outputFiles+=("${outputFile}" "${stdoutFile}" "${stderrFile}")
+	if [ "${CCACHE}" -eq 1 ]; then
+		outputFiles+=(${outputFile}.ccache)
+	fi
+
 	parse "-i       inputFiles" \
 	      "-il      inputLibraries" \
 	      "-l       libraries" \
@@ -177,6 +189,7 @@ elif [ "$1" == "link" ]; then
 		call="${CXX} -rdynamic ${parameters} -fdiagnostics-color=always -o ${outputFile} ${inputFiles[@]} ${inputLibraries[@]} ${libraries[@]}"
 	# Static library?
 	elif [ "${target}" == "static_library" ]; then
+		outputFiles+=("${outputFile}.o")
 		call="${LD} -Ur -o ${outputFile}.o ${inputFiles[@]} && ${AR} rcs ${outputFile} ${outputFile}.o"
 	else
 		exit -1
@@ -211,8 +224,10 @@ if [ "${CCACHE}" -eq 1 ]; then
 fi
 echo "cached: ${is_cached}"
 echo "compilable: true"
-echo "output_file: ${outputFile}"
-
+echo "output_files:"
+for f in "${outputFiles[@]}"; do
+	echo "  - ${f}"
+done
 if [ $errorCode -ne "0" ]; then
 	exit -1
 fi

@@ -116,9 +116,12 @@ void compile() {
 				auto cout = execute(params, cfgVerbose);
 				auto node = YAML::Load(cout);
 
-				bool cached         = YAML::Node{node["cached"]}.as<bool>(false);
-				fileInfo.compilable = YAML::Node{node["compilable"]}.as<bool>(false);
-				fileInfo.outputFile = YAML::Node{node["output_file"]}.as<std::string>("");
+				bool cached          = YAML::Node{node["cached"]}.as<bool>(false);
+				fileInfo.compilable  = YAML::Node{node["compilable"]}.as<bool>(false);
+				fileInfo.outputFiles = {};
+				for (YAML::Node const& n : node["output_files"]) {
+					fileInfo.outputFiles.push_back(n.as<std::string>());
+				}
 
 				auto dependencies = FileInfo::Dependencies{};
 				//!TODO should work with `auto`, but doesn't for some reason
@@ -168,7 +171,10 @@ void compile() {
 				auto node = YAML::Load(cout);
 				bool cached         = YAML::Node{node["cached"]}.as<bool>(false);
 				fileInfo.compilable = YAML::Node{node["compilable"]}.as<bool>(false);
-				fileInfo.outputFile = YAML::Node{node["output_file"]}.as<std::string>("");
+				fileInfo.outputFiles = {};
+				for (YAML::Node const& n : node["output_files"]) {
+					fileInfo.outputFiles.push_back(n.as<std::string>());
+				}
 
 				auto compileTime = consolePrinter.finishedJob(&project);
 				if (not cached or fileInfo.compileTime < compileTime) {

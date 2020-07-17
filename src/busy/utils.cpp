@@ -152,7 +152,15 @@ auto computeEstimationTimes(Config const& config, ProjectMap const& projects_wit
 					}
 					return false;
 				};
-				if (clean or (not exists(fileInfo.outputFile) and fileInfo.compilable) or anyChanges()) {
+				auto existsAllOutputFiles = [&]() {
+					for (auto const& outputFile : fileInfo.outputFiles) {
+						if (not exists(outputFile)) {
+							return false;
+						}
+					}
+					return true;
+				}();
+				if (clean or (not existsAllOutputFiles and fileInfo.compilable) or anyChanges()) {
 					estimatedTimes.try_emplace(&project, fileInfo.compileTime);
 					duration = fileInfo.compileTime;
 				}
