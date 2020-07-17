@@ -1,49 +1,19 @@
 #!/bin/bash
 
-function parseMode {
-	var="$2"
-	if [ "${1}" = "${3}" ]; then
-		parseMode="${var}"
-		eval ${var}="${!var:-()}"
-		r="1"
-	fi
-}
-function parseValue {
-	if [ -n "${parseMode}" ]; then
-		eval "${parseMode}+=(${1})"
-		r="1"
-	fi
-}
-function parse {
-	parsePairs=()
-	while [ "$1" != "--" ]; do
-		parsePairs+=("$1")
-		shift
-	done
-	while [ $# -gt 0 ]; do
-		shift
-		r=
-		for x in "${parsePairs[@]}"; do
-			if [ -z "$r" ]; then
-				parseMode $x "$1"
-			fi
-		done
-		if [ -z "$r" ]; then
-			parseValue "$1"
-		fi
-	done
-}
-function implode {
-	sep="$1"
-	shift;
-	for i in "$@"; do
-		echo -n "$sep$i"
-	done
-}
+# $ <$0> info
+# $ <$0> compile input.cpp output.o -ilocal <includes>... -isystem <system includes>...
+# $ <$0> link static_library output.a -i obj1.o obj2.o lib2.a -l pthread armadillo
+# $ <$0> link executable output.exe -i obj1.o obj2.o lib2.a -l pthread armadillo
+
+# Return values:
+# 0 on success
+# -1 error
+
+source "${0%/*}"/helper_utils.sh
 
 CXX=g++
 C=gcc
-AR=ar
+
 
 if [ "$1" == "info" ]; then
 shift
@@ -51,16 +21,11 @@ shift
 cat <<-END
 toolchains:
   - name: "clang complete"
-    version: ${version}
-    detail: "$(${CXX} --version | head -1)"
+    version: "0.0.0"
+    detail: "0.0.0"
     which:
-      - "${CXX}"
-      - "${C}"
-      - "${AR}"
     options:
-      - "release"
-      - "release_with_symbols"
-      - "debug"
+      default: []
 END
 exit 0
 fi
@@ -76,11 +41,8 @@ if [ "$1" == "begin" ]; then
 	if [ ! -e "src" ]; then
 		ln -s ${rootDir}/src src
 	fi
-	if [ ! -e "log" ]; then
-		mkdir log
-	fi
 
-	echo "clean: true"
+	echo "rebuild: true"
 	echo "max_jobs: 1"
 
 	cat > ${outFile} <<-END
@@ -98,8 +60,8 @@ elif [ "$1" == "compile" ]; then
 	shift; outputFile="$1"
 	shift
 
-	parse "-ilocal  projectIncludes" \
-	      "-isystem systemIncludes" \
+	parse "--ilocal  projectIncludes" \
+	      "--isystem systemIncludes" \
 	      "--" "$@"
 
 	projectIncludes=$(implode " -I " "${projectIncludes[@]}")
@@ -107,11 +69,11 @@ elif [ "$1" == "compile" ]; then
 
 	filetype="$(echo "${inputFile}" | rev | cut -d "." -f 1 | rev)";
 
-	directory=$(realpath --relative-to / ..)
+	directory=/$(realpath --relative-to / ..)
 	if [[ "${filetype}" =~ ^(cpp|cc)$ ]]; then
-		call="${CXX} -O0 -std=c++20 -fPIC -MD -g3 -ggdb -fdiagnostics-color=always -c $inputFile -o $outputFile $projectIncludes $systemIncludes"
+		call="${CXX} -O0 -std=c++20 -c $inputFile -o $outputFile $projectIncludes $systemIncludes"
 	elif [ "${filetype}" = "c" ]; then
-		call="${C} -O0 -std=c18 -fPIC -MD -g3 -ggdb -fdiagnostics-color=always -c $inputFile -o $outputFile $projectIncludes $systemIncludes"
+		call="${C} -O0 -std=c18 -c $inputFile -o $outputFile $projectIncludes $systemIncludes"
 	else
 		exit 0
 	fi

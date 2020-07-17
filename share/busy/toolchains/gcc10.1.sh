@@ -23,7 +23,6 @@ version_major=$(echo ${version} | cut -d "." -f 1)
 version_minor=$(echo ${version} | cut -d "." -f 2)
 version_patch=$(echo ${version} | cut -d "." -f 3)
 
-
 # check if version numbers match
 if [ "${version_major}" != "10" ] || [ "${version_minor}" -lt "1" ]; then
 	exit -1
@@ -83,7 +82,7 @@ if [ "$1" == "begin" ]; then
 	if [ ! -e "src" ]; then
 		ln -s ${rootDir}/src src
 	fi
-	hash="$(echo "${@}" | cat - ${0} ${0%/*}/helper_utils.sh ${CXX} ${C} ${LD} ${LD} | shasum)"
+	hash="$(echo "${@}" | cat - ${0} ${0%/*}/helper_utils.sh ${CXX} ${C} ${LD} ${AR} | shasum)"
 	echo "hash: ${hash}";
 	exit 0
 elif [ "$1" == "end" ]; then
@@ -102,8 +101,6 @@ elif [ "$1" == "compile" ]; then
 	if [ "${CCACHE}" -eq 1 ]; then
 		outputFiles+=(${outputFile}.ccache)
 	fi
-
-
 
 	parse "--ilocal  projectIncludes" \
 	      "--isystem systemIncludes" \
@@ -125,7 +122,6 @@ elif [ "$1" == "compile" ]; then
 	if [[ " ${options[@]} " =~ " strict " ]]; then
 		parameters+=" -Wall -Wextra -Wpedantic"
 	fi
-
 
 	projectIncludes+=($(dirname ${projectIncludes[-1]})) #!TODO this line should not be needed
 	projectIncludes=$(implode " -I " "${projectIncludes[@]}")
