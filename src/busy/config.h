@@ -35,7 +35,6 @@ struct Config {
 		std::set<std::string> options;
 	} toolchain;
 
-	std::string compilerHash{};
 	std::string rootDir {};
 
 
@@ -45,7 +44,6 @@ struct Config {
 		node["toolchain_call"]    % toolchain.call;
 		node["toolchain_options"] % toolchain.options;
 		node["rootDir"]           % rootDir;
-		node["compilerHash"]      % compilerHash;
 	}
 };
 
