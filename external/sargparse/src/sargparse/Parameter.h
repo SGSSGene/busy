@@ -424,18 +424,5 @@ private:
 	Command& _command;
 	Callback _cb;
 };
-template<typename CB> Task(CB) -> Task<CB>;
-
-template<typename CB>
-Command::Command(Command* parentCommand, std::string const& name, std::string const& description, CB&& cb) 
-	: _name(name)
-	, _description(description)
-	, _tasks{}
-	, _defaultTask{std::make_unique<Task<CB>>(std::forward<CB>(cb), *this)}
-	, _parentCommand{parentCommand?nullptr:&Command::getDefaultCommand()}
-{
-	_parentCommand->subcommands.emplace_back(this);
-}
-
 
 }
