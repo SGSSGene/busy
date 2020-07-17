@@ -8,7 +8,7 @@ namespace {
 
 void showDeps() {
 	auto workPath = std::filesystem::current_path();
-	auto config = loadConfig(workPath, *cfgBuildPath, {cfgRootPath, *cfgRootPath});
+	auto config   = loadConfig(workPath, *cfgBuildPath, {cfgRootPath, *cfgRootPath});
 
 	auto [projects, packages] = busy::readPackage(config.rootDir, ".");
 

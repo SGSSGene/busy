@@ -12,8 +12,9 @@ namespace busy::cmd {
 namespace {
 
 void compile() {
-	auto workPath = std::filesystem::current_path();
-	auto config = loadConfig(workPath, *cfgBuildPath, {cfgRootPath, *cfgRootPath});
+	auto fileLock   = FileLock{*cfgBuildPath};
+	auto workPath   = std::filesystem::current_path();
+	auto config     = loadConfig(workPath, *cfgBuildPath, {cfgRootPath, *cfgRootPath});
 	auto cacheGuard = loadFileCache(*cfgYamlCache);
 
 	auto [projects, packages] = busy::readPackage(config.rootDir, ".");

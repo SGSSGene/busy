@@ -9,9 +9,26 @@
 #include <process/Process.h>
 #include <queue>
 #include <unistd.h>
+#include <sys/file.h>
 
 
 namespace busy {
+
+FileLock::FileLock(std::filesystem::path const& buildPath) {
+	fullPath = weakly_canonical(buildPath / ".lock");
+	fd = ::open(fullPath.string().c_str(), O_CREAT | O_RDWR | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+	if (fd == -1) {
+		throw std::runtime_error("can't access " + fullPath.string());
+	}
+	if (flock(fd, LOCK_EX | LOCK_NB) == -1) {
+		throw std::runtime_error("other process is running");
+	}
+}
+FileLock::~FileLock() {
+	close(fd);
+	remove(fullPath);
+}
+
 
 void printProjects(std::map<Project const*, std::tuple<std::set<Project const*>, std::set<Project const*>>> const& _projects) {
 	for (auto const& [i_project, dep] : _projects) {

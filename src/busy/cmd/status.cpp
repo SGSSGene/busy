@@ -22,6 +22,7 @@ auto cfgFiles    = cmd.Parameter<std::vector<std::filesystem::path>>({}, "", "sh
 auto cfgAllFiles = cmd.Flag("all_files", "show warnings of all files with warnings");
 
 void status() {
+	auto fileLock   = FileLock{*cfgBuildPath};
 	auto workPath   = std::filesystem::current_path();
 	auto config     = loadConfig(workPath, *cfgBuildPath, {cfgRootPath, *cfgRootPath});
 	auto cacheGuard = loadFileCache(*cfgYamlCache);

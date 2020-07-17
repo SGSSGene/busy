@@ -15,6 +15,13 @@
 namespace busy {
 
 struct CompileError {};
+struct FileLock {
+	int fd{-1};
+	std::filesystem::path fullPath;
+	FileLock(std::filesystem::path const& buildPath);
+	~FileLock();
+};
+
 
 void printProjects(std::map<Project const*, std::tuple<std::set<Project const*>, std::set<Project const*>>> const& _projects);
 auto loadConfig(std::filesystem::path const& workPath, std::filesystem::path const& buildPath, std::tuple<bool, std::filesystem::path> const& rootPath) -> Config;

@@ -26,6 +26,7 @@ inline static auto user_sharedPath   = []() {
 
 inline static auto global_toolchainDir   = std::filesystem::path{"toolchains.d"};
 inline static auto global_busyConfigFile = std::filesystem::path{".busy.yaml"};
+inline static auto global_lockFile       = std::filesystem::path{".lock"};
 
 struct Config {
 	struct {

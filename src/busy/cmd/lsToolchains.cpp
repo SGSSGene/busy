@@ -9,7 +9,7 @@ namespace {
 
 void lsToolchains() {
 	auto workPath = std::filesystem::current_path();
-	auto config = loadConfig(workPath, *cfgBuildPath, {cfgRootPath, *cfgRootPath});
+	auto config   = loadConfig(workPath, *cfgBuildPath, {cfgRootPath, *cfgRootPath});
 
 	auto packages = std::vector<std::filesystem::path>{};
 	if (!config.rootDir.empty() and config.rootDir != "." and std::filesystem::exists(config.rootDir)) {
