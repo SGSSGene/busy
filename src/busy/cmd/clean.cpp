@@ -1,13 +1,23 @@
 #include <fmt/format.h>
 #include <sargparse/sargparse.h>
 
+#include "../FileCache.h"
+#include "../cache.h"
+#include "../config.h"
+#include "../utils.h"
+
 namespace busy::cmd {
 namespace {
 
 void clean() {
+	auto workPath   = std::filesystem::current_path();
+	auto config     = loadConfig(workPath, *cfgBuildPath, {cfgRootPath, *cfgRootPath});
+	auto fileLock   = FileLock{};
+	auto cacheGuard = loadFileCache(*cfgYamlCache);
+
 	auto allRemovedFiles = std::uintmax_t{};
 	for (auto& p : std::filesystem::directory_iterator{"."}) {
-		if (p.path() != "./.busy.yaml") {
+		if (p.path() != "./.busy.yaml" and p.path() != ".filecache") {
 			allRemovedFiles += std::filesystem::remove_all(p.path());
 		}
 	}

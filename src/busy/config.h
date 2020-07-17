@@ -30,8 +30,8 @@ inline static auto global_lockFile       = std::filesystem::path{".lock"};
 
 struct Config {
 	struct {
-		std::string name {"default"};
-		std::string call {"toolchainCall.sh"};
+		std::string name {};
+		std::string call {};
 		std::set<std::string> options;
 	} toolchain;
 

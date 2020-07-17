@@ -12,9 +12,9 @@ namespace busy::cmd {
 namespace {
 
 void compile() {
-	auto fileLock   = FileLock{*cfgBuildPath};
 	auto workPath   = std::filesystem::current_path();
 	auto config     = loadConfig(workPath, *cfgBuildPath, {cfgRootPath, *cfgRootPath});
+	auto fileLock   = FileLock{};
 	auto cacheGuard = loadFileCache(*cfgYamlCache);
 
 	auto [projects, packages] = busy::readPackage(config.rootDir, ".");
@@ -23,9 +23,20 @@ void compile() {
 	packages.insert(begin(packages), global_sharedPath);
 
 
-	if (cfgToolchain) {
+	if (cfgToolchain or config.toolchain.name.empty()) {
 		auto toolchains = searchForToolchains(packages);
-		auto iter = toolchains.find(*cfgToolchain);
+		auto iter = [&]() {
+			if (cfgToolchain) {
+				return toolchains.find(*cfgToolchain);
+			}
+			for (auto iter = begin(toolchains); iter != end(toolchains); ++iter) {
+				if (iter->first.find("gcc") != std::string::npos
+				    or iter->first.find("clang") != std::string::npos) {
+					return iter;
+				}
+			}
+			return toolchains.begin();
+		}();
 		if (iter == toolchains.end()) {
 			throw std::runtime_error("could not find toolchain \"" + config.toolchain.name + "\"");
 		}

@@ -14,11 +14,10 @@
 
 namespace busy {
 
-FileLock::FileLock(std::filesystem::path const& buildPath) {
-	fullPath = weakly_canonical(buildPath / ".lock");
-	fd = ::open(fullPath.string().c_str(), O_CREAT | O_RDWR | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+FileLock::FileLock() {
+	fd = ::open(global_lockFile.c_str(), O_CREAT | O_RDWR | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 	if (fd == -1) {
-		throw std::runtime_error("can't access " + fullPath.string());
+		throw std::runtime_error("can't access .lock");
 	}
 	if (flock(fd, LOCK_EX | LOCK_NB) == -1) {
 		throw std::runtime_error("other process is running");
@@ -26,7 +25,7 @@ FileLock::FileLock(std::filesystem::path const& buildPath) {
 }
 FileLock::~FileLock() {
 	close(fd);
-	remove(fullPath);
+	remove(global_lockFile);
 }
 
 
