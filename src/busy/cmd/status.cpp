@@ -18,7 +18,7 @@ namespace {
 
 void status();
 auto cmd         = sargp::Command("status", "show status", status);
-auto cfgFiles    = cmd.Parameter<std::vector<std::filesystem::path>>({}, "files", "show warnings of given files", []{}, sargp::completeFile("", sargp::File::Multi));
+auto cfgFiles    = cmd.Parameter<std::vector<std::filesystem::path>>({}, "", "show warnings of given files", []{}, sargp::completeFile("", sargp::File::Multi));
 auto cfgAllFiles = cmd.Flag("all_files", "show warnings of all files with warnings");
 
 void status() {
