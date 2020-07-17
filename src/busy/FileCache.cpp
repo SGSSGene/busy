@@ -1,9 +1,9 @@
 #include "FileCache.h"
 
-
 #include <iostream>
 #include <sys/stat.h>
 #include <unordered_map>
+#include <mutex>
 
 namespace busy {
 
@@ -13,10 +13,12 @@ struct Cache {
 	using CB = std::function<Value(Key const&)>;
 	CB cb;
 	std::unordered_map<RKey, Value> cache{};
+	std::mutex mutex;
 
 	Cache(CB _cb) : cb {std::move(_cb)} {}
 
 	auto operator()(Key const& key) -> Value const& {
+		auto g = std::unique_lock{mutex};
 		auto iter = cache.find(RKey{key});
 		if (iter == end(cache)) {
 			auto value = cb(key);

@@ -138,7 +138,7 @@ void compile() {
 				auto dependencies = FileInfo::Dependencies{};
 				//!TODO should work with `auto`, but doesn't for some reason
 				for (YAML::Node const& n : node["dependencies"]) {
-					auto path = FileInfo::Path{n.as<std::string>()};
+					auto path    = FileInfo::Path{n.as<std::string>()};
 					auto hash    = computeHash(path);
 					auto modTime = getFileModificationTime(path);
 
