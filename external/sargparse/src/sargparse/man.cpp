@@ -47,9 +47,11 @@ void printManPage() {
 
 	Command const *command = activeCommand;
 	while (command->getParentCommand()) {
-		if (not command->getParameters().empty()) {
+		if (command->getParameters().size() > 1
+		    or (command->getParameters().size() == 1 and command->findParameter("") == nullptr)) {
 			groff += ".SH OPTIONS FOR " + command->getName() + "\n";
 			for (ParameterBase const *param : command->getParameters()) {
+				if (param->getArgName() == "") continue;
 				groff += ".TP\n";
 				groff += "\\fR--" + param->getArgName() + "\\fR\n";
 				groff += param->describe() + "\n";
@@ -57,9 +59,11 @@ void printManPage() {
 		}
 		command = command->getParentCommand();
 	}
-	if (not command->getParameters().empty()) {
+	if (command->getParameters().size() > 1
+	    or (command->getParameters().size() == 1 and command->findParameter("") == nullptr)) {
 		groff += ".SH GLOBAL OPTIONS\n";
 		for (ParameterBase const *param : command->getParameters()) {
+			if (param->getArgName() == "") continue;
 			groff += ".TP\n";
 			groff += "\\fR--" + param->getArgName() + "\\fR\n";
 			groff += param->describe() + "\n";

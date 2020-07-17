@@ -61,6 +61,41 @@ Command& getDefaultCommand() {
 	return Command::getDefaultCommand();
 }
 
+auto Command::findSubCommand(std::string const& subcommand) const -> Command const* {
+	for (auto sub : subcommands) {
+		if (sub->getName() == subcommand) {
+			return sub;
+		}
+	}
+	return nullptr;
+}
+
+auto Command::findSubCommand(std::string const& subcommand) -> Command* {
+	for (auto sub : subcommands) {
+		if (sub->getName() == subcommand) {
+			return sub;
+		}
+	}
+	return nullptr;
+}
+
+auto Command::findParameter(std::string const& parameter) const -> ParameterBase const* {
+	for (auto p : parameters) {
+		if (p->getArgName() == parameter) {
+			return p;
+		}
+	}
+	return nullptr;
+}
+
+auto Command::findParameter(std::string const& parameter) -> ParameterBase* {
+	for (auto p : parameters) {
+		if (p->getArgName() == parameter) {
+			return p;
+		}
+	}
+	return nullptr;
+}
 
 
 

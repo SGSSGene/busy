@@ -9,7 +9,13 @@ if [ ${#} != "1" ] || ! [ -f $1 ]; then
 else
     function sargparse_GetOpts ()
     {
-        mapfile -t HINTS <<< $(${COMP_LINE[0]} "${COMP_WORDS[@]:1}" --bash_completion)
+        WORD_TO_COMPLETE=${COMP_WORDS[COMP_CWORD]}
+        LINE="${COMP_LINE[@]:0:COMP_POINT}"
+        if [ "${COMP_LINE[@]:COMP_POINT-1:1}" = ' ' ]; then
+            LINE="${LINE} ''"
+            WORD_TO_COMPLETE=""
+        fi
+        mapfile -t HINTS <<< $(${LINE} --bash_completion)
         if [ "${HINTS}" == " -d " ]; then
             compopt -o filenames
             local IFS=$'\n'
@@ -27,7 +33,7 @@ else
         else
             HINTS=$(printf "%q:" "${HINTS[@]}")
             local IFS=":"
-            mapfile -t COMPREPLY <<< $(compgen -W '${HINTS}' -- "${COMP_WORDS[COMP_CWORD]}")
+            mapfile -t COMPREPLY <<< $(compgen -W '${HINTS}' -- "${WORD_TO_COMPLETE}")
         fi
     }
     complete -F sargparse_GetOpts $1

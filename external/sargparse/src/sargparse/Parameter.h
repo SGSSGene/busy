@@ -27,7 +27,7 @@ struct ParameterBase {
 	using ValueHintFunc = std::function<std::pair<bool, std::set<std::string>>(std::vector<std::string> const&)>;
 	virtual ~ParameterBase();
 
-	virtual void parse([[maybe_unused]] std::vector<std::string> const&  args) = 0;
+	virtual int parse([[maybe_unused]] std::vector<std::string> const&  args) = 0;
 	virtual std::string stringifyValue() const = 0;
 
 	virtual std::string describe() const {
@@ -95,8 +95,10 @@ public:
 	{}
 
 
-	void parse(std::vector<std::string> const& args) override {
-		_val = parsing::parse<T>(args);
+	int parse(std::vector<std::string> const& args) override {
+		int amount;
+		std::tie(_val, amount) = parsing::parse<T>(args);
+		return amount;
 	}
 
 	T& operator *() {
@@ -222,8 +224,8 @@ public:
 	, _name2ValMap(std::move(namedValues))
 	{}
 
-	void parse(std::vector<std::string> const& args) override {
-		if (args.size() != 1) {
+	int parse(std::vector<std::string> const& args) override {
+		if (args.empty()) {
 			throw parsing::detail::ParseError("a choice must be given exactly one value");
 		}
 		auto it = _name2ValMap.find(args[0]);
@@ -231,6 +233,7 @@ public:
 			throw parsing::detail::ParseError("cannot interpret " + args[0] + " as a valid value for " + SuperClass::getArgName());
 		}
 		SuperClass::_val = it->second;
+		return 1;
 	}
 
 	std::string stringifyValue() const override {
@@ -337,6 +340,10 @@ public:
 	auto getSubCommands() const -> decltype(subcommands) const& {
 		return subcommands;
 	}
+
+	auto findSubCommand(std::string const& subcommand) const -> Command const*;
+	auto findSubCommand(std::string const& subcommand) -> Command*;
+
 	auto getParentCommand() const -> decltype(_parentCommand) {
 		return _parentCommand;
 	}
@@ -358,6 +365,8 @@ public:
 	auto getParameters() const -> decltype(parameters) const& {
 		return parameters;
 	}
+	auto findParameter(std::string const& parameter) const -> ParameterBase const*;
+	auto findParameter(std::string const& parameter) -> ParameterBase*;
 
 	void setActive(bool active) {
 		_isActive = active;
@@ -415,6 +424,18 @@ private:
 	Command& _command;
 	Callback _cb;
 };
+template<typename CB> Task(CB) -> Task<CB>;
+
+template<typename CB>
+Command::Command(Command* parentCommand, std::string const& name, std::string const& description, CB&& cb) 
+	: _name(name)
+	, _description(description)
+	, _tasks{}
+	, _defaultTask{std::make_unique<Task<CB>>(std::forward<CB>(cb), *this)}
+	, _parentCommand{parentCommand?nullptr:&Command::getDefaultCommand()}
+{
+	_parentCommand->subcommands.emplace_back(this);
+}
 
 
 }

@@ -19,6 +19,7 @@ Some example calls:
 ./exampleSargparse --help
 ./exampleSargparse --man
 ./exampleSargparse my_command
+./exampleSargparse add file1.txt file2.text
 ./exampleSargparse --my_enum Bar
 ./exampleSargparse --my_enum Foo
 ./exampleSargparse --my_enum Bar

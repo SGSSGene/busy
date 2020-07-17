@@ -169,7 +169,7 @@ inline constexpr bool is_optional_v = is_optional<T>::value;
 
 
 template<typename T>
-T parse(std::vector<std::string> const& args) {
+auto parse(std::vector<std::string> const& args) -> std::tuple<T, int>{
 	if constexpr (detail::is_collection_v<T>) {
 			using value_type = typename T::value_type;
 			T collection;
@@ -180,23 +180,21 @@ T parse(std::vector<std::string> const& args) {
 					collection.emplace(detail::parseFromString<value_type>(arg));
 				}
 			}
-			return collection;
+			return {collection, static_cast<int>(args.size())};
 	} else if constexpr (detail::is_optional_v<T>) {
 		using value_type = typename T::value_type;
 		if (args.empty()) {
-			return T{};
+			return {T{}, 0};
 		}
 		return parse<value_type>(args);
 	} else {
 		if (args.empty()) {
 			if constexpr (std::is_same_v<bool, T>) {
-				return true;
+				return {true, 0};
 			}
+			throw std::invalid_argument("wrong number of arguments given (expect 1, got 0)");
 		}
-		if (args.size() != 1) {
-			throw std::invalid_argument("wrong number of arguments given (expect 1, got " + std::to_string(args.size()) + ")");
-		}
-		return detail::parseFromString<T>(args[0]);
+		return {detail::parseFromString<T>(args[0]), 1};
 	}
 }
 
