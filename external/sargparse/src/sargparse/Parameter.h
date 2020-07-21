@@ -38,7 +38,7 @@ struct ParameterBase {
 		if (_hintFunc) {
 			return _hintFunc(args);
 		}
-		return std::make_pair<bool, std::set<std::string>>(not args.empty(), {});
+		return std::make_pair<bool, std::set<std::string>>(args.size() > 1, {});
 	}
 
 	auto getArgName() const -> std::string const& {
@@ -87,13 +87,6 @@ public:
 	: SuperClass(std::move(argName), [description=std::move(description)]{return description;}, std::move(cb), std::move(hintFunc), command, typeid(T))
 	, _val{std::move(defaultVal)}
 	{}
-
-	// NOLINTNEXTLINE(performance-unnecessary-value-param)
-	TypedParameter(T defaultVal, std::string argName, DescribeFunc describeFunc, Callback cb=Callback{}, ValueHintFunc hintFunc=ValueHintFunc{}, Command& command=getDefaultCommand())
-	: SuperClass(std::move(argName), std::move(describeFunc), std::move(cb), std::move(hintFunc), command, typeid(T))
-	, _val{std::move(defaultVal)}
-	{}
-
 
 	int parse(std::vector<std::string> const& args) override {
 		int amount;

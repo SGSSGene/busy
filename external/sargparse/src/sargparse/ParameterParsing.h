@@ -194,7 +194,14 @@ auto parse(std::vector<std::string> const& args) -> std::tuple<T, int>{
 			}
 			throw std::invalid_argument("wrong number of arguments given (expect 1, got 0)");
 		}
-		return {detail::parseFromString<T>(args[0]), 1};
+		try {
+			return {detail::parseFromString<T>(args[0]), 1};
+		} catch (sargp::parsing::detail::ParseError const&) {
+			if constexpr (std::is_same_v<bool, T>) {
+				return {true, 0};
+			}
+			throw;
+		}
 	}
 }
 

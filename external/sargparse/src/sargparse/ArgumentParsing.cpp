@@ -7,16 +7,19 @@ namespace sargp {
 namespace {
 
 bool isArgName(std::string const& str) {
-	return str.find("--", 0) == 0;
+	return str.find("--", 0) == 0 and str.size() > 2;
 }
 
-template<bool parseEverything, typename ParamCallback>
-int tokenizeArgument(int argc, char const* const* argv, std::string const& argName, ParamCallback&& paramCB) {
+template<typename ParamCallback>
+int tokenizeArgument(int argc, char const* const* argv, std::string const& argName, bool& parseEverything, ParamCallback&& paramCB) {
 	std::vector<std::string> arguments;
 	int idx{0};
 	for (; idx < argc; ++idx) {
 		std::string v{argv[idx]};
-		if (isArgName(v) and not parseEverything) {
+		if (not parseEverything and v == "--") {
+			parseEverything = true;
+			continue;
+		} else if (isArgName(v) and not parseEverything) {
 			break;
 		}
 		arguments.emplace_back(std::move(v));
@@ -29,31 +32,33 @@ bool tokenize(int argc, char const* const* argv, CommandCallback&& commandCB, Pa
 	int idx{0};
 	bool hasTrailingParameters{false};
 	Command* lastCommand = nullptr;
+	bool parseEverything{false};
 	while (idx < argc) {
 		auto curArgName = std::string{argv[idx]};
 
 		// Parse for complete trailing capture
-		if (hasTrailingParameters and curArgName == "--") {
+		if (curArgName == "--") {
 			++idx;
-			idx += tokenizeArgument<true>(argc-idx, argv+idx, "", paramCB);
-			return true;
-
+			parseEverything = true;
+			idx += tokenizeArgument(argc-idx, argv+idx, "", parseEverything, paramCB);
 		// parsing arguments
 		} else if (isArgName(curArgName)) {
 			++idx;
 			auto argName  = curArgName.substr(2);
-			idx += tokenizeArgument<false>(argc-idx, argv+idx, argName, paramCB);
-
+			idx += tokenizeArgument(argc-idx, argv+idx, argName, parseEverything, paramCB);
 		// parsing partial trailing capture
 		} else if (hasTrailingParameters and lastCommand->findSubCommand(argv[idx]) == nullptr) {
-			idx += tokenizeArgument<false>(argc-idx, argv+idx, "", paramCB);
-
+			idx += tokenizeArgument(argc-idx, argv+idx, "", parseEverything, paramCB);
 		// parse for commands
 		} else {
 			++idx;
 			lastCommand = commandCB(curArgName);
 			hasTrailingParameters = lastCommand and lastCommand->findParameter("");
 		}
+		if (parseEverything) {
+			return true;
+		}
+
 	}
 	return false;
 }
@@ -248,7 +253,7 @@ std::string compgen(int argc, char const* const* argv) {
 		for (auto iter = rbegin(argProviders); iter != rend(argProviders); ++iter) {
 			auto argProvider = *iter;
 			auto param = argProvider->findParameter(lastArgName);
-			if (param and (param->getArgName() != "" or lastArguments.back().find("-", 0) != 0)) {
+			if (param and (lastArguments.back().find("-", 0) != 0)) {
 				auto [cur_canAcceptNextArg, cur_hints] = param->getValueHints(lastArguments);
 				canAcceptNextArg &= cur_canAcceptNextArg;
 				hints.insert(cur_hints.begin(), cur_hints.end());

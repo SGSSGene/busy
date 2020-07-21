@@ -30,6 +30,8 @@ else
             local IFS=$'\n'
             COMPREPLY=( $(compgen -d -- ${2}) )
             COMPREPLY+=( $(compgen -f -X '!*'${EXT} -- ${2}) )
+        elif [ ${#HINTS} -eq 0 ]; then
+            COMPREPLY=()
         else
             HINTS=$(printf "%q:" "${HINTS[@]}")
             local IFS=":"
