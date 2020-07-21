@@ -1,36 +1,18 @@
 #/usr/bin/env zsh
 
 	sargparse_GetOpts () {
-		PROG="${words[1]}"
-		globalParams=$(${PROG} --bash_completion)
-		globalCommands=$(echo ${globalParams} | grep "^[^-][^-]")
-		globalOptions=$(echo ${globalParams} | grep "^--")
+		completions=$(${(@q)words[@]:0:$CURRENT} --bash_completion)
+		completions=(${(@f)completions})
 
-		localParams=$(${PROG} ${(@q)words[@]:1} --bash_completion)
-		localCommands=$(echo ${localParams} | grep "^[^-][^-]")
-		localOptions=$(echo ${localParams} | grep "^--")
-		localSpecialOptions=$(echo ${localParams} | grep "^ -")
-
-		localCommands=$(comm -23  <(echo ${localCommands} |  sort ) <(echo ${globalCommands} | sort))
-		localOptions=$(comm -23  <(echo ${localOptions} |  sort ) <(echo ${globalOptions} | sort))
-
-		localCommands=("${(@f)localCommands}")
-		localOptions=("${(@f)localOptions}")
-		globalCommands=(${(@f)globalCommands})
-		globalOptions=(${(@f)globalOptions})
-
-		if [ "${localSpecialOptions}" = " -d " ]; then
+		if [ "${completions}" = " -d " ]; then
 			_files -/
-		elif [ "${localSpecialOptions}" = " -f " ]; then
+		elif [ "${completions}" = " -f " ]; then
 			_files
-		elif [[ "${localSpecialOptions}" =~ " -f " ]]; then
-			EXT="$(echo "${localSpecialOptions}" | cut -d ' ' -f 3)"
+		elif [[ "${completions}" =~ " -f " ]]; then
+			EXT="$(echo "${completions}" | cut -d ' ' -f 3)"
 			_files -g "*${EXT}"
 		else
-			compadd -J "G4" -X "%USuggestions%u" -- ${localCommands[@]}
-			compadd -J "G3" -X "%ULocal Options%u" -- ${localOptions[@]}
-			compadd -J "G1" -X "%UCommands%u" -- ${globalCommands}
-			compadd -J "G2" -X "%UGlobal Options%u" -- ${globalOptions[@]}
+			compadd -- ${completions[@]}
 		fi
 	}
 	compdef sargparse_GetOpts -P busy -N
