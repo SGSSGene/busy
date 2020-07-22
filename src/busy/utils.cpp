@@ -204,7 +204,7 @@ auto computeEstimationTimes(Config const& config, ProjectMap const& projects_wit
 
 auto execute(std::vector<std::string> params, bool verbose) -> std::string {
 	if (verbose) {
-		params.emplace_back("-verbose");
+		params.emplace_back("--verbose");
 	}
 	auto call = std::stringstream{};
 	for (auto const& p : params) {
