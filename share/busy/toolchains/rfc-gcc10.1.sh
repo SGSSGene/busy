@@ -11,10 +11,14 @@
 
 source "${0%/*}"/helper_utils.sh
 
-CXX=/usr/bin/g++
-C=/usr/bin/gcc
-LD=/usr/bin/ld
-AR=/usr/bin/ar
+SDKTARGETSYSROOT=/opt/poky/3.1+snapshot/sysroots/cortexa7t2hf-neon-vfpv4-poky-linux-gnueabi
+
+
+GCCPATH=/opt/poky/3.1+snapshot/sysroots/x86_64-pokysdk-linux/usr/bin/arm-poky-linux-gnueabi
+CXX=${GCCPATH}/arm-poky-linux-gnueabi-g++
+  C=${GCCPATH}/arm-poky-linux-gnueabi-gcc
+ LD=${GCCPATH}/arm-poky-linux-gnueabi-ld
+ AR=${GCCPATH}/arm-poky-linux-gnueabi-ar
 
 version_detailed="$(${C} --version | head -n 1)"
 version=$(echo ${version_detailed} | perl -ne "s/\([^\)]*\)/()/g;print" | cut -d " " -f 3)
@@ -28,8 +32,8 @@ if [ "${version_major}" != "10" ] || [ "${version_minor}" -lt "1" ]; then
 	exit -1
 fi
 
-parse "--options    options"\
-      "--verbose    verbose"\
+parse "--options    options" \
+      "--verbose    verbose" \
       "--" "$@"
 
 # check if ccache is available
@@ -47,12 +51,13 @@ if [[ " ${options[@]} " =~ " ccache " ]]; then
 	AR="ccache ${AR}"
 fi
 
+
 if [ "$1" == "info" ]; then
 shift
 
 cat <<-END
 toolchains:
-  - name: "gcc 10.1"
+  - name: "rfc gcc 10.1"
     version: "${version}"
     detail: "${version_detailed}"
     which:
@@ -68,6 +73,7 @@ toolchains:
       profile: []
       strict: []
       ccache: []
+    sysroot: ${SDKTARGETSYSROOT}
 END
 exit 0
 fi
@@ -124,6 +130,8 @@ elif [ "$1" == "compile" ]; then
 		parameters+=" -Wall -Wextra -Wpedantic"
 	fi
 
+	parameters+=" -mthumb -mfpu=neon-vfpv4 -mfloat-abi=hard -mcpu=cortex-a7 -fstack-protector-strong  -D_FORTIFY_SOURCE=2 -Wformat -Wformat-security -Werror=format-security --sysroot=$SDKTARGETSYSROOT"
+
 	projectIncludes+=($(dirname ${projectIncludes[-1]})) #!TODO this line should not be needed
 	projectIncludes=$(implode " -I " "${projectIncludes[@]}")
 	systemIncludes=$(implode " -isystem " "${systemIncludes[@]}")
@@ -132,9 +140,9 @@ elif [ "$1" == "compile" ]; then
 
 	filetype="$(echo "${inputFile}" | rev | cut -d "." -f 1 | rev)";
 	if [[ "${filetype}" =~ ^(cpp|cc)$ ]]; then
-		call="${CXX} -std=c++20 -fPIC -MD ${parameters} ${diagnostic} -c ${inputFile} -o ${outputFile} $projectIncludes $systemIncludes"
+		call="${CXX} --sysroot ${SDKTARGETSYSROOT} -std=c++20 -fPIC -MD ${parameters} ${diagnostic} -c ${inputFile} -o ${outputFile} ${projectIncludes} ${systemIncludes}"
 	elif [ "${filetype}" = "c" ]; then
-		call="${C} -std=c18 -fPIC -MD ${parameters} ${diagnostic} -c ${inputFile} -o ${outputFile} $projectIncludes $systemIncludes"
+		call="${C} --sysroot ${SDKTARGETSYSROOT} -std=c18 -fPIC -MD ${parameters} ${diagnostic} -c ${inputFile} -o ${outputFile} ${projectIncludes} ${systemIncludes}"
 	else
 		exit 0
 	fi
@@ -155,7 +163,7 @@ elif [ "$1" == "link" ]; then
 	parse "--input         inputFiles" \
 	      "--llibraries    localLibraries" \
 	      "--syslibraries  sysLibraries" \
-	      "--verbose       verbose" \
+	      "--verbose verbose" \
 	      "--" "$@"
 
 	sysLibraries=($(implode " -l" "${sysLibraries[@]}"))
@@ -183,11 +191,12 @@ elif [ "$1" == "link" ]; then
 
 	# Executable
 	elif [ "${target}" == "executable" ]; then
-		call="${CXX} -rdynamic ${parameters} -fdiagnostics-color=always -o ${outputFile} ${inputFiles[@]} ${localLibraries[@]} ${sysLibraries[@]}"
+		call="${CXX} --sysroot=${SDKTARGETSYSROOT} -rdynamic ${parameters} -fdiagnostics-color=always -o ${outputFile} ${inputFiles[@]} ${localLibraries[@]} ${sysLibraries[@]}"
 	# Static library?
 	elif [ "${target}" == "static_library" ]; then
+		export PATH=/usr/lib/i386-linux/gnu:$PATH
 		outputFiles+=("${outputFile}.o")
-		call="${LD} -Ur -o ${outputFile}.o ${inputFiles[@]} && ${AR} rcs ${outputFile} ${outputFile}.o"
+		call="${LD} --sysroot=${SDKTARGETSYSROOT} -Ur -o ${outputFile}.o ${inputFiles[@]} && ${AR} rcs ${outputFile} ${outputFile}.o"
 	else
 		exit -1
 	fi
