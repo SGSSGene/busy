@@ -10,7 +10,7 @@ namespace busy::comp {
 auto toolchain(std::vector<std::string> const& /*str*/) -> std::pair<bool, std::set<std::string>> {
 	auto ret = std::pair<bool, std::set<std::string>>{false, {}};
 	auto workPath = std::filesystem::current_path();
-	auto config = loadConfig(workPath, *cfgBuildPath, {cfgRootPath, *cfgRootPath});
+	auto config = loadConfig(workPath, *cfgBuildPath, {cfgBusyPath, *cfgBusyPath});
 
 	auto packages = std::vector<std::filesystem::path>{};
 	if (!config.rootDir.empty() and config.rootDir != "." and std::filesystem::exists(config.rootDir)) {
@@ -31,7 +31,7 @@ auto toolchain(std::vector<std::string> const& /*str*/) -> std::pair<bool, std::
 auto options(std::vector<std::string> const& /*str*/) -> std::pair<bool, std::set<std::string>> {
 	auto ret = std::pair<bool, std::set<std::string>>{false, {}};
 	auto workPath = std::filesystem::current_path();
-	auto config = loadConfig(workPath, *cfgBuildPath, {cfgRootPath, *cfgRootPath});
+	auto config = loadConfig(workPath, *cfgBuildPath, {cfgBusyPath, *cfgBusyPath});
 
 	auto toolchainOptions = getToolchainOptions(config.toolchain.name, config.toolchain.call);
 	for (auto const& opt : toolchainOptions) {

@@ -30,8 +30,9 @@ int tokenizeArgument(int argc, char const* const* argv, std::string const& argNa
 template<typename CommandCallback, typename ParamCallback>
 bool tokenize(int argc, char const* const* argv, CommandCallback&& commandCB, ParamCallback&& paramCB) {
 	int idx{0};
-	bool hasTrailingParameters{false};
-	Command* lastCommand = nullptr;
+	auto lastCommand           {&Command::getDefaultCommand()};
+	bool hasTrailingParameters {lastCommand and lastCommand->findParameter("")};
+
 	bool parseEverything{false};
 	while (idx < argc) {
 		auto curArgName = std::string{argv[idx]};

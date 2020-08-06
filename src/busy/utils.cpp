@@ -59,7 +59,7 @@ void printProjects(std::map<Project const*, std::tuple<std::set<Project const*>,
 	}
 }
 
-auto loadConfig(std::filesystem::path const& workPath, std::filesystem::path const& buildPath, std::tuple<bool, std::filesystem::path> const& rootPath) -> Config {
+auto loadConfig(std::filesystem::path const& workPath, std::filesystem::path const& buildPath, std::tuple<bool, std::filesystem::path> const& busyPath) -> Config {
 
 	if (relative(buildPath) != ".") {
 		if (not exists(buildPath)) {
@@ -75,12 +75,14 @@ auto loadConfig(std::filesystem::path const& workPath, std::filesystem::path con
 		}
 		return Config{};
 	}();
-	if (std::get<0>(rootPath) or config.rootDir.empty()) {
-		config.rootDir = relative(workPath / std::get<1>(rootPath));
+	if (std::get<0>(busyPath) or config.rootDir.empty()) {
+		auto rootDir = std::get<1>(busyPath);
+		rootDir.remove_filename();
+		config.rootDir = relative(workPath / rootDir);
 	}
 
 	if (config.rootDir.empty()) {
-		throw std::runtime_error("please give path of busy.yaml");
+		throw std::runtime_error("please give path to busy.yaml");
 	}
 
 	if (config.rootDir == ".") {

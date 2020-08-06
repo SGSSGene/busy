@@ -11,7 +11,7 @@ namespace {
 
 void clean() {
 	auto workPath   = std::filesystem::current_path();
-	auto config     = loadConfig(workPath, *cfgBuildPath, {cfgRootPath, *cfgRootPath});
+	auto config     = loadConfig(workPath, *cfgBuildPath, {cfgBusyPath, *cfgBusyPath});
 	auto fileLock   = FileLock{};
 	auto cacheGuard = loadFileCache(*cfgYamlCache);
 
