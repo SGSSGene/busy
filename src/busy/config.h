@@ -35,7 +35,8 @@ struct Config {
 		std::set<std::string> options;
 	} toolchain;
 
-	std::string rootDir {};
+	std::filesystem::path rootDir {};
+	std::filesystem::path busyFile {};
 
 
 	template <typename Node>
@@ -44,6 +45,7 @@ struct Config {
 		node["toolchain_call"]    % toolchain.call;
 		node["toolchain_options"] % toolchain.options;
 		node["rootDir"]           % rootDir;
+		node["busyFile"]          % busyFile;
 	}
 };
 

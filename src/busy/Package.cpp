@@ -19,21 +19,25 @@ struct yaml_error : std::runtime_error {
 };
 
 
-auto readPackage(std::filesystem::path const& _root, std::filesystem::path const& _path) -> std::tuple<std::vector<Project>, std::vector<std::filesystem::path>> {
+auto readPackage(std::filesystem::path const& _workspaceRoot, std::filesystem::path const& _file) -> std::tuple<std::vector<Project>, std::vector<std::filesystem::path>> {
 	auto retProjects = std::vector<Project>{};
 	auto retPackages = std::vector<std::filesystem::path>{};
 
+	auto _path = _file.parent_path();
+
+	auto file = _file.filename();
 	// read this package configuration
-	auto path = _root / _path / "busy.yaml";
+	auto path = _workspaceRoot / _path / file;
+
 
 	try {
 
 		auto node = YAML::LoadFile(path.string());
-		retPackages.emplace_back(_root / _path);
+		retPackages.emplace_back(_workspaceRoot / _path);
 
 		// add all project names based on directory entries
 		auto projectNames = std::set<std::string>{};
-		auto sourcePath = _root / _path / "src";
+		auto sourcePath = _workspaceRoot / _path / "src";
 		if (exists(sourcePath)) {
 			for (auto& p : fs::directory_iterator(sourcePath)) {
 				if (is_directory(p)) {
@@ -62,23 +66,44 @@ auto readPackage(std::filesystem::path const& _root, std::filesystem::path const
 				for (auto const& e : n["legacy"]["systemLibraries"]) {
 					legacySystemLibraries.insert(e.as<std::string>());
 				}
-				retProjects.emplace_back(name, type, _root, path, legacyIncludePaths, legacySystemLibraries);
+				retProjects.emplace_back(name, type, _workspaceRoot, path, legacyIncludePaths, legacySystemLibraries);
 			}
 		}
 
 		// add all projects that weren't defined in "projects" section of busy.yaml
 		for (auto const& p : projectNames) {
 			auto path = _path / "src" / p;
-			retProjects.emplace_back(p, "", _root, path, std::vector<fs::path>{}, std::set<std::string>{});
+			retProjects.emplace_back(p, "", _workspaceRoot, path, std::vector<fs::path>{}, std::set<std::string>{});
+		}
+
+
+		// iterate over all redefined external projects
+		auto busyFileMaps = std::map<std::string, std::filesystem::path>{};
+		if (node["external"].IsDefined()) {
+			if (not node["external"].IsMap()) {
+				throw yaml_error{path, node["external"], "expected 'external' as map"};
+			}
+			for (auto n : node["external"]) {
+				auto key = n.first;
+				auto value = n.second;
+				busyFileMaps[key.as<std::string>()] = value.as<std::string>();
+			}
 		}
 
 
 		// adding entries to package
 		auto packages = std::vector<std::string>{};
-		if (is_directory(_root / _path / external)) {
-			for (auto& p : fs::directory_iterator(_root / _path / external)) {
+		if (is_directory(_workspaceRoot / _path / external)) {
+			for (auto& p : fs::directory_iterator(_workspaceRoot / _path / external)) {
 				if (not is_symlink(p)) {
-					auto [projects, packages] = readPackage(_root, relative(p, _root));
+					auto busyFile = [&]() -> std::filesystem::path {
+						auto externalPath = relative(p.path(), _workspaceRoot / _path);
+						if (busyFileMaps.count(externalPath.string()) > 0) {
+							return busyFileMaps.at(externalPath.string());
+						}
+						return relative(p.path() / "busy.yaml", _workspaceRoot);
+					}();
+					auto [projects, packages] = readPackage(_workspaceRoot, busyFile);
 					retProjects.insert(end(retProjects), begin(projects), end(projects));
 					retPackages.insert(end(retPackages), begin(packages), end(packages));
 				}

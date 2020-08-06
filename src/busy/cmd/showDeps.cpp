@@ -10,7 +10,7 @@ void showDeps() {
 	auto workPath = std::filesystem::current_path();
 	auto config   = loadConfig(workPath, *cfgBuildPath, {cfgBusyPath, *cfgBusyPath});
 
-	auto [projects, packages] = busy::readPackage(config.rootDir, ".");
+	auto [projects, packages] = busy::readPackage(config.rootDir, config.busyFile);
 
 	packages.insert(begin(packages), user_sharedPath);
 	packages.insert(begin(packages), global_sharedPath);

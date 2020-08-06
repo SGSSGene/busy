@@ -17,7 +17,7 @@ void compile() {
 	auto fileLock   = FileLock{};
 	auto cacheGuard = loadFileCache(*cfgYamlCache);
 
-	auto [projects, packages] = busy::readPackage(config.rootDir, ".");
+	auto [projects, packages] = busy::readPackage(config.rootDir, config.busyFile);
 
 	packages.insert(begin(packages), user_sharedPath);
 	packages.insert(begin(packages), global_sharedPath);

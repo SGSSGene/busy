@@ -78,16 +78,14 @@ auto loadConfig(std::filesystem::path const& workPath, std::filesystem::path con
 	if (std::get<0>(busyPath) or config.rootDir.empty()) {
 		auto rootDir = std::get<1>(busyPath);
 		rootDir.remove_filename();
-		config.rootDir = relative(workPath / rootDir);
+		config.rootDir  = relative(workPath / rootDir);
+		config.busyFile = relative(buildPath, rootDir) / std::get<1>(busyPath);
 	}
 
-	if (config.rootDir.empty()) {
-		throw std::runtime_error("please give path to busy.yaml");
-	}
-
-	if (config.rootDir == ".") {
+	if (config.rootDir.lexically_normal() == ".") {
 		throw std::runtime_error("can't build in source, please create a `build` directory");
 	}
+
 	return config;
 }
 
