@@ -3,7 +3,6 @@
 
 #include "../FileCache.h"
 #include "../cache.h"
-#include "../config.h"
 #include "../utils.h"
 
 namespace busy::cmd {
@@ -11,14 +10,16 @@ namespace {
 
 void clean() {
 	auto workPath   = std::filesystem::current_path();
-	auto config     = loadConfig(workPath, *cfgBuildPath, {cfgBusyPath, *cfgBusyPath});
 	auto fileLock   = FileLock{};
-	auto cacheGuard = loadFileCache(*cfgYamlCache);
+	if (not exists(global_busyConfigFile)) {
+		throw std::runtime_error("Can only be performed inside a build folder");
+	}
 
 	auto allRemovedFiles = std::uintmax_t{};
 	for (auto& p : std::filesystem::directory_iterator{"."}) {
-		if (p.path() != "./.busy.yaml" and p.path() != ".filecache") {
-			allRemovedFiles += std::filesystem::remove_all(p.path());
+		auto path = p.path().lexically_normal();
+		if (path != ".busy.yaml" and path != ".filecache" and path != ".lock") {
+			allRemovedFiles += std::filesystem::remove_all(path);
 		}
 	}
 	fmt::print("cleaned busy caches - removed {} files\n", allRemovedFiles);
