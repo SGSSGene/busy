@@ -76,10 +76,10 @@ fi
 outputFiles=()
 if [ "$1" == "begin" ]; then
 	rootDir="$2"
-	if [ ! -e "external" ]; then
+	if [ ! -e "external" ] && [ -e ${rootDir}/external ]; then
 		ln -s ${rootDir}/external external
 	fi
-	if [ ! -e "src" ]; then
+	if [ ! -e "src" ] && [ -e ${rootDir}/src ]; then
 		ln -s ${rootDir}/src src
 	fi
 	hash="$(echo "${@}" | cat - ${0} ${0%/*}/helper_utils.sh ${CXX} ${C} ${LD} ${AR} | shasum)"
