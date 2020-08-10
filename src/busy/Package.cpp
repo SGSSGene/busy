@@ -19,7 +19,7 @@ struct yaml_error : std::runtime_error {
 };
 
 
-auto readPackage(std::filesystem::path const& _workspaceRoot, std::filesystem::path const& _file) -> std::tuple<std::vector<Project>, std::vector<std::filesystem::path>> {
+auto readPackage(std::filesystem::path _workspaceRoot, std::filesystem::path const& _file) -> std::tuple<std::vector<Project>, std::vector<std::filesystem::path>> {
 	auto retProjects = std::vector<Project>{};
 	auto retPackages = std::vector<std::filesystem::path>{};
 
@@ -34,6 +34,13 @@ auto readPackage(std::filesystem::path const& _workspaceRoot, std::filesystem::p
 
 		auto node = YAML::LoadFile(path.string());
 		retPackages.emplace_back(_workspaceRoot / _path);
+
+		// check rootDir
+		if (node["rootDir"].IsDefined()) {
+			auto rel = std::filesystem::path{node["rootDir"].as<std::string>()};
+			_path = (_path / rel).lexically_normal();
+			_workspaceRoot = (_workspaceRoot / rel).lexically_normal();
+		}
 
 		// add all project names based on directory entries
 		auto projectNames = std::set<std::string>{};

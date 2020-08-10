@@ -79,7 +79,7 @@ auto loadConfig(std::filesystem::path const& workPath, std::filesystem::path con
 		auto rootDir = std::get<1>(busyPath);
 		rootDir.remove_filename();
 		config.rootDir  = relative(workPath / rootDir);
-		config.busyFile = relative(buildPath, rootDir) / std::get<1>(busyPath);
+		config.busyFile = relative(workPath / std::get<1>(busyPath), config.rootDir);
 	}
 
 	if (config.rootDir.lexically_normal() == ".") {
