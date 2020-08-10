@@ -118,7 +118,7 @@ elif [ "$1" == "compile" ]; then
 		parameters+=" -O0 -ggdb";
 	fi
 	if [[ " ${options[@]} " =~ " profile " ]]; then
-		parameters+=" -fprofile-arcs -ftest-coverage"
+		parameters+=" -fprofile-arcs -ftest-coverage -fPIC"
 	fi
 	if [[ " ${options[@]} " =~ " strict " ]]; then
 		parameters+=" -Wall -Wextra -Wpedantic"
@@ -158,9 +158,6 @@ elif [ "$1" == "link" ]; then
 	      "--verbose       verbose" \
 	      "--" "$@"
 
-	sysLibraries=($(implode " -l" "${sysLibraries[@]}"))
-
-
 	parameters=""
 	if [[ " ${options[@]} " =~ " release " ]]; then
 		parameters+="";
@@ -172,8 +169,12 @@ elif [ "$1" == "link" ]; then
 		parameters+=" -g3 -ggdb";
 	fi
 	if [[ " ${options[@]} " =~ " profile " ]]; then
-		libraries+=("-lgcov")
+		sysLibraries+=("gcov")
 	fi
+
+	sysLibraries=($(implode " -l" "${sysLibraries[@]}"))
+
+
 
 
 	# Header only
