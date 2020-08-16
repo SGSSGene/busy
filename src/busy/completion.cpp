@@ -28,7 +28,7 @@ auto toolchain(std::vector<std::string> const& /*str*/) -> std::pair<bool, std::
 	return ret;
 }
 
-auto options(std::vector<std::string> const& /*str*/) -> std::pair<bool, std::set<std::string>> {
+auto options(std::vector<std::string> const& str) -> std::pair<bool, std::set<std::string>> {
 	auto ret = std::pair<bool, std::set<std::string>>{false, {}};
 	auto workPath = std::filesystem::current_path();
 	auto config = loadConfig(workPath, *cfgBuildPath, {cfgBusyPath, *cfgBusyPath});
@@ -41,6 +41,9 @@ auto options(std::vector<std::string> const& /*str*/) -> std::pair<bool, std::se
 			ret.second.insert("no-" + opt.first);
 		}
 	}
+	for (auto s : str) {
+		ret.second.erase(s);
+	}
 	return ret;
 }
 auto projects(std::vector<std::string> const& str) -> std::pair<bool, std::set<std::string>> {
@@ -51,6 +54,9 @@ auto projects(std::vector<std::string> const& str) -> std::pair<bool, std::set<s
 	auto [projects, packages] = busy::readPackage(config.rootDir, config.busyFile);
 	for (auto const& p : projects) {
 		ret.second.insert(p.getName());
+	}
+	for (auto s : str) {
+		ret.second.erase(s);
 	}
 	return ret;
 }
