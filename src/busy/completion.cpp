@@ -43,6 +43,18 @@ auto options(std::vector<std::string> const& /*str*/) -> std::pair<bool, std::se
 	}
 	return ret;
 }
+auto projects(std::vector<std::string> const& str) -> std::pair<bool, std::set<std::string>> {
+	auto ret = std::pair<bool, std::set<std::string>>{false, {}};
+	auto workPath = std::filesystem::current_path();
+	auto config = loadConfig(workPath, *cfgBuildPath, {cfgBusyPath, *cfgBusyPath});
+
+	auto [projects, packages] = busy::readPackage(config.rootDir, config.busyFile);
+	for (auto const& p : projects) {
+		ret.second.insert(p.getName());
+	}
+	return ret;
+}
+
 
 
 }

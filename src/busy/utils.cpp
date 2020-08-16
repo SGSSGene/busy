@@ -40,7 +40,7 @@ void printProjects(std::map<Project const*, std::tuple<std::set<Project const*>,
 		if (not project.getSystemLibraries().empty()) {
 			fmt::print("    systemLibraries:\n");
 			for (auto const& l : project.getSystemLibraries()) {
-				fmt::print("   - {}\n", l);
+				fmt::print("    - {}\n", l);
 			}
 		}
 		if (not dependencies.empty()) {
@@ -58,6 +58,77 @@ void printProjects(std::map<Project const*, std::tuple<std::set<Project const*>,
 		}
 	}
 }
+void printProjectTree(std::map<Project const*, std::tuple<std::set<Project const*>, std::set<Project const*>>> const& _projects) {
+	auto parentCt = std::map<Project const*, int>{};
+	for (auto const& [i_project, dep] : _projects) {
+		auto const& dependencies = std::get<0>(dep);
+		for (auto const& d : dependencies) {
+			parentCt[d] += 1;
+		}
+	}
+
+	auto print = std::function<void(Project const*, std::string)>{};
+	print = [&](Project const* project, std::string indent) {
+		fmt::print("{}{}\n", indent, project->getName());
+		indent += "  ";
+		auto const& dependencies = std::get<0>(_projects.at(project));
+		for (auto const& d : dependencies) {
+			print(d, indent);
+		}
+	};
+
+	for (auto const& [i_project, dep] : _projects) {
+		if (parentCt[i_project] == 0) {
+			print(i_project, "");
+		}
+	}
+}
+
+auto selectRootProjects(std::set<std::string> const& names, std::map<Project const*, std::tuple<std::set<Project const*>, std::set<Project const*>>> const& _projects) -> std::set<Project const*> {
+	auto ret = std::set<Project const*>{};
+
+	auto knownNames = std::set<std::string>{};
+
+	auto parentCt = std::map<Project const*, int>{};
+	for (auto const& [i_project, dep] : _projects) {
+		auto const& dependencies = std::get<0>(dep);
+		if (names.count(i_project->getName()) > 0) {
+			knownNames.insert(i_project->getName());
+		}
+		for (auto const& d : dependencies) {
+			parentCt[d] += 1;
+		}
+	}
+
+	if (knownNames.size() != names.size()) {
+		auto str = fmt::format("unknown target(s)");
+		for (auto n : names) {
+			if (knownNames.count(n) == 0) {
+				str = fmt::format("{} {}", str, n);
+			}
+		}
+
+		throw std::runtime_error(str);
+	}
+
+	auto queue = std::function<void(Project const*)>{};
+	queue = [&](Project const* project) {
+		ret.insert(project);
+		auto const& dependencies = std::get<0>(_projects.at(project));
+		for (auto const& d : dependencies) {
+			queue(d);
+		}
+	};
+
+	for (auto const& [i_project, dep] : _projects) {
+		if (names.count(i_project->getName()) > 0) {
+			queue(i_project);
+		}
+	}
+	return ret;
+}
+
+
 
 auto loadConfig(std::filesystem::path const& workPath, std::filesystem::path const& buildPath, std::tuple<bool, std::filesystem::path> const& busyPath) -> Config {
 

@@ -11,6 +11,19 @@
 namespace busy::cmd {
 namespace {
 
+void compile();
+
+auto cmd        = sargp::Command{"compile", "compile everything (default)", compile};
+auto cmdDefault = sargp::Task{[]{
+	// only run if no children are active
+	for (auto cmd : sargp::getDefaultCommand().getSubCommands()) {
+		if (*cmd) return;
+	}
+	compile();
+}};
+
+auto cfgTargets = cmd.Parameter<std::vector<std::string>>({}, "", "project target", []{}, &comp::projects);
+
 void compile() {
 	auto workPath   = std::filesystem::current_path();
 	auto config     = loadConfig(workPath, *cfgBuildPath, {cfgBusyPath, *cfgBusyPath});
@@ -21,7 +34,6 @@ void compile() {
 
 	packages.insert(begin(packages), user_sharedPath);
 	packages.insert(begin(packages), global_sharedPath);
-
 
 	if (cfgToolchain or config.toolchain.name.empty()) {
 		auto toolchains = searchForToolchains(packages);
@@ -58,6 +70,24 @@ void compile() {
 	fmt::print("done\n");
 
 	auto projects_with_deps = createProjects(projects);
+
+	// discover targets
+	if (cfgTargets) {
+		auto names = std::set<std::string>{};
+		for (auto n : *cfgTargets) {
+			names.insert(n);
+		}
+		auto res = selectRootProjects(names, projects_with_deps);
+		auto removeProjects = std::set<Project const*>{};
+		for (auto const& [i_project, dep] : projects_with_deps) {
+			if (res.count(i_project) == 0) {
+				removeProjects.insert(i_project);
+			}
+		}
+		for (auto r : removeProjects) {
+			projects_with_deps.erase(r);
+		}
+	}
 
 	// Save config
 	{
@@ -232,15 +262,6 @@ void compile() {
 		fmt::print("{} files with {}\n", warnings, fmt::format(fg_red, "warnings"));
 	}
 }
-
-auto cmd        = sargp::Command{"compile", "compile everything (default)", compile};
-auto cmdDefault = sargp::Task{[]{
-	// only run if no children are active
-	for (auto cmd : sargp::getDefaultCommand().getSubCommands()) {
-		if (*cmd) return;
-	}
-	compile();
-}};
 
 }
 }
