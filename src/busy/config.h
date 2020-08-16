@@ -16,7 +16,7 @@ inline auto cfgJobs       = sargp::Parameter<int>{0, "jobs", "thread count"};
 inline auto cfgRebuild    = sargp::Flag{"rebuild", "triggers all files to be rebuild"};
 inline auto cfgYamlCache  = sargp::Flag{"yaml-cache", "save cache in yaml format"};
 inline auto cfgToolchain  = sargp::Parameter<std::string>{"", "toolchain", "set toolchain", []{}, &comp::toolchain};
-inline auto cfgOptions    = sargp::Parameter<std::vector<std::string>>{{}, "option", "options for toolchains", []{}, &comp::options};
+inline auto cfgOptions    = sargp::Parameter<std::vector<std::string>>{{}, "options", "options for toolchains", []{}, &comp::options};
 
 //!TODO should follow XDG variables (see cppman) and may be be not hard coded?
 inline static auto global_sharedPath = std::filesystem::path{"/usr/share/busy"};
