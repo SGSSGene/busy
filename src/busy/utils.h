@@ -36,4 +36,7 @@ auto execute(std::vector<std::string> params, bool verbose) -> std::string;
 void visitFilesWithWarnings(Config const& config, ProjectMap const& projects_with_deps, std::function<void(File const&, FileInfo const&)> fileF, std::function<void(Project const&, FileInfo const&)> projectF);
 auto isInteractive() -> bool;
 
+enum class TargetType { Executable, StaticLibrary, SharedLibrary };
+auto getTargetType(Project const& project, std::tuple<std::set<Project const*>, std::set<Project const*>> const& deps, std::set<std::string> const& sharedLibraries) -> TargetType;
+
 }

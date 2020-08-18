@@ -19,16 +19,18 @@ struct CompilePipe {
 	std::string       toolchainCall;
 	ProjectMap const& projects_with_deps;
 	std::set<std::string> const& toolchainOptions;
+	std::set<std::string> const& sharedLibraries;
 	Q::Nodes          nodes;
 	Q::Edges          edges;
 	Q                 queue;
 	ColorMap          colors;
 	std::mutex        mutex;
 
-	CompilePipe(std::string _toolchainCall, ProjectMap const& _projects_with_deps, std::set<std::string> const& _toolchainOptions)
+	CompilePipe(std::string _toolchainCall, ProjectMap const& _projects_with_deps, std::set<std::string> const& _toolchainOptions, std::set<std::string> const& _sharedLibraries)
 		: toolchainCall      {move(_toolchainCall)}
 		, projects_with_deps {_projects_with_deps}
 		, toolchainOptions   {_toolchainOptions}
+		, sharedLibraries    {_sharedLibraries}
 		, queue {loadQueue()}
 	{}
 
@@ -94,83 +96,8 @@ struct CompilePipe {
 		return params;
 	}
 
-	[[nodiscard]]
-	auto setupLinking(busy::Project const& project) const {
+	[[nodiscard]] auto setupLinking(busy::Project const& project) const -> std::tuple<std::vector<std::string>, std::unordered_set<Project const*>>;
 
-		bool isExecutable = [&]() {
-			if (project.getType() == "library") {
-				return false;
-			}
-			return std::get<1>(projects_with_deps.at(&project)).empty();
-		}();
-		auto [action, target] = [&]() -> std::tuple<std::string, std::filesystem::path> {
-			if (isExecutable) {
-				return {"executable", std::filesystem::path{"bin"} / project.getName()};
-			}
-			return {"static_library", (std::filesystem::path{"lib"} / project.getName()).replace_extension(".a")};
-		}();
-
-		auto params = std::vector<std::string>{};
-		params.emplace_back(toolchainCall);
-		params.emplace_back("link");
-		params.emplace_back(action);
-
-		params.emplace_back(target);
-
-		params.emplace_back("--options");
-		for (auto const& o : toolchainOptions) {
-			params.emplace_back(o);
-		}
-		if (params.back() == "--options") params.pop_back();
-
-
-		params.emplace_back("--input");
-		for (auto file : queue.find_incoming<busy::File>(&project)) {
-			if (colors.at(file) == Color::Compilable) {
-				auto objPath = "obj" / file->getPath();
-				objPath.replace_extension(".o");
-				params.emplace_back(objPath);
-			}
-		}
-		if (params.back() == "--input") params.pop_back();
-
-
-		params.emplace_back("--llibraries");
-		// add all legacy system libraries
-		std::vector<std::string> systemLibraries;
-		auto addSystemLibraries = [&](busy::Project const& project) {
-			for (auto const& l : project.getSystemLibraries()) {
-				auto iter = std::find(begin(systemLibraries), end(systemLibraries), l);
-				if (iter != end(systemLibraries)) {
-					systemLibraries.erase(iter);
-				}
-				systemLibraries.push_back(l);
-			}
-		};
-
-		addSystemLibraries(project);
-
-		auto dependencies = std::unordered_set<Project const*>{};
-		queue.visit_incoming<Project const>(&project, [&](Project const& project) {
-			if (colors.at(&project) == Color::Compilable) {
-				auto target = (std::filesystem::path{"lib"} / project.getName()).replace_extension(".a");
-				params.emplace_back(target);
-			}
-			addSystemLibraries(project);
-			dependencies.insert(&project);
-		});
-		if (params.back() == "--llibraries") params.pop_back();
-
-
-		params.emplace_back("--syslibraries");
-		for (auto const& l : systemLibraries) {
-			params.emplace_back(l);
-		}
-		if (params.back() == "--syslibraries") params.pop_back();
-
-		params.erase(std::unique(begin(params), end(params)), end(params));
-		return std::tuple{params, dependencies};
-	}
 
 	[[nodiscard]]
 	auto empty() const -> bool {

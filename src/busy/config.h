@@ -17,6 +17,8 @@ inline auto cfgRebuild    = sargp::Flag{"rebuild", "triggers all files to be reb
 inline auto cfgYamlCache  = sargp::Flag{"yaml-cache", "save cache in yaml format"};
 inline auto cfgToolchain  = sargp::Parameter<std::string>{"", "toolchain", "set toolchain", []{}, &comp::toolchain};
 inline auto cfgOptions    = sargp::Parameter<std::vector<std::string>>{{}, "options", "options for toolchains", []{}, &comp::options};
+inline auto cfgShared     = sargp::Parameter<std::vector<std::string>>({}, "shared", "select libraries as shared libraries", []{}, &comp::staticLibraries);
+inline auto cfgStatic     = sargp::Parameter<std::vector<std::string>>({}, "static", "select libraries as static libraries", []{}, &comp::sharedLibraries);
 
 //!TODO should follow XDG variables (see cppman) and may be be not hard coded?
 inline static auto global_sharedPath = std::filesystem::path{"/usr/share/busy"};
@@ -37,6 +39,7 @@ struct Config {
 
 	std::filesystem::path rootDir {};
 	std::filesystem::path busyFile {};
+	std::set<std::string> sharedLibraries {};
 
 
 	template <typename Node>
@@ -46,7 +49,9 @@ struct Config {
 		node["toolchain_options"] % toolchain.options;
 		node["rootDir"]           % rootDir;
 		node["busyFile"]          % busyFile;
+		node["sharedLibraries"]   % sharedLibraries;
 	}
+
 };
 
 }

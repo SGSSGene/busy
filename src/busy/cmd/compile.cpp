@@ -64,6 +64,14 @@ void compile() {
 	fmt::print("  with options: {}\n", fmt::join(config.toolchain.options, " "));
 
 
+	// update shared/static libraries
+	for (auto s : *cfgShared) {
+		config.sharedLibraries.insert(s);
+	}
+	for (auto s : *cfgStatic) {
+		config.sharedLibraries.erase(s);
+	}
+
 	// check consistency of packages
 	fmt::print("checking consistency...");
 	checkConsistency(projects);
@@ -137,7 +145,7 @@ void compile() {
 
 		fmt::print("start compiling...\n");
 		auto consolePrinter = ConsolePrinter{estimatedTimes, estimatedTotalTime};
-		auto pipe           = CompilePipe{config.toolchain.call, projects_with_deps, config.toolchain.options};
+		auto pipe           = CompilePipe{config.toolchain.call, projects_with_deps, config.toolchain.options, config.sharedLibraries};
 
 		auto multiPipe = MultiCompilePipe{pipe, jobs};
 

@@ -206,7 +206,7 @@ auto updateToolchainOptions(Config& config, bool reset, std::vector<std::string>
 
 auto computeEstimationTimes(Config const& config, ProjectMap const& projects_with_deps, bool clean, std::string const& _compilerHash, std::size_t jobs) -> std::tuple<ConsolePrinter::EstimatedTimes, std::chrono::milliseconds> {
 	auto estimatedTimes = ConsolePrinter::EstimatedTimes{};
-	auto pipe           = CompilePipe{config.toolchain.call, projects_with_deps, config.toolchain.options};
+	auto pipe           = CompilePipe{config.toolchain.call, projects_with_deps, config.toolchain.options, config.sharedLibraries};
 	auto threadTimings = std::vector<std::chrono::milliseconds>(jobs, std::chrono::milliseconds{0});
 	auto readyTimings  = std::vector<std::chrono::milliseconds>{};
 	for (std::size_t i{0}; i < pipe.size(); ++i) {
@@ -301,7 +301,7 @@ auto execute(std::vector<std::string> params, bool verbose) -> std::string {
 }
 
 void visitFilesWithWarnings(Config const& config, ProjectMap const& projects_with_deps, std::function<void(File const&, FileInfo const&)> fileF, std::function<void(Project const&, FileInfo const&)> projectF) {
-	auto pipe = CompilePipe{config.toolchain.call, projects_with_deps, config.toolchain.options};
+	auto pipe = CompilePipe{config.toolchain.call, projects_with_deps, config.toolchain.options, config.sharedLibraries};
 	while (not pipe.empty()) {
 		auto work = pipe.pop();
 		pipe.dispatch(work, overloaded {
@@ -327,5 +327,22 @@ auto isInteractive() -> bool {
 	return interactive;
 
 }
+
+auto getTargetType(Project const& project, std::tuple<std::set<Project const*>, std::set<Project const*>> const& deps, std::set<std::string> const& sharedLibraries) -> TargetType {
+	bool isExecutable = [&]() {
+		if (project.getType() == "library") {
+			return false;
+		}
+		return std::get<1>(deps).empty();
+	}();
+	if (isExecutable) {
+		return TargetType::Executable;
+	}
+	if (sharedLibraries.count(project.getName()) > 0) {
+		return TargetType::SharedLibrary;
+	}
+	return TargetType::StaticLibrary;
+}
+
 
 }

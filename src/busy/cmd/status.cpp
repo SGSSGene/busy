@@ -56,6 +56,40 @@ void status() {
 	}
 	auto projects_with_deps = createProjects(projects);
 
+	auto projectByTypes = std::map<TargetType, std::vector<Project const*>>{};
+	for (auto const& [project, deps] : projects_with_deps) {
+		auto type = getTargetType(*project, deps, config.sharedLibraries);
+		projectByTypes[type].push_back(project);
+	}
+
+	auto printTypes = [&](std::string name, TargetType type) {
+		if (projectByTypes[type].size() > 0) {
+			fmt::print("{}: ", name);
+			auto list = projectByTypes[type];
+			std::sort(begin(list), end(list), [](auto l, auto r) {
+				return l->getName() < r->getName();
+			});
+			for (size_t i{0}; i < list.size(); ++i) {
+				if (i != 0) {
+					fmt::print(", ");
+				}
+
+				fmt::print("{}", list[i]->getName());
+			}
+			fmt::print("\n");
+		}
+	};
+
+	printTypes("executables", TargetType::Executable);
+
+	if (projectByTypes[TargetType::StaticLibrary].size() > 0
+	    or projectByTypes[TargetType::SharedLibrary].size() > 0) {
+		fmt::print("libraries:\n");
+
+		printTypes("  static", TargetType::StaticLibrary);
+		printTypes("  shared", TargetType::SharedLibrary);
+	}
+
 	auto jobs = [&]() -> std::size_t {
 		if (*cfgJobs == 0) {
 			return std::thread::hardware_concurrency();

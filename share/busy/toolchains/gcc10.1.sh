@@ -188,7 +188,10 @@ elif [ "$1" == "link" ]; then
 	# Executable
 	elif [ "${target}" == "executable" ]; then
 		call="${CXX} -rdynamic ${parameters} -fdiagnostics-color=always -o ${outputFile} ${inputFiles[@]} ${localLibraries[@]} ${sysLibraries[@]}"
-	# Static library?
+	# Shared library
+	elif [ "${target}" == "shared_library" ]; then
+		call="${CXX} -rdynamic -shared ${parameters} -fdiagnostics-color=always -o ${outputFile} ${inputFiles[@]} ${localLibraries[@]} ${sysLibraries[@]}"
+	# Static library
 	elif [ "${target}" == "static_library" ]; then
 		objectFile="tmp/lib/${outputFile}.o"
 		mkdir -p $(dirname ${objectFile})

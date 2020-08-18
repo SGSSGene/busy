@@ -61,6 +61,45 @@ auto projects(std::vector<std::string> const& str) -> std::pair<bool, std::set<s
 	return ret;
 }
 
+auto sharedLibraries(std::vector<std::string> const& str) -> std::pair<bool, std::set<std::string>> {
+	auto ret = std::pair<bool, std::set<std::string>>{false, {}};
+	auto workPath = std::filesystem::current_path();
+	auto config = loadConfig(workPath, *cfgBuildPath, {cfgBusyPath, *cfgBusyPath});
+
+	auto [projects, packages] = busy::readPackage(config.rootDir, config.busyFile);
+	auto projects_with_deps = createProjects(projects);
+
+	for (auto const& [project, deps] : projects_with_deps) {
+		if (getTargetType(*project, deps, config.sharedLibraries) == TargetType::StaticLibrary) {
+			ret.second.insert(project->getName());
+		}
+	}
+	for (auto s : str) {
+		ret.second.erase(s);
+	}
+	return ret;
+
+}
+auto staticLibraries(std::vector<std::string> const& str) -> std::pair<bool, std::set<std::string>> {
+	auto ret = std::pair<bool, std::set<std::string>>{false, {}};
+	auto workPath = std::filesystem::current_path();
+	auto config = loadConfig(workPath, *cfgBuildPath, {cfgBusyPath, *cfgBusyPath});
+
+	auto [projects, packages] = busy::readPackage(config.rootDir, config.busyFile);
+	auto projects_with_deps = createProjects(projects);
+
+	for (auto const& [project, deps] : projects_with_deps) {
+		if (getTargetType(*project, deps, config.sharedLibraries) == TargetType::SharedLibrary) {
+			ret.second.insert(project->getName());
+		}
+	}
+	for (auto s : str) {
+		ret.second.erase(s);
+	}
+	return ret;
+}
+
+
 
 
 }
