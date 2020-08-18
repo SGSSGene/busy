@@ -102,7 +102,7 @@ void status() {
 	}
 
 	auto echo = [](std::filesystem::path filePath, std::string const& ext) {
-		filePath = "obj" / filePath;
+		filePath = "tmp/obj" / filePath;
 		filePath.replace_extension(ext);
 		auto data = utils::readFullFile(filePath);
 		data.push_back(std::byte(0));

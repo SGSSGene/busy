@@ -82,6 +82,7 @@ if [ "$1" == "begin" ]; then
 	if [ ! -e "src" ] && [ -e ${rootDir}/src ]; then
 		ln -s ${rootDir}/src src
 	fi
+
 	hash="$(echo "${@}" | cat - ${0} ${0%/*}/helper_utils.sh ${CXX} ${C} ${LD} ${AR} | shasum)"
 	echo "hash: ${hash}";
 	exit 0
@@ -93,13 +94,14 @@ elif [ "$1" == "compile" ]; then
 	shift
 
 	dependencyFile=$(echo "${outputFile}" | rev | cut -b 3- | rev | xargs -I '{}' echo '{}.d')
-	stdoutFile="${outputFile}.stdout"
-	stderrFile="${outputFile}.stderr"
-	export CCACHE_LOGFILE="${outputFile}.ccache"
+	stdoutFile="tmp/${outputFile}.stdout"
+	stderrFile="tmp/${outputFile}.stderr"
+	export CCACHE_LOGFILE="tmp/${outputFile}.ccache"
+	mkdir -p $(dirname ${stdoutFile})
 
 	outputFiles+=("${outputFile}" "${dependencyFile}" "${stdoutFile}" "${stderrFile}")
 	if [ "${CCACHE}" -eq 1 ]; then
-		outputFiles+=(${outputFile}.ccache)
+		outputFiles+=(${CCACHE_LOGFILE})
 	fi
 
 	parse "--ilocal  projectIncludes" \
@@ -143,13 +145,14 @@ elif [ "$1" == "link" ]; then
 	shift; outputFile="$1"
 	shift
 
-	stdoutFile="${outputFile}.stdout"
-	stderrFile="${outputFile}.stderr"
-	export CCACHE_LOGFILE="${outputFile}.ccache"
+	stdoutFile="tmp/${outputFile}.stdout"
+	stderrFile="tmp/${outputFile}.stderr"
+	export CCACHE_LOGFILE="tmp/${outputFile}.ccache"
+	mkdir -p $(dirname ${stdoutFile})
 
 	outputFiles+=("${outputFile}" "${stdoutFile}" "${stderrFile}")
 	if [ "${CCACHE}" -eq 1 ]; then
-		outputFiles+=(${outputFile}.ccache)
+		outputFiles+=(${CCACHE_LOGFILE})
 	fi
 
 	parse "--input         inputFiles" \
@@ -187,8 +190,11 @@ elif [ "$1" == "link" ]; then
 		call="${CXX} -rdynamic ${parameters} -fdiagnostics-color=always -o ${outputFile} ${inputFiles[@]} ${localLibraries[@]} ${sysLibraries[@]}"
 	# Static library?
 	elif [ "${target}" == "static_library" ]; then
-		outputFiles+=("${outputFile}.o")
-		call="${LD} -Ur -o ${outputFile}.o ${inputFiles[@]} && ${AR} rcs ${outputFile} ${outputFile}.o"
+		objectFile="tmp/lib/${outputFile}.o"
+		mkdir -p $(dirname ${objectFile})
+		outputFiles+=("${objectFile}")
+		call="${LD} -Ur -o ${objectFile} ${inputFiles[@]} && ${AR} rcs ${outputFile} ${objectFile}"
+
 	else
 		exit -1
 	fi
