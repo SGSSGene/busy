@@ -27,7 +27,8 @@ private:
 	std::chrono::milliseconds totalTime{};
 	int totalJobs{};
 	int jobs{0};
-	std::string currentJob = "init";
+	std::vector<std::string> currentJobs{};
+
 	std::condition_variable cv;
 
 	std::chrono::steady_clock::time_point const startTime;
@@ -57,6 +58,7 @@ public:
 		auto now = std::chrono::steady_clock::now();
 		auto diff = duration_cast<std::chrono::milliseconds>(now - startTime);
 		totalTime = std::max(diff, totalTime);
+		auto currentJob = currentJobs.empty()?std::string{"<empty queue>"}:currentJobs.back();
 		fmt::print("Jobs {:3}/{:3} ({:3}) - ETA {:.1f}s/{:.1f}s - {}\n", jobs, totalJobs, startTimes.size(), diff.count() / 1000., totalTime.count() / 1000., currentJob);
 	}
 
@@ -72,11 +74,11 @@ public:
 		auto start = std::chrono::steady_clock::now();
 		auto g = std::unique_lock{mutex};
 		startTimes.try_emplace(_key, start);
-		currentJob = std::move(_currentJob);
+		currentJobs.emplace_back(std::move(_currentJob));
 		print();
 	}
 	template <typename T>
-	auto finishedJob(T const* _key) -> std::chrono::milliseconds {
+	auto finishedJob(T const* _key, std::string const& _currentJob) -> std::chrono::milliseconds {
 		auto g = std::unique_lock{mutex};
 		auto stop = std::chrono::steady_clock::now();
 
@@ -93,13 +95,21 @@ public:
 			totalTime = totalTime + (actualTime - actualTime) / int(startTimes.size());
 		}
 
+		for (auto iter = begin(currentJobs); iter != end(currentJobs); ++iter) {
+			if (*iter == _currentJob) {
+				currentJobs.erase(iter);
+				break;
+			}
+		}
+
+
 		startTimes.erase(this_iter);
 
 		jobs += 1;
 		return actualTime;
 	}
 
-	template <typename T>
+/*	template <typename T>
 	void finishedJob(T const* _key, std::chrono::milliseconds _time) {
 		auto g = std::unique_lock{mutex};
 		auto iter = estimatedTimes.find(_key);
@@ -109,12 +119,12 @@ public:
 		totalTime -= iter->second;
 		totalTime += _time;
 		jobs += 1;
-	}
+	}*/
 
-	void setCurrentJob(std::string _currentJob) {
+/*	void setCurrentJob(std::string _currentJob) {
 		auto g = std::unique_lock{mutex};
 		currentJob = std::move(_currentJob);
-	}
+	}*/
 
 };
 

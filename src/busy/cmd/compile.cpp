@@ -210,7 +210,7 @@ void compile() {
 				fileInfo.compilerHash    = compilerHash;
 
 
-				auto compileTime = consolePrinter.finishedJob(&file);
+				auto compileTime = consolePrinter.finishedJob(&file, "compiling " + path.string());
 				if (not cached or fileInfo.compileTime < compileTime) {
 					fileInfo.compileTime = compileTime;
 				}
@@ -239,7 +239,7 @@ void compile() {
 
 				fileInfo.compilerHash    = compilerHash;
 
-				auto compileTime = consolePrinter.finishedJob(&project);
+				auto compileTime = consolePrinter.finishedJob(&project, "linking " + project.getName());
 				if (not cached or fileInfo.compileTime < compileTime) {
 					fileInfo.compileTime = compileTime;
 				}
