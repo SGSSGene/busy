@@ -2,6 +2,7 @@
 
 #include "analyse.h"
 
+#include <atomic>
 #include <chrono>
 #include <condition_variable>
 #include <fmt/format.h>
