@@ -51,8 +51,12 @@ bool tokenize(int argc, char const* const* argv, CommandCallback&& commandCB, Pa
 			auto argName  = curArgName.substr(2);
 			idx += tokenizeArgument(argc-idx, argv+idx, argName, parseEverything, paramCB);
 		// parsing partial trailing capture
-		} else if (hasTrailingParameters and lastCommand->findSubCommand(argv[idx]) == nullptr) {
-			idx += tokenizeArgument(argc-idx, argv+idx, "", parseEverything, paramCB);
+		} else if (hasTrailingParameters and lastCommand->findSubCommand(argv[idx]) == nullptr and not curArgName.empty()) {
+			auto changeIdx = tokenizeArgument(argc-idx, argv+idx, "", parseEverything, paramCB);
+			idx += changeIdx;
+			if (changeIdx == 0) {
+				idx += 1;
+			}
 		// parse for commands
 		} else {
 			++idx;
