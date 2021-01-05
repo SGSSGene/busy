@@ -261,14 +261,37 @@ void compile() {
 	fmt::print("done\n");
 
 	int warnings = 0;
-	visitFilesWithWarnings(config, projects_with_deps, [&](File const&, FileInfo const&) {
-		warnings += 1;
+	int external_warnings = 0;
+	visitFilesWithWarnings(config, projects_with_deps, [&](File const& file, FileInfo const&) {
+		if (*file.getPath().begin() == external) {
+			external_warnings += 1;
+		} else {
+			warnings += 1;
+		}
 	}, nullptr);
 
-	if (warnings == 0) {
+	if (warnings == 0 and external_warnings == 0) {
 		fmt::print("all files {}\n", fmt::format(fg_green, "warning free"));
 	} else {
-		fmt::print("{} files with {}\n", warnings, fmt::format(fg_red, "warnings"));
+		if (warnings > 0) {
+			fmt::print("{} files with {}\n", warnings, fmt::format(fg_red, "warnings"));
+			visitFilesWithWarnings(config, projects_with_deps, [&](File const& file, FileInfo const&) {
+				if (*file.getPath().begin() != external) {
+					fmt::print("  - {}\n", file.getPath());
+				}
+			}, nullptr);
+		}
+		if (external_warnings > 0) {
+			fmt::print("{} external files with {}\n", external_warnings, fmt::format(fg_red, "warnings"));
+			if (cfgVerbose) {
+				visitFilesWithWarnings(config, projects_with_deps, [&](File const& file, FileInfo const&) {
+					if (*file.getPath().begin() == external) {
+						fmt::print("  - {}\n", file.getPath());
+					}
+				}, nullptr);
+			}
+		}
+		fmt::print("to inspect warnings call {}\n", fmt::format(fg_yellow, "`busy status <file>`"));
 	}
 }
 

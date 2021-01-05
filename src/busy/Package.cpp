@@ -4,8 +4,6 @@
 
 namespace busy {
 
-constexpr std::string_view external{"external"};
-
 namespace fs = std::filesystem;
 
 struct yaml_error : std::runtime_error {
