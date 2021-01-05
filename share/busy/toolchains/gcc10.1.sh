@@ -134,9 +134,9 @@ elif [ "$1" == "compile" ]; then
 
 	filetype="$(echo "${inputFile}" | rev | cut -d "." -f 1 | rev)";
 	if [[ "${filetype}" =~ ^(cpp|cc)$ ]]; then
-		call="${CXX} -std=c++20 -fPIC -MD ${parameters} ${diagnostic} -c ${inputFile} -o ${outputFile} $projectIncludes $systemIncludes"
+		call="${CXX} -std=c++20 -fPIC -MMD ${parameters} ${diagnostic} -c ${inputFile} -o ${outputFile} $projectIncludes $systemIncludes"
 	elif [ "${filetype}" = "c" ]; then
-		call="${C} -std=c18 -fPIC -MD ${parameters} ${diagnostic} -c ${inputFile} -o ${outputFile} $projectIncludes $systemIncludes"
+		call="${C} -std=c18 -fPIC -MMD ${parameters} ${diagnostic} -c ${inputFile} -o ${outputFile} $projectIncludes $systemIncludes"
 	else
 		exit 0
 	fi
@@ -176,8 +176,6 @@ elif [ "$1" == "link" ]; then
 	fi
 
 	sysLibraries=($(implode " -l" "${sysLibraries[@]}"))
-
-
 
 
 	# Header only

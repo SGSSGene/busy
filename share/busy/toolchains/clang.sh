@@ -24,7 +24,7 @@ version_minor=$(echo ${version} | cut -d "." -f 2)
 version_patch=$(echo ${version} | cut -d "." -f 3)
 
 # check if version numbers match
-if [ "${version_major}" != "10" ] || [ "${version_minor}" -lt "0" ]; then
+if [ "${version_major}" != "11" ] || [ "${version_minor}" -lt "0" ]; then
 	exit -1
 fi
 
@@ -52,7 +52,7 @@ shift
 
 cat <<-END
 toolchains:
-  - name: "clang 10.0"
+  - name: "clang 11.0"
     version: "${version}"
     detail: "${version_detailed}"
     which:
@@ -75,12 +75,13 @@ fi
 outputFiles=()
 if [ "$1" == "begin" ]; then
 	rootDir="$2"
-	if [ ! -e "external" ]; then
+	if [ ! -e "external" ] && [ -e ${rootDir}/external ]; then
 		ln -s ${rootDir}/external external
 	fi
-	if [ ! -e "src" ]; then
+	if [ ! -e "src" ] && [ -e ${rootDir}/src ]; then
 		ln -s ${rootDir}/src src
 	fi
+
 	hash="$(echo "${@}" | cat - ${0} ${0%/*}/helper_utils.sh ${CXX} ${C} ${LD} ${AR} | shasum)"
 	echo "hash: ${hash}";
 	exit 0
@@ -92,17 +93,19 @@ elif [ "$1" == "compile" ]; then
 	shift
 
 	dependencyFile=$(echo "${outputFile}" | rev | cut -b 3- | rev | xargs -I '{}' echo '{}.d')
-	stdoutFile="${outputFile}.stdout"
-	stderrFile="${outputFile}.stderr"
-	export CCACHE_LOGFILE="${outputFile}.ccache"
+	stdoutFile="tmp/${outputFile}.stdout"
+	stderrFile="tmp/${outputFile}.stderr"
+	export CCACHE_LOGFILE="tmp/${outputFile}.ccache"
+	mkdir -p $(dirname ${stdoutFile})
 
 	outputFiles+=("${outputFile}" "${dependencyFile}" "${stdoutFile}" "${stderrFile}")
 	if [ "${CCACHE}" -eq 1 ]; then
-		outputFiles+=(${outputFile}.ccache)
+		outputFiles+=(${CCACHE_LOGFILE})
 	fi
 
 	parse "--ilocal  projectIncludes" \
 	      "--isystem systemIncludes" \
+	      "--verbose verbose" \
 	      "--" "$@"
 
 	parameters=""
@@ -127,9 +130,9 @@ elif [ "$1" == "compile" ]; then
 
 	filetype="$(echo "${inputFile}" | rev | cut -d "." -f 1 | rev)";
 	if [[ "${filetype}" =~ ^(cpp|cc)$ ]]; then
-		call="${CXX} -std=c++20 -fPIC -MD ${parameters} ${diagnostic} -c ${inputFile} -o ${outputFile} $projectIncludes $systemIncludes"
+		call="${CXX} -std=c++20 -fPIC -MMD ${parameters} ${diagnostic} -c ${inputFile} -o ${outputFile} $projectIncludes $systemIncludes"
 	elif [ "${filetype}" = "c" ]; then
-		call="${C} -std=c18 -fPIC -MD ${parameters} ${diagnostic} -c ${inputFile} -o ${outputFile} $projectIncludes $systemIncludes"
+		call="${C} -std=c18 -fPIC -MMD ${parameters} ${diagnostic} -c ${inputFile} -o ${outputFile} $projectIncludes $systemIncludes"
 	else
 		exit 0
 	fi
@@ -138,21 +141,21 @@ elif [ "$1" == "link" ]; then
 	shift; outputFile="$1"
 	shift
 
-	stdoutFile="${outputFile}.stdout"
-	stderrFile="${outputFile}.stderr"
-	export CCACHE_LOGFILE="${outputFile}.ccache"
+	stdoutFile="tmp/${outputFile}.stdout"
+	stderrFile="tmp/${outputFile}.stderr"
+	export CCACHE_LOGFILE="tmp/${outputFile}.ccache"
+	mkdir -p $(dirname ${stdoutFile})
 
 	outputFiles+=("${outputFile}" "${stdoutFile}" "${stderrFile}")
 	if [ "${CCACHE}" -eq 1 ]; then
-		outputFiles+=(${outputFile}.ccache)
+		outputFiles+=(${CCACHE_LOGFILE})
 	fi
 
 	parse "--input         inputFiles" \
-	      "--llibraries    inputLibraries" \
-	      "--syslibraries  libraries" \
+	      "--llibraries    localLibraries" \
+	      "--syslibraries  sysLibraries" \
+	      "--verbose       verbose" \
 	      "--" "$@"
-
-	libraries=($(implode " -l" "${libraries[@]}"))
 
 	parameters=""
 	if [[ " ${options[@]} " =~ " release " ]]; then
@@ -165,6 +168,8 @@ elif [ "$1" == "link" ]; then
 		parameters+=" -g3 -ggdb";
 	fi
 
+	sysLibraries=($(implode " -l" "${sysLibraries[@]}"))
+
 
 	# Header only
 	if [ "${#inputFiles[@]}" -eq 0 ]; then
@@ -173,11 +178,17 @@ elif [ "$1" == "link" ]; then
 
 	# Executable
 	elif [ "${target}" == "executable" ]; then
-		call="${CXX} -rdynamic ${parameters} -fdiagnostics-color=always -o ${outputFile} ${inputFiles[@]} ${inputLibraries[@]} ${libraries[@]}"
-	# Static library?
+		call="${CXX} -rdynamic ${parameters} -fdiagnostics-color=always -o ${outputFile} ${inputFiles[@]} ${localLibraries[@]} ${sysLibraries[@]}"
+	# Shared library
+	elif [ "${target}" == "shared_library" ]; then
+		call="${CXX} -rdynamic -shared ${parameters} -fdiagnostics-color=always -o ${outputFile} ${inputFiles[@]} ${localLibraries[@]} ${sysLibraries[@]}"
+	# Static library
 	elif [ "${target}" == "static_library" ]; then
-		outputFiles+=("${outputFile}.o")
-		call="${LD} -Ur -o ${outputFile}.o ${inputFiles[@]} && ${AR} rcs ${outputFile} ${outputFile}.o"
+		objectFile="tmp/lib/${outputFile}.o"
+		mkdir -p $(dirname ${objectFile})
+		outputFiles+=("${objectFile}")
+		call="${LD} -Ur -o ${objectFile} ${inputFiles[@]} && ${AR} rcs ${outputFile} ${objectFile}"
+
 	else
 		exit -1
 	fi

@@ -7,6 +7,7 @@
 #include "../utils.h"
 
 #include <fmt/color.h>
+#include <fmt/chrono.h>
 
 namespace busy::cmd {
 namespace {

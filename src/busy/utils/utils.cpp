@@ -50,7 +50,8 @@ auto exceptionToString(std::exception const& e, int level) -> std::string {
 auto readFullFile(std::filesystem::path const& file) -> std::vector<std::byte> {
 	auto ifs = std::ifstream{file, std::ios::binary};
 	ifs.seekg(0, std::ios::end);
-	auto buffer = std::vector<std::byte>(ifs.tellg());
+	std::size_t size = ifs.tellg();
+	auto buffer = std::vector<std::byte>(size);
 	ifs.seekg(0, std::ios::beg);
 	ifs.read(reinterpret_cast<char*>(buffer.data()), buffer.size());
 	return buffer;
