@@ -9,6 +9,7 @@
             WORD_TO_COMPLETE=""
         fi
         readarray -t HINTS <<< $(eval ${LINE} --bash_completion)
+
         if [ "${HINTS[0]}" == " -d " ]; then
             compopt -o filenames
             local IFS=$'\n'
@@ -19,7 +20,8 @@
             COMPREPLY=( $(compgen -f -- ${2}) )
         elif [[ "${HINTS[0]}" =~ " -f " ]]; then
             compopt -o filenames
-            EXT="$(echo "${HINTS[0]}" | cut -d ' ' -f 3)"
+            parts=(${HINTS[0]})
+            EXT="${parts[1]}"
 
             HINTS=$(printf "%q:" "${HINTS[@]}")
             unset HINTS[0]

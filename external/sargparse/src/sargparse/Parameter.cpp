@@ -80,6 +80,9 @@ auto Command::findSubCommand(std::string const& subcommand) -> Command* {
 }
 
 auto Command::findParameter(std::string const& parameter) const -> ParameterBase const* {
+	if (parameter.empty()) {
+		return findTrailingParameter();
+	}
 	for (auto p : parameters) {
 		if (p->getArgName() == parameter) {
 			return p;
@@ -89,6 +92,10 @@ auto Command::findParameter(std::string const& parameter) const -> ParameterBase
 }
 
 auto Command::findParameter(std::string const& parameter) -> ParameterBase* {
+	if (parameter.empty()) {
+		return findTrailingParameter();
+	}
+
 	for (auto p : parameters) {
 		if (p->getArgName() == parameter) {
 			return p;
@@ -97,7 +104,21 @@ auto Command::findParameter(std::string const& parameter) -> ParameterBase* {
 	return nullptr;
 }
 
-
-
+auto Command::findTrailingParameter() const -> ParameterBase const* {
+	for (auto p : parameters) {
+		if (p->getArgName().empty() or (p->getArgName().front() == '<' and p->getArgName().back() == '>')) {
+			return p;
+		}
+	}
+	return nullptr;
+}
+auto Command::findTrailingParameter() -> ParameterBase* {
+	for (auto p : parameters) {
+		if (p->getArgName().empty() or (p->getArgName().front() == '<' and p->getArgName().back() == '>')) {
+			return p;
+		}
+	}
+	return nullptr;
+}
 
 }

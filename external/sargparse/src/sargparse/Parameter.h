@@ -361,6 +361,10 @@ public:
 	auto findParameter(std::string const& parameter) const -> ParameterBase const*;
 	auto findParameter(std::string const& parameter) -> ParameterBase*;
 
+	auto findTrailingParameter() const -> ParameterBase const*;
+	auto findTrailingParameter() -> ParameterBase*;
+
+
 	void setActive(bool active) {
 		_isActive = active;
 	}

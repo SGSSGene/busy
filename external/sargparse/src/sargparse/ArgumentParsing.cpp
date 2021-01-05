@@ -9,6 +9,9 @@ namespace {
 bool isArgName(std::string const& str) {
 	return str.find("--", 0) == 0 and str.size() > 2;
 }
+bool isTrailingName(std::string const& str) {
+	return str.empty() or (str.front() == '<' and str.back() == '>');
+}
 
 template<typename ParamCallback>
 int tokenizeArgument(int argc, char const* const* argv, std::string const& argName, bool& parseEverything, ParamCallback&& paramCB) {
@@ -31,7 +34,7 @@ template<typename CommandCallback, typename ParamCallback>
 bool tokenize(int argc, char const* const* argv, CommandCallback&& commandCB, ParamCallback&& paramCB) {
 	int idx{0};
 	auto lastCommand           {&Command::getDefaultCommand()};
-	bool hasTrailingParameters {lastCommand and lastCommand->findParameter("")};
+	bool hasTrailingParameters {lastCommand and lastCommand->findTrailingParameter()};
 
 	bool parseEverything{false};
 	while (idx < argc) {
@@ -54,7 +57,7 @@ bool tokenize(int argc, char const* const* argv, CommandCallback&& commandCB, Pa
 		} else {
 			++idx;
 			lastCommand = commandCB(curArgName);
-			hasTrailingParameters = lastCommand and lastCommand->findParameter("");
+			hasTrailingParameters = lastCommand and lastCommand->findTrailingParameter();
 		}
 		if (parseEverything) {
 			return true;
@@ -162,8 +165,12 @@ std::string generateHelpString(std::regex const& filter) {
 			if (command->getName().empty()) {
 				helpString += "\nglobal parameters:\n\n";
 			} else {
-				if (command->findParameter("")) {
-					helpString += command->getName() + " <arguments>\n";
+				if (auto param = command->findTrailingParameter(); param) {
+					if (param->getArgName().empty()) {
+						helpString += command->getName() + " <arguments>\n";
+					} else {
+						helpString += command->getName() + " " + param->getArgName() + "\n";
+					}
 				} else {
 					helpString += command->getName() + "\n";
 				}
@@ -171,24 +178,30 @@ std::string generateHelpString(std::regex const& filter) {
 				helpString += "\nparameters for command " + command->getName() + "\n\n";
 			}
 
-			for (auto const& param : command->getParameters()) {
-				std::string name = param->getArgName();
-				if (name.empty()) {
-					name = "<arguments>";
-				} else {
-					name = "--" + name;
-				}
-				if (std::regex_match(name, filter)) {
-					helpString += name + std::string(maxArgNameLen - name.size(), ' ');
-					if (not *param) {// the difference are the brackets!
-						helpString += "(" + param->stringifyValue() + ")";
+			for (bool printTrailing : {true, false}) {
+				for (auto const& param : command->getParameters()) {
+					std::string name = param->getArgName();
+					bool isTrailing = isTrailingName(name);
+					if (isTrailing) {
+						if (name.empty()) {
+							name = "<arguments>";
+						}
 					} else {
-						helpString += param->stringifyValue();
+						name = "--" + name;
 					}
-					helpString += "\n";
-					auto&& description = param->describe();
-					if (not description.empty()) {
-						helpString += "    " + description + "\n";
+					if (isTrailing != printTrailing) continue;
+					if (std::regex_match(name, filter)) {
+						helpString += name + std::string(maxArgNameLen - name.size(), ' ');
+						if (not *param) {// the difference are the brackets!
+							helpString += "(" + param->stringifyValue() + ")";
+						} else {
+							helpString += param->stringifyValue();
+						}
+						helpString += "\n";
+						auto&& description = param->describe();
+						if (not description.empty()) {
+							helpString += "    " + description + "\n";
+						}
 					}
 				}
 			}
@@ -241,13 +254,19 @@ std::string compgen(int argc, char const* const* argv) {
 	std::set<std::string> hints;
 
 	bool canAcceptNextArg = true;
-	if (onlyTrailingArguments) {
-		auto param = argProviders.back()->findParameter("");
+	if (lastArguments.back().find("-", 0) != 0 and lastArgName == "")
+	{
+		auto param = argProviders.back()->findTrailingParameter();
 		if (param) {
 			auto [cur_canAcceptNextArg, cur_hints] = param->getValueHints(lastArguments);
 			canAcceptNextArg = false;
-			hints.insert(cur_hints.begin(), cur_hints.end());
+			for (auto& h : cur_hints) {
+				hints.insert(h + " " + param->getArgName());
+			}
 		}
+	}
+	if (onlyTrailingArguments) {
+		canAcceptNextArg = false;
 	}
 
 	if (canAcceptNextArg) {
@@ -271,7 +290,7 @@ std::string compgen(int argc, char const* const* argv) {
 
 		for (auto argProvider : argProviders) {
 			for (auto const* p : argProvider->getParameters()) {
-				if (p->getArgName() != "") {
+				if (not isTrailingName(p->getArgName())) {
 					hints.insert("--" + p->getArgName());
 				}
 			}

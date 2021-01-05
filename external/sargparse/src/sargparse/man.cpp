@@ -12,6 +12,11 @@ namespace sargp {
 
 namespace {
 
+bool isTrailingName(std::string const& str) {
+	return str.empty() or (str.front() == '<' and str.back() == '>');
+}
+
+
 void printManPage();
 auto manPage =
 	Flag("man", "show a man compatible help for the active (sub) command(s)",
@@ -48,10 +53,10 @@ void printManPage() {
 	Command const *command = activeCommand;
 	while (command->getParentCommand()) {
 		if (command->getParameters().size() > 1
-		    or (command->getParameters().size() == 1 and command->findParameter("") == nullptr)) {
+		    or (command->getParameters().size() == 1 and command->findTrailingParameter() == nullptr)) {
 			groff += ".SH OPTIONS FOR " + command->getName() + "\n";
 			for (ParameterBase const *param : command->getParameters()) {
-				if (param->getArgName() == "") continue;
+				if (isTrailingName(param->getArgName())) continue;
 				groff += ".TP\n";
 				groff += "\\fR--" + param->getArgName() + "\\fR\n";
 				groff += param->describe() + "\n";
@@ -60,10 +65,10 @@ void printManPage() {
 		command = command->getParentCommand();
 	}
 	if (command->getParameters().size() > 1
-	    or (command->getParameters().size() == 1 and command->findParameter("") == nullptr)) {
+	    or (command->getParameters().size() == 1 and command->findTrailingParameter() == nullptr)) {
 		groff += ".SH GLOBAL OPTIONS\n";
 		for (ParameterBase const *param : command->getParameters()) {
-			if (param->getArgName() == "") continue;
+			if (isTrailingName(param->getArgName())) continue;
 			groff += ".TP\n";
 			groff += "\\fR--" + param->getArgName() + "\\fR\n";
 			groff += param->describe() + "\n";

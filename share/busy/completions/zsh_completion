@@ -8,9 +8,12 @@
 		elif [ "${completions[1]}" = " -f " ]; then
 			_files
 		elif [[ "${completions[1]}" =~ " -f " ]]; then
-			parts=(${completions[1]})
-			_files -g "*${parts[2]}"
-			compadd -- ${completions[2,-1]}
+			parts=($(echo ${completions[1]}))
+
+			_files -g "*${parts[2]}" -X ${parts[3]}
+			if [ ${#completions[@]} -gt 1 ]; then
+				compadd -- ${completions[2,-1]}
+			fi
 		else
 			compadd -- ${completions[@]}
 		fi

@@ -10,7 +10,7 @@
 namespace busy {
 
 inline auto cfgVerbose    = sargp::Flag{"verbose", "verbose output"};
-inline auto cfgBusyPath   = sargp::Parameter<std::filesystem::path>{"../busy.yaml", "",  "path to busy.yaml", []{}, sargp::completeFile(".yaml")};
+inline auto cfgBusyPath   = sargp::Parameter<std::filesystem::path>{"../busy.yaml", "<busy_file>",  "path to busy.yaml", []{}, sargp::completeFile(".yaml")};
 inline auto cfgBuildPath  = sargp::Parameter<std::filesystem::path>{".",  "build", "path to build directory", []{}, sargp::completeDirectory()};
 inline auto cfgJobs       = sargp::Parameter<int>{0, "jobs", "thread count"};
 inline auto cfgRebuild    = sargp::Flag{"rebuild", "triggers all files to be rebuild"};
