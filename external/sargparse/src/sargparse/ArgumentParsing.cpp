@@ -263,7 +263,7 @@ std::string compgen(int argc, char const* const* argv) {
 		}
 	}
 
-	if (canAcceptNextArg) {
+	if (canAcceptNextArg or (lastArguments.size() == 1 and lastArguments[0] == "")) {
 		auto const& subC = argProviders.back()->getSubCommands();
 		for (Command const* c : subC) {
 			hints.emplace(c->getName());

@@ -1,16 +1,16 @@
 #/usr/bin/env zsh
 
 	sargparse_GetOpts () {
-		completions=$(${(@q)words[@]:0:$CURRENT} --bash_completion)
-		completions=(${(@f)completions})
-
-		if [ "${completions}" = " -d " ]; then
+		words=(${(q)words[@]:0:$CURRENT} --bash_completion)
+		completions=("${(@f)$(eval $words)}")
+		if [ "${completions[1]}" = " -d " ]; then
 			_files -/
-		elif [ "${completions}" = " -f " ]; then
+		elif [ "${completions[1]}" = " -f " ]; then
 			_files
-		elif [[ "${completions}" =~ " -f " ]]; then
-			EXT="$(echo "${completions}" | cut -d ' ' -f 3)"
-			_files -g "*${EXT}"
+		elif [[ "${completions[1]}" =~ " -f " ]]; then
+			parts=(${completions[1]})
+			_files -g "*${parts[2]}"
+			compadd -- ${completions[2,-1]}
 		else
 			compadd -- ${completions[@]}
 		fi
