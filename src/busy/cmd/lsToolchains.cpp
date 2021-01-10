@@ -8,23 +8,23 @@ namespace busy::cmd {
 namespace {
 
 void lsToolchains() {
-	auto workPath = std::filesystem::current_path();
-	auto config   = loadConfig(workPath, *cfgBuildPath, {cfgBusyPath, *cfgBusyPath});
+    auto workPath = std::filesystem::current_path();
+    auto config   = loadConfig(workPath, *cfgBuildPath, {cfgBusyPath, *cfgBusyPath});
 
-	auto packages = std::vector<std::filesystem::path>{};
-	if (!config.rootDir.empty() and config.rootDir != "." and std::filesystem::exists(config.rootDir)) {
-		auto [pro, pack] = busy::readPackage(config.rootDir, config.busyFile);
-		for (auto const& p : pack) {
-			packages.emplace_back(p);
-		}
-	}
+    auto packages = std::vector<std::filesystem::path>{};
+    if (!config.rootDir.empty() and config.rootDir != "." and std::filesystem::exists(config.rootDir)) {
+        auto [pro, pack] = busy::readPackage(config.rootDir, config.busyFile);
+        for (auto const& p : pack) {
+            packages.emplace_back(p);
+        }
+    }
 
-	packages.insert(begin(packages), user_sharedPath);
-	packages.insert(begin(packages), global_sharedPath);
+    packages.insert(begin(packages), user_sharedPath);
+    packages.insert(begin(packages), global_sharedPath);
 
-	for (auto [name, path]  : searchForToolchains(packages)) {
-		fmt::print("  - {} ({})\n", name, path);
-	}
+    for (auto [name, path]  : searchForToolchains(packages)) {
+        fmt::print("  - {} ({})\n", name, path);
+    }
 }
 
 auto cmd = sargp::Command{"ls-toolchains", "list all available toolchains", lsToolchains};

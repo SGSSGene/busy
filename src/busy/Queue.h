@@ -11,158 +11,158 @@
 template <typename ...Args>
 class Queue {
 public:
-	using Node = std::variant<Args*...>;
-	using Edge = std::tuple<Node, Node>;
-	using Nodes = std::vector<Node>;
-	using Edges = std::vector<Edge>;
+    using Node = std::variant<Args*...>;
+    using Edge = std::tuple<Node, Node>;
+    using Nodes = std::vector<Node>;
+    using Edges = std::vector<Edge>;
 
 private:
 
-	struct IntNode {
-		Node value;
-		std::size_t inNodeCt{0};
-		std::vector<IntNode*> inNode;
-		std::vector<IntNode*> outNode;
-	};
+    struct IntNode {
+        Node value;
+        std::size_t inNodeCt{0};
+        std::vector<IntNode*> inNode;
+        std::vector<IntNode*> outNode;
+    };
 
-	std::list<IntNode> nodes;
-	std::queue<IntNode*> work;
-	std::mutex mutex;
+    std::list<IntNode> nodes;
+    std::queue<IntNode*> work;
+    std::mutex mutex;
 
-	[[nodiscard]]
-	auto findNode(Node v) -> auto&{
-		for (auto& n : nodes) {
-			if (n.value == v) {
-				return n;
-			}
-		}
-		assert(false);
-	}
+    [[nodiscard]]
+    auto findNode(Node v) -> auto&{
+        for (auto& n : nodes) {
+            if (n.value == v) {
+                return n;
+            }
+        }
+        assert(false);
+    }
 
-	[[nodiscard]]
-	auto findNode(Node v) const -> auto const& {
-		for (auto& n : nodes) {
-			if (n.value == v) {
-				return n;
-			}
-		}
-		assert(false);
-	}
+    [[nodiscard]]
+    auto findNode(Node v) const -> auto const& {
+        for (auto& n : nodes) {
+            if (n.value == v) {
+                return n;
+            }
+        }
+        assert(false);
+    }
 
 public:
-	Queue(Nodes const& _nodes, Edges const& _edges) {
-		for (auto n : _nodes) {
-			nodes.emplace_back(IntNode{n, 0, {}, {}});
-		}
-		for (auto [src, dst] : _edges) {
-			auto& srcNode = findNode(src);
-			auto& dstNode = findNode(dst);
-			srcNode.outNode.push_back(&dstNode);
-			dstNode.inNode.push_back(&srcNode);
-		}
+    Queue(Nodes const& _nodes, Edges const& _edges) {
+        for (auto n : _nodes) {
+            nodes.emplace_back(IntNode{n, 0, {}, {}});
+        }
+        for (auto [src, dst] : _edges) {
+            auto& srcNode = findNode(src);
+            auto& dstNode = findNode(dst);
+            srcNode.outNode.push_back(&dstNode);
+            dstNode.inNode.push_back(&srcNode);
+        }
 
-		for (auto& n : nodes) {
-			if (n.inNode.size() == n.inNodeCt) {
-				work.push(&n);
-			}
-		}
-	}
+        for (auto& n : nodes) {
+            if (n.inNode.size() == n.inNodeCt) {
+                work.push(&n);
+            }
+        }
+    }
 
-	[[nodiscard]]
-	auto empty() const -> bool{
-		return work.empty();
-	}
+    [[nodiscard]]
+    auto empty() const -> bool{
+        return work.empty();
+    }
 
-	[[nodiscard]]
-	auto size() const -> std::size_t {
-		return work.size();
-	}
+    [[nodiscard]]
+    auto size() const -> std::size_t {
+        return work.size();
+    }
 
-	template <typename T>
-	[[nodiscard]]
-	auto find_outgoing(Node n) -> T& {
-		auto& node = findNode(n);
-		for (auto const& n : node.outNode) {
-			if (std::holds_alternative<T*>(n->value)) {
-				return *std::get<T*>(n->value);
-			}
-		}
-		assert(false);
-	}
+    template <typename T>
+    [[nodiscard]]
+    auto find_outgoing(Node n) -> T& {
+        auto& node = findNode(n);
+        for (auto const& n : node.outNode) {
+            if (std::holds_alternative<T*>(n->value)) {
+                return *std::get<T*>(n->value);
+            }
+        }
+        assert(false);
+    }
 
-	template <typename T>
-	[[nodiscard]]
-	auto find_outgoing(Node n) const -> T const& {
-		auto& node = findNode(n);
-		for (auto const& n : node.outNode) {
-			if (std::holds_alternative<T*>(n->value)) {
-				return *std::get<T*>(n->value);
-			}
-		}
-		assert(false);
-	}
+    template <typename T>
+    [[nodiscard]]
+    auto find_outgoing(Node n) const -> T const& {
+        auto& node = findNode(n);
+        for (auto const& n : node.outNode) {
+            if (std::holds_alternative<T*>(n->value)) {
+                return *std::get<T*>(n->value);
+            }
+        }
+        assert(false);
+    }
 
 
-	template <typename T=void, typename L>
-	void visit_incoming(Node n, L const& l) const {
-		auto& node = findNode(n);
+    template <typename T=void, typename L>
+    void visit_incoming(Node n, L const& l) const {
+        auto& node = findNode(n);
 
-		std::queue<IntNode*> work;
+        std::queue<IntNode*> work;
 
-		for (auto n : node.inNode) {
-			work.push(n);
-		}
+        for (auto n : node.inNode) {
+            work.push(n);
+        }
 
-		while (not work.empty()) {
-			auto front = work.front();
-			work.pop();
-			if constexpr (std::is_void_v<T>) {
-				std::visit([&](auto& ptr) {
-					l(*ptr);
-				}, front->value);
-			} else {
-				if (std::holds_alternative<T*>(front->value)) {
-					l(*std::get<T*>(front->value));
-				}
-			}
-			for (auto n : front->inNode) {
-				work.push(n);
-			}
-		}
-	}
+        while (not work.empty()) {
+            auto front = work.front();
+            work.pop();
+            if constexpr (std::is_void_v<T>) {
+                std::visit([&](auto& ptr) {
+                    l(*ptr);
+                }, front->value);
+            } else {
+                if (std::holds_alternative<T*>(front->value)) {
+                    l(*std::get<T*>(front->value));
+                }
+            }
+            for (auto n : front->inNode) {
+                work.push(n);
+            }
+        }
+    }
 
-	template <typename T>
-	[[nodiscard]]
-	auto find_incoming(Node n) const -> std::vector<T const*> {
-		std::vector<T const*> result;
-		auto& node = findNode(n);
-		for (auto const& n : node.inNode) {
-			if (std::holds_alternative<T const*>(n->value)) {
-				result.push_back(std::get<T const*>(n->value));
-			}
-		}
-		return result;
-	}
+    template <typename T>
+    [[nodiscard]]
+    auto find_incoming(Node n) const -> std::vector<T const*> {
+        std::vector<T const*> result;
+        auto& node = findNode(n);
+        for (auto const& n : node.inNode) {
+            if (std::holds_alternative<T const*>(n->value)) {
+                result.push_back(std::get<T const*>(n->value));
+            }
+        }
+        return result;
+    }
 
-	auto pop() {
-		auto g = std::lock_guard{mutex};
-		auto front = work.front();
-		work.pop();
-		return front;
-	}
+    auto pop() {
+        auto g = std::lock_guard{mutex};
+        auto front = work.front();
+        work.pop();
+        return front;
+    }
 
-	template <typename L>
-	void dispatch(IntNode* node, L const& l) {
-		std::visit([&](auto ptr) {
-			l(*ptr);
-		}, node->value);
+    template <typename L>
+    void dispatch(IntNode* node, L const& l) {
+        std::visit([&](auto ptr) {
+            l(*ptr);
+        }, node->value);
 
-		auto g = std::lock_guard{mutex};
-		for (auto n : node->outNode) {
-			n->inNodeCt += 1;
-			if (n->inNode.size() == n->inNodeCt) {
-				work.push(n);
-			}
-		}
-	}
+        auto g = std::lock_guard{mutex};
+        for (auto n : node->outNode) {
+            n->inNodeCt += 1;
+            if (n->inNode.size() == n->inNodeCt) {
+                work.push(n);
+            }
+        }
+    }
 };
