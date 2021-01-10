@@ -258,14 +258,20 @@ std::string compgen(int argc, char const* const* argv) {
 	std::set<std::string> hints;
 
 	bool canAcceptNextArg = true;
-	if (lastArguments.back().find("-", 0) != 0 and lastArgName == "")
+	if (lastArguments.back().find("-", 0) != 0 and lastArgName.empty())
 	{
 		auto param = argProviders.back()->findTrailingParameter();
 		if (param) {
 			auto [cur_canAcceptNextArg, cur_hints] = param->getValueHints(lastArguments);
-			canAcceptNextArg = false;
+			if (argProviders.size() > 1) {
+				canAcceptNextArg = false;
+			}
 			for (auto& h : cur_hints) {
-				hints.insert(h + " " + param->getArgName());
+				if (param->getArgName().empty()) {
+					hints.insert(h);
+				} else {
+					hints.insert(h + " " + param->getArgName());
+				}
 			}
 		}
 	}
@@ -273,7 +279,7 @@ std::string compgen(int argc, char const* const* argv) {
 		canAcceptNextArg = false;
 	}
 
-	if (canAcceptNextArg) {
+	if ((canAcceptNextArg or onlyTrailingArguments) and not lastArgName.empty()) {
 		for (auto iter = rbegin(argProviders); iter != rend(argProviders); ++iter) {
 			auto argProvider = *iter;
 			auto param = argProvider->findParameter(lastArgName);
@@ -286,7 +292,7 @@ std::string compgen(int argc, char const* const* argv) {
 		}
 	}
 
-	if (canAcceptNextArg or (lastArguments.size() == 1 and lastArguments[0] == "")) {
+	if (canAcceptNextArg) {
 		auto const& subC = argProviders.back()->getSubCommands();
 		for (Command const* c : subC) {
 			hints.emplace(c->getName());
@@ -300,6 +306,7 @@ std::string compgen(int argc, char const* const* argv) {
 			}
 		}
 	}
+
 	std::string compgen_str;
 	if (not hints.empty()) {
 		compgen_str += std::accumulate(next(begin(hints)), end(hints), *begin(hints), [](std::string const& l , std::string const& r){
