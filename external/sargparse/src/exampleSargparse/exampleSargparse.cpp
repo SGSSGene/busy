@@ -23,7 +23,7 @@ int main(int argc, char** argv) {
 		}
 		sargp::callCommands();
 	} catch (std::exception const& e) {
-		std::cout << e.what() << "\n";
+		std::cout << "exception occurred: " << e.what() << "\n";
 		return EXIT_FAILURE;
 	}
 	return EXIT_SUCCESS;

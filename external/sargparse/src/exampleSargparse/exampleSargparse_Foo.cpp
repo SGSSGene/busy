@@ -45,4 +45,10 @@ enum class MyEnumType {Foo, Bar};
 auto myChoice = sargp::Choice<MyEnumType>{MyEnumType::Foo, "my_enum",
 	{{"Foo", MyEnumType::Foo}, {"Bar", MyEnumType::Bar}}, "a choice demonstration"
 };
+
+enum class MyEnumType2 {Foo, Bar};
+auto myChoice2 = sargp::Parameter<MyEnumType2>{MyEnumType2::Foo, "my_enum2", "a demonstration of a enum without choice"};
+
+
+
 }

@@ -117,7 +117,7 @@ T parseFromString(std::string str) {
 
 	} else {
 		// parse everything else
-		T ret;
+		T ret{};
 		std::stringstream ss{str};
 		if (not (ss >> ret)) {
 			throw ParseError{};
@@ -126,9 +126,7 @@ T parseFromString(std::string str) {
 		if constexpr (std::is_floating_point_v<T>) {
 			if (not ss.eof()) {
 				std::string ending;
-				if (not (ss >> ending)) {
-					throw ParseError{};
-				}
+				ss >> ending;
 				if (ending == "rad") {
 				} else if (ending == "deg") {
 					ret = ret / 180. * M_PI;
@@ -224,6 +222,9 @@ std::string stringify(T const& t) {
 		return t;
 	} else if constexpr (std::is_same_v<bool, T>) {
 		return t?"true":"false";
+	} else if constexpr (std::is_enum_v<T>) {
+		using UT = std::underlying_type_t<T>;
+		return std::to_string(static_cast<UT>(t));
 	} else {
 		return std::to_string(t);
 	}

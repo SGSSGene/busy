@@ -30,8 +30,10 @@ completeResult='--help
 --mySection.path
 --mySection.string
 --my_enum
+--my_enum2
 add
-my_command'
+my_command
+named_add'
 
 check 101 "${completeResult}" = "$(./bin/exampleSargparse --bash_completion)" 
 check 102 "${completeResult}" = "$(./bin/exampleSargparse \"\" --bash_completion)"
@@ -58,6 +60,7 @@ my_command_Result=$'--help
 --mySection.path
 --mySection.string
 --my_enum
+--my_enum2
 --print_hello
 --words_to_print'
 
@@ -78,7 +81,8 @@ add_Result=$'--help
 --mySection.multi_paths
 --mySection.path
 --mySection.string
---my_enum'
+--my_enum
+--my_enum2'
 
 
 check 301 "${completeResult}" = "$(./bin/exampleSargparse 'add' --bash_completion)"
@@ -111,9 +115,11 @@ flag_Result=$'--help
 --mySection.path
 --mySection.string
 --my_enum
+--my_enum2
 add
 false
 my_command
+named_add
 true'
 
 check 501 "${completeResult}" = "$(./bin/exampleSargparse '--mySection.flag' --bash_completion)"
