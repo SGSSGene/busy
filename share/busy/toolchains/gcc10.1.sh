@@ -35,11 +35,11 @@ profiles=(
 
 declare -A profile_compile_param
 profile_compile_param=(
-    ["release"]=" -O2"
-    ["release_with_symbols"]=" -O2 -ggdb"
-    ["debug"]=" -O0 -ggdb"
-    ["profile"]=" -fprofile-arcs -ftest-coverage -fPIC"
-    ["strict"]=" -Wall -Wextra -Wpedantic"
+    ["release"]=" -MD -O2"
+    ["release_with_symbols"]=" -MD -O2 -ggdb"
+    ["debug"]=" -MD -O0 -ggdb"
+    ["profile"]=" -MD -fprofile-arcs -ftest-coverage -fPIC"
+    ["strict"]=" -MD -Wall -Wextra -Wpedantic"
 )
 
 declare -A profile_link_param
