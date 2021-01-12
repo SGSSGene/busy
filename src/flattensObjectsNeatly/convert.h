@@ -369,8 +369,7 @@ struct convert<Node, std::variant<Args...>> {
         using Key   = size_t;
         template <typename L>
         static void range(std::variant<Args...>& obj, L l) {
-            l_apply(obj, [&](auto index) {
-                using Index = std::decay_t<decltype(index)>;
+            l_apply(obj, [&]<typename Index>(Index index) {
                 if (Index::N == obj.index()) {
                     size_t i = obj.index();
                     l(i, std::get<Index::N>(obj));
@@ -385,9 +384,8 @@ struct convert<Node, std::variant<Args...>> {
             if (key < 0 or key >= sizeof...(Args)) {
                 throw std::runtime_error("accessing std::optional out of range");
             }
-            l_apply(obj, [&](auto index) {
-                using Index = std::decay_t<decltype(index)>;
-                using Value = std::decay_t<decltype(std::get<Index::N>(obj))>;
+            l_apply(obj, [&]<typename Index>(Index index) {
+                using Value = std::variant_alternative_t<Index::N, std::variant<Args...>>;
                 if (Index::N == key) {
                     obj = getEmpty<Value>();
                     node[key] % std::get<Index::N>(obj);
@@ -397,8 +395,7 @@ struct convert<Node, std::variant<Args...>> {
     };
 
     convert(Node& node, std::variant<Args...>& obj) {
-        l_apply(obj, [&](auto index) {
-            using Index = std::decay_t<decltype(index)>;
+        l_apply(obj, [&]<typename Index>(Index index) {
             if (Index::N == obj.index()) {
                 node[obj.index()] % std::get<Index::N>(obj);
             }

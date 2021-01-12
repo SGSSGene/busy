@@ -50,10 +50,7 @@ auto serialize(T const& _input, YAML::Node start = {}) -> YAML::Node {
 
     std::map<void*, std::string> serializedShared; // helps tracking which shared ptr have already been serialized
 
-    fon::visit([&](auto& node, auto& obj) {
-        using Node   = std::decay_t<decltype(node)>;
-        using ValueT = std::decay_t<decltype(obj)>;
-
+    fon::visit([&]<typename Node, typename ValueT>(Node& node, ValueT& obj) {
         auto top = access_key(root[""], node);
 
         if constexpr (std::is_same_v<YAML::Node, ValueT>) {
@@ -130,10 +127,7 @@ template <typename T>
 auto deserialize(YAML::Node root) -> T {
 
     auto res = getEmpty<T>();
-    visit([&](auto& node, auto& obj) {
-        using Node   = std::decay_t<decltype(node)>;
-        using ValueT = std::decay_t<decltype(obj)>;
-
+    visit([&]<typename Node, typename ValueT>(Node& node, ValueT& obj) {
         auto top = access_key(root, node);
 
         if (not top.IsDefined()) {
@@ -196,10 +190,7 @@ auto deserialize(YAML::Node root) -> T {
         }
     }, res);
 
-    visit([&](auto& node, auto& obj) {
-        using Node   = std::decay_t<decltype(node)>;
-        using ValueT = std::decay_t<decltype(obj)>;
-
+    visit([&]<typename Node, typename ValueT>(Node& node, ValueT& obj) {
         auto top = access_key(root, node);
 
         try {

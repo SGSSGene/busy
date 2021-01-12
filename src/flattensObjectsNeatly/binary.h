@@ -21,9 +21,7 @@ auto serialize(T const& _input) -> std::vector<std::byte> {
     std::vector<std::byte> buffer;
     buffer.reserve(1'000'000);
 
-    fon::visit([&](auto& node, auto& obj) {
-        using Node   = std::decay_t<decltype(node)>;
-        using ValueT = std::decay_t<decltype(obj)>;
+    fon::visit([&]<typename Node, typename ValueT> (Node& node, ValueT& obj) {
         if constexpr (Node::is_none) {
             auto stack = SerializeStack{buffer};
             if constexpr (std::is_same_v<std::string_view, ValueT>) {
@@ -80,9 +78,7 @@ auto deserialize(std::vector<std::byte> buffer, size_t startIndex=0) -> T {
 
     size_t currentIndex {startIndex};
 
-    visit([&](auto& node, auto& obj) {
-        using Node   = std::decay_t<decltype(node)>;
-        using ValueT = std::decay_t<decltype(obj)>;
+    visit([&]<typename Node, typename ValueT>(Node& node, ValueT& obj) {
 
         //stack.back().
         //stack.push_back(
