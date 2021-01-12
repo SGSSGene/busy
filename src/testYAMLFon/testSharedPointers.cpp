@@ -8,11 +8,11 @@ struct B {
     std::shared_ptr<int32_t> sptr2;
     int* ptr{nullptr};
 
-    template <typename Node>
-    void serialize(Node& node) {
-        node["sptr1"] % sptr1;
-        node["sptr2"] % sptr2;
-        node["ptr"]   % ptr;
+    template <typename Node, typename Self>
+    static void reflect(Node& node, Self& self) {
+        node["sptr1"] % self.sptr1;
+        node["sptr2"] % self.sptr2;
+        node["ptr"]   % self.ptr;
     }
 };
 

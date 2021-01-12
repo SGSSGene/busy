@@ -56,7 +56,7 @@ auto serialize(T const& _input) -> std::vector<std::byte> {
             });
         } else if constexpr (Node::is_object) {
             auto frame = SerializeStack{buffer};
-            Node::range(obj, [&](auto& key, auto& value) {
+            Node::template range(obj, [&](auto& key, auto& value) {
                 frame.setType(SerializeStack::Type::Map);
                 frame.push_back(serialize(key));
                 node[key] % value;

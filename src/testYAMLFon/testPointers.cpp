@@ -7,10 +7,10 @@ struct A {
     std::vector<int32_t> xs;
     int* ptr{nullptr};
 
-    template <typename Node>
-    void serialize(Node& node) {
-        node["xs"] % xs;
-        node["ptr"] % ptr;
+    template <typename Node, typename Self>
+    static void reflect(Node& node, Self& self) {
+        node["xs"]  % self.xs;
+        node["ptr"] % self.ptr;
     }
 };
 
@@ -40,10 +40,10 @@ struct B {
     std::unique_ptr<int32_t> uptr;
     int* ptr{nullptr};
 
-    template <typename Node>
-    void serialize(Node& node) {
-        node["uptr"] % uptr;
-        node["ptr"] % ptr;
+    template <typename Node, typename Self>
+    static void reflect(Node& node, Self& self) {
+        node["uptr"] % self.uptr;
+        node["ptr"]  % self.ptr;
     }
 };
 
@@ -71,20 +71,20 @@ TEST_CASE("test yaml deserialization of unique_ptr pointers", "[yaml][std][uniqu
 
 struct Base {
     int32_t x;
-    template <typename Node>
-    void serialize(Node& node) {
-        node["x"] % x;
+    template <typename Node, typename Self>
+    static void reflect(Node& node, Self& self) {
+        node["x"] % self.x;
     }
 };
 struct Derived : Base {
     int32_t y;
     Base* self;
 
-    template <typename Node>
-    void serialize(Node& node) {
-        Base::serialize(node);
-        node["y"] % y;
-        node["self"] % self;
+    template <typename Node, typename Self>
+    static void reflect(Node& node, Self& self) {
+        Base::reflect(node, self);
+        node["y"]    % self.y;
+        node["self"] % self.self;
     }
 };
 

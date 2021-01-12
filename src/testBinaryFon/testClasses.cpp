@@ -12,9 +12,9 @@ auto createVector(Ts... ts) {
 struct A {
     std::vector<int32_t> xs;
 
-    template <typename Node>
-    void serialize(Node& node) {
-        node["xs"] % xs;
+    template <typename Node, typename Self>
+    static void reflect(Node& node, Self& self) {
+        node["xs"] % self.xs;
     }
 };
 
@@ -80,9 +80,9 @@ struct B {
     struct C {
         int32_t x;
 
-        template <typename Node>
-        void serialize(Node& node) {
-            node["x"] % x;
+        template <typename Node, typename Self>
+        static void reflect(Node& node, Self& self) {
+            node["x"] % self.x;
         }
         bool operator==(C const& other) const noexcept {
             return x == other.x;
@@ -90,9 +90,9 @@ struct B {
     };
     std::map<std::string, C> infos;
 
-    template <typename Node>
-    void serialize(Node& node) {
-        node["infos"] % infos;
+    template <typename Node, typename Self>
+    static void reflect(Node& node, Self& self) {
+        node["infos"] % self.infos;
     }
 };
 
@@ -131,6 +131,7 @@ TEST_CASE("test binary serialization of maps with structs", "[binary][struct][st
     CHECK(buffer.size() == expect.size());
     CHECK(buffer == expect);
 }
+
 TEST_CASE("test binary deserialization of maps with structs", "[binary][struct][std][map]") {
     auto input = B{};
     input.infos["k1"].x = 10;
@@ -144,9 +145,9 @@ TEST_CASE("test binary deserialization of maps with structs", "[binary][struct][
 struct D {
     std::vector<int32_t> xs;
 
-    template <typename Node>
-    void serialize(Node& node) {
-        node % xs;
+    template <typename Node, typename Self>
+    static void reflect(Node& node, Self& self) {
+        node % self.xs;
     }
 };
 
@@ -177,5 +178,4 @@ TEST_CASE("test binary deserialization of struct D (no name)", "[deserialize][bi
 
     CHECK(data.xs == input.xs);
 }
-
 }

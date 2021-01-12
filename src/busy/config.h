@@ -42,14 +42,14 @@ struct Config {
 	std::set<std::string> sharedLibraries {};
 
 
-	template <typename Node>
-	void serialize(Node& node) {
-		node["toolchain_name"]    % toolchain.name;
-		node["toolchain_call"]    % toolchain.call;
-		node["toolchain_options"] % toolchain.options;
-		node["rootDir"]           % rootDir;
-		node["busyFile"]          % busyFile;
-		node["sharedLibraries"]   % sharedLibraries;
+	template <typename Node, typename Self>
+	static void reflect(Node& node, Self& self) {
+		node["toolchain_name"]    % self.toolchain.name;
+		node["toolchain_call"]    % self.toolchain.call;
+		node["toolchain_options"] % self.toolchain.options;
+		node["rootDir"]           % self.rootDir;
+		node["busyFile"]          % self.busyFile;
+		node["sharedLibraries"]   % self.sharedLibraries;
 	}
 
 };

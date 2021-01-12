@@ -295,6 +295,24 @@ struct convert<Node, T, typename std::enable_if_t<has_ser_v<Node, T>>> {
 };
 
 template <typename Node, typename T>
+struct convert<Node, T, typename std::enable_if_t<has_reflect_v<Node, T>>> {
+    static constexpr Type type = Type::Object;
+    struct Infos {
+        template <typename L1, typename L2>
+        static auto range(T& obj, L1 const& l1, L2 const& l2) {
+            auto visitor = helper::Visitor{l1, l2};
+            std::decay_t<T>::reflect(visitor, obj);
+        };
+
+    };
+
+    convert(Node& node, T& obj) {
+        std::decay_t<T>::reflect(node, obj);
+    }
+};
+
+
+template <typename Node, typename T>
 struct convert<Node, std::optional<T>> {
     static constexpr Type type = Type::List;
     struct Infos {

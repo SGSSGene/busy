@@ -4,9 +4,9 @@
 struct A {
     std::vector<int32_t> xs;
 
-    template <typename Node>
-    void serialize(Node& node) {
-        node["xs"] % xs;
+    template <typename Node, typename Self>
+    static void reflect(Node& node, Self& self) {
+        node["xs"] % self.xs;
     }
 };
 
@@ -35,16 +35,16 @@ struct B {
     struct C {
         int32_t x;
 
-        template <typename Node>
-        void serialize(Node& node) {
-            node["x"] % x;
+        template <typename Node, typename Self>
+        static void reflect(Node& node, Self& self) {
+            node["x"] % self.x;
         }
     };
     std::map<std::string, C> infos;
 
-    template <typename Node>
-    void serialize(Node& node) {
-        node["infos"] % infos;
+    template <typename Node, typename Self>
+    static void reflect(Node& node, Self& self) {
+        node["infos"] % self.infos;
     }
 };
 
@@ -77,12 +77,13 @@ TEST_CASE("test yaml deserialization of maps with structs", "[yaml][struct][std]
 }
 
 
+
 struct D {
     std::vector<int32_t> xs;
 
-    template <typename Node>
-    void serialize(Node& node) {
-        node % xs;
+    template <typename Node, typename Self>
+    static void reflect(Node& node, Self& self) {
+        node % self.xs;
     }
 };
 

@@ -40,9 +40,9 @@ struct FileCache {
         return std::get<Hash>(iter->second);
     }
 
-    template <typename Node>
-    void serialize(Node& node) {
-        node["files"]   % files;
+    template <typename Node, typename Self>
+    static void reflect(Node& node, Self& self) {
+        node["files"]   % self.files;
     }
 };
 
@@ -58,10 +58,10 @@ struct FileData {
         Hash hash;
         Value value;
 
-        template <typename Node>
-        void serialize(Node& node) {
-            node["hash"]  % hash;
-            node["value"] % value;
+        template <typename Node, typename Self>
+        static void reflect(Node& node, Self& self) {
+            node["hash"]  % self.hash;
+            node["value"] % self.value;
         }
     };
     template <typename ...Args>
@@ -86,9 +86,9 @@ struct FileData {
         return date.value;
     }
 
-    template <typename Node>
-    void serialize(Node& node) {
-        node["data"] % data;
+    template <typename Node, typename Self>
+    static void reflect(Node& node, Self& self) {
+        node["data"] % self.data;
     }
 
 };
@@ -119,18 +119,18 @@ struct FileInfo {
         : path{std::move(_path)}
     {}
 
-    template <typename Node>
-    void serialize(Node& node) {
-        node["path"]            % path;
-        node["outputFiles"]     % outputFiles;
-        node["modTime"]         % modTime;
-        node["hash"]            % hash;
-        node["compilable"]      % compilable;
-        node["needRecompiling"] % needRecompiling;
-        node["dependencies"]    % dependencies;
-        node["compileTime"]     % compileTime;
-        node["hasWarnings"]     % hasWarnings;
-        node["compilerHash"]    % compilerHash;
+    template <typename Node, typename Self>
+    static void reflect(Node& node, Self& self) {
+        node["path"]            % self.path;
+        node["outputFiles"]     % self.outputFiles;
+        node["modTime"]         % self.modTime;
+        node["hash"]            % self.hash;
+        node["compilable"]      % self.compilable;
+        node["needRecompiling"] % self.needRecompiling;
+        node["dependencies"]    % self.dependencies;
+        node["compileTime"]     % self.compileTime;
+        node["hasWarnings"]     % self.hasWarnings;
+        node["compilerHash"]    % self.compilerHash;
     }
 
 
@@ -184,9 +184,9 @@ struct FileInfos {
         return iter->second;
     }
 
-    template <typename Node>
-    void serialize(Node& node) {
-        node["fileInfos"]   % fileInfos;
+    template <typename Node, typename Self>
+    static void reflect(Node& node, Self& self) {
+        node["fileInfos"]   % self.fileInfos;
     }
 };
 

@@ -2,8 +2,8 @@
 #include <flattensObjectsNeatly/flattensObjectsNeatly.h>
 
 struct A {
-    template <typename Node>
-    void serialize(Node& node) {
+    template <typename Node, typename Self>
+    static void reflect(Node& node, Self& self) {
     }
 };
 

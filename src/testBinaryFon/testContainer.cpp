@@ -596,10 +596,10 @@ TEST_CASE("test binary deserialization of std::filesystem::file_time_type", "[bi
         std::filesystem::file_time_type modTime{};
         T                               value{};
 
-        template <typename Node>
-        void serialize(Node& node) {
-            node["modTime"] % modTime;
-            node["value"]   % value;
+        template <typename Node, typename Self>
+        static void reflect(Node& node, Self& self) {
+            node["modTime"] % self.modTime;
+            node["value"]   % self.value;
         }
     };
 

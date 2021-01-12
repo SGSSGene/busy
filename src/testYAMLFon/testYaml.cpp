@@ -6,9 +6,9 @@ namespace {
 struct B {
     YAML::Node node;
 
-    template <typename Node>
-    void serialize(Node& _node) {
-        _node["node"] % node;
+    template <typename Node, typename Self>
+    static void reflect(Node& _node, Self& self) {
+        _node["node"] % self.node;
     }
 };
 

@@ -8,6 +8,16 @@ namespace fon {
 enum class ctor : uint8_t {};
 
 template <typename Node, typename T>
+concept has_ser_v = requires(Node node, T t) {
+    { t.serialize(node) };
+};
+
+template <typename Node, typename T>
+concept has_reflect_v = requires(Node node, T t) {
+    { T::reflect(node, t) };
+};
+
+/*template <typename Node, typename T>
 struct has_serialize_function {
 private:
     template <typename U>
@@ -22,7 +32,7 @@ public:
 
 
 template <typename Node, typename T>
-constexpr static bool has_ser_v = has_serialize_function<Node, T>::value;
+constexpr static bool has_ser_v = requires (has_serialize_function<Node, T>);*/
 
 // use as is_same_base<std::vector, T>::type
 template <template <typename...> typename T1, typename T2>
