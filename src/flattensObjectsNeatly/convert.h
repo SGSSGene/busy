@@ -31,7 +31,7 @@ enum class Type {
 };
 
 // converter functions
-template <typename Node, typename T, class Enable=void>
+template <typename Node, typename T>
 struct convert;
 
 // deduction guide
@@ -47,17 +47,11 @@ struct convert<Node, std::string_view> {
 };
 
 
-// value types int, string, double, etc
-template <typename Node>
-struct convert<Node, std::string> {
-    static constexpr Type type = Type::Value;
-    struct Infos {};
+template<typename T>
+concept ValueTypeConcept = std::is_arithmetic_v<T> or std::is_same_v<std::string, T>;
 
-    convert(Node&, std::string&) {}
-};
-
-template <typename Node, typename T>
-struct convert<Node, T, typename std::enable_if_t<std::is_arithmetic_v<T>>> {
+template <typename Node, ValueTypeConcept T>
+struct convert<Node, T> {
     static constexpr Type type = Type::Value;
     struct Infos {};
 
@@ -66,8 +60,11 @@ struct convert<Node, T, typename std::enable_if_t<std::is_arithmetic_v<T>>> {
 
 
 // convertible
-template <typename Node, typename T>
-struct convert<Node, T, typename std::enable_if_t<std::is_enum_v<T>>> {
+template <typename T>
+concept EnumConcept = std::is_enum_v<T>;
+
+template <typename Node, EnumConcept T>
+struct convert<Node, T> {
     static constexpr Type type = Type::Convertible;
     struct Infos {
         template <typename Node2>
@@ -88,7 +85,8 @@ constexpr static bool is_sequence_v = is_any_of_v<C<T>,
     std::vector<T>, std::list<T>, std::deque<T>, std::forward_list<T>>;
 
 template <typename Node, typename T, template <typename...> typename C>
-struct convert<Node, C<T>, typename std::enable_if_t<is_sequence_v<C, T>>> {
+requires is_sequence_v<C, T>
+struct convert<Node, C<T>> {
     static constexpr Type type = Type::List;
     struct Infos {
         using Key   = size_t;
@@ -169,7 +167,8 @@ constexpr static bool is_set_v = is_any_of_v<C<T>,
 
 
 template <typename Node, typename T, template <typename...> typename C>
-struct convert<Node, C<T>, typename std::enable_if_t<is_set_v<C, T>>> {
+requires is_set_v<C, T>
+struct convert<Node, C<T>> {
     static constexpr Type type = Type::List;
     struct Infos {
         using Key   = size_t;
@@ -209,7 +208,8 @@ constexpr static bool is_map_v = is_any_of_v<C<Key, T>,
     std::map<Key, T>, std::unordered_map<Key, T>>;
 
 template <typename Node, typename TKey, typename T, template <typename...> typename C>
-struct convert<Node, C<TKey, T>, typename std::enable_if_t<is_map_v<C, TKey, T>>> {
+requires is_map_v<C, TKey, T>
+struct convert<Node, C<TKey, T>> {
     static constexpr Type type = Type::Map;
     struct Infos {
         using Key   = TKey;
@@ -278,7 +278,8 @@ struct Visitor {
 
 // object types
 template <typename Node, typename T>
-struct convert<Node, T, typename std::enable_if_t<has_ser_v<Node, T>>> {
+requires has_ser_v<Node, T>
+struct convert<Node, T> {
     static constexpr Type type = Type::Object;
     struct Infos {
         template <typename L1, typename L2>
@@ -295,7 +296,8 @@ struct convert<Node, T, typename std::enable_if_t<has_ser_v<Node, T>>> {
 };
 
 template <typename Node, typename T>
-struct convert<Node, T, typename std::enable_if_t<has_reflect_v<Node, T>>> {
+requires has_reflect_v<Node, T>
+struct convert<Node, T> {
     static constexpr Type type = Type::Object;
     struct Infos {
         template <typename L1, typename L2>
@@ -303,7 +305,6 @@ struct convert<Node, T, typename std::enable_if_t<has_reflect_v<Node, T>>> {
             auto visitor = helper::Visitor{l1, l2};
             std::decay_t<T>::reflect(visitor, obj);
         };
-
     };
 
     convert(Node& node, T& obj) {
