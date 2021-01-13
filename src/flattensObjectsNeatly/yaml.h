@@ -43,14 +43,14 @@ auto access_key(YAML::Node root, Node& node) {
 
 template <typename T>
 auto serialize(T const& _input, YAML::Node start = {}) -> YAML::Node {
-    auto& input = const_cast<T&>(_input);
+    auto& input = _input;
 
     YAML::Node root;
     root[""] = start; // we need a level of indirection, so the ref mechanism of yaml-cpp works properly
 
     std::map<void*, std::string> serializedShared; // helps tracking which shared ptr have already been serialized
 
-    fon::visit([&]<typename Node, typename ValueT>(Node& node, ValueT& obj) {
+    fon::visit([&]<typename Node, typename ValueT>(Node& node, ValueT const& obj) {
         auto top = access_key(root[""], node);
 
         if constexpr (std::is_same_v<YAML::Node, ValueT>) {
@@ -120,7 +120,7 @@ auto serialize(T const& _input, YAML::Node start = {}) -> YAML::Node {
 struct yaml_error : std::runtime_error {
     yaml_error(std::string s, YAML::Node const& node)
         : runtime_error(s + " in line " + std::to_string(node.Mark().line) + ":" + std::to_string(node.Mark().column) + " (" + std::to_string(node.Mark().pos) + ")")
-    {}    
+    {}
 };
 
 template <typename T>

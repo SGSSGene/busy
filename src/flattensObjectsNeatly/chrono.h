@@ -17,8 +17,13 @@ struct convert<Node, std::chrono::time_point<Clock, Duration>> {
             node % val;
             obj = std::chrono::time_point<Clock, Duration>(Duration(val));
         }
+        template <typename Node2>
+        static void convert(Node2& node, std::chrono::time_point<Clock, Duration> const& obj) {
+            auto val = obj.time_since_epoch().count();
+            node % val;
+        }
     };
-    convert(Node&, std::chrono::time_point<Clock, Duration>&) {}
+    convert(Node&, std::chrono::time_point<Clock, Duration> const&) {}
 };
 
 template <typename Node, class Rep, class Period>
@@ -31,8 +36,13 @@ struct convert<Node, std::chrono::duration<Rep, Period>> {
             node % val;
             obj = std::chrono::duration<Rep, Period>(val);
         }
+        template <typename Node2>
+        static void convert(Node2& node, std::chrono::duration<Rep, Period> const& obj) {
+            auto val = obj.count();
+            node % val;
+        }
     };
-    convert(Node&, std::chrono::duration<Rep, Period>&) {}
+    convert(Node&, std::chrono::duration<Rep, Period> const&) {}
 };
 
 

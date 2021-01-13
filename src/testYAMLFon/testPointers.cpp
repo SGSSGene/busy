@@ -14,7 +14,6 @@ struct A {
     }
 };
 
-
 TEST_CASE("test yaml serialization of raw pointers", "[yaml][raw][pointer][serialize]") {
     auto data = A{{10, 20, 30}};
     data.ptr = &data.xs[1];

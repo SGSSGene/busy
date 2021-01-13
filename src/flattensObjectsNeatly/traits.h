@@ -17,23 +17,6 @@ concept has_reflect_v = requires(Node node, T t) {
     { T::reflect(node, t) };
 };
 
-/*template <typename Node, typename T>
-struct has_serialize_function {
-private:
-    template <typename U>
-    static auto test(int) -> decltype(std::declval<U>().serialize(std::declval<typename std::add_lvalue_reference<Node>::type>()), std::true_type());
-
-    template <typename>
-    static std::false_type test(...);
-public:
-    using type = decltype(test<T>(int(0)));
-    enum { value = type::value };
-};
-
-
-template <typename Node, typename T>
-constexpr static bool has_ser_v = requires (has_serialize_function<Node, T>);*/
-
 // use as is_same_base<std::vector, T>::type
 template <template <typename...> typename T1, typename T2>
 struct is_same_base : std::false_type {};

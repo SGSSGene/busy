@@ -36,6 +36,7 @@ struct convert;
 
 // deduction guide
 template<typename Node, typename T> convert(Node&, T&) -> convert<Node, T>;
+template<typename Node, typename T> convert(Node&, T const&) -> convert<Node, T>;
 
 // special "none" types
 template <typename Node>
@@ -55,7 +56,7 @@ struct convert<Node, T> {
     static constexpr Type type = Type::Value;
     struct Infos {};
 
-    convert(Node&, T&) {}
+    convert(Node&, T const&) {}
 };
 
 
@@ -74,8 +75,15 @@ struct convert<Node, T> {
             node % val;
             obj = T {val};
         }
+        template <typename Node2>
+        static void convert(Node2& node, T const& obj) {
+            using UT = std::underlying_type_t<T>;
+            auto val = static_cast<UT>(obj);
+            node % val;
+        }
+
     };
-    convert(Node&, T&) {}
+    convert(Node&, T const&) {}
 };
 
 
@@ -100,6 +108,15 @@ struct convert<Node, C<T>> {
                 ++i;
             }
         };
+        template <typename L>
+        static void range(C<T> const& obj, L const& l) {
+            std::size_t i{0};
+            for (auto& e : obj) {
+                l(i, e);
+                ++i;
+            }
+        };
+
 
         static void reserve(C<T>& obj, size_t size) {
             if constexpr (std::is_same_v<std::vector<T>, C<T>>) {
@@ -129,6 +146,12 @@ struct convert<Node, C<T>> {
             node[i] % *iter;
         }
     }
+    convert(Node& node, C<T> const& obj) {
+        auto iter {begin(obj)};
+        for (size_t i{0}; iter != end(obj); ++i, ++iter) {
+            node[i] % *iter;
+        }
+    }
 };
 
 template <typename Node, typename T, size_t N>
@@ -142,7 +165,15 @@ struct convert<Node, std::array<T, N>> {
             for (std::size_t i{0}; i < N; ++i) {
                 l(i, obj[i]);
             }
-        };
+        }
+        template <typename L>
+        static void range(std::array<T, N> const& obj, L const& l) {
+            std::size_t i{0};
+            for (std::size_t i{0}; i < N; ++i) {
+                l(i, obj[i]);
+            }
+        }
+
 
         static void reserve(std::array<T, N>&, size_t) {}
         template <typename N2>
@@ -159,6 +190,12 @@ struct convert<Node, std::array<T, N>> {
             node[i] % obj.at(i);
         }
     }
+    convert(Node& node, std::array<T, N> const& obj) {
+        for (size_t i{0}; i < N; ++i) {
+            node[i] % obj.at(i);
+        }
+    }
+
 };
 
 template <template <typename...> typename C, typename T>
@@ -176,11 +213,18 @@ struct convert<Node, C<T>> {
         static void range(C<T>& obj, L const& l) {
             auto iter {begin(obj)};
             for (size_t i{0}; iter != end(obj); ++i, ++iter) {
-                //!TODO this const cast needs to go away
-                auto& entry = const_cast<T&>(*iter);
-                l(i, entry);
+                l(i, *iter);
             }
         }
+
+        template <typename L>
+        static void range(C<T> const& obj, L const& l) {
+            auto iter {begin(obj)};
+            for (size_t i{0}; iter != end(obj); ++i, ++iter) {
+                l(i, *iter);
+            }
+        }
+
 
         static void reserve(C<T>&, size_t) {}
 
@@ -195,9 +239,14 @@ struct convert<Node, C<T>> {
     convert(Node& node, C<T>& obj) {
         auto iter {begin(obj)};
         for (size_t i{0}; iter != end(obj); ++i, ++iter) {
-            //!TODO this const cast needs to go away
-            auto& entry = const_cast<T&>(*iter);
-            node[i] % entry;
+            node[i] % *iter;
+        }
+    }
+
+    convert(Node& node, C<T> const& obj) {
+        auto iter {begin(obj)};
+        for (size_t i{0}; iter != end(obj); ++i, ++iter) {
+            node[i] % *iter;
         }
     }
 };
@@ -221,6 +270,14 @@ struct convert<Node, C<TKey, T>> {
             }
         };
 
+        template <typename L>
+        static void range(C<TKey, T> const& obj, L const& l) {
+            for (auto& [key, value] : obj) {
+                l(key, value);
+            }
+        };
+
+
         static void reserve(C<TKey, T>& obj, size_t size) {
             (void)obj;
             (void)size;
@@ -233,6 +290,12 @@ struct convert<Node, C<TKey, T>> {
         }
     };
     convert(Node& node, C<TKey, T>& obj) {
+        for (auto& [key, value] : obj) {
+            node[key] % value;
+        }
+    }
+
+    convert(Node& node, C<TKey, T> const& obj) {
         for (auto& [key, value] : obj) {
             node[key] % value;
         }
@@ -288,9 +351,19 @@ struct convert<Node, T> {
             obj.serialize(visitor);
         };
 
+        template <typename L1, typename L2>
+        static auto range(T const& obj, L1 const& l1, L2 const& l2) {
+            auto visitor = helper::Visitor{l1, l2};
+            obj.serialize(visitor);
+        };
+
+
     };
 
     convert(Node& node, T& obj) {
+        obj.serialize(node);
+    }
+    convert(Node& node, T const& obj) {
         obj.serialize(node);
     }
 };
@@ -304,12 +377,22 @@ struct convert<Node, T> {
         static auto range(T& obj, L1 const& l1, L2 const& l2) {
             auto visitor = helper::Visitor{l1, l2};
             std::decay_t<T>::reflect(visitor, obj);
+        }
+        template <typename L1, typename L2>
+        static auto range(T const& obj, L1 const& l1, L2 const& l2) {
+            auto visitor = helper::Visitor{l1, l2};
+            std::decay_t<T>::reflect(visitor, obj);
         };
+
     };
 
     convert(Node& node, T& obj) {
         std::decay_t<T>::reflect(node, obj);
     }
+    convert(Node& node, T const& obj) {
+        std::decay_t<T>::reflect(node, obj);
+    }
+
 };
 
 
@@ -324,7 +407,15 @@ struct convert<Node, std::optional<T>> {
                 int i{0};
                 l(i, *obj);
             }
-        };
+        }
+        template <typename L>
+        static void range(std::optional<T> const& obj, L l) {
+            if (obj.has_value()) {
+                int i{0};
+                l(i, *obj);
+            }
+        }
+
 
         static void reserve(std::optional<T>& obj, size_t i) {
             if (i == 0) {
@@ -347,6 +438,12 @@ struct convert<Node, std::optional<T>> {
             node[0] % obj.value();
         }
     }
+    convert(Node& node, std::optional<T> const& obj) {
+        if (obj.has_value()) {
+            node[0] % obj.value();
+        }
+    }
+
 };
 
 template <size_t TN>
@@ -361,6 +458,14 @@ void l_apply(std::variant<Args...>& obj, L const& l) {
         l_apply<N+1>(obj, l);
     }
 }
+template <size_t N = 0, typename L, typename ...Args>
+void l_apply(std::variant<Args...> const& obj, L const& l) {
+    if constexpr(N < sizeof...(Args)) {
+        l(l_apply_index<N>{});
+        l_apply<N+1>(obj, l);
+    }
+}
+
 
 
 template <typename Node, typename ...Args>
@@ -377,6 +482,16 @@ struct convert<Node, std::variant<Args...>> {
                 }
             });
         };
+        template <typename L>
+        static void range(std::variant<Args...> const& obj, L l) {
+            l_apply(obj, [&]<typename Index>(Index index) {
+                if (Index::N == obj.index()) {
+                    size_t i = obj.index();
+                    l(i, std::get<Index::N>(obj));
+                }
+            });
+        };
+
 
         static void reserve(std::variant<Args...>&, size_t) {}
 
@@ -402,6 +517,15 @@ struct convert<Node, std::variant<Args...>> {
             }
         });
     }
+
+    convert(Node& node, std::variant<Args...> const& obj) {
+        l_apply(obj, [&]<typename Index>(Index index) {
+            if (Index::N == obj.index()) {
+                node[obj.index()] % std::get<Index::N>(obj);
+            }
+        });
+    }
+
 };
 
 
@@ -417,6 +541,14 @@ struct convert<Node, std::pair<T1, T2>> {
             l(++i, obj.first);
             l(++i, obj.second);
         };
+
+        template <typename L>
+        static void range(std::pair<T1, T2> const& obj, L l) {
+            int i{-1};
+            l(++i, obj.first);
+            l(++i, obj.second);
+        };
+
 
         static void reserve(std::pair<T1, T2>&, size_t) {}
 
@@ -437,10 +569,24 @@ struct convert<Node, std::pair<T1, T2>> {
         node[0] % obj.first;
         node[1] % obj.second;
     }
+
+    convert(Node& node, std::pair<T1, T2> const& obj) {
+        node[0] % obj.first;
+        node[1] % obj.second;
+    }
+
 };
 
 template <size_t N = 0, typename L, typename ...Args>
 void l_apply(std::tuple<Args...>& obj, L const& l) {
+    if constexpr(N < sizeof...(Args)) {
+        size_t n = N;
+        l(n, std::get<N>(obj));
+        l_apply<N+1>(obj, l);
+    }
+}
+template <size_t N = 0, typename L, typename ...Args>
+void l_apply(std::tuple<Args...> const& obj, L const& l) {
     if constexpr(N < sizeof...(Args)) {
         size_t n = N;
         l(n, std::get<N>(obj));
@@ -458,7 +604,13 @@ struct convert<Node, std::tuple<Args...>> {
         template <typename L>
         static void range(std::tuple<Args...>& obj, L l) {
             l_apply(obj, l);
-        };
+        }
+
+        template <typename L>
+        static void range(std::tuple<Args...> const& obj, L l) {
+            l_apply(obj, l);
+        }
+
 
         static void reserve(std::tuple<Args...>&, size_t) {}
         template <typename N2>
@@ -479,6 +631,13 @@ struct convert<Node, std::tuple<Args...>> {
             node[i] % value;
         });
     }
+
+    convert(Node& node, std::tuple<Args...> const& obj) {
+        l_apply(obj, [&](size_t i, auto& value) {
+            node[i] % value;
+        });
+    }
+
 };
 
 
@@ -496,6 +655,12 @@ struct convert<Node, T*> {
             node % *obj;
         }
     }
+    convert(Node& node, T* const& obj) {
+        if (obj) {
+            node % *obj;
+        }
+    }
+
 };
 
 template <typename Node, typename T>
@@ -509,6 +674,12 @@ struct convert<Node, std::unique_ptr<T>> {
             node % *obj;
         }
     }
+    convert(Node& node, std::unique_ptr<T> const& obj) {
+        if (obj) {
+            node % *obj;
+        }
+    }
+
 };
 
 template <typename Node, typename T>
@@ -522,6 +693,12 @@ struct convert<Node, std::shared_ptr<T>> {
             node % *obj;
         }
     }
+    convert(Node& node, std::shared_ptr<T> const& obj) {
+        if (obj) {
+            node % *obj;
+        }
+    }
+
 };
 
 }

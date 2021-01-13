@@ -94,7 +94,7 @@ public:
 
     template<typename T>
     void operator% (T& t) const {
-        auto wrapper = NodeWrapper<Node, T>{*this};
+        auto wrapper = NodeWrapper<Node, std::remove_const_t<T>>{*this};
         cb(wrapper, t);
     }
 

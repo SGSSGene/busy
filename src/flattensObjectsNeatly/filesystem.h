@@ -22,8 +22,14 @@ struct convert<Node, std::filesystem::path> {
             node % str;
             path = str;
         }
+        template <typename Node2>
+        static void convert(Node2& node, std::filesystem::path const& path) {
+            std::string str = path.string();
+            node % str;
+        }
+
     };
-    convert(Node&, std::filesystem::path&) {}
+    convert(Node&, std::filesystem::path const&) {}
 };
 
 }

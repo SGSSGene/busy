@@ -16,7 +16,7 @@ template <typename F, typename Cb, typename T>
 void filter(Cb cb, T& obj) {
     visit([&]<typename Node, typename Value>(Node& node, Value& obj) {
 
-        if constexpr(std::is_base_of_v<F, Value> or std::is_same_v<F, Value>) {
+        if constexpr(std::is_base_of_v<F, Value> or std::is_same_v<F, std::remove_const_t<Value>>) {
             cb(node, obj);
         } else if constexpr(std::is_polymorphic_v<F> and std::is_polymorphic_v<Value>) {
             auto* newObj = dynamic_cast<F*>(&obj);
@@ -71,6 +71,29 @@ void findPath(T& input, BaseType* target, L l) {
         }
     }, input);
 }
+
+template <typename BaseType, typename T, typename L>
+void findPath(T const& input, BaseType* target, L l) {
+    bool found{false};
+
+    filter<BaseType>([&]<typename Node>(Node& node, BaseType const& obj) {
+        if (found) {
+            return;
+        }
+
+        if (&obj == target) {
+            l(node);
+            found = true;
+            return;
+        }
+
+        if constexpr (Node::is_owner) {
+            fon::convert(node, obj);
+        }
+    }, input);
+}
+
+
 template <typename BaseType, typename ...Args, typename T, typename L>
 void findObj(T& input, std::string const& path, L l) {
     bool found{false};
@@ -90,6 +113,7 @@ void findObj(T& input, std::string const& path, L l) {
         }
     }, input);
 }
+
 
 
 }
