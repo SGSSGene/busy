@@ -93,30 +93,21 @@ constexpr static bool is_sequence_v = is_any_of_v<C<T>,
     std::vector<T>, std::list<T>, std::deque<T>, std::forward_list<T>>;
 
 template <typename Node, typename T, template <typename...> typename C>
-requires is_sequence_v<C, T>
+    requires is_sequence_v<C, T>
 struct convert<Node, C<T>> {
     static constexpr Type type = Type::List;
     struct Infos {
         using Key   = size_t;
         using Value = T;
 
-        template <typename L>
-        static void range(C<T>& obj, L const& l) {
+        template <typename L, typename Self>
+        static void range(Self& obj, L const& l) {
             std::size_t i{0};
             for (auto& e : obj) {
                 l(i, e);
                 ++i;
             }
         };
-        template <typename L>
-        static void range(C<T> const& obj, L const& l) {
-            std::size_t i{0};
-            for (auto& e : obj) {
-                l(i, e);
-                ++i;
-            }
-        };
-
 
         static void reserve(C<T>& obj, size_t size) {
             if constexpr (std::is_same_v<std::vector<T>, C<T>>) {
@@ -140,13 +131,8 @@ struct convert<Node, C<T>> {
         }
     };
 
-    convert(Node& node, C<T>& obj) {
-        auto iter {begin(obj)};
-        for (size_t i{0}; iter != end(obj); ++i, ++iter) {
-            node[i] % *iter;
-        }
-    }
-    convert(Node& node, C<T> const& obj) {
+    template <typename Self>
+    convert(Node& node, Self& obj) {
         auto iter {begin(obj)};
         for (size_t i{0}; iter != end(obj); ++i, ++iter) {
             node[i] % *iter;
@@ -159,21 +145,13 @@ struct convert<Node, std::array<T, N>> {
     static constexpr Type type = Type::List;
     struct Infos {
         using Key   = size_t;
-        template <typename L>
-        static void range(std::array<T, N>& obj, L const& l) {
+        template <typename L, typename Self>
+        static void range(Self& obj, L const& l) {
             std::size_t i{0};
             for (std::size_t i{0}; i < N; ++i) {
                 l(i, obj[i]);
             }
         }
-        template <typename L>
-        static void range(std::array<T, N> const& obj, L const& l) {
-            std::size_t i{0};
-            for (std::size_t i{0}; i < N; ++i) {
-                l(i, obj[i]);
-            }
-        }
-
 
         static void reserve(std::array<T, N>&, size_t) {}
         template <typename N2>
@@ -185,17 +163,12 @@ struct convert<Node, std::array<T, N>> {
         }
     };
 
-    convert(Node& node, std::array<T, N>& obj) {
+    template <typename Self>
+    convert(Node& node, Self& obj) {
         for (size_t i{0}; i < N; ++i) {
             node[i] % obj.at(i);
         }
     }
-    convert(Node& node, std::array<T, N> const& obj) {
-        for (size_t i{0}; i < N; ++i) {
-            node[i] % obj.at(i);
-        }
-    }
-
 };
 
 template <template <typename...> typename C, typename T>
@@ -204,27 +177,18 @@ constexpr static bool is_set_v = is_any_of_v<C<T>,
 
 
 template <typename Node, typename T, template <typename...> typename C>
-requires is_set_v<C, T>
+    requires is_set_v<C, T>
 struct convert<Node, C<T>> {
     static constexpr Type type = Type::List;
     struct Infos {
         using Key   = size_t;
-        template <typename L>
-        static void range(C<T>& obj, L const& l) {
+        template <typename L, typename Self>
+        static void range(Self& obj, L const& l) {
             auto iter {begin(obj)};
             for (size_t i{0}; iter != end(obj); ++i, ++iter) {
                 l(i, *iter);
             }
         }
-
-        template <typename L>
-        static void range(C<T> const& obj, L const& l) {
-            auto iter {begin(obj)};
-            for (size_t i{0}; iter != end(obj); ++i, ++iter) {
-                l(i, *iter);
-            }
-        }
-
 
         static void reserve(C<T>&, size_t) {}
 
@@ -236,14 +200,8 @@ struct convert<Node, C<T>> {
         }
     };
 
-    convert(Node& node, C<T>& obj) {
-        auto iter {begin(obj)};
-        for (size_t i{0}; iter != end(obj); ++i, ++iter) {
-            node[i] % *iter;
-        }
-    }
-
-    convert(Node& node, C<T> const& obj) {
+    template <typename Self>
+    convert(Node& node, Self& obj) {
         auto iter {begin(obj)};
         for (size_t i{0}; iter != end(obj); ++i, ++iter) {
             node[i] % *iter;
@@ -257,26 +215,18 @@ constexpr static bool is_map_v = is_any_of_v<C<Key, T>,
     std::map<Key, T>, std::unordered_map<Key, T>>;
 
 template <typename Node, typename TKey, typename T, template <typename...> typename C>
-requires is_map_v<C, TKey, T>
+    requires is_map_v<C, TKey, T>
 struct convert<Node, C<TKey, T>> {
     static constexpr Type type = Type::Map;
     struct Infos {
         using Key   = TKey;
         using Value = T;
-        template <typename L>
-        static void range(C<TKey, T>& obj, L const& l) {
+        template <typename L, typename Self>
+        static void range(Self& obj, L const& l) {
             for (auto& [key, value] : obj) {
                 l(key, value);
             }
-        };
-
-        template <typename L>
-        static void range(C<TKey, T> const& obj, L const& l) {
-            for (auto& [key, value] : obj) {
-                l(key, value);
-            }
-        };
-
+        }
 
         static void reserve(C<TKey, T>& obj, size_t size) {
             (void)obj;
@@ -289,13 +239,8 @@ struct convert<Node, C<TKey, T>> {
             obj.emplace(std::move(key), std::move(value));
         }
     };
-    convert(Node& node, C<TKey, T>& obj) {
-        for (auto& [key, value] : obj) {
-            node[key] % value;
-        }
-    }
-
-    convert(Node& node, C<TKey, T> const& obj) {
+    template <typename Self>
+    convert(Node& node, Self& obj) {
         for (auto& [key, value] : obj) {
             node[key] % value;
         }
@@ -341,58 +286,39 @@ struct Visitor {
 
 // object types
 template <typename Node, typename T>
-requires has_ser_v<Node, T>
+    requires has_ser_v<Node, T>
 struct convert<Node, T> {
     static constexpr Type type = Type::Object;
     struct Infos {
-        template <typename L1, typename L2>
-        static auto range(T& obj, L1 const& l1, L2 const& l2) {
+        template <typename L1, typename L2, typename Self>
+        static auto range(Self& obj, L1 const& l1, L2 const& l2) {
             auto visitor = helper::Visitor{l1, l2};
             obj.serialize(visitor);
-        };
-
-        template <typename L1, typename L2>
-        static auto range(T const& obj, L1 const& l1, L2 const& l2) {
-            auto visitor = helper::Visitor{l1, l2};
-            obj.serialize(visitor);
-        };
-
-
+        }
     };
 
-    convert(Node& node, T& obj) {
-        obj.serialize(node);
-    }
-    convert(Node& node, T const& obj) {
+    template<typename Self>
+    convert(Node& node, Self& obj) {
         obj.serialize(node);
     }
 };
 
 template <typename Node, typename T>
-requires has_reflect_v<Node, T>
+    requires has_reflect_v<Node, T>
 struct convert<Node, T> {
     static constexpr Type type = Type::Object;
     struct Infos {
-        template <typename L1, typename L2>
-        static auto range(T& obj, L1 const& l1, L2 const& l2) {
+        template <typename L1, typename L2, typename Self>
+        static auto range(Self& obj, L1 const& l1, L2 const& l2) {
             auto visitor = helper::Visitor{l1, l2};
-            std::decay_t<T>::reflect(visitor, obj);
+            T::reflect(visitor, obj);
         }
-        template <typename L1, typename L2>
-        static auto range(T const& obj, L1 const& l1, L2 const& l2) {
-            auto visitor = helper::Visitor{l1, l2};
-            std::decay_t<T>::reflect(visitor, obj);
-        };
-
     };
 
-    convert(Node& node, T& obj) {
-        std::decay_t<T>::reflect(node, obj);
+    template <typename Self>
+    convert(Node& node, Self& obj) {
+        Self::reflect(node, obj);
     }
-    convert(Node& node, T const& obj) {
-        std::decay_t<T>::reflect(node, obj);
-    }
-
 };
 
 
@@ -401,21 +327,13 @@ struct convert<Node, std::optional<T>> {
     static constexpr Type type = Type::List;
     struct Infos {
         using Key   = size_t;
-        template <typename L>
-        static void range(std::optional<T>& obj, L l) {
+        template <typename L, typename Self>
+        static void range(Self& obj, L l) {
             if (obj.has_value()) {
                 int i{0};
                 l(i, *obj);
             }
         }
-        template <typename L>
-        static void range(std::optional<T> const& obj, L l) {
-            if (obj.has_value()) {
-                int i{0};
-                l(i, *obj);
-            }
-        }
-
 
         static void reserve(std::optional<T>& obj, size_t i) {
             if (i == 0) {
@@ -433,17 +351,12 @@ struct convert<Node, std::optional<T>> {
         }
     };
 
-    convert(Node& node, std::optional<T>& obj) {
+    template <typename Self>
+    convert(Node& node, Self& obj) {
         if (obj.has_value()) {
             node[0] % obj.value();
         }
     }
-    convert(Node& node, std::optional<T> const& obj) {
-        if (obj.has_value()) {
-            node[0] % obj.value();
-        }
-    }
-
 };
 
 template <size_t TN>
@@ -473,25 +386,15 @@ struct convert<Node, std::variant<Args...>> {
     static constexpr Type type = Type::Map;
     struct Infos {
         using Key   = size_t;
-        template <typename L>
-        static void range(std::variant<Args...>& obj, L l) {
+        template <typename L, typename Self>
+        static void range(Self& obj, L l) {
             l_apply(obj, [&]<typename Index>(Index index) {
                 if (Index::N == obj.index()) {
                     size_t i = obj.index();
                     l(i, std::get<Index::N>(obj));
                 }
             });
-        };
-        template <typename L>
-        static void range(std::variant<Args...> const& obj, L l) {
-            l_apply(obj, [&]<typename Index>(Index index) {
-                if (Index::N == obj.index()) {
-                    size_t i = obj.index();
-                    l(i, std::get<Index::N>(obj));
-                }
-            });
-        };
-
+        }
 
         static void reserve(std::variant<Args...>&, size_t) {}
 
@@ -510,22 +413,14 @@ struct convert<Node, std::variant<Args...>> {
         }
     };
 
-    convert(Node& node, std::variant<Args...>& obj) {
+    template <typename Self>
+    convert(Node& node, Self& obj) {
         l_apply(obj, [&]<typename Index>(Index index) {
             if (Index::N == obj.index()) {
                 node[obj.index()] % std::get<Index::N>(obj);
             }
         });
     }
-
-    convert(Node& node, std::variant<Args...> const& obj) {
-        l_apply(obj, [&]<typename Index>(Index index) {
-            if (Index::N == obj.index()) {
-                node[obj.index()] % std::get<Index::N>(obj);
-            }
-        });
-    }
-
 };
 
 
@@ -535,20 +430,12 @@ struct convert<Node, std::pair<T1, T2>> {
     static constexpr Type type = Type::List;
     struct Infos {
         using Key   = size_t;
-        template <typename L>
-        static void range(std::pair<T1, T2>& obj, L l) {
+        template <typename L, typename Self>
+        static void range(Self& obj, L l) {
             int i{-1};
             l(++i, obj.first);
             l(++i, obj.second);
         };
-
-        template <typename L>
-        static void range(std::pair<T1, T2> const& obj, L l) {
-            int i{-1};
-            l(++i, obj.first);
-            l(++i, obj.second);
-        };
-
 
         static void reserve(std::pair<T1, T2>&, size_t) {}
 
@@ -565,16 +452,11 @@ struct convert<Node, std::pair<T1, T2>> {
         }
     };
 
-    convert(Node& node, std::pair<T1, T2>& obj) {
+    template <typename Self>
+    convert(Node& node, Self& obj) {
         node[0] % obj.first;
         node[1] % obj.second;
     }
-
-    convert(Node& node, std::pair<T1, T2> const& obj) {
-        node[0] % obj.first;
-        node[1] % obj.second;
-    }
-
 };
 
 template <size_t N = 0, typename L, typename ...Args>
@@ -601,18 +483,13 @@ struct convert<Node, std::tuple<Args...>> {
     static constexpr Type type = Type::List;
     struct Infos {
         using Key   = size_t;
-        template <typename L>
-        static void range(std::tuple<Args...>& obj, L l) {
+        template <typename L, typename Self>
+        static void range(Self& obj, L l) {
             l_apply(obj, l);
         }
-
-        template <typename L>
-        static void range(std::tuple<Args...> const& obj, L l) {
-            l_apply(obj, l);
-        }
-
 
         static void reserve(std::tuple<Args...>&, size_t) {}
+
         template <typename N2>
         static auto emplace(N2& node, std::tuple<Args...>& obj, Key key) {
             if (key < 0 or key >= sizeof...(Args)) {
@@ -626,21 +503,13 @@ struct convert<Node, std::tuple<Args...>> {
         }
     };
 
-    convert(Node& node, std::tuple<Args...>& obj) {
+    template <typename Self>
+    convert(Node& node, Self& obj) {
         l_apply(obj, [&](size_t i, auto& value) {
             node[i] % value;
         });
     }
-
-    convert(Node& node, std::tuple<Args...> const& obj) {
-        l_apply(obj, [&](size_t i, auto& value) {
-            node[i] % value;
-        });
-    }
-
 };
-
-
 
 
 // pointer types
@@ -650,17 +519,12 @@ struct convert<Node, T*> {
     struct Infos {
         using Value = T;
     };
-    convert(Node& node, T*& obj) {
+    template <typename Self>
+    convert(Node& node, Self& obj) {
         if (obj) {
             node % *obj;
         }
     }
-    convert(Node& node, T* const& obj) {
-        if (obj) {
-            node % *obj;
-        }
-    }
-
 };
 
 template <typename Node, typename T>
@@ -669,17 +533,12 @@ struct convert<Node, std::unique_ptr<T>> {
     struct Infos {
         using Value = T;
     };
-    convert(Node& node, std::unique_ptr<T>& obj) {
+    template <typename Self>
+    convert(Node& node, Self& obj) {
         if (obj) {
             node % *obj;
         }
     }
-    convert(Node& node, std::unique_ptr<T> const& obj) {
-        if (obj) {
-            node % *obj;
-        }
-    }
-
 };
 
 template <typename Node, typename T>
@@ -688,17 +547,12 @@ struct convert<Node, std::shared_ptr<T>> {
     struct Infos {
         using Value = T;
     };
-    convert(Node& node, std::shared_ptr<T>& obj) {
+    template <typename Self>
+    convert(Node& node, Self& obj) {
         if (obj) {
             node % *obj;
         }
     }
-    convert(Node& node, std::shared_ptr<T> const& obj) {
-        if (obj) {
-            node % *obj;
-        }
-    }
-
 };
 
 }
