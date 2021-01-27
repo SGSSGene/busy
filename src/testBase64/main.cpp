@@ -43,7 +43,7 @@ auto main() -> int {
 	assert(base64::encoded_valid("123") == false);
 	assert(base64::encoded_valid("123=") == true);
 	//!TODO more test cases to chck for invalid encodings
-	base64::decode("blub\/{}()-:");
+	base64::decode("blub\n{}()-:");
 
 	//!TODO use catch2 for testing
 
