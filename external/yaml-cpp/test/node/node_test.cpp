@@ -1,16 +1,58 @@
-#include "yaml-cpp/emitter.h"
-#include "yaml-cpp/node/emit.h"
 #include "yaml-cpp/node/node.h"
-#include "yaml-cpp/node/impl.h"
+#include "yaml-cpp/emitter.h"
 #include "yaml-cpp/node/convert.h"
-#include "yaml-cpp/node/iterator.h"
 #include "yaml-cpp/node/detail/impl.h"
+#include "yaml-cpp/node/emit.h"
+#include "yaml-cpp/node/impl.h"
+#include "yaml-cpp/node/iterator.h"
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
+#include <sstream>
+
+namespace {
+
+// malloc/free based allocator just for testing custom allocators on stl containers
+template <class T>
+class CustomAllocator : public std::allocator<T> {
+  public:
+    typedef std::size_t     size_type;
+    typedef std::ptrdiff_t  difference_type;
+    typedef T*              pointer;
+    typedef const T*        const_pointer;
+    typedef T&              reference;
+    typedef const T&        const_reference;
+    typedef T               value_type;
+    template<class U> struct rebind { typedef CustomAllocator<U> other; };
+    CustomAllocator() : std::allocator<T>() {}
+    CustomAllocator(const CustomAllocator& other) : std::allocator<T>(other) {}
+    template<class U> CustomAllocator(const CustomAllocator<U>& other) : std::allocator<T>(other) {}
+    ~CustomAllocator() {}
+    size_type max_size() const { return (std::numeric_limits<std::ptrdiff_t>::max)()/sizeof(T); }
+    pointer allocate(size_type num, const void* /*hint*/ = 0) {
+      if (num > std::size_t(-1) / sizeof(T)) throw std::bad_alloc();
+      return static_cast<pointer>(malloc(num * sizeof(T)));
+    }
+    void deallocate(pointer p, size_type /*num*/) { free(p); }
+};
+
+template <class T> using CustomVector = std::vector<T,CustomAllocator<T>>;
+template <class T> using CustomList = std::list<T,CustomAllocator<T>>;
+template <class K, class V, class C=std::less<K>> using CustomMap = std::map<K,V,C,CustomAllocator<std::pair<const K,V>>>;
+
+}  // anonymous namespace
+
 using ::testing::AnyOf;
 using ::testing::Eq;
+
+#define EXPECT_THROW_REPRESENTATION_EXCEPTION(statement, message) \
+  ASSERT_THROW(statement, RepresentationException);               \
+  try {                                                           \
+    statement;                                                    \
+  } catch (const RepresentationException& e) {                    \
+    EXPECT_EQ(e.msg, message);                                    \
+  }
 
 namespace YAML {
 namespace {
@@ -39,11 +81,123 @@ TEST(NodeTest, SimpleAppendSequence) {
   EXPECT_TRUE(node.IsSequence());
 }
 
+TEST(NodeTest, SequenceElementRemoval) {
+  Node node;
+  node[0] = "a";
+  node[1] = "b";
+  node[2] = "c";
+  node.remove(1);
+  EXPECT_TRUE(node.IsSequence());
+  EXPECT_EQ(2, node.size());
+  EXPECT_EQ("a", node[0].as<std::string>());
+  EXPECT_EQ("c", node[1].as<std::string>());
+}
+
+TEST(NodeTest, SequenceElementRemovalSizeCheck) {
+  Node node;
+  node[0] = "a";
+  node[1] = "b";
+  node[2] = "c";
+  EXPECT_EQ(3, node.size());
+  node.remove(1);
+  EXPECT_TRUE(node.IsSequence());
+  EXPECT_EQ(2, node.size());
+  EXPECT_EQ("a", node[0].as<std::string>());
+  EXPECT_EQ("c", node[1].as<std::string>());
+}
+
+TEST(NodeTest, SequenceFirstElementRemoval) {
+  Node node;
+  node[0] = "a";
+  node[1] = "b";
+  node[2] = "c";
+  node.remove(0);
+  EXPECT_TRUE(node.IsSequence());
+  EXPECT_EQ(2, node.size());
+  EXPECT_EQ("b", node[0].as<std::string>());
+  EXPECT_EQ("c", node[1].as<std::string>());
+}
+
+TEST(NodeTest, SequenceFirstElementRemovalSizeCheck) {
+  Node node;
+  node[0] = "a";
+  node[1] = "b";
+  node[2] = "c";
+  EXPECT_EQ(3, node.size());
+  node.remove(0);
+  EXPECT_TRUE(node.IsSequence());
+  EXPECT_EQ(2, node.size());
+  EXPECT_EQ("b", node[0].as<std::string>());
+  EXPECT_EQ("c", node[1].as<std::string>());
+}
+
+TEST(NodeTest, SequenceLastElementRemoval) {
+  Node node;
+  node[0] = "a";
+  node[1] = "b";
+  node[2] = "c";
+  node.remove(2);
+  EXPECT_TRUE(node.IsSequence());
+  EXPECT_EQ(2, node.size());
+  EXPECT_EQ("a", node[0].as<std::string>());
+  EXPECT_EQ("b", node[1].as<std::string>());
+}
+
+TEST(NodeTest, SequenceLastElementRemovalSizeCheck) {
+  Node node;
+  node[0] = "a";
+  node[1] = "b";
+  node[2] = "c";
+  EXPECT_EQ(3, node.size());
+  node.remove(2);
+  EXPECT_TRUE(node.IsSequence());
+  EXPECT_EQ(2, node.size());
+  EXPECT_EQ("a", node[0].as<std::string>());
+  EXPECT_EQ("b", node[1].as<std::string>());
+}
+
+TEST(NodeTest, NodeAssignment) {
+  Node node1;
+  Node node2;
+  node1[1] = 1;
+  node1[2] = 2;
+  node1[3] = 3;
+  node2 = node1;
+  EXPECT_EQ(node1, node2);
+  EXPECT_EQ(node1[1], node2[1]);
+  EXPECT_EQ(node1[2], node2[2]);
+  EXPECT_EQ(node1[3], node2[3]);
+}
+
+TEST(NodeTest, EqualRepresentationAfterMoveAssignment) {
+  Node node1;
+  Node node2;
+  std::ostringstream ss1, ss2;
+  node1["foo"] = "bar";
+  ss1 << node1;
+  node2["hello"] = "world";
+  node2 = std::move(node1);
+  ss2 << node2;
+  EXPECT_FALSE(node2["hello"]);
+  EXPECT_EQ("bar", node2["foo"].as<std::string>());
+  EXPECT_EQ(ss1.str(), ss2.str());
+}
+
 TEST(NodeTest, MapElementRemoval) {
   Node node;
   node["foo"] = "bar";
   node.remove("foo");
   EXPECT_TRUE(!node["foo"]);
+}
+
+TEST(NodeTest, MapIntegerElementRemoval) {
+  Node node;
+  node[1] = "hello";
+  node[2] = 'c';
+  node["foo"] = "bar";
+  EXPECT_TRUE(node.IsMap());
+  node.remove(1);
+  EXPECT_TRUE(node.IsMap());
 }
 
 TEST(NodeTest, SimpleAssignSequence) {
@@ -80,6 +234,32 @@ TEST(NodeTest, MapWithUndefinedValues) {
   EXPECT_EQ(2, node.size());
 }
 
+TEST(NodeTest, SeqIntoMap) {
+  Node node;
+  node[0] = "test";
+  node[1];
+  node[2] = "value";
+  EXPECT_TRUE(node.IsMap());
+  EXPECT_EQ("test", node[0].as<std::string>());
+  EXPECT_EQ("value", node[2].as<std::string>());
+  EXPECT_EQ(2, node.size());
+}
+
+TEST(NodeTest, RemoveUnassignedNode) {
+  Node node(NodeType::Map);
+  node["key"];
+  node.remove("key");
+  EXPECT_EQ(0, node.size());
+}
+
+TEST(NodeTest, RemoveUnassignedNodeFromMap) {
+  Node node(NodeType::Map);
+  Node n;
+  node[n];
+  node.remove(n);
+  EXPECT_EQ(0, node.size());
+}
+
 TEST(NodeTest, MapForceInsert) {
   Node node;
   Node k1("k1");
@@ -95,8 +275,8 @@ TEST(NodeTest, MapForceInsert) {
 
   node.force_insert(k2, v2);
   EXPECT_EQ("v1", node["k1"].as<std::string>());
-  EXPECT_EQ("v2", node["k2"].as<std::string>());
-  EXPECT_EQ(2, node.size());
+  EXPECT_EQ("v1", node["k2"].as<std::string>());
+  EXPECT_EQ(3, node.size());
 }
 
 TEST(NodeTest, UndefinedConstNodeWithFallback) {
@@ -124,7 +304,7 @@ TEST(NodeTest, ConstIteratorOnConstUndefinedNode) {
   std::size_t count = 0;
   for (const_iterator it = undefinedCn.begin(); it != undefinedCn.end(); ++it) {
     count++;
- }
+  }
   EXPECT_EQ(0, count);
 }
 
@@ -136,7 +316,8 @@ TEST(NodeTest, IteratorOnConstUndefinedNode) {
   Node& nonConstUndefinedNode = const_cast<Node&>(undefinedCn);
 
   std::size_t count = 0;
-  for (iterator it = nonConstUndefinedNode.begin(); it != nonConstUndefinedNode.end(); ++it) {
+  for (iterator it = nonConstUndefinedNode.begin();
+       it != nonConstUndefinedNode.end(); ++it) {
     count++;
   }
   EXPECT_EQ(0, count);
@@ -154,6 +335,22 @@ TEST(NodeTest, SimpleSubkeys) {
   EXPECT_EQ("monkey", node["username"].as<std::string>());
 }
 
+TEST(NodeTest, StdArray) {
+  std::array<int, 5> evens{{2, 4, 6, 8, 10}};
+  Node node;
+  node["evens"] = evens;
+  std::array<int, 5> actualEvens = node["evens"].as<std::array<int, 5>>();
+  EXPECT_EQ(evens, actualEvens);
+}
+
+TEST(NodeTest, StdArrayWrongSize) {
+  std::array<int, 3> evens{{2, 4, 6}};
+  Node node;
+  node["evens"] = evens;
+  EXPECT_THROW_REPRESENTATION_EXCEPTION(
+      (node["evens"].as<std::array<int, 5>>()), ErrorMsg::BAD_CONVERSION);
+}
+
 TEST(NodeTest, StdVector) {
   std::vector<int> primes;
   primes.push_back(2);
@@ -165,7 +362,21 @@ TEST(NodeTest, StdVector) {
 
   Node node;
   node["primes"] = primes;
-  EXPECT_EQ(primes, node["primes"].as<std::vector<int> >());
+  EXPECT_EQ(primes, node["primes"].as<std::vector<int>>());
+}
+
+TEST(NodeTest, StdVectorWithCustomAllocator) {
+  CustomVector<int> primes;
+  primes.push_back(2);
+  primes.push_back(3);
+  primes.push_back(5);
+  primes.push_back(7);
+  primes.push_back(11);
+  primes.push_back(13);
+
+  Node node;
+  node["primes"] = primes;
+  EXPECT_EQ(primes, node["primes"].as<CustomVector<int>>());
 }
 
 TEST(NodeTest, StdList) {
@@ -179,7 +390,21 @@ TEST(NodeTest, StdList) {
 
   Node node;
   node["primes"] = primes;
-  EXPECT_EQ(primes, node["primes"].as<std::list<int> >());
+  EXPECT_EQ(primes, node["primes"].as<std::list<int>>());
+}
+
+TEST(NodeTest, StdListWithCustomAllocator) {
+  CustomList<int> primes;
+  primes.push_back(2);
+  primes.push_back(3);
+  primes.push_back(5);
+  primes.push_back(7);
+  primes.push_back(11);
+  primes.push_back(13);
+
+  Node node;
+  node["primes"] = primes;
+  EXPECT_EQ(primes, node["primes"].as<CustomList<int>>());
 }
 
 TEST(NodeTest, StdMap) {
@@ -192,7 +417,21 @@ TEST(NodeTest, StdMap) {
 
   Node node;
   node["squares"] = squares;
-  std::map<int, int> actualSquares = node["squares"].as<std::map<int, int> >();
+  std::map<int, int> actualSquares = node["squares"].as<std::map<int, int>>();
+  EXPECT_EQ(squares, actualSquares);
+}
+
+TEST(NodeTest, StdMapWithCustomAllocator) {
+  CustomMap<int,int> squares;
+  squares[0] = 0;
+  squares[1] = 1;
+  squares[2] = 4;
+  squares[3] = 9;
+  squares[4] = 16;
+
+  Node node;
+  node["squares"] = squares;
+  CustomMap<int,int> actualSquares = node["squares"].as<CustomMap<int,int>>();
   EXPECT_EQ(squares, actualSquares);
 }
 
@@ -204,7 +443,7 @@ TEST(NodeTest, StdPair) {
   Node node;
   node["pair"] = p;
   std::pair<int, std::string> actualP =
-      node["pair"].as<std::pair<int, std::string> >();
+      node["pair"].as<std::pair<int, std::string>>();
   EXPECT_EQ(p, actualP);
 }
 
@@ -306,10 +545,70 @@ TEST(NodeTest, AutoBoolConversion) {
   EXPECT_TRUE(!!node["foo"]);
 }
 
-TEST(NodeTest, FloatingPrecision) {
+TEST(NodeTest, FloatingPrecisionFloat) {
+  const float x = 0.123456789;
+  Node node = Node(x);
+  EXPECT_EQ(x, node.as<float>());
+}
+
+TEST(NodeTest, FloatingPrecisionPositiveInfinityFloat) {
+  if (!std::numeric_limits<float>::has_infinity) {
+    return;
+  }
+  const float x = std::numeric_limits<float>::infinity();
+  Node node = Node(x);
+  EXPECT_EQ(x, node.as<float>());
+}
+
+TEST(NodeTest, FloatingPrecisionNegativeInfinityFloat) {
+  if (!std::numeric_limits<float>::has_infinity) {
+    return;
+  }
+  const float x = -std::numeric_limits<float>::infinity();
+  Node node = Node(x);
+  EXPECT_EQ(x, node.as<float>());
+}
+
+TEST(NodeTest, FloatingPrecisionNanFloat) {
+  if (!std::numeric_limits<float>::has_quiet_NaN) {
+    return;
+  }
+  const float x = std::numeric_limits<float>::quiet_NaN();
+  Node node = Node(x);
+  EXPECT_TRUE(std::isnan(node.as<float>()));
+}
+
+TEST(NodeTest, FloatingPrecisionDouble) {
   const double x = 0.123456789;
   Node node = Node(x);
   EXPECT_EQ(x, node.as<double>());
+}
+
+TEST(NodeTest, FloatingPrecisionPositiveInfinityDouble) {
+  if (!std::numeric_limits<double>::has_infinity) {
+    return;
+  }
+  const double x = std::numeric_limits<double>::infinity();
+  Node node = Node(x);
+  EXPECT_EQ(x, node.as<float>());
+}
+
+TEST(NodeTest, FloatingPrecisionNegativeInfinityDouble) {
+  if (!std::numeric_limits<double>::has_infinity) {
+    return;
+  }
+  const double x = -std::numeric_limits<double>::infinity();
+  Node node = Node(x);
+  EXPECT_EQ(x, node.as<double>());
+}
+
+TEST(NodeTest, FloatingPrecisionNanDouble) {
+  if (!std::numeric_limits<double>::has_quiet_NaN) {
+    return;
+  }
+  const double x = std::numeric_limits<double>::quiet_NaN();
+  Node node = Node(x);
+  EXPECT_TRUE(std::isnan(node.as<double>()));
 }
 
 TEST(NodeTest, SpaceChar) {
@@ -367,108 +666,108 @@ class NodeEmitterTest : public ::testing::Test {
 TEST_F(NodeEmitterTest, SimpleFlowSeqNode) {
   Node node;
   node.SetStyle(EmitterStyle::Flow);
-  node.push_back(1.01);
-  node.push_back(2.01);
-  node.push_back(3.01);
+  node.push_back(1.5);
+  node.push_back(2.25);
+  node.push_back(3.125);
 
-  ExpectOutput("[1.01, 2.01, 3.01]", node);
+  ExpectOutput("[1.5, 2.25, 3.125]", node);
 }
 
 TEST_F(NodeEmitterTest, NestFlowSeqNode) {
   Node node, cell0, cell1;
 
-  cell0.push_back(1.01);
-  cell0.push_back(2.01);
-  cell0.push_back(3.01);
+  cell0.push_back(1.5);
+  cell0.push_back(2.25);
+  cell0.push_back(3.125);
 
-  cell1.push_back(4.01);
-  cell1.push_back(5.01);
-  cell1.push_back(6.01);
+  cell1.push_back(4.5);
+  cell1.push_back(5.25);
+  cell1.push_back(6.125);
 
   node.SetStyle(EmitterStyle::Flow);
   node.push_back(cell0);
   node.push_back(cell1);
 
-  ExpectOutput("[[1.01, 2.01, 3.01], [4.01, 5.01, 6.01]]", node);
+  ExpectOutput("[[1.5, 2.25, 3.125], [4.5, 5.25, 6.125]]", node);
 }
 
 TEST_F(NodeEmitterTest, MixBlockFlowSeqNode) {
   Node node, cell0, cell1;
 
   cell0.SetStyle(EmitterStyle::Flow);
-  cell0.push_back(1.01);
-  cell0.push_back(2.01);
-  cell0.push_back(3.01);
+  cell0.push_back(1.5);
+  cell0.push_back(2.25);
+  cell0.push_back(3.125);
 
-  cell1.push_back(4.01);
-  cell1.push_back(5.01);
-  cell1.push_back(6.01);
+  cell1.push_back(4.5);
+  cell1.push_back(5.25);
+  cell1.push_back(6.125);
 
   node.SetStyle(EmitterStyle::Block);
   node.push_back(cell0);
   node.push_back(cell1);
 
-  ExpectOutput("- [1.01, 2.01, 3.01]\n-\n  - 4.01\n  - 5.01\n  - 6.01", node);
+  ExpectOutput("- [1.5, 2.25, 3.125]\n-\n  - 4.5\n  - 5.25\n  - 6.125", node);
 }
 
 TEST_F(NodeEmitterTest, NestBlockFlowMapListNode) {
   Node node, mapNode, blockNode;
 
-  node.push_back(1.01);
-  node.push_back(2.01);
-  node.push_back(3.01);
+  node.push_back(1.5);
+  node.push_back(2.25);
+  node.push_back(3.125);
 
   mapNode.SetStyle(EmitterStyle::Flow);
   mapNode["position"] = node;
 
-  blockNode.push_back(1.01);
+  blockNode.push_back(1.0625);
   blockNode.push_back(mapNode);
 
-  ExpectOutput("- 1.01\n- {position: [1.01, 2.01, 3.01]}", blockNode);
+  ExpectOutput("- 1.0625\n- {position: [1.5, 2.25, 3.125]}", blockNode);
 }
 
 TEST_F(NodeEmitterTest, NestBlockMixMapListNode) {
   Node node, mapNode, blockNode;
 
-  node.push_back(1.01);
-  node.push_back(2.01);
-  node.push_back(3.01);
+  node.push_back(1.5);
+  node.push_back(2.25);
+  node.push_back(3.125);
 
   mapNode.SetStyle(EmitterStyle::Flow);
   mapNode["position"] = node;
 
-  blockNode["scalar"] = 1.01;
+  blockNode["scalar"] = 1.0625;
   blockNode["object"] = mapNode;
 
   ExpectAnyOutput(blockNode,
-                  "scalar: 1.01\nobject: {position: [1.01, 2.01, 3.01]}",
-                  "object: {position: [1.01, 2.01, 3.01]}\nscalar: 1.01");
+                  "scalar: 1.0625\nobject: {position: [1.5, 2.25, 3.125]}",
+                  "object: {position: [1.5, 2.25, 3.125]}\nscalar: 1.5");
 }
 
 TEST_F(NodeEmitterTest, NestBlockMapListNode) {
   Node node, mapNode;
 
-  node.push_back(1.01);
-  node.push_back(2.01);
-  node.push_back(3.01);
+  node.push_back(1.5);
+  node.push_back(2.25);
+  node.push_back(3.125);
 
   mapNode.SetStyle(EmitterStyle::Block);
   mapNode["position"] = node;
 
-  ExpectOutput("position:\n  - 1.01\n  - 2.01\n  - 3.01", mapNode);
+  ExpectOutput("position:\n  - 1.5\n  - 2.25\n  - 3.125", mapNode);
 }
 
 TEST_F(NodeEmitterTest, NestFlowMapListNode) {
   Node node, mapNode;
 
-  node.push_back(1.01);
-  node.push_back(2.01);
-  node.push_back(3.01);
+  node.push_back(1.5);
+  node.push_back(2.25);
+  node.push_back(3.125);
 
   mapNode.SetStyle(EmitterStyle::Flow);
   mapNode["position"] = node;
 
-  ExpectOutput("{position: [1.01, 2.01, 3.01]}", mapNode);
+  ExpectOutput("{position: [1.5, 2.25, 3.125]}", mapNode);
 }
 }
 }

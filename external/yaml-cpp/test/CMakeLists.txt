@@ -1,34 +1,49 @@
-set(gtest_force_shared_crt ${MSVC_SHARED_RT} CACHE BOOL
-  "Use shared (DLL) run-time lib even when Google Test built as a static lib.")
-add_subdirectory(gmock-1.7.0)
-include_directories(SYSTEM gmock-1.7.0/gtest/include)
-include_directories(SYSTEM gmock-1.7.0/include)
+find_package(Threads REQUIRED)
 
-if(WIN32 AND BUILD_SHARED_LIBS)
-  add_definitions("-DGTEST_LINKED_AS_SHARED_LIBRARY")
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+set(BUILD_MOCK ON CACHE BOOL "" FORCE)
+set(CMAKE_POLICY_DEFAULT_CMP0048 NEW)
+
+add_subdirectory(
+  "${CMAKE_CURRENT_SOURCE_DIR}/gtest-1.10.0"
+  "${CMAKE_CURRENT_BINARY_DIR}/prefix")
+
+include_directories(SYSTEM "${CMAKE_CURRENT_SOURCE_DIR}/gtest-1.10.0/googletest/include")
+
+set(test-new-api-pattern "new-api/*.cpp")
+set(test-source-pattern "*.cpp" "integration/*.cpp" "node/*.cpp")
+if (CMAKE_VERSION VERSION_GREATER 3.11)
+  list(INSERT test-new-api-pattern 0 CONFIGURE_DEPENDS)
+  list(INSERT test-source-pattern 0 CONFIGURE_DEPENDS)
 endif()
 
-if("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU" OR
-   "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
-  set(yaml_test_flags "-Wno-c99-extensions -Wno-variadic-macros -Wno-sign-compare -std=c++11")
+file(GLOB test-new-api-sources ${test-new-api-pattern})
+file(GLOB test-sources ${test-source-pattern})
+
+add_executable(yaml-cpp-tests "")
+target_sources(yaml-cpp-tests
+  PRIVATE
+    ${test-new-api-sources}
+    ${test-sources})
+target_include_directories(yaml-cpp-tests
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/integration
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${PROJECT_SOURCE_DIR}/src)
+target_compile_options(yaml-cpp-tests
+  PRIVATE
+    $<$<CXX_COMPILER_ID:Clang>:-Wno-c99-extensions -Wno-variadic-macros -Wno-sign-compare>
+    $<$<CXX_COMPILER_ID:GNU>:-Wno-variadic-macros -Wno-sign-compare>)
+target_link_libraries(yaml-cpp-tests
+  PRIVATE
+    Threads::Threads
+    yaml-cpp
+    gmock)
+
+set_property(TARGET yaml-cpp-tests PROPERTY CXX_STANDARD_REQUIRED ON)
+if (NOT DEFINED CMAKE_CXX_STANDARD)
+  set_target_properties(yaml-cpp-tests PROPERTIES CXX_STANDARD 11)
 endif()
 
-file(GLOB test_headers [a-z_]*.h)
-file(GLOB test_sources [a-z_]*.cpp integration/[a-z_]*.cpp node/[a-z_]*.cpp)
-file(GLOB test_new_api_sources new-api/[a-z]*.cpp)
 
-list(APPEND test_sources ${test_new_api_sources})
-add_sources(${test_sources} ${test_headers})
-
-include_directories(${YAML_CPP_SOURCE_DIR}/test)
-
-add_executable(run-tests
-	${test_sources}
-	${test_headers}
-)
-set_target_properties(run-tests PROPERTIES
-  COMPILE_FLAGS "${yaml_c_flags} ${yaml_cxx_flags} ${yaml_test_flags}"
-)
-target_link_libraries(run-tests yaml-cpp gmock)
-
-add_test(yaml-test ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/run-tests)
+add_test(yaml-cpp::test yaml-cpp-tests)
