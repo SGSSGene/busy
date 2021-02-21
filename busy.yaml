@@ -4,3 +4,5 @@ projects:
     legacy:
       systemLibraries:
         - stdc++fs
+  - name: demangle
+    type: library
