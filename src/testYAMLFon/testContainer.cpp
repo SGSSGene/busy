@@ -398,3 +398,22 @@ TEST_CASE("test yaml deserialization of std::filesystem::file_time_type", "[yaml
     auto data = fon::yaml::deserialize<std::filesystem::file_time_type>(node);
     REQUIRE(data == std::filesystem::file_time_type(std::chrono::nanoseconds{42}));
 }
+
+TEST_CASE("test yaml serialization of std::chrono::duration", "[yaml][std][chrono][duration]") {
+    using namespace std::chrono_literals;
+    auto data = 42ms - 20ms;
+    auto node = fon::yaml::serialize(data);
+
+    REQUIRE(node.IsScalar());
+    REQUIRE(node.as<int>() == 22);
+}
+
+TEST_CASE("test yaml deserialization of std::chrono::duration", "[yaml][std][chrono][duration]") {
+    using namespace std::chrono_literals;
+
+    YAML::Node node;
+    node = 22;
+    using duration = decltype(42ms - 20ms);
+    auto data = fon::yaml::deserialize<duration>(node);
+    REQUIRE(data == (42ms - 20ms));
+}
