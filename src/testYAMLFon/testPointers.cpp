@@ -107,6 +107,7 @@ TEST_CASE("test yaml deserialization of base pointers", "[yaml][raw][base][point
     node["self"] = "";
 
     auto data = fon::yaml::deserialize<std::unique_ptr<Derived>>(node);
+    REQUIRE(data != nullptr);
     CHECK(data->x == 7);
     CHECK(data->y == 8);
     CHECK(data->self == data.get());

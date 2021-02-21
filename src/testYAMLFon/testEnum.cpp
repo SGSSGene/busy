@@ -7,7 +7,7 @@ enum class MyEnum : int32_t {
     E3
 };
 
-TEST_CASE("test yaml serialization of enum", "[yaml][enum]") {
+TEST_CASE("test yaml serialization of enum", "[yaml][enum][serialize]") {
     SECTION("E1") {
         auto data = MyEnum::E1;
         auto node = fon::yaml::serialize(data);
@@ -27,7 +27,7 @@ TEST_CASE("test yaml serialization of enum", "[yaml][enum]") {
         REQUIRE(node.as<int32_t>() == int32_t(MyEnum::E3));
     }
 }
-TEST_CASE("test yaml deserialization of enum", "[yaml][enum]") {
+TEST_CASE("test yaml deserialization of enum", "[yaml][enum][deserialize]") {
     SECTION("E1") {
         YAML::Node node;
         node = int(MyEnum::E1);

@@ -11,7 +11,7 @@ struct A {
 };
 
 
-TEST_CASE("test yaml serialization of struct A", "[yaml][struct]") {
+TEST_CASE("test yaml serialization of struct A", "[yaml][struct][serialize]") {
     auto data = A{{10, 20, 30}};
     auto node = fon::yaml::serialize(data);
     REQUIRE(node.IsMap());
@@ -22,7 +22,7 @@ TEST_CASE("test yaml serialization of struct A", "[yaml][struct]") {
     REQUIRE(node["xs"][2].as<int32_t>() == 30);
 }
 
-TEST_CASE("test yaml deserialization of struct A", "[yaml][struct]") {
+TEST_CASE("test yaml deserialization of struct A", "[yaml][struct][deserialize]") {
     YAML::Node node;
     node["xs"][0] = 10;
     node["xs"][1] = 20;
@@ -48,7 +48,7 @@ struct B {
     }
 };
 
-TEST_CASE("test yaml serialization of maps with structs", "[yaml][struct][std][map]") {
+TEST_CASE("test yaml serialization of maps with structs", "[yaml][struct][std][map][serialize]") {
     auto data = B{};
     data.infos["k1"].x = 10;
     data.infos["k2"].x = 20;
@@ -62,7 +62,7 @@ TEST_CASE("test yaml serialization of maps with structs", "[yaml][struct][std][m
     REQUIRE(node["infos"]["k2"]["x"].as<int>() == 20);
 }
 
-TEST_CASE("test yaml deserialization of maps with structs", "[yaml][struct][std][map]") {
+TEST_CASE("test yaml deserialization of maps with structs", "[yaml][struct][std][map][deserialize]") {
     YAML::Node node;
     node["infos"]["k1"]["x"] = 10;
     node["infos"]["k2"]["x"] = 20;
@@ -88,7 +88,7 @@ struct D {
 };
 
 
-TEST_CASE("test yaml serialization of struct D (no name)", "[yaml][struct]") {
+TEST_CASE("test yaml serialization of struct D (no name)", "[yaml][struct][serialize]") {
     auto data = D{{10, 20, 30}};
     auto node = fon::yaml::serialize(data);
     REQUIRE(node.IsSequence());
@@ -98,7 +98,7 @@ TEST_CASE("test yaml serialization of struct D (no name)", "[yaml][struct]") {
     REQUIRE(node[2].as<int32_t>() == 30);
 }
 
-TEST_CASE("test yaml deserialization of struct D (no name)", "[yaml][struct]") {
+TEST_CASE("test yaml deserialization of struct D (no name)", "[yaml][struct][deserialize]") {
     YAML::Node node;
     node[0] = 10;
     node[1] = 20;

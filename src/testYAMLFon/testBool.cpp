@@ -1,7 +1,7 @@
 #include <catch/catch.hpp>
 #include <flattensObjectsNeatly/flattensObjectsNeatly.h>
 
-TEST_CASE("test yaml serialization of bool", "[yaml][bool]") {
+TEST_CASE("test yaml serialization of bool", "[yaml][bool][serialize]") {
     SECTION ("testing 'true'") {
         bool data {true};
         auto node = fon::yaml::serialize(data);
@@ -17,7 +17,7 @@ TEST_CASE("test yaml serialization of bool", "[yaml][bool]") {
     }
 }
 
-TEST_CASE("test yaml deserialization of bool", "[yaml][bool]") {
+TEST_CASE("test yaml deserialization of bool", "[yaml][bool][deserialize]") {
     SECTION ("testing 'true'") {
         YAML::Node node;
         node = true;
