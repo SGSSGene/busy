@@ -262,6 +262,24 @@ struct convert<Node, T> {
     }
 };
 
+template <typename Node, typename T>
+    requires has_proxy_v<Node, T>
+struct convert<Node, T> {
+    static constexpr Type type = Type::Object;
+    struct Infos {
+        template <typename L1, typename L2, typename Self>
+        static auto range(Self& obj, L1 const& l1, L2 const& l2) {
+            auto visitor = helper::Visitor{l1, l2};
+            proxy<T>::reflect(visitor, obj);
+        }
+    };
+
+    template <typename Self>
+    convert(Node& node, Self& obj) {
+        Self::reflect(node, obj);
+    }
+};
+
 
 template <typename Node, typename T>
 struct convert<Node, std::optional<T>> {
@@ -418,82 +436,5 @@ struct convert<Node, std::shared_ptr<T>> {
         }
     }
 };
-
-template <typename T>
-struct proxy;
-
-template <size_t N>
-struct multi_element {
-private:
-    template <size_t I, typename Node, typename T>
-    constexpr static void serialize_single_element(Node& node, T& t) {
-        node[I] % std::get<I>(t);
-    }
-
-    template <typename Node, typename Self, typename T, auto... Is>
-    constexpr static void serialize_all_elements(Node& node, Self& self, std::integer_sequence<T, Is...>) {
-        (serialize_single_element<Is>(node, self), ...);
-    }
-
-public:
-    template <typename Node, typename Self>
-    constexpr static void reflect(Node& node, Self& self) {
-        using Range = std::make_index_sequence<N>;
-        serialize_all_elements(node, self, Range{});
-    }
-
-};
-
-
-template <typename T, size_t N>
-struct proxy<std::array<T, N>> {
-    template <typename Node, typename Self>
-    constexpr static void reflect(Node& node, Self& self) {
-        multi_element<N>::reflect(node, self);
-    }
-};
-
-template <typename... Args>
-struct proxy<std::tuple<Args...>> {
-    template <typename Node, typename Self>
-    constexpr static void reflect(Node& node, Self& self) {
-        multi_element<sizeof...(Args)>::reflect(node, self);
-    }
-};
-
-template <typename T1, typename T2>
-struct proxy<std::pair<T1, T2>> {
-    template <typename Node, typename Self>
-    constexpr static void reflect(Node& node, Self& self) {
-        node[0] % self.first;
-        node[1] % self.second;
-    }
-};
-
-template <typename Node, typename T>
-concept has_proxy_v = requires(Node node, T t) {
-    { proxy<T>::reflect(node, t) };
-};
-
-template <typename Node, typename T>
-    requires has_proxy_v<Node, T>
-struct convert<Node, T> {
-    static constexpr Type type = Type::Object;
-    struct Infos {
-        template <typename L1, typename L2, typename Self>
-        static auto range(Self& obj, L1 const& l1, L2 const& l2) {
-            auto visitor = helper::Visitor{l1, l2};
-            proxy<T>::reflect(visitor, obj);
-        }
-    };
-
-    template <typename Self>
-    convert(Node& node, Self& obj) {
-        Self::reflect(node, obj);
-    }
-};
-
-
-
 
 }

@@ -2,6 +2,7 @@
 
 #include "traits.h"
 #include "convert.h"
+#include "proxy.h"
 #include "Node.h"
 
 namespace fon {
