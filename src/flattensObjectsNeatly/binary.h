@@ -38,7 +38,7 @@ auto serialize(T const& _input) -> std::vector<std::byte> {
             } else if constexpr (std::is_same_v<std::string, ValueT>) {
                 stack.set(obj.data(), obj.size());
             }
-        } else if constexpr (Node::is_list) {
+        } else if constexpr (Node::is_dynamic_list) {
             auto frame = SerializeStack{buffer};
             frame.setType(SerializeStack::Type::Sequence);
             Node::range(obj, [&](auto& key, auto& value) {
@@ -100,14 +100,17 @@ auto deserialize(std::vector<std::byte> buffer, size_t startIndex=0) -> T {
                 obj.resize(frame.payloadSize());
                 std::memcpy(obj.data(), frame.data<char>(), frame.payloadSize());
             }
-        } else if constexpr (Node::is_list) {
+        } else if constexpr (Node::is_dynamic_list) {
             DeserializeStack frame{buffer, currentIndex};
             if (frame.type == DeserializeStack::Type::Sequence) {
                 Node::reserve(obj, frame.entries);
                 auto oldIndex = currentIndex;
                 for (size_t idx{0}; idx < frame.entries; ++idx) {
                     currentIndex = frame.nextIndex();
-                    Node::emplace(node, obj, idx);
+
+                    auto value = Node::getEmpty();
+                    node % value;
+                    Node::emplace(obj, value);
                 }
                 currentIndex = oldIndex;
             }

@@ -1,6 +1,8 @@
 #include <catch/catch.hpp>
 #include <flattensObjectsNeatly/flattensObjectsNeatly.h>
 
+#include <fmt/format.h>
+
 namespace {
 
 struct B {
@@ -17,6 +19,7 @@ TEST_CASE("test yaml serialization of YAML::Node", "[yaml][serialize][yaml-cpp]"
     data.node["foo"] = "bar";
 
     auto node = fon::yaml::serialize(data);
+
     REQUIRE(node.IsMap());
     REQUIRE(node["node"].IsMap());
     CHECK(node["node"]["foo"].as<std::string>() == "bar");

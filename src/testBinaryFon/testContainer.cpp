@@ -110,7 +110,7 @@ TEST_CASE("test binary deserialization of std::list", "[binary][std][list]") {
     REQUIRE(data == (std::list<int32_t>{10, 20, 30}));
 }
 
-TEST_CASE("test binary serialization of std::forward_list", "[binary][std][forward_list]") {
+/*TEST_CASE("test binary serialization of std::forward_list", "[binary][std][forward_list]") {
     auto data = std::forward_list<int32_t>{10, 20, 30};
     auto buffer = fon::binary::serialize(data);
     auto expect = createVector(
@@ -130,7 +130,7 @@ TEST_CASE("test binary deserialization of std::forward_list", "[binary][std][for
     auto buffer = fon::binary::serialize(std::forward_list<int32_t>{10,20, 30});
     auto data = fon::binary::deserialize<std::forward_list<int32_t>>(buffer);
     REQUIRE(data == (std::forward_list<int32_t>{10, 20, 30}));
-}
+}*/
 
 TEST_CASE("test binary serialization of std::deque", "[binary][std][deque]") {
     auto data = std::deque<int32_t>{10, 20, 30};

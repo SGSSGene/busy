@@ -2,6 +2,8 @@
 
 #include "utils.h"
 
+#include <cassert>
+#include <fmt/format.h>
 #include <tuple>
 #include <yaml-cpp/yaml.h>
 
@@ -9,7 +11,7 @@ namespace fon::yaml {
 
 namespace details {
 
-template <typename Key>
+/*template <typename Key>
 auto access_yaml_key(YAML::Node parent, Key key) -> YAML::Node {
     if constexpr(std::is_same_v<Key, std::string> or std::is_arithmetic_v<Key>) {
         return parent[key];
@@ -37,7 +39,7 @@ auto access_key(YAML::Node root, Node& node) {
     return acc_tuple(root, node->getFullKey(), [&](auto key, auto&& parent) {
         return access_yaml_key(std::forward<decltype(parent)>(parent), key);
     });
-}
+}*/
 
 
 
@@ -45,46 +47,53 @@ template <typename T>
 auto serialize(T const& _input, YAML::Node start = {}) -> YAML::Node {
     auto& input = _input;
 
-    YAML::Node root;
-    root[""] = start; // we need a level of indirection, so the ref mechanism of yaml-cpp works properly
-
     std::map<void*, std::string> serializedShared; // helps tracking which shared ptr have already been serialized
 
-    fon::visit([&]<typename Node, typename ValueT>(Node& node, ValueT const& obj) {
-        auto top = access_key(root[""], node);
+
+    auto root = fon::visit([&]<typename Node, typename ValueT>(Node& node, ValueT const& obj) {
+        YAML::Node top;
 
         if constexpr (std::is_same_v<YAML::Node, ValueT>) {
             top = obj;
+/*        } else if constexpr (has_proxy_v<Node, ValueT>) {
+            proxy<ValueT>::reflect(node, obj);*/
         } else if constexpr (Node::is_convert) {
-            Node::convert(node, obj);
+            top = Node::convert(node, obj);
         } else if constexpr (Node::is_value) {
-            top = obj;
-        } else if constexpr (Node::is_map or Node::is_list) {
-            if constexpr (Node::is_map) { // !TODO Workaround, forces yaml maps
-                top[1] = 0;
-                top.remove(1);
+            // Interpret int8_t and uint8_t as ints not chars
+            if constexpr (is_any_of_v<ValueT, int8_t, uint8_t>) {
+                top = static_cast<int16_t>(obj);
+            } else {
+                top = obj;
             }
+        } else if constexpr (std::is_same_v<ValueT, std::string_view>) {
+            top = std::string{obj};
+        } else if constexpr (std::is_same_v<ValueT, char const*>) {
+            top = std::string{obj};
+        } else if constexpr (Node::is_dynamic_list) {
             Node::range(obj, [&](auto& key, auto& value) {
-                node[key] % value;
+                auto right = node % value;
+                top.push_back(right);
             });
-
+        } else if constexpr (Node::is_map) {
+            Node::range(obj, [&](auto& key, auto& value) {
+                auto left  = serialize(key);
+                auto right = node % value;
+                top[left] = right;
+            });
         } else if constexpr (Node::is_object) {
-            bool forceMap = false;
+            top = YAML::Node(YAML::NodeType::Map);
             Node::range(obj, [&](auto& key, auto& value) {
-                forceMap = true;
-                node[key] % value;
+                auto left  = node % key;
+                auto right = node % value;
+                top[left] = right;
             }, [&](auto& value) {
-                node % value;
+                top = node % value;
             });
-            if (not top.IsMap() and forceMap) {
-                // !TODO Workaround, forces yaml maps
-                top["langerstringderhoffentlichsonichtvorkommtvielglueck"] = 0;
-                top.remove("langerstringderhoffentlichsonichtvorkommtvielglueck");
-            }
-
         } else if constexpr (Node::is_pointer) {
+            fmt::print("name: {}\n", is_same_base_v<std::unique_ptr, ValueT>);
             if constexpr (is_same_base_v<std::unique_ptr, ValueT>) {
-                node % *obj;
+                top = node % *obj;
             } else if constexpr (is_same_base_v<std::shared_ptr, ValueT>) {
                 using BaseType = typename Node::Value;
                 if (obj) {
@@ -98,7 +107,7 @@ auto serialize(T const& _input, YAML::Node start = {}) -> YAML::Node {
                     auto iter = serializedShared.find(mostDerived);
                     if (iter == serializedShared.end()) {
                         top["type"] = "primary";
-                        serializedShared[mostDerived] = node->getPath();
+//                        serializedShared[mostDerived] = node->getPath();
                         node["data"] % *obj;
                     } else {
                         top["type"] = "secondary";
@@ -106,14 +115,17 @@ auto serialize(T const& _input, YAML::Node start = {}) -> YAML::Node {
                     }
                 }
             } else {
-                findPath(input, obj, [&](auto& node) {
-                    top = node->getPath();
-                });
+                //findPath(input, obj, [&](auto& node) {
+                    //top = node->getPath();
+                //});
             }
+        } else {
+            assert(false); //!TODO compile error! should be an static_assert :-(
         }
+        return top;
     }, input);
 
-    return root[""];
+    return root;
 }
 
 
@@ -123,12 +135,14 @@ struct yaml_error : std::runtime_error {
     {}
 };
 
+
 template <typename T>
 auto deserialize(YAML::Node root) -> T {
 
     auto res = getEmpty<T>();
+    std::vector<YAML::Node> nodeStack{root};
     visit([&]<typename Node, typename ValueT>(Node& node, ValueT& obj) {
-        auto top = access_key(root, node);
+        auto top = nodeStack.back();
 
         if (not top.IsDefined()) {
             return;
@@ -137,6 +151,8 @@ auto deserialize(YAML::Node root) -> T {
         try {
             if constexpr (std::is_same_v<YAML::Node, ValueT>) {
                 obj = top;
+/*            } else if constexpr (has_proxy_v<Node, ValueT>) {
+                proxy<ValueT>::reflect(node, obj);*/
             } else if constexpr (Node::is_convert) {
                 Node::convert(node, obj);
             } else if constexpr (Node::is_value) {
@@ -150,18 +166,26 @@ auto deserialize(YAML::Node root) -> T {
                     // !TODO no check, we just hope it works
                     obj = top.template as<ValueT>();
                 }
-            } else if constexpr (Node::is_list) {
+            } else if constexpr (Node::is_dynamic_list) {
                 Node::reserve(obj, top.size());
                 for (size_t idx{0}; idx < top.size(); ++idx) {
-                    Node::emplace(node, obj, idx);
+                    auto e = top[idx];
+                    auto value = Node::getEmpty();
+
+                    nodeStack.push_back(e);
+                    node % value;
+                    nodeStack.pop_back();
+                    Node::emplace(obj, value);
                 }
             } else if constexpr (Node::is_map) {
                 using Key   = typename Node::Key;
                 auto y_node = top;
                 Node::reserve(obj, y_node.size());
                 for (auto iter{y_node.begin()}; iter != y_node.end(); ++iter) {
-                    auto key = iter->first.template as<Key>();
-                    Node::emplace(node, obj, key);
+                    auto key  = deserialize<Key>(iter->first);
+                    nodeStack.push_back(iter->second);
+                    Node::emplace(node, obj, std::move(key));
+                    nodeStack.pop_back();
                 }
             } else if constexpr (Node::is_pointer) {
                 using BaseType = typename Node::Value;
@@ -177,8 +201,24 @@ auto deserialize(YAML::Node root) -> T {
                     }
                 }
             } else if constexpr (Node::is_object) {
-                Node::range(obj, [&](auto& key, auto& value) {
-                    node[key] % value;
+                Node::range(obj, [&]<typename Key, typename Value>(Key& key, Value& value) {
+                    //!WORKAROUND for bug: https://github.com/jbeder/yaml-cpp/issues/979
+                    auto fakeKey = [&]() {
+                        YAML::Emitter emit;
+                        emit << serialize(key);
+                        return std::string{emit.c_str()};
+                    }();
+                    auto e = top[fakeKey];
+                    nodeStack.push_back(e);
+                    node % value;
+                    nodeStack.pop_back();
+
+
+//                    deserialize<Value>(e);
+//                    value = deserialize<Value>(top[serialize(key)]);
+/*                    auto left  = node % key;
+                    auto right = node % value;
+                    node[left] % right;*/
                 }, [&](auto& value) {
                     node % value;
                 });
@@ -190,7 +230,7 @@ auto deserialize(YAML::Node root) -> T {
         }
     }, res);
 
-    visit([&]<typename Node, typename ValueT>(Node& node, ValueT& obj) {
+/*    visit([&]<typename Node, typename ValueT>(Node& node, ValueT& obj) {
         auto top = access_key(root, node);
 
         try {
@@ -221,7 +261,7 @@ auto deserialize(YAML::Node root) -> T {
             std::throw_with_nested(yaml_error("error reading yaml file ", top));
         }
 
-    }, res);
+    }, res);*/
 
     return res;
 }
@@ -246,6 +286,15 @@ struct convert<Node, ::YAML::Node> {
             node % val;
             obj = val;
         }
+
+        template <typename Node2>
+        static void convert(Node2& node, YAML::Node const& obj) {
+            std::stringstream ss;
+            ss << obj;
+            auto val = ss.str();
+            return node % val;
+        }
+
     };
     convert(Node&, YAML::Node&) {}
 

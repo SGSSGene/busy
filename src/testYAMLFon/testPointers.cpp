@@ -1,6 +1,8 @@
 #include <catch/catch.hpp>
 #include <flattensObjectsNeatly/flattensObjectsNeatly.h>
 
+#if 0
+
 namespace {
 
 struct A {
@@ -35,6 +37,14 @@ TEST_CASE("test yaml deserialization of raw pointers", "[yaml][raw][pointer][des
     REQUIRE(data.ptr == &data.xs[1]);
 }
 
+TEST_CASE("test yaml serialization of unique_ptr pointers", "[yaml][std][unique_ptr][pointer][serialize]") {
+    auto data = std::make_unique<int32_t>(42);
+    auto node = fon::yaml::serialize(data);
+    REQUIRE(node.IsScalar());
+    CHECK(node.as<int32_t>() == 42);
+}
+
+
 struct B {
     std::unique_ptr<int32_t> uptr;
     int* ptr{nullptr};
@@ -46,7 +56,7 @@ struct B {
     }
 };
 
-TEST_CASE("test yaml serialization of unique_ptr pointers", "[yaml][std][unique_ptr][pointer][serialize]") {
+TEST_CASE("test yaml serialization of unique_ptr pointers and raw pointers", "[yaml][std][unique_ptr][raw][pointer][serialize]") {
     auto data = B{};
     data.uptr = std::make_unique<int32_t>(42);
     data.ptr = data.uptr.get();
@@ -57,7 +67,7 @@ TEST_CASE("test yaml serialization of unique_ptr pointers", "[yaml][std][unique_
     CHECK(node["ptr"].as<std::string>() == "/uptr");
 }
 
-TEST_CASE("test yaml deserialization of unique_ptr pointers", "[yaml][std][unique_ptr][pointer][deserialize]") {
+TEST_CASE("test yaml deserialization of unique_ptr pointers and raw pointers", "[yaml][std][unique_ptr][raw][pointer][deserialize]") {
     YAML::Node node;
     node["uptr"] = 43;
     node["ptr"] = "/uptr";
@@ -114,3 +124,4 @@ TEST_CASE("test yaml deserialization of base pointers", "[yaml][raw][base][point
 }
 
 }
+#endif

@@ -1,5 +1,6 @@
 #include <catch/catch.hpp>
 #include <flattensObjectsNeatly/flattensObjectsNeatly.h>
+#if 0
 
 namespace {
 
@@ -50,3 +51,4 @@ TEST_CASE("test yaml deserialization of shared_ptr pointers", "[yaml][std][share
 }
 
 }
+#endif

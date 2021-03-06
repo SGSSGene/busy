@@ -4,7 +4,6 @@
 
 #include <array>
 #include <deque>
-#include <forward_list>
 #include <list>
 #include <map>
 #include <memory>
@@ -15,6 +14,7 @@
 #include <type_traits>
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
 #include <variant>
 #include <vector>
 
@@ -24,7 +24,7 @@ enum class Type {
     None,
     Value,
     Convertible,
-    List,
+    DynamicList,
     Map,
     Object,
     Pointer,
@@ -76,10 +76,10 @@ struct convert<Node, T> {
             obj = T {val};
         }
         template <typename Node2>
-        static void convert(Node2& node, T const& obj) {
+        static auto convert(Node2& node, T const& obj) {
             using UT = std::underlying_type_t<T>;
             auto val = static_cast<UT>(obj);
-            node % val;
+            return node % val;
         }
 
     };
@@ -90,12 +90,12 @@ struct convert<Node, T> {
 // list types
 template <template <typename...> typename C, typename T>
 constexpr static bool is_sequence_v = is_any_of_v<C<T>,
-    std::vector<T>, std::list<T>, std::deque<T>, std::forward_list<T>>;
+    std::vector<T>, std::list<T>, std::deque<T>>;
 
 template <typename Node, typename T, template <typename...> typename C>
     requires is_sequence_v<C, T>
 struct convert<Node, C<T>> {
-    static constexpr Type type = Type::List;
+    static constexpr Type type = Type::DynamicList;
     struct Infos {
         using Key   = size_t;
         using Value = T;
@@ -114,20 +114,8 @@ struct convert<Node, C<T>> {
                 obj.reserve(size);
             }
         }
-        template <typename N2>
-        static auto emplace(N2& node, C<T>& obj, Key key) {
-            if constexpr (std::is_same_v<std::forward_list<T>, C<T>>) {
-                if (obj.empty()) {
-                    obj.push_front(N2::getEmpty());
-                    node[key] % obj.front();
-                } else {
-                    auto iter = obj.insert_after(next(begin(obj), key-1), N2::getEmpty());
-                    node[key] % *iter;
-                }
-            } else {
-                obj.push_back(N2::getEmpty());
-                node[key] % obj.back();
-            }
+        static auto emplace(C<T>& obj, T e) {
+            obj.push_back(e);
         }
     };
 
@@ -140,37 +128,6 @@ struct convert<Node, C<T>> {
     }
 };
 
-template <typename Node, typename T, size_t N>
-struct convert<Node, std::array<T, N>> {
-    static constexpr Type type = Type::List;
-    struct Infos {
-        using Key   = size_t;
-        template <typename L, typename Self>
-        static void range(Self& obj, L const& l) {
-            std::size_t i{0};
-            for (std::size_t i{0}; i < N; ++i) {
-                l(i, obj[i]);
-            }
-        }
-
-        static void reserve(std::array<T, N>&, size_t) {}
-        template <typename N2>
-        static auto emplace(N2& node, std::array<T, N>& obj, Key key) {
-            if (key >= N or key < 0) {
-                throw std::runtime_error("accessing array out of range");
-            }
-            node[key] % obj[key];
-        }
-    };
-
-    template <typename Self>
-    convert(Node& node, Self& obj) {
-        for (size_t i{0}; i < N; ++i) {
-            node[i] % obj.at(i);
-        }
-    }
-};
-
 template <template <typename...> typename C, typename T>
 constexpr static bool is_set_v = is_any_of_v<C<T>,
     std::set<T>, std::unordered_set<T>>;
@@ -179,9 +136,10 @@ constexpr static bool is_set_v = is_any_of_v<C<T>,
 template <typename Node, typename T, template <typename...> typename C>
     requires is_set_v<C, T>
 struct convert<Node, C<T>> {
-    static constexpr Type type = Type::List;
+    static constexpr Type type = Type::DynamicList;
     struct Infos {
         using Key   = size_t;
+        using Value = T;
         template <typename L, typename Self>
         static void range(Self& obj, L const& l) {
             auto iter {begin(obj)};
@@ -192,12 +150,10 @@ struct convert<Node, C<T>> {
 
         static void reserve(C<T>&, size_t) {}
 
-        template <typename N2>
-        static auto emplace(N2& node, C<T>& obj, Key key) {
-            auto value = getEmpty<T>();
-            node[key] % value;
-            obj.insert(std::move(value));
+        static auto emplace(C<T>& obj, T e) {
+            obj.insert(std::move(e));
         }
+
     };
 
     template <typename Self>
@@ -259,7 +215,7 @@ struct SubVisitor {
     {}
 
     template <typename T>
-    auto operator%(T& obj) {
+    void operator%(T& obj) {
         cb(key, obj);
     }
 };
@@ -273,35 +229,20 @@ struct Visitor {
         , cb2{_cb2}
     {};
 
+    template <typename Key>
+    auto operator[](Key key) {
+        return SubVisitor{cb1, key};
+    }
     auto operator[](std::string_view key) {
         return SubVisitor{cb1, key};
     }
 
     template <typename T>
-    auto operator%(T& obj) {
+    void operator%(T& obj) {
         cb2(obj);
     }
 };
 }
-
-// object types
-template <typename Node, typename T>
-    requires has_ser_v<Node, T>
-struct convert<Node, T> {
-    static constexpr Type type = Type::Object;
-    struct Infos {
-        template <typename L1, typename L2, typename Self>
-        static auto range(Self& obj, L1 const& l1, L2 const& l2) {
-            auto visitor = helper::Visitor{l1, l2};
-            obj.serialize(visitor);
-        }
-    };
-
-    template<typename Self>
-    convert(Node& node, Self& obj) {
-        obj.serialize(node);
-    }
-};
 
 template <typename Node, typename T>
     requires has_reflect_v<Node, T>
@@ -324,9 +265,10 @@ struct convert<Node, T> {
 
 template <typename Node, typename T>
 struct convert<Node, std::optional<T>> {
-    static constexpr Type type = Type::List;
+    static constexpr Type type = Type::DynamicList;
     struct Infos {
         using Key   = size_t;
+        using Value = T;
         template <typename L, typename Self>
         static void range(Self& obj, L l) {
             if (obj.has_value()) {
@@ -335,20 +277,12 @@ struct convert<Node, std::optional<T>> {
             }
         }
 
-        static void reserve(std::optional<T>& obj, size_t i) {
-            if (i == 0) {
-                obj = std::nullopt;
-            } else {
-                obj = getEmpty<T>();
-            }
+        static void reserve(std::optional<T>& obj, size_t i) {}
+
+        static auto emplace(std::optional<T>& obj, T e) {
+            obj.emplace(std::move(e));
         }
-        template <typename N2>
-        static auto emplace(N2& node, std::optional<T>& obj, Key key) {
-            if (key < 0 or key >= 1) {
-                throw std::runtime_error("accessing std::optional out of range");
-            }
-            node[0] % obj.value();
-        }
+
     };
 
     template <typename Self>
@@ -425,40 +359,6 @@ struct convert<Node, std::variant<Args...>> {
 
 
 
-template <typename Node, typename T1, typename T2>
-struct convert<Node, std::pair<T1, T2>> {
-    static constexpr Type type = Type::List;
-    struct Infos {
-        using Key   = size_t;
-        template <typename L, typename Self>
-        static void range(Self& obj, L l) {
-            int i{-1};
-            l(++i, obj.first);
-            l(++i, obj.second);
-        };
-
-        static void reserve(std::pair<T1, T2>&, size_t) {}
-
-        template <typename N2>
-        static auto emplace(N2& node, std::pair<T1, T2>& obj, Key key) {
-            if (key < 0 or key >= 2) {
-                throw std::runtime_error("accessing std::pair out of range");
-            }
-            if (key == 0) {
-                node[key] % obj.first;
-            } else {
-                node[key] % obj.second;
-            }
-        }
-    };
-
-    template <typename Self>
-    convert(Node& node, Self& obj) {
-        node[0] % obj.first;
-        node[1] % obj.second;
-    }
-};
-
 template <size_t N = 0, typename L, typename ...Args>
 void l_apply(std::tuple<Args...>& obj, L const& l) {
     if constexpr(N < sizeof...(Args)) {
@@ -475,42 +375,6 @@ void l_apply(std::tuple<Args...> const& obj, L const& l) {
         l_apply<N+1>(obj, l);
     }
 }
-
-
-
-template <typename Node, typename... Args>
-struct convert<Node, std::tuple<Args...>> {
-    static constexpr Type type = Type::List;
-    struct Infos {
-        using Key   = size_t;
-        template <typename L, typename Self>
-        static void range(Self& obj, L l) {
-            l_apply(obj, l);
-        }
-
-        static void reserve(std::tuple<Args...>&, size_t) {}
-
-        template <typename N2>
-        static auto emplace(N2& node, std::tuple<Args...>& obj, Key key) {
-            if (key < 0 or key >= sizeof...(Args)) {
-                throw std::runtime_error("accessing std::tuple out of range");
-            }
-            l_apply(obj, [&](size_t i, auto& value) {
-                if (i == key) {
-                    node[key] % value;
-                }
-            });
-        }
-    };
-
-    template <typename Self>
-    convert(Node& node, Self& obj) {
-        l_apply(obj, [&](size_t i, auto& value) {
-            node[i] % value;
-        });
-    }
-};
-
 
 // pointer types
 template <typename Node, typename T>
@@ -554,5 +418,82 @@ struct convert<Node, std::shared_ptr<T>> {
         }
     }
 };
+
+template <typename T>
+struct proxy;
+
+template <size_t N>
+struct multi_element {
+private:
+    template <size_t I, typename Node, typename T>
+    constexpr static void serialize_single_element(Node& node, T& t) {
+        node[I] % std::get<I>(t);
+    }
+
+    template <typename Node, typename Self, typename T, auto... Is>
+    constexpr static void serialize_all_elements(Node& node, Self& self, std::integer_sequence<T, Is...>) {
+        (serialize_single_element<Is>(node, self), ...);
+    }
+
+public:
+    template <typename Node, typename Self>
+    constexpr static void reflect(Node& node, Self& self) {
+        using Range = std::make_index_sequence<N>;
+        serialize_all_elements(node, self, Range{});
+    }
+
+};
+
+
+template <typename T, size_t N>
+struct proxy<std::array<T, N>> {
+    template <typename Node, typename Self>
+    constexpr static void reflect(Node& node, Self& self) {
+        multi_element<N>::reflect(node, self);
+    }
+};
+
+template <typename... Args>
+struct proxy<std::tuple<Args...>> {
+    template <typename Node, typename Self>
+    constexpr static void reflect(Node& node, Self& self) {
+        multi_element<sizeof...(Args)>::reflect(node, self);
+    }
+};
+
+template <typename T1, typename T2>
+struct proxy<std::pair<T1, T2>> {
+    template <typename Node, typename Self>
+    constexpr static void reflect(Node& node, Self& self) {
+        node[0] % self.first;
+        node[1] % self.second;
+    }
+};
+
+template <typename Node, typename T>
+concept has_proxy_v = requires(Node node, T t) {
+    { proxy<T>::reflect(node, t) };
+};
+
+template <typename Node, typename T>
+    requires has_proxy_v<Node, T>
+struct convert<Node, T> {
+    static constexpr Type type = Type::Object;
+    struct Infos {
+        template <typename L1, typename L2, typename Self>
+        static auto range(Self& obj, L1 const& l1, L2 const& l2) {
+            auto visitor = helper::Visitor{l1, l2};
+            proxy<T>::reflect(visitor, obj);
+        }
+    };
+
+    template <typename Self>
+    convert(Node& node, Self& obj) {
+        Self::reflect(node, obj);
+    }
+};
+
+
+
 
 }

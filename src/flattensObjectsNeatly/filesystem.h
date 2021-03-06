@@ -23,9 +23,9 @@ struct convert<Node, std::filesystem::path> {
             path = str;
         }
         template <typename Node2>
-        static void convert(Node2& node, std::filesystem::path const& path) {
+        static auto convert(Node2& node, std::filesystem::path const& path) {
             std::string str = path.string();
-            node % str;
+            return node % str;
         }
 
     };

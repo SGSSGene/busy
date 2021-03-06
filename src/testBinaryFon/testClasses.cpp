@@ -24,18 +24,18 @@ TEST_CASE("test binary serialization of struct A", "[serialize][binary][struct]"
     auto buffer = fon::binary::serialize(data);
 
     auto expect = createVector(
-         84, 0, 0, 0, 0, 0, 0, 0, // full size of map
-          3, 1, 0, 0, 0, 0, 0, 0, 0, // map(3) with 1 entry
-         11, 0, 0, 0, 0, 0, 0, 0, // key "xs"
-          1, 'x', 's',
-         56, 0, 0, 0, 0, 0, 0, 0, // value to "xs"
-          2, 3, 0, 0, 0, 0, 0, 0, 0, // sequence(2) with 3 entries
-          13, 0, 0, 0, 0, 0, 0, 0, 1, // size 4 of type value(1)
-          10, 0, 0, 0,
-          13, 0, 0, 0, 0, 0, 0, 0, 1, // size 4 of type value(1)
-          20, 0, 0, 0,
-          13, 0, 0, 0, 0, 0, 0, 0, 1, // size 4 of type value(1)
-          30, 0, 0, 0
+          84,   0, 0, 0, 0, 0, 0, 0, // full size of map
+           3,   1, 0, 0, 0, 0, 0, 0, 0, // map(3) with 1 entry
+          11,   0, 0, 0, 0, 0, 0, 0, // key "xs"
+           1, 'x', 's',
+          56,   0, 0, 0, 0, 0, 0, 0, // value to "xs"
+           2,   3, 0, 0, 0, 0, 0, 0, 0, // sequence(2) with 3 entries
+          13,   0, 0, 0, 0, 0, 0, 0, 1, // size 4 of type value(1)
+          10,   0, 0, 0,
+          13,   0, 0, 0, 0, 0, 0, 0, 1, // size 4 of type value(1)
+          20,   0, 0, 0,
+          13,   0, 0, 0, 0, 0, 0, 0, 1, // size 4 of type value(1)
+          30,   0, 0, 0
     );
 
     CHECK(buffer.size() == expect.size());

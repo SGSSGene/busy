@@ -7,15 +7,14 @@
 namespace fon {
 
 template <typename Cb, typename T>
-void visit(Cb cb, T& obj) {
-    auto node = Node{cb, std::make_tuple(), (std::nullptr_t const*)nullptr};
-    node % obj;
+auto visit(Cb cb, T& obj) {
+    auto node = Node{cb};
+    return node % obj;
 }
 
 template <typename F, typename Cb, typename T>
 void filter(Cb cb, T& obj) {
     visit([&]<typename Node, typename Value>(Node& node, Value& obj) {
-
         if constexpr(std::is_base_of_v<F, Value> or std::is_same_v<F, std::remove_const_t<Value>>) {
             cb(node, obj);
         } else if constexpr(std::is_polymorphic_v<F> and std::is_polymorphic_v<Value>) {
@@ -103,10 +102,10 @@ void findObj(T& input, std::string const& path, L l) {
             return;
         }
 
-        if (node->getPath() == path) {
+/*        if (node->getPath() == path) {
             l(obj);
             found = true;
-        }
+        }*/
 
         if constexpr (Node::is_owner) {
             fon::convert(node, obj);
