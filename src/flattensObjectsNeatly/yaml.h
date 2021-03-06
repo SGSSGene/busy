@@ -31,7 +31,7 @@ auto serialize(T const& _input, YAML::Node start = {}) -> YAML::Node {
         } else if constexpr (std::is_same_v<ValueT, std::string_view>
                             or std::is_same_v<ValueT, char const*>) {
             top = std::string{obj};
-        } else if constexpr (Visitor::is_dynamic_list) {
+        } else if constexpr (Visitor::is_list) {
             visitor.visit(obj, [&](auto& key, auto& value) {
                 auto right = visitor % value;
                 top.push_back(right);
@@ -127,7 +127,7 @@ auto deserialize(YAML::Node root) -> T {
                     // !TODO no check, we just hope it works
                     obj = top.template as<ValueT>();
                 }
-            } else if constexpr (Node::is_dynamic_list) {
+            } else if constexpr (Node::is_list) {
                 Node::reserve(obj, top.size());
                 for (size_t idx{0}; idx < top.size(); ++idx) {
                     auto e = top[idx];

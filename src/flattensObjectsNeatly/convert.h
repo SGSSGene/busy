@@ -24,7 +24,7 @@ enum class Type {
     None,
     Value,
     Convertible,
-    DynamicList,
+    List,
     Map,
     Object,
     Pointer,
@@ -95,7 +95,7 @@ constexpr static bool is_sequence_v = is_any_of_v<C<T>,
 template <typename Node, typename T, template <typename...> typename C>
     requires is_sequence_v<C, T>
 struct convert<Node, C<T>> {
-    static constexpr Type type = Type::DynamicList;
+    static constexpr Type type = Type::List;
     struct Infos {
         using Key   = size_t;
         using Value = T;
@@ -136,7 +136,7 @@ constexpr static bool is_set_v = is_any_of_v<C<T>,
 template <typename Node, typename T, template <typename...> typename C>
     requires is_set_v<C, T>
 struct convert<Node, C<T>> {
-    static constexpr Type type = Type::DynamicList;
+    static constexpr Type type = Type::List;
     struct Infos {
         using Key   = size_t;
         using Value = T;
@@ -283,7 +283,7 @@ struct convert<Node, T> {
 
 template <typename Node, typename T>
 struct convert<Node, std::optional<T>> {
-    static constexpr Type type = Type::DynamicList;
+    static constexpr Type type = Type::List;
     struct Infos {
         using Key   = size_t;
         using Value = T;

@@ -31,7 +31,7 @@ public:
     static constexpr bool is_none         { type == Type::None };
     static constexpr bool is_value        { type == Type::Value };
     static constexpr bool is_convert      { type == Type::Convertible };
-    static constexpr bool is_dynamic_list { type == Type::DynamicList };
+    static constexpr bool is_list         { type == Type::List };
     static constexpr bool is_map          { type == Type::Map };
     static constexpr bool is_object       { type == Type::Object };
     static constexpr bool is_pointer      { type == Type::Pointer };
@@ -57,7 +57,7 @@ public:
     }
 
     template <typename Object>
-    requires (is_convert or is_object or is_dynamic_list)
+    requires (is_convert or is_object or is_list)
     auto visit(Object& object) const {
         if constexpr (is_convert) {
             return this->template convert(*this, object);
@@ -67,14 +67,14 @@ public:
             }, [&](auto& value) {
                 *this % value;
             });
-        } else if constexpr (is_dynamic_list) {
+        } else if constexpr (is_list) {
             this->template range(object, [&](auto& key, auto& value) {
                 (*this)[key] % value;
             });
         }
     }
     template <typename Object, typename CB>
-    requires (is_dynamic_list or is_map)
+    requires (is_list or is_map)
     void visit(Object& object, CB cb) const {
         this->template range(object, cb);
     }
