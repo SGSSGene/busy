@@ -38,16 +38,6 @@ struct convert;
 template<typename Node, typename T> convert(Node&, T&) -> convert<Node, T>;
 template<typename Node, typename T> convert(Node&, T const&) -> convert<Node, T>;
 
-// special "none" types
-template <typename Node>
-struct convert<Node, std::string_view> {
-    static constexpr Type type = Type::None;
-    struct Infos {};
-
-    convert(Node&, std::string_view const&) {}
-};
-
-
 template<typename T>
 concept ValueTypeConcept = std::is_arithmetic_v<T> or std::is_same_v<std::string, T>;
 

@@ -22,13 +22,7 @@ auto serialize(T const& _input) -> std::vector<std::byte> {
     buffer.reserve(1'000'000);
 
     fon::visit([&]<typename Node, typename ValueT> (Node& node, ValueT const& obj) {
-        if constexpr (Node::is_none) {
-            auto stack = SerializeStack{buffer};
-            if constexpr (std::is_same_v<std::string_view, ValueT>) {
-                stack.setType(SerializeStack::Type::Value);
-                stack.set(obj.data(), obj.size());
-            }
-        } else if constexpr (Node::is_convert) {
+        if constexpr (Node::is_convert) {
             Node::convert(node, obj);
         } else if constexpr (Node::is_value) {
             auto stack = SerializeStack{buffer};

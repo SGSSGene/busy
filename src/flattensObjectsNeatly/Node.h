@@ -28,7 +28,6 @@ public:
     {}
 
     static constexpr Type type            {convert<Parent, T>::type};
-    static constexpr bool is_none         { type == Type::None };
     static constexpr bool is_value        { type == Type::Value };
     static constexpr bool is_convert      { type == Type::Convertible };
     static constexpr bool is_list         { type == Type::List };

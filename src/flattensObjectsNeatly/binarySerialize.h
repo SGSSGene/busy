@@ -39,7 +39,7 @@ struct Frame {
     std::optional<Pointer<size_t>>  sizePtr;
     std::optional<Pointer<uint8_t>> typePtr;
     enum class Type : uint8_t {None = 0x00,  Value = 0x01, Sequence = 0x02, Map = 0x03};
-    Type mType {Type::None};
+    std::optional<Type> mType;
 
     size_t entries{0};
     std::optional<Pointer<size_t>> entriesPtr;
@@ -66,7 +66,7 @@ struct Frame {
             (*sizePtr) = sizePtr->size();
         }
         if (typePtr) {
-            (*typePtr) = uint8_t(mType);
+            (*typePtr) = uint8_t(mType.value());
         }
 
         if (entriesPtr) {
@@ -74,16 +74,16 @@ struct Frame {
         }
     }
     void setType(Type type) {
-        if (mType == Type::None) {
+        if (not mType.has_value()) {
             sizePtr.emplace(buffer);
             typePtr.emplace(buffer);
             if (type == Type::Sequence or type == Type::Map) {
                 entriesPtr.emplace(buffer);
             }
-        } else if (mType != type) {
+        } else if (mType.value() != type) {
             throw std::runtime_error("type can't be changed");
         }
-        mType = type;
+        mType.emplace(type);
     }
 
     template <typename T>
