@@ -1,16 +1,26 @@
 #include <catch/catch.hpp>
 #include <flattensObjectsNeatly/flattensObjectsNeatly.h>
 
+namespace {
 enum class MyEnum : int32_t {
     E1,
     E2,
     E3
 };
 
+auto asString(YAML::Node node) -> std::string {
+    YAML::Emitter emit;
+    emit << node;
+    return emit.c_str();
+}
+}
+
+
 TEST_CASE("test yaml serialization of enum", "[yaml][enum][serialize]") {
     SECTION("E1") {
         auto data = MyEnum::E1;
         auto node = fon::yaml::serialize(data);
+        INFO(asString(node));
         REQUIRE(node.IsScalar());
         REQUIRE(node.as<int32_t>() == int32_t(MyEnum::E1));
     }

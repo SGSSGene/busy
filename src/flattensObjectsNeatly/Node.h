@@ -55,6 +55,35 @@ public:
     auto* operator->() const {
         return &mParent;
     }
+
+    template <typename Object>
+    requires (is_convert or is_object or is_dynamic_list)
+    auto visit(Object& object) const {
+        if constexpr (is_convert) {
+            return this->template convert(*this, object);
+        } else if constexpr (is_object) {
+            this->template range(object, [&](auto& key, auto& value) {
+                (*this)[key] % value;
+            }, [&](auto& value) {
+                *this % value;
+            });
+        } else if constexpr (is_dynamic_list) {
+            this->template range(object, [&](auto& key, auto& value) {
+                (*this)[key] % value;
+            });
+        }
+    }
+    template <typename Object, typename CB>
+    requires (is_dynamic_list or is_map)
+    void visit(Object& object, CB cb) const {
+        this->template range(object, cb);
+    }
+    template <typename Object, typename CB1, typename CB2>
+    requires (is_object)
+    void visit(Object& object, CB1 cb1, CB2 cb2) const {
+        this->template range(object, cb1, cb2);
+    }
+
 };
 
 /*template <typename Parent, typename Key>
