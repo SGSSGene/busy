@@ -184,7 +184,7 @@ struct convert<Node, C<TKey, T>> {
         template <typename N2>
         static auto emplace(N2& node, C<TKey, T>& obj, TKey key) {
             Value value = N2::getEmpty();
-            node[key] % value;
+            node % value;
             obj.emplace(std::move(key), std::move(value));
         }
     };
@@ -352,7 +352,7 @@ struct convert<Node, std::variant<Args...>> {
                 using Value = std::variant_alternative_t<Index::N, std::variant<Args...>>;
                 if (Index::N == key) {
                     obj = getEmpty<Value>();
-                    node[key] % std::get<Index::N>(obj);
+                    node % std::get<Index::N>(obj);
                 }
             });
         }

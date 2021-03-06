@@ -42,33 +42,24 @@ public:
         return ::fon::getEmpty<Value>();
     }
 
-    template <typename Key>
-    auto operator[](Key key) const {
-        return mParent.operator[](key);
-    }
-
     template<typename T2>
     auto operator%(T2& t) const {
         return mParent.operator%(t);
     }
-    auto* operator->() const {
-        return &mParent;
-    }
 
     template <typename Object>
-    requires (is_convert or is_object or is_list or is_map)
     auto visit(Object& object) const {
         if constexpr (is_convert) {
             return this->template convert(*this, object);
         } else if constexpr (is_object) {
             this->template range(object, [&](auto& key, auto& value) {
-                (*this)[key] % value;
+                (*this) % value;
             }, [&](auto& value) {
                 *this % value;
             });
         } else if constexpr (is_list or is_map) {
             this->template range(object, [&](auto& key, auto& value) {
-                (*this)[key] % value;
+                (*this) % value;
             });
         }
     }
@@ -84,24 +75,6 @@ public:
     }
 
 };
-
-/*template <typename Parent, typename Key>
-struct KeyedNode {
-    Parent const& parent;
-    Key key;
-    KeyedNode(Parent const& parent, Key key)
-        : parent{parent}
-        , key{key}
-    {}
-
-    template<typename T>
-    auto operator% (T& t) const {
-        auto wrapper = NodeWrapper<Node, std::remove_const_t<T>>{*this};
-        return cb(wrapper, t);
-    }
-
-};*/
-
 
 template <typename Cb>
 struct Node {
@@ -119,18 +92,6 @@ public:
     Node(Cb const& _cb)
         : cb      {_cb}
     {}
-
-
-
-    template <typename TKey>
-    auto operator[](TKey key) const {
-        return Node{cb};
-    }
-
-    // we assume all c-str are static values
-    auto operator[](char const* key) const {
-        return this->operator[](std::string_view{key});
-    }
 
     template<typename T>
     auto operator% (T& t) const {
