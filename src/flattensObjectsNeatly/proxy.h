@@ -5,6 +5,7 @@
 #include <array>
 #include <map>
 #include <tuple>
+#include <type_traits>
 
 namespace fon {
 

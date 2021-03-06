@@ -28,7 +28,7 @@ public:
     {}
 
     static constexpr Type type            {convert<Parent, T>::type};
-    static constexpr bool is_value        { type == Type::Value };
+//    static constexpr bool is_value        { type == Type::Value };
     static constexpr bool is_convert      { type == Type::Convertible };
     static constexpr bool is_list         { type == Type::List };
     static constexpr bool is_map          { type == Type::Map };
@@ -56,7 +56,7 @@ public:
     }
 
     template <typename Object>
-    requires (is_convert or is_object or is_list)
+    requires (is_convert or is_object or is_list or is_map)
     auto visit(Object& object) const {
         if constexpr (is_convert) {
             return this->template convert(*this, object);
@@ -66,7 +66,7 @@ public:
             }, [&](auto& value) {
                 *this % value;
             });
-        } else if constexpr (is_list) {
+        } else if constexpr (is_list or is_map) {
             this->template range(object, [&](auto& key, auto& value) {
                 (*this)[key] % value;
             });

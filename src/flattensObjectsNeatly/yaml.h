@@ -21,13 +21,13 @@ auto serialize(T const& _input, YAML::Node start = {}) -> YAML::Node {
     auto root = fon::visit([&]<typename Visitor, typename ValueT>(Visitor& visitor, ValueT const& obj) {
         YAML::Node top;
 
-        if constexpr (Visitor::is_value or std::is_same_v<YAML::Node, ValueT>) {
-            // Interpret int8_t and uint8_t as ints not chars
-            if constexpr (is_any_of_v<ValueT, int8_t, uint8_t>) {
-                top = static_cast<int16_t>(obj);
-            } else {
-                top = obj;
-            }
+        // Interpret int8_t and uint8_t as ints not chars
+        if constexpr (is_any_of_v<ValueT, int8_t, uint8_t>) {
+            top = static_cast<int16_t>(obj);
+        } else if constexpr (std::is_arithmetic_v<ValueT>
+                      or std::is_same_v<std::string, ValueT>
+                      or std::is_same_v<YAML::Node, ValueT>) {
+            top = obj;
         } else if constexpr (std::is_same_v<ValueT, std::string_view>
                             or std::is_same_v<ValueT, char const*>) {
             top = std::string{obj};
@@ -96,13 +96,25 @@ struct yaml_error : std::runtime_error {
     {}
 };
 
+struct StackGuard final {
+    std::vector<YAML::Node>& stack;
+
+    StackGuard(std::vector<YAML::Node>& stack, YAML::Node n)
+        : stack{stack}
+    {
+        stack.push_back(n);
+    }
+    ~StackGuard() {
+        stack.pop_back();
+    }
+};
 
 template <typename T>
 auto deserialize(YAML::Node root) -> T {
 
     auto res = getEmpty<T>();
     std::vector<YAML::Node> nodeStack{root};
-    visit([&]<typename Node, typename ValueT>(Node& node, ValueT& obj) {
+    visit([&]<typename Visitor, typename ValueT>(Visitor& visitor, ValueT& obj) {
         auto top = nodeStack.back();
 
         if (not top.IsDefined()) {
@@ -112,11 +124,8 @@ auto deserialize(YAML::Node root) -> T {
         try {
             if constexpr (std::is_same_v<YAML::Node, ValueT>) {
                 obj = top;
-/*            } else if constexpr (has_proxy_v<Node, ValueT>) {
-                proxy<ValueT>::reflect(node, obj);*/
-            } else if constexpr (Node::is_convert) {
-                Node::convert(node, obj);
-            } else if constexpr (Node::is_value) {
+            } else if constexpr (std::is_arithmetic_v<ValueT>
+                      or std::is_same_v<std::string, ValueT>) {
                 if constexpr (is_any_of_v<ValueT, int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t>) {
                     auto v = top.template as<int64_t>();
                     if (v < std::numeric_limits<ValueT>::min() or v > std::numeric_limits<ValueT>::max()) {
@@ -127,28 +136,42 @@ auto deserialize(YAML::Node root) -> T {
                     // !TODO no check, we just hope it works
                     obj = top.template as<ValueT>();
                 }
-            } else if constexpr (Node::is_list) {
-                Node::reserve(obj, top.size());
+            } else if constexpr (Visitor::is_list) {
+                Visitor::reserve(obj, top.size());
                 for (size_t idx{0}; idx < top.size(); ++idx) {
                     auto e = top[idx];
-                    auto value = Node::getEmpty();
-
-                    nodeStack.push_back(e);
-                    node % value;
-                    nodeStack.pop_back();
-                    Node::emplace(obj, value);
+                    auto value = Visitor::getEmpty();
+                    auto g = StackGuard{nodeStack, e};
+                    visitor % value;
+                    Visitor::emplace(obj, value);
                 }
-            } else if constexpr (Node::is_map) {
-                using Key   = typename Node::Key;
+            } else if constexpr (Visitor::is_map) {
+                using Key   = typename Visitor::Key;
                 auto y_node = top;
-                Node::reserve(obj, y_node.size());
+                Visitor::reserve(obj, y_node.size());
                 for (auto iter{y_node.begin()}; iter != y_node.end(); ++iter) {
                     auto key  = deserialize<Key>(iter->first);
                     nodeStack.push_back(iter->second);
-                    Node::emplace(node, obj, std::move(key));
+                    Visitor::emplace(visitor, obj, std::move(key));
                     nodeStack.pop_back();
                 }
-            } else if constexpr (Node::is_pointer) {
+            } else if constexpr (Visitor::is_object) {
+                Visitor::range(obj, [&]<typename Key, typename Value>(Key& key, Value& value) {
+                    //!WORKAROUND for bug: https://github.com/jbeder/yaml-cpp/issues/979
+                    auto fakeKey = [&]() {
+                        YAML::Emitter emit;
+                        emit << serialize(key);
+                        return std::string{emit.c_str()};
+                    }();
+                    auto e = top[fakeKey];
+                    nodeStack.push_back(e);
+                    visitor % value;
+                    nodeStack.pop_back();
+                }, [&](auto& value) {
+                    visitor % value;
+                });
+
+/*            } else if constexpr (Node::is_pointer) {
                 using BaseType = typename Node::Value;
                 if constexpr (is_same_base_v<std::unique_ptr, ValueT>) {
                     if (not obj) {
@@ -160,29 +183,9 @@ auto deserialize(YAML::Node root) -> T {
                         obj = std::make_shared<BaseType>(Node::getEmpty());
                         node["data"] % *obj;
                     }
-                }
-            } else if constexpr (Node::is_object) {
-                Node::range(obj, [&]<typename Key, typename Value>(Key& key, Value& value) {
-                    //!WORKAROUND for bug: https://github.com/jbeder/yaml-cpp/issues/979
-                    auto fakeKey = [&]() {
-                        YAML::Emitter emit;
-                        emit << serialize(key);
-                        return std::string{emit.c_str()};
-                    }();
-                    auto e = top[fakeKey];
-                    nodeStack.push_back(e);
-                    node % value;
-                    nodeStack.pop_back();
-
-
-//                    deserialize<Value>(e);
-//                    value = deserialize<Value>(top[serialize(key)]);
-/*                    auto left  = node % key;
-                    auto right = node % value;
-                    node[left] % right;*/
-                }, [&](auto& value) {
-                    node % value;
-                });
+                }*/
+            } else if constexpr (Visitor::is_convert) {
+                Visitor::convert(visitor, obj);
             }
         } catch(yaml_error const&) {
             throw;

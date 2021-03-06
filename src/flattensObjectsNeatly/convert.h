@@ -32,13 +32,18 @@ enum class Type {
 
 // converter functions
 template <typename Node, typename T>
-struct convert;
+struct convert {
+    static constexpr Type type = Type::None;
+    struct Infos {};
+
+    convert(Node&, T const&) {}
+};
 
 // deduction guide
 template<typename Node, typename T> convert(Node&, T&) -> convert<Node, T>;
 template<typename Node, typename T> convert(Node&, T const&) -> convert<Node, T>;
 
-template<typename T>
+/*template<typename T>
 concept ValueTypeConcept = std::is_arithmetic_v<T> or std::is_same_v<std::string, T>;
 
 template <typename Node, ValueTypeConcept T>
@@ -47,14 +52,12 @@ struct convert<Node, T> {
     struct Infos {};
 
     convert(Node&, T const&) {}
-};
+};*/
 
 
 // convertible
-template <typename T>
-concept EnumConcept = std::is_enum_v<T>;
-
-template <typename Node, EnumConcept T>
+template <typename Node, typename T>
+    requires (std::is_enum_v<T>)
 struct convert<Node, T> {
     static constexpr Type type = Type::Convertible;
     struct Infos {
