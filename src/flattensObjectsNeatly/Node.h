@@ -12,7 +12,7 @@
 namespace fon {
 
 template <typename Parent, typename T>
-struct NodeWrapper : convert<Parent, T>::Infos {
+struct NodeWrapper : convert<Parent, T> {
     Parent const& mParent;
 
 public:
@@ -28,7 +28,6 @@ public:
     {}
 
     static constexpr Type type            {convert<Parent, T>::type};
-//    static constexpr bool is_value        { type == Type::Value };
     static constexpr bool is_convert      { type == Type::Convertible };
     static constexpr bool is_list         { type == Type::List };
     static constexpr bool is_map          { type == Type::Map };
@@ -37,8 +36,9 @@ public:
     static constexpr bool is_owner        { not is_pointer or is_same_base_v<std::unique_ptr, T> or is_same_base_v<std::shared_ptr, T> };
 
 
-    static auto getEmpty() {
-        using Value = typename convert<Parent, T>::Infos::Value;
+    template <typename Object>
+    static auto getEmptyEntry() {
+        using Value = typename convert<Parent, std::remove_cv_t<Object>>::Value;
         return ::fon::getEmpty<Value>();
     }
 
@@ -49,31 +49,44 @@ public:
 
     template <typename Object>
     auto visit(Object& object) const {
+        convert<Parent, std::remove_cv_t<Object>> conv;
         if constexpr (is_convert) {
-            return this->template convert(*this, object);
+            return conv.access(*this, object);
         } else if constexpr (is_object) {
-            this->template range(object, [&](auto& key, auto& value) {
+            conv.range(object, [&](auto& key, auto& value) {
                 (*this) % value;
             }, [&](auto& value) {
                 *this % value;
             });
         } else if constexpr (is_list or is_map) {
-            this->template range(object, [&](auto& key, auto& value) {
+            conv.range(object, [&](auto& key, auto& value) {
                 (*this) % value;
             });
         }
     }
     template <typename Object, typename CB>
-    requires (is_list or is_map)
     void visit(Object& object, CB cb) const {
-        this->template range(object, cb);
-    }
-    template <typename Object, typename CB1, typename CB2>
-    requires (is_object)
-    void visit(Object& object, CB1 cb1, CB2 cb2) const {
-        this->template range(object, cb1, cb2);
+        constexpr Type type {convert<Parent, T>::type};
+        static_assert(type == Type::List || type == Type::Map, "Must be a map or a list");
+
+        convert<Parent, std::remove_cv_t<Object>> conv;
+        conv.range(object, cb);
     }
 
+    template <typename Object, typename CB1, typename CB2>
+    void visit(Object& object, CB1 cb1, CB2 cb2) const {
+        convert<Parent, std::remove_cv_t<Object>> conv;
+
+        constexpr Type type {convert<Parent, T>::type};
+        static_assert(type == Type::List
+                      || type == Type::Map
+                      || type == Type::Object, "Must be a map, a list or an object");
+        if constexpr (type == Type::Object) {
+            conv.range(object, cb1, cb2);
+        } else {
+            conv.range(object, cb1);
+        }
+    }
 };
 
 template <typename Cb>

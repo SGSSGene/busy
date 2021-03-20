@@ -13,6 +13,22 @@ auto visit(Cb cb, T& obj) {
     return node % obj;
 }
 
+template <typename Cb, typename T>
+auto visitWithPath(Cb cb, T& obj) {
+    std::vector<std::string> path;
+
+    fon::visit([&]<typename Visitor, typename ValueT> (Visitor& visitor, ValueT& obj) {
+        std::string fullPath{"/"};
+        for (auto const& p : path) {
+            fullPath += p + "/";
+        }
+        if (!path.empty()) {
+            fullPath.pop_back();
+        }
+        cb(visitor, fullPath, obj);
+    }, obj);
+}
+
 template <typename F, typename Cb, typename T>
 void filter(Cb cb, T& obj) {
     visit([&]<typename Node, typename Value>(Node& node, Value& obj) {

@@ -60,4 +60,23 @@ struct proxy<std::pair<T1, T2>> {
     }
 };
 
+template <typename T>
+struct proxy<std::vector<T>> {
+    template <typename Visitor, typename Self>
+    constexpr static void reflect(Visitor& visitor, Self& self) {
+        self.clear();
+        self.reserve(visitor.size());
+        for (auto subVisitor : visitor) {
+            self.emplace_back(getEmpty<T>());
+            subVisitor % self.back();
+        }
+    }
+
+    template <typename Visitor, typename Self>
+    constexpr static void reflect(Visitor& visitor, Self const& self) {
+        visitor.range(self.size(), begin(self), end(self));
+    }
+};
+
+
 }

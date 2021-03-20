@@ -139,7 +139,7 @@ auto deserialize(YAML::Node root) -> T {
             } else if constexpr (Visitor::is_list) {
                 Visitor::reserve(obj, top.size());
                 for (size_t idx{0}; idx < top.size(); ++idx) {
-                    auto value = Visitor::getEmpty();
+                    auto value = Visitor::template getEmptyEntry<ValueT>();
                     auto g = StackGuard{nodeStack, top[idx]};
                     visitor % value;
                     Visitor::emplace(obj, value);
@@ -237,27 +237,22 @@ namespace fon {
 template <typename Node>
 struct convert<Node, ::YAML::Node> {
     static constexpr Type type = Type::Convertible;
-    struct Infos {
-        template <typename Node2>
-        static void convert(Node2& node, YAML::Node& obj) {
-            std::stringstream ss;
-            ss << obj;
-            auto val = ss.str();
-            node % val;
-            obj = val;
-        }
+    template <typename Node2>
+    static void access(Node2& node, YAML::Node& obj) {
+        std::stringstream ss;
+        ss << obj;
+        auto val = ss.str();
+        node % val;
+        obj = val;
+    }
 
-        template <typename Node2>
-        static void convert(Node2& node, YAML::Node const& obj) {
-            std::stringstream ss;
-            ss << obj;
-            auto val = ss.str();
-            return node % val;
-        }
-
-    };
-    convert(Node&, YAML::Node&) {}
-
+    template <typename Node2>
+    static void access(Node2& node, YAML::Node const& obj) {
+        std::stringstream ss;
+        ss << obj;
+        auto val = ss.str();
+        return node % val;
+    }
 };
 
 
