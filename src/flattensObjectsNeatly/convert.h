@@ -17,6 +17,7 @@
 #include <utility>
 #include <variant>
 #include <vector>
+#include <optional>
 
 namespace fon {
 
