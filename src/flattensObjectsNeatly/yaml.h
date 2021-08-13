@@ -89,6 +89,85 @@ auto serialize(T const& _input, YAML::Node start = {}) -> YAML::Node {
     return root;
 }
 
+template <typename T>
+auto serialize2(T const& _input, YAML::Node start = {}) -> YAML::Node {
+    auto& input = _input;
+
+    std::map<void*, std::string> serializedShared; // helps tracking which shared ptr have already been serialized
+
+
+    auto root = fon::visit2([&]<typename Visitor, typename ValueT>(Visitor& visitor, ValueT const& obj) {
+        YAML::Node top;
+
+        // Interpret int8_t and uint8_t as ints not chars
+        if constexpr (is_any_of_v<ValueT, int8_t, uint8_t>) {
+            top = static_cast<int16_t>(obj);
+        } else if constexpr (std::is_arithmetic_v<ValueT>
+                      or std::is_same_v<std::string, ValueT>
+                      or std::is_same_v<YAML::Node, ValueT>) {
+            top = obj;
+        } else if constexpr (std::is_same_v<ValueT, std::string_view>
+                            or std::is_same_v<ValueT, char const*>) {
+            top = std::string{obj};
+        } else if constexpr (is_list<Visitor, ValueT>()) {
+            visitor.visit(obj, [&](auto& key, auto& value) {
+                auto right = visitor % value;
+                top.push_back(right);
+            });
+        } else if constexpr (is_map<Visitor, ValueT>()) {
+            visitor.visit(obj, [&](auto& key, auto& value) {
+                auto left  = visitor % key;
+                auto right = visitor % value;
+                top[left] = right;
+            });
+        } else if constexpr (is_object<Visitor, ValueT>()) {
+            top = YAML::Node(YAML::NodeType::Map);
+            visitor.visit(obj, [&](auto& key, auto& value) {
+                auto left  = visitor % key;
+                auto right = visitor % value;
+                top[left] = right;
+            }, [&](auto& value) {
+                top = visitor % value;
+            });
+/*        } else if constexpr (Visitor::is_pointer) {
+            fmt::print("name: {}\n", is_same_base_v<std::unique_ptr, ValueT>);
+            if constexpr (is_same_base_v<std::unique_ptr, ValueT>) {
+                top = visitor % *obj;
+            } else if constexpr (is_same_base_v<std::shared_ptr, ValueT>) {
+                using BaseType = typename Visitor::Value;
+                if (obj) {
+                    auto mostDerived = [&] {
+                        if constexpr (std::is_polymorphic_v<BaseType>) {
+                            return dynamic_cast<void*>(obj.get());
+                        } else {
+                            return obj.get();
+                        }
+                    }();
+                    auto iter = serializedShared.find(mostDerived);
+                    if (iter == serializedShared.end()) {
+                        top["type"] = "primary";
+//                        serializedShared[mostDerived] = node->getPath();
+                        visitor["data"] % *obj;
+                    } else {
+                        top["type"] = "secondary";
+                        top["path"] = iter->second;
+                    }
+                }
+            } else {
+                //findPath(input, obj, [&](auto& node) {
+                    //top = node->getPath();
+                //});
+            }*/
+        } else {
+            top = visitor.visit(obj);
+        }
+        return top;
+    }, [](auto key) { return nullptr; }, input);
+
+    return root;
+}
+
+
 
 struct yaml_error : std::runtime_error {
     yaml_error(std::string s, YAML::Node const& node)
@@ -228,6 +307,7 @@ auto deserialize(YAML::Node root) -> T {
 }
 using details::serialize;
 using details::deserialize;
+using details::serialize2;
 
 }
 

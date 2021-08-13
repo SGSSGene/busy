@@ -7,6 +7,7 @@
 #include <list>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <stdexcept>
 #include <string>
@@ -29,6 +30,7 @@ enum class Type {
     Object,
     Pointer,
 };
+
 
 // converter functions
 template <typename Node, typename T>
@@ -308,12 +310,25 @@ struct convert2 {
     convert2(T& value) : value{value} {}
 
     std::string toString() const {
-        return std::to_string(value);
+        return value;
     }
     void fromString(std::string_view) {
         value = {};
     }
 };
+
+// converter functions
+template <typename T>
+    requires (std::is_same_v<nullptr_t, std::remove_cv_t<T>>)
+struct convert2<T> {
+    convert2(T&) {}
+
+    std::string toString() const {
+        return "";
+    }
+    void fromString(std::string_view) {}
+};
+
 
 template <typename T>
     requires (std::is_arithmetic_v<T>)
@@ -355,8 +370,35 @@ struct convert2<char const*> {
     void fromString(std::string_view str) = delete;
 };
 
+template <>
+struct convert2<char const* const&> {
+    char const* const value;
+    convert2(char const* const value) : value{value} {}
+
+    std::string toString() const {
+        return {value};
+    }
+    void fromString(std::string_view str) = delete;
+};
+
+template <typename Visitor, typename Object>
+concept isConvertible = requires(Visitor visitor, Object object) {
+    { convert<Visitor, Object>{}.access(visitor, object) };
+};
+
+template <typename Visitor, typename Object>
+concept isListOrMap = requires(Visitor visitor, Object object) {
+    { convert<Visitor, Object>{}.range(object, [](auto& key, auto& value) {
+    }) };
+};
 
 
+template <typename Visitor, typename Object>
+concept isObject = requires(Visitor visitor, Object object) {
+    { convert<Visitor, Object>{}.range(object, [](auto& key, auto& value) {
+    }, [](auto& value) {
+    }) };
+};
 
 
 }
