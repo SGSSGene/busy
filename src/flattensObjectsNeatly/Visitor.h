@@ -53,7 +53,7 @@ private:
 public:
 
     template <isObject<Visitor> T>
-    void visit(T& obj) {
+    void visit(isObject<Visitor> auto& obj) {
         _convert<T>().range(obj, [&](auto& key, auto& value) {
             (*this)[key] % value;
         }, [&](auto& value) {
@@ -75,13 +75,13 @@ public:
         _convert<T>().access(*this, obj);
     }
 
-    template <isListOrMap<Visitor> T, typename CB>
-    void visit(T& obj, CB cb) {
+    template <isListOrMap<Visitor> T>
+    void visit(T& obj, auto cb) {
         _convert<T>().range(obj, cb);
     }
 
-    template <isObject<Visitor> T, typename CB1, typename CB2>
-    void visit(T& obj, CB1 cb1, CB2 cb2) {
+    template <isObject<Visitor> T>
+    void visit(T& obj, auto cb1, auto cb2) {
         _convert<T>().range(obj, cb1, cb2);
     }
 
