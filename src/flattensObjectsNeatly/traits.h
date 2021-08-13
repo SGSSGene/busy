@@ -11,11 +11,6 @@ template <typename T>
 struct proxy;
 
 template <typename Node, typename T>
-concept has_ser_v = requires(Node node, T t) {
-    { t.serialize(node) };
-};
-
-template <typename Node, typename T>
 concept has_reflect_v = requires(Node node, T t) {
     { T::reflect(node, t) };
 };
