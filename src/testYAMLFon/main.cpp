@@ -2,8 +2,7 @@
 #include <flattensObjectsNeatly/flattensObjectsNeatly.h>
 
 struct A {
-    template <typename Node, typename Self>
-    static void reflect(Node& node, Self& self) {
+    constexpr static void reflect(auto& visitor, auto& self) {
     }
 };
 

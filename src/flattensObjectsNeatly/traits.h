@@ -10,14 +10,14 @@ enum class ctor : uint8_t {};
 template <typename T>
 struct proxy;
 
-template <typename Node, typename T>
-concept has_reflect_v = requires(Node node, T t) {
-    { T::reflect(node, t) };
+template <typename Visitor, typename T>
+concept has_reflect_v = requires(Visitor visitor, T t) {
+    { T::reflect(visitor, t) };
 };
 
-template <typename Node, typename T>
-concept has_proxy_v = requires(Node node, T t) {
-    { proxy<T>::reflect(node, t) };
+template <typename Visitor, typename T>
+concept has_proxy_v = requires(Visitor visitor, T t) {
+    { proxy<T>::reflect(visitor, t) };
 };
 
 // use as is_same_base<std::vector, T>::type
