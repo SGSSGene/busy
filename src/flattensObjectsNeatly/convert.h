@@ -100,7 +100,6 @@ template <typename Node, typename T, template <typename...> typename C>
     requires is_set_v<C, T>
 struct convert<Node, C<T>> {
     static constexpr Type type = Type::List;
-    using Key   = size_t;
     using Value = T;
     template <typename L, typename Self>
     static void range(Self& obj, L const& l) {
@@ -383,14 +382,27 @@ struct convert2<char const* const&> {
 
 template <typename Visitor, typename Object>
 concept isConvertible = requires(Visitor visitor, Object object) {
-    { convert<Visitor, Object>{}.access(visitor, object) };
+    convert<Visitor, Object>{}.access(visitor, object);
 };
 
 template <typename Visitor, typename Object>
-concept isListOrMap = requires(Visitor visitor, Object object) {
-    { convert<Visitor, Object>{}.range(object, [](auto& key, auto& value) {
-    }) };
+concept isMap = requires(Visitor visitor, Object object) {
+    { convert<Visitor, Object>{}.range(object, [](auto& key, auto& value) { }) };
+    { convert<Visitor, Object>::Key };
+    { convert<Visitor, Object>::Value };
+    { visitor[std::declval<convert<Visitor, Object>::Key>()] % std::declval<convert<Visitor, Object>::Value>() };
 };
+
+template <typename Visitor, typename Object>
+concept isList = !isMap<Visitor, Object> && requires(Visitor visitor, Object object) {
+    { convert<Visitor, Object>{}.range(object, [](auto& key, auto& value) { }) };
+    { convert<Visitor, Object>::Value };
+    { visitor[size_t{}] % std::declval<convert<Visitor, Object>::Value>() };
+
+};
+
+template <typename Visitor, typename Object>
+concept isListOrMap = isList<Visitor, Object> || isMap<Visitor, Object>;
 
 
 template <typename Visitor, typename Object>

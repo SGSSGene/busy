@@ -109,18 +109,18 @@ auto serialize2(T const& _input, YAML::Node start = {}) -> YAML::Node {
         } else if constexpr (std::is_same_v<ValueT, std::string_view>
                             or std::is_same_v<ValueT, char const*>) {
             top = std::string{obj};
-        } else if constexpr (is_list<Visitor, ValueT>()) {
+        } else if constexpr (isList<Visitor, ValueT>) {
             visitor.visit(obj, [&](auto& key, auto& value) {
                 auto right = visitor % value;
                 top.push_back(right);
             });
-        } else if constexpr (is_map<Visitor, ValueT>()) {
+        } else if constexpr (isMap<Visitor, ValueT>) {
             visitor.visit(obj, [&](auto& key, auto& value) {
                 auto left  = visitor % key;
                 auto right = visitor % value;
                 top[left] = right;
             });
-        } else if constexpr (is_object<Visitor, ValueT>()) {
+        } else if constexpr (isObject<Visitor, ValueT>) {
             top = YAML::Node(YAML::NodeType::Map);
             visitor.visit(obj, [&](auto& key, auto& value) {
                 auto left  = visitor % key;

@@ -24,20 +24,6 @@ public:
     Visitor& operator=(Visitor&&)      = delete;
     ~Visitor()                         = default;
 
-    template <typename T>
-    static constexpr bool is_list() {
-        return convert<Visitor, T>::type == Type::List;
-    }
-    template <typename T>
-    static constexpr bool is_map() {
-        return convert<Visitor, T>::type == Type::Map;
-    }
-    template <typename T>
-    static constexpr bool is_object() {
-        return convert<Visitor, T>::type == Type::Object;
-    }
-
-
     Visitor(Cb const& cb)
         : cb {cb}
         , key {nullptr}
@@ -59,10 +45,16 @@ public:
         return cb(*this, *key, obj);
     }
 
+private:
+    template <typename T>
+    auto _convert() {
+        return convert<Visitor, std::remove_cv_t<T>>{};
+    }
+public:
+
     template <isObject<Visitor> T>
     void visit(T& obj) {
-        convert<Visitor, std::remove_cv_t<T>> conv;
-        conv.range(obj, [&](auto& key, auto& value) {
+        _convert<T>().range(obj, [&](auto& key, auto& value) {
             (*this)[key] % value;
         }, [&](auto& value) {
             *this % value;
@@ -71,8 +63,7 @@ public:
 
     template <isListOrMap<Visitor> T>
     void visit(T& obj) {
-        convert<Visitor, std::remove_cv_t<T>> conv;
-        conv.range(obj, [&](auto& key, auto& value) {
+        _convert<T>().range(obj, [&](auto& key, auto& value) {
             (*this)[key] % value;
         });
     }
@@ -81,38 +72,20 @@ public:
      */
     template <isConvertible<Visitor> T>
     void visit(T& obj) {
-        constexpr Type type {convert<Visitor, T>::type};
-        convert<Visitor, std::remove_cv_t<T>> conv;
-        conv.access(*this, obj);
+        _convert<T>().access(*this, obj);
     }
 
     template <isListOrMap<Visitor> T, typename CB>
-    void visit(T& obj, CB cb) const {
-        convert<Visitor, std::remove_cv_t<T>> conv;
-        conv.range(obj, cb);
+    void visit(T& obj, CB cb) {
+        _convert<T>().range(obj, cb);
     }
 
     template <isObject<Visitor> T, typename CB1, typename CB2>
-    void visit(T& obj, CB1 cb1, CB2 cb2) const {
-        convert<Visitor, std::remove_cv_t<T>> conv;
-        conv.range(obj, cb1, cb2);
+    void visit(T& obj, CB1 cb1, CB2 cb2) {
+        _convert<T>().range(obj, cb1, cb2);
     }
 
 
 };
-
-template <typename Visitor, typename T>
-constexpr bool is_list() {
-    return convert<Visitor, T>::type == Type::List;
-}
-template <typename Visitor, typename T>
-constexpr bool is_map() {
-    return convert<Visitor, T>::type == Type::Map;
-}
-template <typename Visitor, typename T>
-constexpr bool is_object() {
-    return convert<Visitor, T>::type == Type::Object;
-}
-
 
 }
