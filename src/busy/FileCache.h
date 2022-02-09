@@ -1,10 +1,9 @@
 #pragma once
 
 #include <base64/base64.h>
-#include <flattensObjectsNeatly/binary.h>
-#include <flattensObjectsNeatly/chrono.h>
-#include <flattensObjectsNeatly/filesystem.h>
-#include <flattensObjectsNeatly/flattensObjectsNeatly.h>
+#include <fon/binary.h>
+#include <fon/std/chrono.h>
+#include <fon/std/filesystem.h>
 #include <picosha2/picosha2.h>
 
 namespace busy {
