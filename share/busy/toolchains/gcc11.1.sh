@@ -24,7 +24,7 @@ expected_minor_ge=1
 declare -A profiles
 profiles=(
     ["default"]="debug ccache no-default"
-    ["release"]="no_debug no-release no-release_with_symbols"
+    ["release"]="no-debug no-release_with_symbols"
     ["release_with_symbols"]="no-release no-debug"
     ["debug"]="no-release no-release_with_symbols"
     ["profile"]=""
