@@ -10,6 +10,7 @@
 #include <fmt/format.h>
 #include <fmt/chrono.h>
 #include <fmt/color.h>
+#include <fon/yaml.h>
 #include <sargparse/sargparse.h>
 #include <unistd.h>
 

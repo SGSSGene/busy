@@ -5,6 +5,7 @@
 
 #include <cstddef>
 #include <map>
+#include <unordered_set>
 
 namespace busy {
 

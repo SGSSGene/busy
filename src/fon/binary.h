@@ -7,6 +7,8 @@
 
 #include <cassert>
 #include <cstring>
+#include <functional>
+#include <limits>
 
 namespace fon::binary {
 

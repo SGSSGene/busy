@@ -5,6 +5,7 @@
 #include <fon/std/chrono.h>
 #include <fon/std/filesystem.h>
 #include <picosha2/picosha2.h>
+#include <set>
 
 namespace busy {
 
@@ -112,6 +113,7 @@ struct FileInfo {
     bool hasWarnings{false};
     std::string compilerHash{};
 
+    FileInfo() = default;
 
     FileInfo(fon::ctor) {};
     FileInfo(Path _path)
