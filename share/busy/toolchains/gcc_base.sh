@@ -14,6 +14,8 @@ if [ -z "${BUSY_TOOLCHAIN_CALL}" ]; then
 fi
 
 source "${0%/*}"/helper_utils.sh
+BUILD_SCRIPTS="${BUILD_SCRIPTS} "${0%/*}"/gcc_base.sh "${0%/*}"/helper_utils.sh"
+
 
 version_detailed="$(${C} --version | head -n 1)"
 version=$(echo ${version_detailed} | perl -ne "s/\([^\)]*\)/()/g;print" | cut -d " " -f 3)
@@ -24,7 +26,7 @@ version_patch=$(echo ${version} | cut -d "." -f 3)
 
 # check if version numbers match
 if [ "${version_major}" != "${expected_major}" ] || [ "${version_minor}" -lt "${expected_minor_ge}" ]; then
-	exit -1
+    exit -1
 fi
 
 parse "--options    options"\
@@ -34,16 +36,16 @@ parse "--options    options"\
 # check if ccache is available
 CCACHE=0
 if [[ " ${options[@]} " =~ " ccache " ]]; then
-	which ccache > /dev/null 2>&1
-	if [ "$?" != "0" ]; then
-		exit -1
-	fi
+    which ccache > /dev/null 2>&1
+    if [ "$?" != "0" ]; then
+        exit -1
+    fi
 
-	CCACHE=1
-	CXX="ccache ${CXX}"
-	C="ccache ${C}"
-	LD="ccache ${LD}"
-	AR="ccache ${AR}"
+    CCACHE=1
+    CXX="ccache ${CXX}"
+    C="ccache ${C}"
+    LD="ccache ${LD}"
+    AR="ccache ${AR}"
 fi
 
 if [ "$1" == "info" ]; then
@@ -74,125 +76,125 @@ fi
 
 outputFiles=()
 if [ "$1" == "begin" ]; then
-	rootDir="$2"
-	if [ ! -e "external" ] && [ -e ${rootDir}/external ]; then
-		ln -s ${rootDir}/external external
-	fi
-	if [ ! -e "src" ] && [ -e ${rootDir}/src ]; then
-		ln -s ${rootDir}/src src
-	fi
+    rootDir="$2"
+    if [ ! -e "external" ] && [ -e ${rootDir}/external ]; then
+        ln -s ${rootDir}/external external
+    fi
+    if [ ! -e "src" ] && [ -e ${rootDir}/src ]; then
+        ln -s ${rootDir}/src src
+    fi
 
-	hash="$(echo "${@}" | cat - ${0} ${0%/*}/helper_utils.sh ${CXX} ${C} ${LD} ${AR} | shasum)"
-	echo "hash: ${hash}";
-	exit 0
+    hash="$(echo "${@}" | cat - ${BUILD_SCRIPTS} ${CXX} ${C} ${LD} ${AR} | shasum)"
+    echo "hash: ${hash}";
+    exit 0
 elif [ "$1" == "end" ]; then
-	exit 0
+    exit 0
 elif [ "$1" == "compile" ]; then
-	shift; inputFile="$1"
-	shift; outputFile="$1"
-	shift
+    shift; inputFile="$1"
+    shift; outputFile="$1"
+    shift
 
-	dependencyFile=$(echo "${outputFile}" | rev | cut -b 3- | rev | xargs -I '{}' echo '{}.d')
-	stdoutFile="tmp/${outputFile}.stdout"
-	stderrFile="tmp/${outputFile}.stderr"
-	export CCACHE_LOGFILE="tmp/${outputFile}.ccache"
-	mkdir -p $(dirname ${stdoutFile})
+    dependencyFile=$(echo "${outputFile}" | rev | cut -b 3- | rev | xargs -I '{}' echo '{}.d')
+    stdoutFile="tmp/${outputFile}.stdout"
+    stderrFile="tmp/${outputFile}.stderr"
+    export CCACHE_LOGFILE="tmp/${outputFile}.ccache"
+    mkdir -p $(dirname ${stdoutFile})
 
-	outputFiles+=("${outputFile}" "${dependencyFile}" "${stdoutFile}" "${stderrFile}")
-	if [ "${CCACHE}" -eq 1 ]; then
-		outputFiles+=(${CCACHE_LOGFILE})
-	fi
+    outputFiles+=("${outputFile}" "${dependencyFile}" "${stdoutFile}" "${stderrFile}")
+    if [ "${CCACHE}" -eq 1 ]; then
+        outputFiles+=(${CCACHE_LOGFILE})
+    fi
 
-	parse "--ilocal  projectIncludes" \
-	      "--isystem systemIncludes" \
-	      "--verbose verbose" \
-	      "--" "$@"
+    parse "--ilocal  projectIncludes" \
+          "--isystem systemIncludes" \
+          "--verbose verbose" \
+          "--" "$@"
 
-	parameters=""
-	for key in ${!profile_compile_param[@]}; do
-		if [[ "${options[@]} " =~ " ${key} " ]]; then
-			parameters+="${profile_compile_param[$key]}"
-		fi
-	done
+    parameters=""
+    for key in ${!profile_compile_param[@]}; do
+        if [[ "${options[@]} " =~ " ${key} " ]]; then
+            parameters+="${profile_compile_param[$key]}"
+        fi
+    done
 
-	projectIncludes+=($(dirname ${projectIncludes[-1]})) #!TODO this line should not be needed
-	projectIncludes=$(implode " -I " "${projectIncludes[@]}")
-	systemIncludes=$(implode " -isystem " "${systemIncludes[@]}")
+    projectIncludes+=($(dirname ${projectIncludes[-1]})) #!TODO this line should not be needed
+    projectIncludes=$(implode " -iquote " "${projectIncludes[@]}")
+    systemIncludes=$(implode " -isystem " "${systemIncludes[@]}")
 
-	diagnostic="-fdiagnostics-color=always -fdiagnostics-show-template-tree -fdiagnostics-format=text"
+    diagnostic="-fdiagnostics-color=always -fdiagnostics-show-template-tree -fdiagnostics-format=text"
 
-	filetype="$(echo "${inputFile}" | rev | cut -d "." -f 1 | rev)";
-	if [[ "${filetype}" =~ ^(cpp|cc)$ ]]; then
-		call="${CXX} ${CXX_STD} ${parameters} ${diagnostic} -c ${inputFile} -o ${outputFile} $projectIncludes $systemIncludes"
-	elif [ "${filetype}" = "c" ]; then
-		call="${C} ${C_STD} ${parameters} ${diagnostic} -c ${inputFile} -o ${outputFile} $projectIncludes $systemIncludes"
-	else
-		exit 0
-	fi
+    filetype="$(echo "${inputFile}" | rev | cut -d "." -f 1 | rev)";
+    if [[ "${filetype}" =~ ^(cpp|cc)$ ]]; then
+        call="${CXX} ${CXX_STD} ${parameters} ${diagnostic} -c ${inputFile} -o ${outputFile} $projectIncludes $systemIncludes"
+    elif [ "${filetype}" = "c" ]; then
+        call="${C} ${C_STD} ${parameters} ${diagnostic} -c ${inputFile} -o ${outputFile} $projectIncludes $systemIncludes"
+    else
+        exit 0
+    fi
 elif [ "$1" == "link" ]; then
-	shift; target="$1"
-	shift; outputFile="$1"
-	shift
+    shift; target="$1"
+    shift; outputFile="$1"
+    shift
 
-	stdoutFile="tmp/${outputFile}.stdout"
-	stderrFile="tmp/${outputFile}.stderr"
-	export CCACHE_LOGFILE="tmp/${outputFile}.ccache"
-	mkdir -p $(dirname ${stdoutFile})
+    stdoutFile="tmp/${outputFile}.stdout"
+    stderrFile="tmp/${outputFile}.stderr"
+    export CCACHE_LOGFILE="tmp/${outputFile}.ccache"
+    mkdir -p $(dirname ${stdoutFile})
 
-	outputFiles+=("${outputFile}" "${stdoutFile}" "${stderrFile}")
-	if [ "${CCACHE}" -eq 1 ]; then
-		outputFiles+=(${CCACHE_LOGFILE})
-	fi
+    outputFiles+=("${outputFile}" "${stdoutFile}" "${stderrFile}")
+    if [ "${CCACHE}" -eq 1 ]; then
+        outputFiles+=(${CCACHE_LOGFILE})
+    fi
 
-	parse "--input         inputFiles" \
-	      "--llibraries    localLibraries" \
-	      "--syslibraries  sysLibraries" \
-	      "--verbose       verbose" \
-	      "--" "$@"
+    parse "--input         inputFiles" \
+          "--llibraries    localLibraries" \
+          "--syslibraries  sysLibraries" \
+          "--verbose       verbose" \
+          "--" "$@"
 
-	parameters=""
-	for key in ${!profile_link_param[@]}; do
-		if [[ "${options[@]} " =~ " ${key} " ]]; then
-			parameters+="${profile_link_param[$key]}"
-		fi
-	done
-	for key in ${!profile_link_libraries[@]}; do
-		if [[ "${options[@]} " =~ " ${key} " ]]; then
-			sysLibraries+=("${profile_link_libraries[$key]}")
-		fi
-	done
+    parameters=""
+    for key in ${!profile_link_param[@]}; do
+        if [[ "${options[@]} " =~ " ${key} " ]]; then
+            parameters+="${profile_link_param[$key]}"
+        fi
+    done
+    for key in ${!profile_link_libraries[@]}; do
+        if [[ "${options[@]} " =~ " ${key} " ]]; then
+            sysLibraries+=("${profile_link_libraries[$key]}")
+        fi
+    done
 
-	sysLibraries=($(implode " -l" "${sysLibraries[@]}"))
+    sysLibraries=($(implode " -l" "${sysLibraries[@]}"))
 
-	# Header only
-	if [ "${#inputFiles[@]}" -eq 0 ]; then
-		echo "compilable: false"
-		exit 0
+    # Header only
+    if [ "${#inputFiles[@]}" -eq 0 ]; then
+        echo "compilable: false"
+        exit 0
 
-	# Executable
-	elif [ "${target}" == "executable" ]; then
-		call="${CXX} -rdynamic ${parameters} -fdiagnostics-color=always -o ${outputFile} ${inputFiles[@]} ${localLibraries[@]} ${sysLibraries[@]}"
-	# Shared library
-	elif [ "${target}" == "shared_library" ]; then
-		call="${CXX} -rdynamic -shared ${parameters} -fdiagnostics-color=always -o ${outputFile} ${inputFiles[@]} ${localLibraries[@]} ${sysLibraries[@]}"
-	# Static library
-	elif [ "${target}" == "static_library" ]; then
-		objectFile="tmp/lib/${outputFile}.o"
-		mkdir -p $(dirname ${objectFile})
-		outputFiles+=("${objectFile}")
-		call="${LD} -Ur -o ${objectFile} ${inputFiles[@]} && ${AR} rcs ${outputFile} ${objectFile}"
+    # Executable
+    elif [ "${target}" == "executable" ]; then
+        call="${CXX} -rdynamic ${parameters} -fdiagnostics-color=always -o ${outputFile} ${inputFiles[@]} ${localLibraries[@]} ${sysLibraries[@]}"
+    # Shared library
+    elif [ "${target}" == "shared_library" ]; then
+        call="${CXX} -rdynamic -shared ${parameters} -fdiagnostics-color=always -o ${outputFile} ${inputFiles[@]} ${localLibraries[@]} ${sysLibraries[@]}"
+    # Static library
+    elif [ "${target}" == "static_library" ]; then
+        objectFile="tmp/lib/${outputFile}.o"
+        mkdir -p $(dirname ${objectFile})
+        outputFiles+=("${objectFile}")
+        call="${LD} -Ur -o ${objectFile} ${inputFiles[@]} && ${AR} rcs ${outputFile} ${objectFile}"
 
-	else
-		exit -1
-	fi
+    else
+        exit -1
+    fi
 else
-	exit -1
+    exit -1
 fi
 
 mkdir -p $(dirname ${outputFile})
 : > ${stdoutFile}
 if [ -n "${set_verbose}" ]; then
-	echo $call>>${stdoutFile}
+    echo $call>>${stdoutFile}
 fi
 eval $call 1>>${stdoutFile} 2>${stderrFile}
 errorCode=$?
@@ -204,22 +206,22 @@ cat ${stderrFile} | sed 's/^/    /'
 
 echo "dependencies:"
 if [ "${errorCode}" -eq 0 ] && [ -n "${dependencyFile}" ]; then
-	parseDepFile ${dependencyFile}
+    parseDepFile ${dependencyFile}
 fi
 
 is_cached="false"
 if [ "${CCACHE}" -eq 1 ]; then
-	if [ "$(cat ${CCACHE_LOGFILE} | grep 'Result: cache hit' | wc -l)" -eq 1 ]; then
-		is_cached="true"
-	fi
+    if [ "$(cat ${CCACHE_LOGFILE} | grep 'Result: cache hit' | wc -l)" -eq 1 ]; then
+        is_cached="true"
+    fi
 fi
 echo "cached: ${is_cached}"
 echo "compilable: true"
 echo "output_files:"
 for f in "${outputFiles[@]}"; do
-	echo "  - ${f}"
+    echo "  - ${f}"
 done
 if [ $errorCode -ne "0" ]; then
-	exit -1
+    exit -1
 fi
 exit 0
