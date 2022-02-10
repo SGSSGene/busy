@@ -24,9 +24,10 @@ expected_minor_ge=1
 declare -A profiles
 profiles=(
     ["default"]="debug ccache no-default"
-    ["release"]="no-debug no-release_with_symbols"
-    ["release_with_symbols"]="no-release no-debug"
-    ["debug"]="no-release no-release_with_symbols"
+    ["native"]="no-release no-release_with_symbols no-debug"
+    ["release"]="no-debug no-release_with_symbols no-native"
+    ["release_with_symbols"]="no-release no-debug no-native"
+    ["debug"]="no-release no-release_with_symbols no-native"
     ["profile"]=""
     ["strict"]=""
     ["ccache"]=""
@@ -35,8 +36,9 @@ profiles=(
 
 declare -A profile_compile_param
 profile_compile_param=(
-    ["release"]=" -MD -O2"
-    ["release_with_symbols"]=" -MD -O2 -ggdb"
+    ["native"]=" -MD -O3 -march=native "
+    ["release"]=" -MD -O3"
+    ["release_with_symbols"]=" -MD -O3 -ggdb"
     ["debug"]=" -MD -O0 -ggdb"
     ["profile"]=" -MD -fprofile-arcs -ftest-coverage -fPIC"
     ["strict"]=" -MD -Wall -Wextra -Wpedantic"
