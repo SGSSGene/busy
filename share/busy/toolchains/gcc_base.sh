@@ -1,6 +1,9 @@
 #!/bin/bash
 
+# script must be executed inside the build folder
 # $ <$0> info
+# $ <$0> init <rootDir>
+# $ <$0> finialize <rootDir>
 # $ <$0> compile input.cpp output.o -ilocal <includes>... -isystem <system includes>...
 # $ <$0> link static_library output.a -i obj1.o obj2.o lib2.a -l pthread armadillo
 # $ <$0> link executable output.exe -i obj1.o obj2.o lib2.a -l pthread armadillo
