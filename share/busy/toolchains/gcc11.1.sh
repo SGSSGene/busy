@@ -37,14 +37,7 @@ profiles=(
 
 declare -A profile_compile_param
 profile_compile_param=(
-    ["native"]=" -MD -O3 -march=native -nostdinc -nostdinc++
-        -isystem /usr/include/c++/11.1.0
-        -isystem /usr/include/c++/11.1.0/x86_64-pc-linux-gnu/
-        -isystem /usr/include/c++/11.1.0/backward
-        -isystem /usr/lib/gcc/x86_64-pc-linux-gnu/11.1.0/include
-        -isystem /usr/lib/gcc/x86_64-pc-linux-gnu/11.1.0/include-fixed
-        -isystem /home/gene/nostd
-    "
+    ["native"]=" -MD -O3 -march=native "
     ["release"]=" -MD -O3"
     ["release_with_symbols"]=" -MD -O3 -ggdb"
     ["debug"]=" -MD -O0 -ggdb"

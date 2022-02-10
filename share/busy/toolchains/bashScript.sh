@@ -72,7 +72,7 @@ elif [ "$1" == "compile" ]; then
           "--" "$@"
 
     projectIncludes+=($(dirname ${projectIncludes[-1]})) #!TODO this line should not be needed
-    projectIncludes=$(implode " -Iquote " "${projectIncludes[@]}")
+    projectIncludes=$(implode " -iquote " "${projectIncludes[@]}")
     systemIncludes=$(implode " -isystem " "${systemIncludes[@]}")
 
     filetype="$(echo "${inputFile}" | rev | cut -d "." -f 1 | rev)";
