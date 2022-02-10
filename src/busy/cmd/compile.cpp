@@ -124,7 +124,7 @@ void compile() {
     bool rebuild = cfgRebuild;
     auto compilerHash = std::string{};
     {
-        auto args = std::vector<std::string>{config.toolchain.call, "begin", config.rootDir};
+        auto args = std::vector<std::string>{config.toolchain.call, "init", config.rootDir};
         if (not config.toolchain.options.empty()) {
             args.emplace_back("--options");
             for (auto const& o : config.toolchain.options) {
@@ -260,7 +260,7 @@ void compile() {
             throw CompileError{};
         }
     }
-    execute({config.toolchain.call, "end"}, false);
+    execute({config.toolchain.call, "finalize"}, false);
     fmt::print("done\n");
 
     int warnings = 0;

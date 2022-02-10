@@ -37,7 +37,7 @@ fi
 outFile="bashScript.sh"
 
 
-if [ "$1" == "begin" ]; then
+if [ "$1" == "init" ]; then
 	rootDir="$2"
 	relPath="$(pwd)"
 	cat > ${outFile} <<-END
@@ -60,7 +60,7 @@ if [ "$1" == "begin" ]; then
 	echo "rebuild: true"
 	echo "max_jobs: 1"
 	exit 0
-elif [ "$1" == "end" ]; then
+elif [ "$1" == "finalize" ]; then
 	exit 0
 elif [ "$1" == "compile" ]; then
 	shift; inputFile="$1"
@@ -72,7 +72,7 @@ elif [ "$1" == "compile" ]; then
 	      "--" "$@"
 
 	projectIncludes+=($(dirname ${projectIncludes[-1]})) #!TODO this line should not be needed
-	projectIncludes=$(implode " -I " "${projectIncludes[@]}")
+	projectIncludes=$(implode " -Iquote " "${projectIncludes[@]}")
 	systemIncludes=$(implode " -isystem " "${systemIncludes[@]}")
 
 	filetype="$(echo "${inputFile}" | rev | cut -d "." -f 1 | rev)";

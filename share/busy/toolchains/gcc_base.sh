@@ -75,7 +75,7 @@ fi
 
 
 outputFiles=()
-if [ "$1" == "begin" ]; then
+if [ "$1" == "init" ]; then
     rootDir="$2"
     if [ ! -e "external" ] && [ -e ${rootDir}/external ]; then
         ln -s ${rootDir}/external external
@@ -87,7 +87,7 @@ if [ "$1" == "begin" ]; then
     hash="$(echo "${@}" | cat - ${BUILD_SCRIPTS} ${CXX} ${C} ${LD} ${AR} | shasum)"
     echo "hash: ${hash}";
     exit 0
-elif [ "$1" == "end" ]; then
+elif [ "$1" == "finalize" ]; then
     exit 0
 elif [ "$1" == "compile" ]; then
     shift; inputFile="$1"
