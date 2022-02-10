@@ -34,60 +34,60 @@ outFile="compile_commands.json"
 
 
 if [ "$1" == "begin" ]; then
-	rootDir="$2"
-	if [ ! -e "external" ]; then
-		ln -s ${rootDir}/external external
-	fi
-	if [ ! -e "src" ]; then
-		ln -s ${rootDir}/src src
-	fi
+    rootDir="$2"
+    if [ ! -e "external" ]; then
+        ln -s ${rootDir}/external external
+    fi
+    if [ ! -e "src" ]; then
+        ln -s ${rootDir}/src src
+    fi
 
-	echo "rebuild: true"
-	echo "max_jobs: 1"
+    echo "rebuild: true"
+    echo "max_jobs: 1"
 
-	cat > ${outFile} <<-END
-		[
-	END
-	exit 0
+    cat > ${outFile} <<-END
+        [
+    END
+    exit 0
 elif [ "$1" == "end" ]; then
-	cat >> ${outFile} <<-END
-		{}
-		]
-	END
-	exit 0
+    cat >> ${outFile} <<-END
+        {}
+        ]
+    END
+    exit 0
 elif [ "$1" == "compile" ]; then
-	shift; inputFile="$1"
-	shift; outputFile="$1"
-	shift
+    shift; inputFile="$1"
+    shift; outputFile="$1"
+    shift
 
-	parse "--ilocal  projectIncludes" \
-	      "--isystem systemIncludes" \
-	      "--" "$@"
+    parse "--ilocal  projectIncludes" \
+          "--isystem systemIncludes" \
+          "--" "$@"
 
-	projectIncludes=$(implode " -I " "${projectIncludes[@]}")
-	systemIncludes=$(implode " -isystem " "${systemIncludes[@]}")
+    projectIncludes=$(implode " -I " "${projectIncludes[@]}")
+    systemIncludes=$(implode " -isystem " "${systemIncludes[@]}")
 
-	filetype="$(echo "${inputFile}" | rev | cut -d "." -f 1 | rev)";
+    filetype="$(echo "${inputFile}" | rev | cut -d "." -f 1 | rev)";
 
-	directory=/$(realpath --relative-to / ..)
-	if [[ "${filetype}" =~ ^(cpp|cc)$ ]]; then
-		call="${CXX} -O0 -std=c++20 -c $inputFile -o $outputFile $projectIncludes $systemIncludes"
-	elif [ "${filetype}" = "c" ]; then
-		call="${C} -O0 -std=c18 -c $inputFile -o $outputFile $projectIncludes $systemIncludes"
-	else
-		exit 0
-	fi
+    directory=/$(realpath --relative-to / ..)
+    if [[ "${filetype}" =~ ^(cpp|cc)$ ]]; then
+        call="${CXX} -O0 -std=c++20 -c $inputFile -o $outputFile $projectIncludes $systemIncludes"
+    elif [ "${filetype}" = "c" ]; then
+        call="${C} -O0 -std=c18 -c $inputFile -o $outputFile $projectIncludes $systemIncludes"
+    else
+        exit 0
+    fi
 
 cat >> ${outFile} <<-END
-	{ "directory": "${directory}",
-	  "command": "${call}",
-	  "file": "${inputFile}"},
+    { "directory": "${directory}",
+      "command": "${call}",
+      "file": "${inputFile}"},
 END
 
 elif [ "$1" == "link" ]; then
-	exit 0
+    exit 0
 else
-	exit -1
+    exit -1
 fi
 
 exit 0
