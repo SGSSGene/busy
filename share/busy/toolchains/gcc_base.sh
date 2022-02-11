@@ -4,7 +4,8 @@
 # $ <$0> info
 # $ <$0> init <rootDir>
 # $ <$0> finialize <rootDir>
-# $ <$0> compile input.cpp output.o -ilocal <includes>... -isystem <system includes>...
+# $ <$0> setup_translation_set <rootDir> <ts_name> -ilocal <includes>... -isystem <system includes>...
+# $ <$0> compile <ts_name> input.cpp output.o
 # $ <$0> link static_library output.a -i obj1.o obj2.o lib2.a -l pthread armadillo
 # $ <$0> link executable output.exe -i obj1.o obj2.o lib2.a -l pthread armadillo
 
@@ -92,7 +93,38 @@ if [ "$1" == "init" ]; then
     exit 0
 elif [ "$1" == "finalize" ]; then
     exit 0
+elif [ "$1" == "setup_translation_set" ] ; then
+    shift; rootDir="$1"
+    shift; tsName="$1"
+    shift;
+
+    echo $REAL_CALL
+
+    rm -rf environments/${tsName}/includes
+    mkdir -p environments/${tsName}/includes/local
+    mkdir -p environments/${tsName}/includes/system
+
+    parse "--ilocal  projectIncludes" \
+          "--isystem systemIncludes" \
+          "--" "$@"
+    for f in "${projectIncludes[@]}"; do
+        ln -s "$(realpath "${rootDir}/${f}")" -T "environments/${tsName}/includes/local/$(basename "${f}")"
+    done
+    for f in "${systemIncludes[@]}"; do
+        i=0
+        target="environments/${tsName}/includes/system/$i/$(basename "${f}")"
+        while [ -e ${target} ]; do
+            i=$(expr $i + 1)
+            target="environments/${tsName}/includes/system/$i/$(basename "${f}")"
+        done
+        mkdir -p "environments/${tsName}/includes/system/$i"
+
+        ln -s "$(realpath "${rootDir}/${f}")" -T "${target}"
+    done
+
+    exit 0
 elif [ "$1" == "compile" ]; then
+    shift; tsName="$1"
     shift; inputFile="$1"
     shift; outputFile="$1"
     shift
@@ -118,6 +150,14 @@ elif [ "$1" == "compile" ]; then
         if [[ "${options[@]} " =~ " ${key} " ]]; then
             parameters+="${profile_compile_param[$key]}"
         fi
+    done
+
+    i=0
+    target="environments/${tsName}/includes/system/$i"
+    while [ -d ${target} ]; do
+        systemIncludes+=("environments/${tsName}/includes/system/$i")
+        i=$(expr $i + 1)
+        target="environments/${tsName}/includes/system/$i/$(basename "${f}")"
     done
 
     projectIncludes+=($(dirname ${projectIncludes[-1]})) #!TODO this line should not be needed
@@ -212,9 +252,12 @@ eval $call 1>>${stdoutFile} 2>${stderrFile}
 errorCode=$?
 
 echo "stdout: |+"
+echo $REAL_CALL | sed 's/^/    /'
+echo $call | sed 's/^/    /'
 cat ${stdoutFile} | sed 's/^/    /'
 echo "stderr: |+"
 cat ${stderrFile} | sed 's/^/    /'
+
 
 echo "dependencies:"
 if [ "${errorCode}" -eq 0 ] && [ -n "${dependencyFile}" ]; then

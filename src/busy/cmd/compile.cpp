@@ -145,6 +145,30 @@ void compile() {
     auto failedCompilations = std::unordered_set<std::string>{};
     fmt::print("done\n");
     fmt::print("{} files need processing\n", estimatedTimes.size());
+
+    for (auto const& project : projects) {
+        auto const& [ingoing, outgoing] = projects_with_deps[&project];
+        auto args = std::vector<std::string>{config.toolchain.call, "setup_translation_set", config.rootDir, project.getPath(), "--isystem"};
+        std::vector<Project const*> stack;
+        for (auto p : ingoing) {
+            stack.push_back(p);
+        }
+        while (!stack.empty()) {
+            args.push_back(stack.back()->getPath());
+            for (auto i : stack.back()->getLegacyIncludePaths()) {
+                for (auto const& p : std::filesystem::directory_iterator(i)) {
+                    args.emplace_back(p.path().string());
+                }
+            }
+            auto const& [ingoing, outgoing] = projects_with_deps[stack.back()];
+            stack.pop_back();
+            for (auto p : ingoing) {
+                stack.push_back(p);
+            }
+        }
+        auto cout = execute(args, false);
+    }
+
     if (not estimatedTimes.empty()) {
 
         fmt::print("start compiling...\n");

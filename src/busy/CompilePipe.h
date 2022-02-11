@@ -55,10 +55,13 @@ struct CompilePipe {
         auto outFile = file.getPath().lexically_normal().replace_extension(".o");
         auto inFile  = file.getPath();
 
+        auto& project = queue.find_outgoing<busy::Project const>(&file);
+
         auto params = std::vector<std::string>{};
 
         params.emplace_back(toolchainCall);
         params.emplace_back("compile");
+        params.emplace_back(project.getPath());
         params.emplace_back(inFile);
         params.emplace_back("obj" / outFile);
         // add all options
@@ -72,26 +75,11 @@ struct CompilePipe {
         // add all include paths
         params.emplace_back("--ilocal");
 
-        auto& project = queue.find_outgoing<busy::Project const>(&file);
-
         params.emplace_back(project.getPath());
         for (auto const& p : project.getLegacyIncludePaths()) {
             params.emplace_back(p);
         }
         if (params.back() == "--ilocal") params.pop_back();
-
-
-        // add all system include paths
-        params.emplace_back("--isystem");
-
-        auto systemIncludes = std::vector<std::filesystem::path>{};
-        queue.visit_incoming<Project const>(&project, [&](Project const& project) {
-            params.emplace_back(project.getPath().parent_path());
-            for (auto const& i : project.getLegacyIncludePaths()) {
-                params.emplace_back(i);
-            }
-        });
-        if (params.back() == "--isystem") params.pop_back();
 
         params.erase(std::unique(begin(params), end(params)), end(params));
         return params;

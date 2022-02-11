@@ -18,6 +18,7 @@ AR=/usr/bin/ar
 CXX_STD="-std=c++20"
 C_STD="-std=c18"
 BUILD_SCRIPTS="${0}"
+REAL_CALL="${@}"
 
 expected_major=11
 expected_minor_ge=1
