@@ -167,12 +167,12 @@ elif [ "$1" == "compile" ]; then
     diagnostic="-fdiagnostics-color=always -fdiagnostics-show-template-tree -fdiagnostics-format=text"
 
     parameters="${parameters} -nostdinc -nostdinc++
-        -isystem /usr/include/c++/11.1.0
-        -isystem /usr/include/c++/11.1.0/x86_64-pc-linux-gnu/
-        -isystem /usr/include/c++/11.1.0/backward
-        -isystem /usr/lib/gcc/x86_64-pc-linux-gnu/11.1.0/include
-        -isystem /usr/lib/gcc/x86_64-pc-linux-gnu/11.1.0/include-fixed
-        -isystem \"${0%/*}\"/gcc11.1-includes"
+        -isystem /usr/include/c++/11.2.0
+        -isystem /usr/include/c++/11.2.0/x86_64-pc-linux-gnu/
+        -isystem /usr/include/c++/11.2.0/backward
+        -isystem /usr/lib/gcc/x86_64-pc-linux-gnu/11.2.0/include
+        -isystem /usr/lib/gcc/x86_64-pc-linux-gnu/11.2.0/include-fixed
+        -isystem \"${0%/*}\"/gcc11.2-includes"
 
 
     filetype="$(echo "${inputFile}" | rev | cut -d "." -f 1 | rev)";
