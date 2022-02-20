@@ -36,8 +36,6 @@ mkdir -p obj/src/demangle
 g++ -O0 -std=c++20 -fPIC -MD -g3 -ggdb -fdiagnostics-color=always -c src/demangle/demangle.cpp -o obj/src/demangle/demangle.o  -I src/demangle -I src
 mkdir -p obj/src/base64
 g++ -O0 -std=c++20 -fPIC -MD -g3 -ggdb -fdiagnostics-color=always -c src/base64/base64.cpp -o obj/src/base64/base64.o  -I src/base64 -I src
-mkdir -p obj/src/catch
-g++ -O0 -std=c++20 -fPIC -MD -g3 -ggdb -fdiagnostics-color=always -c src/catch/catch.cpp -o obj/src/catch/catch.o  -I src/catch -I src
 mkdir -p obj/src/testBase64
 g++ -O0 -std=c++20 -fPIC -MD -g3 -ggdb -fdiagnostics-color=always -c src/testBase64/main.cpp -o obj/src/testBase64/main.o  -I src/testBase64 -I src  -isystem src
 mkdir -p obj/external/sargparse/src/exampleSargparse
@@ -111,8 +109,6 @@ g++ -O0 -std=c++20 -fPIC -MD -g3 -ggdb -fdiagnostics-color=always -c external/Th
 mkdir -p lib
 ld -Ur -o lib/demangle.a.o obj/src/demangle/demangle.o && ar rcs lib/demangle.a lib/demangle.a.o
 ld -Ur -o lib/base64.a.o obj/src/base64/base64.o && ar rcs lib/base64.a lib/base64.a.o
-mkdir -p bin
-g++ -rdynamic -g3 -ggdb -fdiagnostics-color=always -o bin/catch obj/src/catch/catch.o
 mkdir -p lib
 ld -Ur -o lib/sargparse.a.o obj/external/sargparse/src/sargparse/Parameter.o obj/external/sargparse/src/sargparse/ArgumentParsing.o obj/external/sargparse/src/sargparse/man.o && ar rcs lib/sargparse.a lib/sargparse.a.o
 ld -Ur -o lib/gtest.a.o obj/external/gtest/src/gtest/src/gtest-port.o obj/external/gtest/src/gtest/src/gtest-typed-test.o obj/external/gtest/src/gtest/src/gtest_main.o obj/external/gtest/src/gtest/src/gtest-test-part.o obj/external/gtest/src/gtest/src/gtest-printers.o obj/external/gtest/src/gtest/src/gtest.o obj/external/gtest/src/gtest/src/gtest-filepath.o obj/external/gtest/src/gtest/src/gtest-death-test.o && ar rcs lib/gtest.a lib/gtest.a.o
