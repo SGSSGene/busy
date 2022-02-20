@@ -19,10 +19,10 @@ namespace process {
 
 namespace utils {
 	auto cwd() -> std::string {
-		std::array<char, 512> buf; //!TODO risky
+		std::array<char, 512> buf{}; //!TODO risky
 		char* ret = ::getcwd(buf.data(), buf.size());
 		if (ret == nullptr) {
-			throw std::runtime_error("getcwd faild");
+			throw std::runtime_error("getcwd failed");
 		}
 		return buf.data();
 	}
