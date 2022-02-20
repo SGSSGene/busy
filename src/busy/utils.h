@@ -16,9 +16,9 @@ namespace busy {
 
 struct CompileError {};
 struct FileLock {
-	int fd{-1};
-	FileLock();
-	~FileLock();
+    int fd{-1};
+    FileLock();
+    ~FileLock();
 };
 
 

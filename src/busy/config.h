@@ -23,7 +23,7 @@ inline auto cfgStatic     = sargp::Parameter<std::vector<std::string>>({}, "stat
 //!TODO should follow XDG variables (see cppman) and may be be not hard coded?
 inline static auto global_sharedPath = std::filesystem::path{"/usr/share/busy"};
 inline static auto user_sharedPath   = []() {
-	return std::filesystem::path{getenv("HOME")} / ".config/busy";
+    return std::filesystem::path{getenv("HOME")} / ".config/busy";
 }();
 
 inline static auto global_toolchainDir   = std::filesystem::path{"toolchains.d"};
@@ -31,26 +31,26 @@ inline static auto global_busyConfigFile = std::filesystem::path{".busy.yaml"};
 inline static auto global_lockFile       = std::filesystem::path{".lock"};
 
 struct Config {
-	struct {
-		std::string name {};
-		std::string call {};
-		std::set<std::string> options;
-	} toolchain;
+    struct {
+        std::string name {};
+        std::string call {};
+        std::set<std::string> options;
+    } toolchain;
 
-	std::filesystem::path rootDir {};
-	std::filesystem::path busyFile {};
-	std::set<std::string> sharedLibraries {};
+    std::filesystem::path rootDir {};
+    std::filesystem::path busyFile {};
+    std::set<std::string> sharedLibraries {};
 
 
-	template <typename Node, typename Self>
-	static void reflect(Node& node, Self& self) {
-		node["toolchain_name"]    % self.toolchain.name;
-		node["toolchain_call"]    % self.toolchain.call;
-		node["toolchain_options"] % self.toolchain.options;
-		node["rootDir"]           % self.rootDir;
-		node["busyFile"]          % self.busyFile;
-		node["sharedLibraries"]   % self.sharedLibraries;
-	}
+    template <typename Node, typename Self>
+    static void reflect(Node& node, Self& self) {
+        node["toolchain_name"]    % self.toolchain.name;
+        node["toolchain_call"]    % self.toolchain.call;
+        node["toolchain_options"] % self.toolchain.options;
+        node["rootDir"]           % self.rootDir;
+        node["busyFile"]          % self.busyFile;
+        node["sharedLibraries"]   % self.sharedLibraries;
+    }
 
 };
 
