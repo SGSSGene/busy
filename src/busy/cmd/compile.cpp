@@ -34,11 +34,13 @@ void compile() {
     auto fileLock   = FileLock{};
     auto cacheGuard = loadFileCache(*cfgYamlCache);
 
-    auto [projects, packages] = busy::readPackage(config.rootDir, config.busyFile);
+    // load busy files
+    auto [allProjects, packages] = busy::readPackage(config.rootDir, config.busyFile);
 
     packages.insert(begin(packages), user_sharedPath);
     packages.insert(begin(packages), global_sharedPath);
 
+    // check if toolchain is configured differently
     if (cfgToolchain or config.toolchain.name.empty()) {
         auto toolchains = searchForToolchains(packages);
         auto iter = [&]() {
@@ -78,8 +80,11 @@ void compile() {
 
     // check consistency of packages
     fmt::print("checking consistency...");
-    checkConsistency(projects);
+    checkConsistency(allProjects);
     fmt::print("done\n");
+
+    auto& projects = allProjects;
+
 
     auto projects_with_deps = createTranslationSets(projects);
 

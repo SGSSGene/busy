@@ -29,7 +29,6 @@ auto readPackage(std::filesystem::path _workspaceRoot, std::filesystem::path con
 
 
     try {
-
         auto node = YAML::LoadFile(path.string());
         retPackages.emplace_back(_workspaceRoot / _path);
 

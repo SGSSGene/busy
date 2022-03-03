@@ -1,5 +1,7 @@
 #include "analyse.h"
 
+#include <cassert>
+
 
 namespace busy {
 
@@ -28,66 +30,61 @@ auto isDependentTranslationSet(std::set<std::filesystem::path> const& _allInclud
     return false;
 }
 
-auto findDependentTranslationSets(TranslationSet const& _project, std::vector<TranslationSet> const& _projects) -> std::set<TranslationSet const*> {
+auto findDependentTranslationSets(TranslationSet const& _project, std::vector<TranslationSet const*> const& _projects) -> std::set<TranslationSet const*> {
     auto ret = std::set<TranslationSet const*>{};
     auto _allIncludes = _project.getIncludes();
 
     for (auto const& project : _projects) {
-        if (isDependentTranslationSet(_allIncludes, project)) {
-            ret.emplace(&project);
+        if (isDependentTranslationSet(_allIncludes, *project)) {
+            ret.emplace(project);
         }
     }
     return ret;
 }
 
-auto createTranslationSets(std::vector<TranslationSet> const& _projects) -> TranslationSetMap {
-    auto ret = TranslationSetMap{};
-
-    for (auto const& p : _projects) {
-        ret[&p];
-        auto deps = findDependentTranslationSets(p, _projects);
-        for (auto const& d : deps) {
-            if (d == &p) continue;
-            std::get<0>(ret[&p]).insert(d);
-            std::get<1>(ret[d]).insert(&p);
-        }
-    }
-
-    return normalizeTranslationSets(ret);
-}
-auto normalizeTranslationSets(TranslationSetMap const& _projectMap) -> TranslationSetMap {
-    auto duplicateList = std::map<std::string, TranslationSet const*>{};
-    auto ret = TranslationSetMap{};
-    for (auto [key, deps] : _projectMap) {
-        auto iter = duplicateList.find(key->getName());
-        if (iter == end(duplicateList)) {
-            duplicateList[key->getName()] = key;
-            ret[key] = deps;
-        }
-    }
-    for (auto& [key, deps] : ret) {
-        auto ingoing  = std::get<0>(deps);
-        auto outgoing = std::get<1>(deps);
-        deps = {};
-
-        for (auto v : ingoing) {
-            std::get<0>(deps).insert(duplicateList.at(v->getName()));
-        }
-        for (auto v : outgoing) {
-            std::get<1>(deps).insert(duplicateList.at(v->getName()));
-        }
-    }
-    return ret;
-}
-
-
-void checkConsistency(std::vector<TranslationSet> const& _projects) {
+auto groupTranslationSets(std::vector<TranslationSet> const& _projects) {
+    // put all translationsets with the same name into one group
     auto groupedTranslationSets = std::map<std::string, std::vector<TranslationSet const*>>{};
     for (auto const& p : _projects) {
         groupedTranslationSets[p.getName()].emplace_back(&p);
     }
+    return groupedTranslationSets;
+}
 
+namespace {
+auto normalizeTranslationSets(std::vector<TranslationSet> const& _projects) {
+    assert((checkConsistency(_projects), true));
 
+    auto groupedTranslationSets = groupTranslationSets(_projects);
+    auto projects               = std::vector<TranslationSet const*>{};
+    for (auto const& [key, list] : groupedTranslationSets) {
+        projects.emplace_back(list.front());
+    }
+    return projects;
+}
+}
+
+auto createTranslationSets(std::vector<TranslationSet> const& _projects) -> TranslationSetMap {
+    auto projects = normalizeTranslationSets(_projects);
+    auto ret = TranslationSetMap{};
+
+    for (auto const& p : projects) {
+        ret.try_emplace(p);
+        auto deps = findDependentTranslationSets(*p, projects);
+        for (auto const& d : deps) {
+            if (d == p) continue;
+            std::get<0>(ret[p]).insert(d);
+            std::get<1>(ret[d]).insert(p);
+        }
+    }
+
+    return ret;
+}
+
+void checkConsistency(std::vector<TranslationSet> const& _projects) {
+    auto groupedTranslationSets = groupTranslationSets(_projects);
+
+    // check that translationsets in the same group are the same
     for (auto const& [name, list] : groupedTranslationSets) {
         //!TODO this can be done much more efficient
         if (size(list) > 1) {
