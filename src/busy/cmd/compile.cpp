@@ -151,7 +151,7 @@ void compile() {
     fmt::print("{} files need processing\n", estimatedTimes.size());
 
     for (auto const& project : projects) {
-        auto const& [ingoing, outgoing] = projects_with_deps[project];
+        auto const& [ingoing, outgoing] = projects_with_deps.at(project);
         auto args = std::vector<std::string>{config.toolchain.call, "setup_translation_set", config.rootDir, project->getPath(), "--isystem"};
         std::vector<TranslationSet const*> stack;
         for (auto p : ingoing) {
@@ -164,7 +164,7 @@ void compile() {
                     args.emplace_back(p.path().string());
                 }
             }
-            auto const& [ingoing, outgoing] = projects_with_deps[stack.back()];
+            auto const& [ingoing, outgoing] = projects_with_deps.at(stack.back());
             stack.pop_back();
             for (auto p : ingoing) {
                 stack.push_back(p);
