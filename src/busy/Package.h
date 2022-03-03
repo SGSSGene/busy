@@ -7,7 +7,12 @@
 
 namespace busy {
 
-auto readPackage(std::filesystem::path _workspaceRoot, std::filesystem::path const& _path) -> std::tuple<std::vector<TranslationSet>, std::vector<std::filesystem::path>>;
+struct Package {
+    std::vector<TranslationSet>         translationSets;
+    std::vector<std::filesystem::path>  packages;
+};
+
+auto readPackage(std::filesystem::path _workspaceRoot, std::filesystem::path const& _path) -> Package;
 
 constexpr std::string_view external{"external"};
 

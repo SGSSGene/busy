@@ -17,7 +17,7 @@ struct yaml_error : std::runtime_error {
 };
 
 
-auto readPackage(std::filesystem::path _workspaceRoot, std::filesystem::path const& _file) -> std::tuple<std::vector<TranslationSet>, std::vector<std::filesystem::path>> {
+auto readPackage(std::filesystem::path _workspaceRoot, std::filesystem::path const& _file) -> Package {
     auto retTranslationSets = std::vector<TranslationSet>{};
     auto retPackages = std::vector<std::filesystem::path>{};
 
