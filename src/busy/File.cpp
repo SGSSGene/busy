@@ -1,6 +1,6 @@
 #include "File.h"
 
-#include "utils/utils.h"
+#include "utils.h"
 
 #include <cstring>
 #include <fstream>
@@ -31,7 +31,7 @@ auto readIncludes(std::filesystem::path const& _file) -> std::set<std::filesyste
     auto line = std::string{};
     while (std::getline(ifs, line)) {
         if (checkIfMakroSystemInclude(line.c_str())) {
-            auto parts = utils::explode(line, {' ', '\t'});
+            auto parts = explode(line, {' ', '\t'});
 
             if (parts.size() == 0) continue;
 

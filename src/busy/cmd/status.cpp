@@ -5,7 +5,6 @@
 #include "../overloaded.h"
 #include "../toolchains.h"
 #include "../utils.h"
-#include "../utils/utils.h"
 
 #include <fmt/format.h>
 #include <fmt/chrono.h>
@@ -139,7 +138,7 @@ void status() {
     auto echo = [](std::filesystem::path filePath, std::string const& ext) {
         filePath = "tmp/obj" / filePath;
         filePath.replace_extension(ext);
-        auto data = utils::readFullFile(filePath);
+        auto data = readFullFile(filePath);
         data.push_back(std::byte(0));
         fmt::print("{}\n", (char*)data.data());
     };

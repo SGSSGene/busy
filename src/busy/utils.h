@@ -39,4 +39,12 @@ auto isInteractive() -> bool;
 enum class TargetType { Executable, StaticLibrary, SharedLibrary };
 auto getTargetType(TranslationSet const& project, std::tuple<std::set<TranslationSet const*>, std::set<TranslationSet const*>> const& deps, std::set<std::string> const& sharedLibraries) -> TargetType;
 
+auto explode(std::string const& _str, std::vector<char> const& _dels) -> std::vector<std::string>;
+
+void safeFileWrite(std::filesystem::path const& _dest, std::filesystem::path const& _src);
+
+auto exceptionToString(std::exception const& e, int level = 0) -> std::string;
+auto readFullFile(std::filesystem::path const& file) -> std::vector<std::byte>;
+
+
 }

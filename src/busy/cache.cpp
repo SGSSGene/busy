@@ -1,7 +1,7 @@
 #include "cache.h"
 
 #include "FileCache.h"
-#include "utils/utils.h"
+#include "utils.h"
 
 #include <fon/yaml.h>
 #include <fon/std/all.h>
@@ -17,7 +17,7 @@ void loadFileCache() {
     std::tie(getFileCache(), getFileData(), getFileInfos()) = [&]() {
         // load binary cache
         if (std::filesystem::exists(".filecache")) {
-            auto buffer = busy::utils::readFullFile(".filecache");
+            auto buffer = readFullFile(".filecache");
                 emptyFileCache = false;
             return fon::binary::deserialize<FileCacheStorage>(buffer);
         // load yaml cache

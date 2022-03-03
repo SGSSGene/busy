@@ -1,5 +1,4 @@
 #include "utils.h"
-#include "utils/utils.h"
 
 #include <algorithm>
 #include <fmt/format.h>
@@ -27,7 +26,7 @@ auto main(int argc, char const** argv) -> int {
         sargp::parseArguments(argc-1, argv+1);
     } catch(std::exception const& e) {
         fmt::print(std::cerr, "failed parsing arguments: {}\n\n",
-            fmt::format(fg(fmt::color::red), "{}", busy::utils::exceptionToString(e, 0)));
+            fmt::format(fg(fmt::color::red), "{}", busy::exceptionToString(e, 0)));
         help();
         return EXIT_FAILURE;
     }
@@ -40,7 +39,7 @@ auto main(int argc, char const** argv) -> int {
         sargp::callCommands();
     } catch (busy::CompileError const& e) {
     } catch (std::exception const& e) {
-        fmt::print(std::cerr, "exception {}\n", busy::utils::exceptionToString(e, 0));
+        fmt::print(std::cerr, "exception {}\n", busy::exceptionToString(e, 0));
         return EXIT_FAILURE;
     }
     return EXIT_SUCCESS;
