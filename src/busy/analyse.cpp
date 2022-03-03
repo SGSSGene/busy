@@ -51,8 +51,7 @@ auto groupTranslationSets(std::vector<TranslationSet> const& _projects) {
     return groupedTranslationSets;
 }
 
-namespace {
-auto normalizeTranslationSets(std::vector<TranslationSet> const& _projects) {
+auto normalizeTranslationSets(std::vector<TranslationSet> const& _projects) -> std::vector<TranslationSet const*> {
     assert((checkConsistency(_projects), true));
 
     auto groupedTranslationSets = groupTranslationSets(_projects);
@@ -62,15 +61,13 @@ auto normalizeTranslationSets(std::vector<TranslationSet> const& _projects) {
     }
     return projects;
 }
-}
 
-auto createTranslationSets(std::vector<TranslationSet> const& _projects) -> TranslationSetMap {
-    auto projects = normalizeTranslationSets(_projects);
+auto createTranslationSets(std::vector<TranslationSet const*> const& _projects) -> TranslationSetMap {
     auto ret = TranslationSetMap{};
 
-    for (auto const& p : projects) {
+    for (auto const& p : _projects) {
         ret.try_emplace(p);
-        auto deps = findDependentTranslationSets(*p, projects);
+        auto deps = findDependentTranslationSets(*p, _projects);
         for (auto const& d : deps) {
             if (d == p) continue;
             std::get<0>(ret[p]).insert(d);

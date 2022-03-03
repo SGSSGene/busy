@@ -83,8 +83,7 @@ void compile() {
     checkConsistency(allProjects);
     fmt::print("done\n");
 
-    auto& projects = allProjects;
-
+    auto projects = normalizeTranslationSets(allProjects);
 
     auto projects_with_deps = createTranslationSets(projects);
 
@@ -152,8 +151,8 @@ void compile() {
     fmt::print("{} files need processing\n", estimatedTimes.size());
 
     for (auto const& project : projects) {
-        auto const& [ingoing, outgoing] = projects_with_deps[&project];
-        auto args = std::vector<std::string>{config.toolchain.call, "setup_translation_set", config.rootDir, project.getPath(), "--isystem"};
+        auto const& [ingoing, outgoing] = projects_with_deps[project];
+        auto args = std::vector<std::string>{config.toolchain.call, "setup_translation_set", config.rootDir, project->getPath(), "--isystem"};
         std::vector<TranslationSet const*> stack;
         for (auto p : ingoing) {
             stack.push_back(p);

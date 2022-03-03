@@ -51,9 +51,10 @@ auto projects(std::vector<std::string> const& str) -> std::pair<bool, std::set<s
     auto workPath = std::filesystem::current_path();
     auto config = loadConfig(workPath, *cfgBuildPath, {cfgBusyPath, *cfgBusyPath});
 
-    auto [projects, packages] = busy::readPackage(config.rootDir, config.busyFile);
+    auto [allProjects, packages] = busy::readPackage(config.rootDir, config.busyFile);
+    auto projects = normalizeTranslationSets(allProjects);
     for (auto const& p : projects) {
-        ret.second.insert(p.getName());
+        ret.second.insert(p->getName());
     }
     for (auto s : str) {
         ret.second.erase(s);
@@ -66,7 +67,8 @@ auto sharedLibraries(std::vector<std::string> const& str) -> std::pair<bool, std
     auto workPath = std::filesystem::current_path();
     auto config = loadConfig(workPath, *cfgBuildPath, {cfgBusyPath, *cfgBusyPath});
 
-    auto [projects, packages] = busy::readPackage(config.rootDir, config.busyFile);
+    auto [allProjects, packages] = busy::readPackage(config.rootDir, config.busyFile);
+    auto projects = normalizeTranslationSets(allProjects);
     auto projects_with_deps = createTranslationSets(projects);
 
     for (auto const& [project, deps] : projects_with_deps) {
@@ -85,7 +87,8 @@ auto staticLibraries(std::vector<std::string> const& str) -> std::pair<bool, std
     auto workPath = std::filesystem::current_path();
     auto config = loadConfig(workPath, *cfgBuildPath, {cfgBusyPath, *cfgBusyPath});
 
-    auto [projects, packages] = busy::readPackage(config.rootDir, config.busyFile);
+    auto [allProjects, packages] = busy::readPackage(config.rootDir, config.busyFile);
+    auto projects = normalizeTranslationSets(allProjects);
     auto projects_with_deps = createTranslationSets(projects);
 
     for (auto const& [project, deps] : projects_with_deps) {

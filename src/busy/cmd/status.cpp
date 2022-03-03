@@ -27,7 +27,7 @@ void status() {
     auto fileLock   = FileLock{};
     auto cacheGuard = loadFileCache(*cfgYamlCache);
 
-    auto [projects, packages] = busy::readPackage(config.rootDir, config.busyFile);
+    auto [allProjects, packages] = busy::readPackage(config.rootDir, config.busyFile);
 
     packages.insert(begin(packages), user_sharedPath);
     packages.insert(begin(packages), global_sharedPath);
@@ -43,7 +43,7 @@ void status() {
         fmt::format(fg_yellow, "{}", fmt::join(config.toolchain.options, " ")));
 
     // check consistency of packages
-    auto consistency = listConsistencyIssues(projects);
+    auto consistency = listConsistencyIssues(allProjects);
     if (consistency.empty()) {
         fmt::print("all projects are {}\n",
             fmt::format(fg_green, "{}", "consistent"));
@@ -54,6 +54,7 @@ void status() {
             fmt::format("  - {}: {} and {} are not the same\n", p1->getName(), p1->getPath(), p2->getPath());
         }
     }
+    auto projects = normalizeTranslationSets(allProjects);
     auto projects_with_deps = createTranslationSets(projects);
 
     auto projectByTypes = std::map<TargetType, std::vector<TranslationSet const*>>{};
