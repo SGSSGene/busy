@@ -187,6 +187,7 @@ void compile() {
         auto cout = execute(args, false);
     }
 
+    // checks if there are any files to compile, and if actually compile them
     if (not estimatedTimes.empty()) {
 
         fmt::print("start compiling...\n");
