@@ -28,6 +28,37 @@ auto cmdDefault = sargp::Task{[]{
 
 auto cfgTargets = cmd.Parameter<std::vector<std::string>>({}, "", "project target", []{}, &comp::projects);
 
+
+auto getIngoingProjects(TranslationSet const& project, auto const& projects_with_deps) {
+    auto const& [ingoing, outgoing] = projects_with_deps.at(&project);
+    auto stack = std::vector<TranslationSet const*>{};
+    size_t processI{};
+    for (auto p : ingoing) {
+        stack.push_back(p);
+    }
+    while (stack.size() != processI) {
+        auto const& [ingoing, outgoing] = projects_with_deps.at(stack[processI]);
+        processI += 1;
+        for (auto p : ingoing) {
+            stack.push_back(p);
+        }
+    }
+    return stack;
+}
+auto getIngoingIncludes(TranslationSet const& project, auto const& projects_with_deps) {
+    auto includes = std::vector<std::string>{};
+    auto ingoingProjects = getIngoingProjects(project, projects_with_deps);
+    for (auto p : ingoingProjects) {
+        includes.push_back(p->getPath());
+        for (auto i : p->getLegacyIncludePaths()) {
+            for (auto const& path : std::filesystem::directory_iterator(i)) {
+                includes.emplace_back(path.path().string());
+            }
+        }
+    }
+    return includes;
+}
+
 void compile() {
     auto workPath   = std::filesystem::current_path();
     auto config     = loadConfig(workPath, *cfgBuildPath, {cfgBusyPath, *cfgBusyPath});
@@ -149,24 +180,9 @@ void compile() {
     fmt::print("{} files need processing\n", estimatedTimes.size());
 
     for (auto const& project : projects) {
-        auto const& [ingoing, outgoing] = projects_with_deps.at(project);
         auto args = std::vector<std::string>{config.toolchain.call, "setup_translation_set", config.rootDir, project->getPath(), "--isystem"};
-        std::vector<TranslationSet const*> stack;
-        for (auto p : ingoing) {
-            stack.push_back(p);
-        }
-        while (!stack.empty()) {
-            args.push_back(stack.back()->getPath());
-            for (auto i : stack.back()->getLegacyIncludePaths()) {
-                for (auto const& p : std::filesystem::directory_iterator(i)) {
-                    args.emplace_back(p.path().string());
-                }
-            }
-            auto const& [ingoing, outgoing] = projects_with_deps.at(stack.back());
-            stack.pop_back();
-            for (auto p : ingoing) {
-                stack.push_back(p);
-            }
+        for (auto const& i : getIngoingIncludes(*project, projects_with_deps)) {
+            args.emplace_back(i);
         }
         auto cout = execute(args, false);
     }
