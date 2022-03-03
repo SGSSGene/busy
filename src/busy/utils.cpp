@@ -251,7 +251,7 @@ auto computeEstimationTimes(Config const& config, TranslationSetMap const& proje
                     }
                     return true;
                 }();
-                if (clean 
+                if (clean
                     or (not existsAllOutputFiles and fileInfo.compilable)
                     or anyChanges()
                     or fileInfo.compilerHash != _compilerHash) {
@@ -262,7 +262,7 @@ auto computeEstimationTimes(Config const& config, TranslationSetMap const& proje
             }
         });
         // find smallest thread with timings
-        threadTimings[0] = std::max(readyTimings.front(), threadTimings.front()) + duration;
+        threadTimings[0] = std::min(readyTimings.front(), threadTimings.front()) + duration;
         readyTimings.erase(begin(readyTimings));
         auto newProcesses = pipe.size() - otherProcesses;
         for (std::size_t i{0}; i < newProcesses; ++i) {
