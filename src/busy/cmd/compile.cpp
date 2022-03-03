@@ -142,9 +142,7 @@ void compile() {
         compilerHash = YAML::Node{node["hash"]}.as<std::string>(compilerHash);
     }
 
-    auto [_estimatedTimes, _estimatedTotalTime] = computeEstimationTimes(config, projects_with_deps, rebuild, compilerHash, jobs);
-    auto estimatedTimes     = _estimatedTimes;
-    auto estimatedTotalTime = _estimatedTotalTime;
+    auto [estimatedTimes, estimatedTotalTime] = computeEstimationTimes(config, projects_with_deps, rebuild, compilerHash, jobs);
 
     auto failedCompilations = std::unordered_set<std::string>{};
     fmt::print("done\n");
