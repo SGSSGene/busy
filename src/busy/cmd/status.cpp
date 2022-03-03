@@ -55,9 +55,9 @@ void status() {
             fmt::format("  - {}: {} and {} are not the same\n", p1->getName(), p1->getPath(), p2->getPath());
         }
     }
-    auto projects_with_deps = createProjects(projects);
+    auto projects_with_deps = createTranslationSets(projects);
 
-    auto projectByTypes = std::map<TargetType, std::vector<Project const*>>{};
+    auto projectByTypes = std::map<TargetType, std::vector<TranslationSet const*>>{};
     for (auto const& [project, deps] : projects_with_deps) {
         auto type = getTargetType(*project, deps, config.sharedLibraries);
         projectByTypes[type].push_back(project);
@@ -130,7 +130,7 @@ void status() {
         std::visit(overloaded{
             [](File const* file) {
                 fmt::print("  - {}\n", file->getPath());
-            }, [](Project const* project) {
+            }, [](TranslationSet const* project) {
                 fmt::print("  - {}\n", project->getName());
             }
         }, target);

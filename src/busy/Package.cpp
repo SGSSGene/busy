@@ -17,8 +17,8 @@ struct yaml_error : std::runtime_error {
 };
 
 
-auto readPackage(std::filesystem::path _workspaceRoot, std::filesystem::path const& _file) -> std::tuple<std::vector<Project>, std::vector<std::filesystem::path>> {
-    auto retProjects = std::vector<Project>{};
+auto readPackage(std::filesystem::path _workspaceRoot, std::filesystem::path const& _file) -> std::tuple<std::vector<TranslationSet>, std::vector<std::filesystem::path>> {
+    auto retTranslationSets = std::vector<TranslationSet>{};
     auto retPackages = std::vector<std::filesystem::path>{};
 
     auto _path = _file.parent_path();
@@ -71,14 +71,14 @@ auto readPackage(std::filesystem::path _workspaceRoot, std::filesystem::path con
                 for (auto const& e : n["legacy"]["systemLibraries"]) {
                     legacySystemLibraries.insert(e.as<std::string>());
                 }
-                retProjects.emplace_back(name, type, _workspaceRoot, path, legacyIncludePaths, legacySystemLibraries);
+                retTranslationSets.emplace_back(name, type, _workspaceRoot, path, legacyIncludePaths, legacySystemLibraries);
             }
         }
 
         // add all projects that weren't defined in "projects" section of busy.yaml
         for (auto const& p : projectNames) {
             auto path = _path / "src" / p;
-            retProjects.emplace_back(p, "", _workspaceRoot, path, std::vector<fs::path>{}, std::set<std::string>{});
+            retTranslationSets.emplace_back(p, "", _workspaceRoot, path, std::vector<fs::path>{}, std::set<std::string>{});
         }
 
 
@@ -109,7 +109,7 @@ auto readPackage(std::filesystem::path _workspaceRoot, std::filesystem::path con
                         return relative(p.path() / "busy.yaml", _workspaceRoot);
                     }();
                     auto [projects, packages] = readPackage(_workspaceRoot, busyFile);
-                    retProjects.insert(end(retProjects), begin(projects), end(projects));
+                    retTranslationSets.insert(end(retTranslationSets), begin(projects), end(projects));
                     retPackages.insert(end(retPackages), begin(packages), end(packages));
                 }
             }
@@ -117,7 +117,7 @@ auto readPackage(std::filesystem::path _workspaceRoot, std::filesystem::path con
     } catch(...) {
         std::throw_with_nested(std::runtime_error{"failed loading " + path.string()});
     }
-    return {retProjects, retPackages};
+    return {retTranslationSets, retPackages};
 }
 
 

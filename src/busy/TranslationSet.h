@@ -9,7 +9,7 @@
 
 namespace busy {
 
-class Project {
+class TranslationSet {
 private:
     std::string mName;
     std::string mType;
@@ -21,7 +21,7 @@ private:
 
 
 public:
-    Project(std::string _name, std::string _type, std::filesystem::path const& _root, std::filesystem::path const& _sourcePath, std::vector<std::filesystem::path> _legacyIncludePaths, std::set<std::string> _systemLibraries);
+    TranslationSet(std::string _name, std::string _type, std::filesystem::path const& _root, std::filesystem::path const& _sourcePath, std::vector<std::filesystem::path> _legacyIncludePaths, std::set<std::string> _systemLibraries);
 
     [[nodiscard]]
     auto getFiles() const -> auto const&{
@@ -65,7 +65,7 @@ public:
     }
 
     [[nodiscard]]
-    auto isEquivalent(Project const& _other) const -> bool {
+    auto isEquivalent(TranslationSet const& _other) const -> bool {
         if (mName != _other.mName) {
             return false;
         }

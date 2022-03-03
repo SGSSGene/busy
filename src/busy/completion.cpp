@@ -67,7 +67,7 @@ auto sharedLibraries(std::vector<std::string> const& str) -> std::pair<bool, std
     auto config = loadConfig(workPath, *cfgBuildPath, {cfgBusyPath, *cfgBusyPath});
 
     auto [projects, packages] = busy::readPackage(config.rootDir, config.busyFile);
-    auto projects_with_deps = createProjects(projects);
+    auto projects_with_deps = createTranslationSets(projects);
 
     for (auto const& [project, deps] : projects_with_deps) {
         if (getTargetType(*project, deps, config.sharedLibraries) == TargetType::StaticLibrary) {
@@ -86,7 +86,7 @@ auto staticLibraries(std::vector<std::string> const& str) -> std::pair<bool, std
     auto config = loadConfig(workPath, *cfgBuildPath, {cfgBusyPath, *cfgBusyPath});
 
     auto [projects, packages] = busy::readPackage(config.rootDir, config.busyFile);
-    auto projects_with_deps = createProjects(projects);
+    auto projects_with_deps = createTranslationSets(projects);
 
     for (auto const& [project, deps] : projects_with_deps) {
         if (getTargetType(*project, deps, config.sharedLibraries) == TargetType::SharedLibrary) {

@@ -81,7 +81,7 @@ void compile() {
     checkConsistency(projects);
     fmt::print("done\n");
 
-    auto projects_with_deps = createProjects(projects);
+    auto projects_with_deps = createTranslationSets(projects);
 
     // discover targets
     if (cfgTargets) {
@@ -89,14 +89,14 @@ void compile() {
         for (auto n : *cfgTargets) {
             names.insert(n);
         }
-        auto res = selectRootProjects(names, projects_with_deps);
-        auto removeProjects = std::set<Project const*>{};
+        auto res = selectRootTranslationSets(names, projects_with_deps);
+        auto removeTranslationSets = std::set<TranslationSet const*>{};
         for (auto const& [i_project, dep] : projects_with_deps) {
             if (res.count(i_project) == 0) {
-                removeProjects.insert(i_project);
+                removeTranslationSets.insert(i_project);
             }
         }
-        for (auto r : removeProjects) {
+        for (auto r : removeTranslationSets) {
             projects_with_deps.erase(r);
         }
     }
@@ -149,7 +149,7 @@ void compile() {
     for (auto const& project : projects) {
         auto const& [ingoing, outgoing] = projects_with_deps[&project];
         auto args = std::vector<std::string>{config.toolchain.call, "setup_translation_set", config.rootDir, project.getPath(), "--isystem"};
-        std::vector<Project const*> stack;
+        std::vector<TranslationSet const*> stack;
         for (auto p : ingoing) {
             stack.push_back(p);
         }
@@ -248,7 +248,7 @@ void compile() {
                 g.unlock();
 
                 return fileInfo.compilable? CompilePipe::Color::Compilable: CompilePipe::Color::Ignored;
-            }, [&](busy::Project const& project, auto const& params, auto const&) {
+            }, [&](busy::TranslationSet const& project, auto const& params, auto const&) {
                 auto& fileInfo = getFileInfos().get(project.getPath());
 
                 if (estimatedTimes.count(&project) == 0) {

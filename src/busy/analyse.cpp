@@ -4,7 +4,7 @@
 namespace busy {
 
 // check if this _project is included by _allIncludes
-auto isDependentProject(std::set<std::filesystem::path> const& _allIncludes, Project const& _project) -> bool {
+auto isDependentTranslationSet(std::set<std::filesystem::path> const& _allIncludes, TranslationSet const& _project) -> bool {
 
     auto files = _project.getFiles();
     for (auto const& file : files) {
@@ -28,24 +28,24 @@ auto isDependentProject(std::set<std::filesystem::path> const& _allIncludes, Pro
     return false;
 }
 
-auto findDependentProjects(Project const& _project, std::vector<Project> const& _projects) -> std::set<Project const*> {
-    auto ret = std::set<Project const*>{};
+auto findDependentTranslationSets(TranslationSet const& _project, std::vector<TranslationSet> const& _projects) -> std::set<TranslationSet const*> {
+    auto ret = std::set<TranslationSet const*>{};
     auto _allIncludes = _project.getIncludes();
 
     for (auto const& project : _projects) {
-        if (isDependentProject(_allIncludes, project)) {
+        if (isDependentTranslationSet(_allIncludes, project)) {
             ret.emplace(&project);
         }
     }
     return ret;
 }
 
-auto createProjects(std::vector<Project> const& _projects) -> ProjectMap {
-    auto ret = ProjectMap{};
+auto createTranslationSets(std::vector<TranslationSet> const& _projects) -> TranslationSetMap {
+    auto ret = TranslationSetMap{};
 
     for (auto const& p : _projects) {
         ret[&p];
-        auto deps = findDependentProjects(p, _projects);
+        auto deps = findDependentTranslationSets(p, _projects);
         for (auto const& d : deps) {
             if (d == &p) continue;
             std::get<0>(ret[&p]).insert(d);
@@ -53,11 +53,11 @@ auto createProjects(std::vector<Project> const& _projects) -> ProjectMap {
         }
     }
 
-    return normalizeProjects(ret);
+    return normalizeTranslationSets(ret);
 }
-auto normalizeProjects(ProjectMap const& _projectMap) -> ProjectMap {
-    auto duplicateList = std::map<std::string, Project const*>{};
-    auto ret = ProjectMap{};
+auto normalizeTranslationSets(TranslationSetMap const& _projectMap) -> TranslationSetMap {
+    auto duplicateList = std::map<std::string, TranslationSet const*>{};
+    auto ret = TranslationSetMap{};
     for (auto [key, deps] : _projectMap) {
         auto iter = duplicateList.find(key->getName());
         if (iter == end(duplicateList)) {
@@ -81,14 +81,14 @@ auto normalizeProjects(ProjectMap const& _projectMap) -> ProjectMap {
 }
 
 
-void checkConsistency(std::vector<Project> const& _projects) {
-    auto groupedProjects = std::map<std::string, std::vector<Project const*>>{};
+void checkConsistency(std::vector<TranslationSet> const& _projects) {
+    auto groupedTranslationSets = std::map<std::string, std::vector<TranslationSet const*>>{};
     for (auto const& p : _projects) {
-        groupedProjects[p.getName()].emplace_back(&p);
+        groupedTranslationSets[p.getName()].emplace_back(&p);
     }
 
 
-    for (auto const& [name, list] : groupedProjects) {
+    for (auto const& [name, list] : groupedTranslationSets) {
         //!TODO this can be done much more efficient
         if (size(list) > 1) {
             for (auto const& p1 : list) {
@@ -103,14 +103,14 @@ void checkConsistency(std::vector<Project> const& _projects) {
     }
 }
 
-auto listConsistencyIssues(std::vector<Project> const& _projects) -> std::vector<std::tuple<Project const*, Project const*>> {
-    auto groupedProjects = std::map<std::string, std::vector<Project const*>>{};
+auto listConsistencyIssues(std::vector<TranslationSet> const& _projects) -> std::vector<std::tuple<TranslationSet const*, TranslationSet const*>> {
+    auto groupedTranslationSets = std::map<std::string, std::vector<TranslationSet const*>>{};
     for (auto const& p : _projects) {
-        groupedProjects[p.getName()].emplace_back(&p);
+        groupedTranslationSets[p.getName()].emplace_back(&p);
     }
 
-    auto retList = std::vector<std::tuple<Project const*, Project const*>>{};
-    for (auto const& [name, list] : groupedProjects) {
+    auto retList = std::vector<std::tuple<TranslationSet const*, TranslationSet const*>>{};
+    for (auto const& [name, list] : groupedTranslationSets) {
         if (size(list) > 1) {
             for (auto const& p1 : list) {
                 for (auto const& p2 : list) {

@@ -31,7 +31,7 @@ FileLock::~FileLock() {
 }
 
 
-void printProjects(std::map<Project const*, std::tuple<std::set<Project const*>, std::set<Project const*>>> const& _projects) {
+void printTranslationSets(std::map<TranslationSet const*, std::tuple<std::set<TranslationSet const*>, std::set<TranslationSet const*>>> const& _projects) {
     for (auto const& [i_project, dep] : _projects) {
         auto const& project = *i_project;
         auto const& dependencies = std::get<0>(dep);
@@ -60,8 +60,8 @@ void printProjects(std::map<Project const*, std::tuple<std::set<Project const*>,
         }
     }
 }
-void printProjectTree(std::map<Project const*, std::tuple<std::set<Project const*>, std::set<Project const*>>> const& _projects) {
-    auto parentCt = std::map<Project const*, int>{};
+void printTranslationSetTree(std::map<TranslationSet const*, std::tuple<std::set<TranslationSet const*>, std::set<TranslationSet const*>>> const& _projects) {
+    auto parentCt = std::map<TranslationSet const*, int>{};
     for (auto const& [i_project, dep] : _projects) {
         auto const& dependencies = std::get<0>(dep);
         for (auto const& d : dependencies) {
@@ -69,8 +69,8 @@ void printProjectTree(std::map<Project const*, std::tuple<std::set<Project const
         }
     }
 
-    auto print = std::function<void(Project const*, std::string)>{};
-    print = [&](Project const* project, std::string indent) {
+    auto print = std::function<void(TranslationSet const*, std::string)>{};
+    print = [&](TranslationSet const* project, std::string indent) {
         fmt::print("{}{}\n", indent, project->getName());
         indent += "  ";
         auto const& dependencies = std::get<0>(_projects.at(project));
@@ -86,12 +86,12 @@ void printProjectTree(std::map<Project const*, std::tuple<std::set<Project const
     }
 }
 
-auto selectRootProjects(std::set<std::string> const& names, std::map<Project const*, std::tuple<std::set<Project const*>, std::set<Project const*>>> const& _projects) -> std::set<Project const*> {
-    auto ret = std::set<Project const*>{};
+auto selectRootTranslationSets(std::set<std::string> const& names, std::map<TranslationSet const*, std::tuple<std::set<TranslationSet const*>, std::set<TranslationSet const*>>> const& _projects) -> std::set<TranslationSet const*> {
+    auto ret = std::set<TranslationSet const*>{};
 
     auto knownNames = std::set<std::string>{};
 
-    auto parentCt = std::map<Project const*, int>{};
+    auto parentCt = std::map<TranslationSet const*, int>{};
     for (auto const& [i_project, dep] : _projects) {
         auto const& dependencies = std::get<0>(dep);
         if (names.count(i_project->getName()) > 0) {
@@ -113,8 +113,8 @@ auto selectRootProjects(std::set<std::string> const& names, std::map<Project con
         throw std::runtime_error(str);
     }
 
-    auto queue = std::function<void(Project const*)>{};
-    queue = [&](Project const* project) {
+    auto queue = std::function<void(TranslationSet const*)>{};
+    queue = [&](TranslationSet const* project) {
         ret.insert(project);
         auto const& dependencies = std::get<0>(_projects.at(project));
         for (auto const& d : dependencies) {
@@ -206,7 +206,7 @@ auto updateToolchainOptions(Config& config, bool reset, std::vector<std::string>
     return toolchainOptions;
 }
 
-auto computeEstimationTimes(Config const& config, ProjectMap const& projects_with_deps, bool clean, std::string const& _compilerHash, std::size_t jobs) -> std::tuple<ConsolePrinter::EstimatedTimes, std::chrono::milliseconds> {
+auto computeEstimationTimes(Config const& config, TranslationSetMap const& projects_with_deps, bool clean, std::string const& _compilerHash, std::size_t jobs) -> std::tuple<ConsolePrinter::EstimatedTimes, std::chrono::milliseconds> {
     auto estimatedTimes = ConsolePrinter::EstimatedTimes{};
     auto pipe           = CompilePipe{config.toolchain.call, projects_with_deps, config.toolchain.options, config.sharedLibraries};
     auto threadTimings = std::vector<std::chrono::milliseconds>(jobs, std::chrono::milliseconds{0});
@@ -228,7 +228,7 @@ auto computeEstimationTimes(Config const& config, ProjectMap const& projects_wit
                     duration = fileInfo.compileTime;
                 }
                 return CompilePipe::Color::Compilable;
-            }, [&](busy::Project const& project, auto const& /*params*/, auto const& deps) {
+            }, [&](busy::TranslationSet const& project, auto const& /*params*/, auto const& deps) {
                 auto& fileInfo = getFileInfos().get(project.getPath());
                 auto anyChanges = [&]() {
                     for (auto const& d : deps) {
@@ -302,7 +302,7 @@ auto execute(std::vector<std::string> params, bool verbose) -> std::string {
     return p.cout();
 }
 
-void visitFilesWithWarnings(Config const& config, ProjectMap const& projects_with_deps, std::function<void(File const&, FileInfo const&)> fileF, std::function<void(Project const&, FileInfo const&)> projectF) {
+void visitFilesWithWarnings(Config const& config, TranslationSetMap const& projects_with_deps, std::function<void(File const&, FileInfo const&)> fileF, std::function<void(TranslationSet const&, FileInfo const&)> projectF) {
     auto pipe = CompilePipe{config.toolchain.call, projects_with_deps, config.toolchain.options, config.sharedLibraries};
     while (not pipe.empty()) {
         auto work = pipe.pop();
@@ -313,7 +313,7 @@ void visitFilesWithWarnings(Config const& config, ProjectMap const& projects_wit
                     fileF(file, fileInfo);
                 }
                 return CompilePipe::Color::Compilable;
-            }, [&](busy::Project const& project, auto const& /*params*/, auto const& /*deps*/) {
+            }, [&](busy::TranslationSet const& project, auto const& /*params*/, auto const& /*deps*/) {
                 auto& fileInfo = getFileInfos().get(project.getPath());
                 if (fileInfo.hasWarnings and projectF) {
                     projectF(project, fileInfo);
@@ -330,7 +330,7 @@ auto isInteractive() -> bool {
 
 }
 
-auto getTargetType(Project const& project, std::tuple<std::set<Project const*>, std::set<Project const*>> const& deps, std::set<std::string> const& sharedLibraries) -> TargetType {
+auto getTargetType(TranslationSet const& project, std::tuple<std::set<TranslationSet const*>, std::set<TranslationSet const*>> const& deps, std::set<std::string> const& sharedLibraries) -> TargetType {
     bool isExecutable = [&]() {
         if (project.getType() == "library") {
             return false;

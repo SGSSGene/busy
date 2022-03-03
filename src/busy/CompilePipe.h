@@ -10,15 +10,15 @@
 namespace busy {
 
 // first tuple entry in going edges, second entry outgoing edges
-using ProjectMap = std::map<Project const*, std::tuple<std::set<Project const*>, std::set<Project const*>>>;
+using TranslationSetMap = std::map<TranslationSet const*, std::tuple<std::set<TranslationSet const*>, std::set<TranslationSet const*>>>;
 
 struct CompilePipe {
-    using Q        = Queue<busy::Project const, busy::File const>;
+    using Q        = Queue<busy::TranslationSet const, busy::File const>;
     enum class Color { Ignored, Compilable };
     using ColorMap = std::map<Q::Node, Color>;
 
     std::string       toolchainCall;
-    ProjectMap const& projects_with_deps;
+    TranslationSetMap const& projects_with_deps;
     std::set<std::string> const& toolchainOptions;
     std::set<std::string> const& sharedLibraries;
     Q::Nodes          nodes;
@@ -27,7 +27,7 @@ struct CompilePipe {
     ColorMap          colors;
     std::mutex        mutex;
 
-    CompilePipe(std::string _toolchainCall, ProjectMap const& _projects_with_deps, std::set<std::string> const& _toolchainOptions, std::set<std::string> const& _sharedLibraries)
+    CompilePipe(std::string _toolchainCall, TranslationSetMap const& _projects_with_deps, std::set<std::string> const& _toolchainOptions, std::set<std::string> const& _sharedLibraries)
         : toolchainCall      {move(_toolchainCall)}
         , projects_with_deps {_projects_with_deps}
         , toolchainOptions   {_toolchainOptions}
@@ -55,7 +55,7 @@ struct CompilePipe {
         auto outFile = file.getPath().lexically_normal().replace_extension(".o");
         auto inFile  = file.getPath();
 
-        auto& project = queue.find_outgoing<busy::Project const>(&file);
+        auto& project = queue.find_outgoing<busy::TranslationSet const>(&file);
 
         auto params = std::vector<std::string>{};
 
@@ -85,7 +85,7 @@ struct CompilePipe {
         return params;
     }
 
-    [[nodiscard]] auto setupLinking(busy::Project const& project) const -> std::tuple<std::vector<std::string>, std::unordered_set<Project const*>>;
+    [[nodiscard]] auto setupLinking(busy::TranslationSet const& project) const -> std::tuple<std::vector<std::string>, std::unordered_set<TranslationSet const*>>;
 
 
     [[nodiscard]]
@@ -105,7 +105,7 @@ struct CompilePipe {
     }
 
     [[nodiscard]]
-    auto extract(busy::Project const& project) const -> std::tuple<std::vector<std::string>, std::unordered_set<Project const*>> {
+    auto extract(busy::TranslationSet const& project) const -> std::tuple<std::vector<std::string>, std::unordered_set<TranslationSet const*>> {
         return setupLinking(project);
     }
 

@@ -3,7 +3,7 @@
 
 namespace busy {
 
-auto CompilePipe::setupLinking(busy::Project const& project) const -> std::tuple<std::vector<std::string>, std::unordered_set<Project const*>> {
+auto CompilePipe::setupLinking(busy::TranslationSet const& project) const -> std::tuple<std::vector<std::string>, std::unordered_set<TranslationSet const*>> {
 
     auto [action, target] = [&]() -> std::tuple<std::string, std::filesystem::path> {
         auto type = getTargetType(project, projects_with_deps.at(&project), sharedLibraries);
@@ -43,7 +43,7 @@ auto CompilePipe::setupLinking(busy::Project const& project) const -> std::tuple
     params.emplace_back("--llibraries");
     // add all legacy system libraries
     std::vector<std::string> systemLibraries;
-    auto addSystemLibraries = [&](busy::Project const& project) {
+    auto addSystemLibraries = [&](busy::TranslationSet const& project) {
         for (auto const& l : project.getSystemLibraries()) {
             auto iter = std::find(begin(systemLibraries), end(systemLibraries), l);
             if (iter != end(systemLibraries)) {
@@ -55,8 +55,8 @@ auto CompilePipe::setupLinking(busy::Project const& project) const -> std::tuple
 
     addSystemLibraries(project);
 
-    auto dependencies = std::unordered_set<Project const*>{};
-    queue.visit_incoming<Project const>(&project, [&](Project const& project) {
+    auto dependencies = std::unordered_set<TranslationSet const*>{};
+    queue.visit_incoming<TranslationSet const>(&project, [&](TranslationSet const& project) {
         if (colors.at(&project) == Color::Compilable) {
             auto target = [&]() {
                 auto type = getTargetType(project, projects_with_deps.at(&project), sharedLibraries);

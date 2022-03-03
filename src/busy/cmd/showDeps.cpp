@@ -26,12 +26,12 @@ void showDeps() {
     checkConsistency(projects);
     fmt::print("done\n");
 
-    auto projects_with_deps = createProjects(projects);
+    auto projects_with_deps = createTranslationSets(projects);
 
     if (not *cfgTree) {
-        printProjects(projects_with_deps);
+        printTranslationSets(projects_with_deps);
     } else {
-        printProjectTree(projects_with_deps);
+        printTranslationSetTree(projects_with_deps);
     }
 }
 
