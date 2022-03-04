@@ -3,6 +3,58 @@
 
 namespace busy {
 
+auto CompilePipe::loadGraph() -> G {
+    auto nodes = G::Nodes{};
+    auto edges = G::Edges{};
+
+    for (auto& [project, dep] : projects_with_deps) {
+        nodes.push_back(project);
+        for (auto& file : project->getFiles()) {
+            nodes.emplace_back(&file);
+            edges.emplace_back(G::Edge{&file, project});
+        }
+        for (auto& d : std::get<0>(dep)) {
+            edges.emplace_back(G::Edge{d, project});
+        }
+    }
+    return Graph{std::move(nodes), std::move(edges)};
+}
+
+auto CompilePipe::setupCompiling (busy::File const& file) const -> std::vector<std::string> {
+    auto outFile = file.getPath().lexically_normal().replace_extension(".o");
+    auto inFile  = file.getPath();
+
+    auto& project = graph.find_outgoing<busy::TranslationSet const>(&file);
+
+    auto params = std::vector<std::string>{};
+
+    params.emplace_back(toolchainCall);
+    params.emplace_back("compile");
+    params.emplace_back(project.getPath());
+    params.emplace_back(inFile);
+    params.emplace_back("obj" / outFile);
+    // add all options
+    params.emplace_back("--options");
+    for (auto const& o : toolchainOptions) {
+        params.emplace_back(o);
+    }
+    if (params.back() == "--options") params.pop_back();
+
+
+    // add all include paths
+    params.emplace_back("--ilocal");
+
+    params.emplace_back(project.getPath());
+    for (auto const& p : project.getLegacyIncludePaths()) {
+        params.emplace_back(p);
+    }
+    if (params.back() == "--ilocal") params.pop_back();
+
+    params.erase(std::unique(begin(params), end(params)), end(params));
+    return params;
+}
+
+
 auto CompilePipe::setupLinking(busy::TranslationSet const& project) const -> std::tuple<std::vector<std::string>, std::unordered_set<TranslationSet const*>> {
 
     auto [action, target] = [&]() -> std::tuple<std::string, std::filesystem::path> {
