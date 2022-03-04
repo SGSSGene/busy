@@ -162,13 +162,6 @@ struct FileInfo {
         }
         return false;
     }
-
-    //!TODO remove when fixed?? otherwise not working with c++20
-    void uselessCode() {
-        FileInfo x{fon::ctor{}};
-        // NOLINTNEXTLINE(performance-unnecessary-copy-initialization)
-        FileInfo y {x};
-    }
 };
 
 struct FileInfos {
