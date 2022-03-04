@@ -243,6 +243,10 @@ else
     exit -1
 fi
 
+if [ "${CCACHE}" -eq 1 ]; then
+    rm -f ${CCACHE_LOGFILE}
+fi
+
 mkdir -p $(dirname ${outputFile})
 : > ${stdoutFile}
 if [ -n "${set_verbose}" ]; then
@@ -265,10 +269,14 @@ if [ "${errorCode}" -eq 0 ] && [ -n "${dependencyFile}" ]; then
 fi
 
 is_cached="false"
-if [ "${CCACHE}" -eq 1 ]; then
-    if [ "$(cat ${CCACHE_LOGFILE} | grep 'Result: cache hit' | wc -l)" -eq 1 ]; then
+if [ "${CCACHE}" -eq 1 ] && [ -f "${CCACHE_LOGFILE}" ]; then
+    if [ "$(cat ${CCACHE_LOGFILE} | grep 'Result: direct_cache_hit' | wc -l)" -eq 1 ]; then
         is_cached="true"
     fi
+    if [ "$(cat ${CCACHE_LOGFILE} | grep 'Result: preprocessed_cache_hit' | wc -l)" -eq 1 ]; then
+        is_cached="true"
+    fi
+
 fi
 echo "cached: ${is_cached}"
 echo "compilable: true"
