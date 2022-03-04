@@ -213,7 +213,7 @@ auto updateToolchainOptions(Config& config, bool reset, std::vector<std::string>
     return toolchainOptions;
 }
 
-auto computeEstimationTimes(Config const& config, TranslationSetMap const& projects_with_deps, bool clean, std::string const& _compilerHash, std::size_t jobs) -> std::tuple<ConsolePrinter::EstimatedTimes, std::chrono::milliseconds> {
+auto computeEstimationTimes(TranslationSetMap const& projects_with_deps, bool clean, std::string const& _compilerHash, std::size_t jobs) -> std::tuple<ConsolePrinter::EstimatedTimes, std::chrono::milliseconds> {
     auto estimatedTimes = ConsolePrinter::EstimatedTimes{};
 
 

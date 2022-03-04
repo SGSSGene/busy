@@ -29,7 +29,7 @@ auto loadConfig(std::filesystem::path const& workPath, std::filesystem::path con
 
 auto updateToolchainOptions(Config& config, bool reset, std::vector<std::string> const& _options) -> std::map<std::string, std::vector<std::string>>;
 
-auto computeEstimationTimes(Config const& config, TranslationSetMap const& projects_with_deps, bool clean, std::string const& _compilerHash, std::size_t jobs) -> std::tuple<ConsolePrinter::EstimatedTimes, std::chrono::milliseconds> ;
+auto computeEstimationTimes(TranslationSetMap const& projects_with_deps, bool clean, std::string const& _compilerHash, std::size_t jobs) -> std::tuple<ConsolePrinter::EstimatedTimes, std::chrono::milliseconds> ;
 
 auto execute(std::vector<std::string> params, bool verbose) -> std::string;
 

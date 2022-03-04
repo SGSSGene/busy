@@ -115,7 +115,7 @@ void status() {
         compilerHash = YAML::Node{node["hash"]}.as<std::string>(compilerHash);
     }
 
-    auto [_estimatedTimes, _estimatedTotalTime] = computeEstimationTimes(config, projects_with_deps, rebuild, compilerHash, jobs);
+    auto [_estimatedTimes, _estimatedTotalTime] = computeEstimationTimes(projects_with_deps, rebuild, compilerHash, jobs);
     auto estimatedTimes     = _estimatedTimes;
     auto estimatedTotalTime = _estimatedTotalTime;
     if (estimatedTimes.empty()) {

@@ -208,7 +208,7 @@ struct Compile {
 
         fmt::print("checking files...");
         auto [rebuild, compilerHash, jobs] = initToolchain();
-        auto [estimatedTimes, estimatedTotalTime] = computeEstimationTimes(config, projects_with_deps, rebuild, compilerHash, jobs);
+        auto [estimatedTimes, estimatedTotalTime] = computeEstimationTimes(projects_with_deps, rebuild, compilerHash, jobs);
 
         auto failedCompilations = std::unordered_set<std::string>{};
         fmt::print("done\n");
