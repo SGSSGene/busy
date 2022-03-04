@@ -30,7 +30,7 @@ auto CompilePipe::setupLinking(busy::TranslationSet const& project) const -> std
 
 
     params.emplace_back("--input");
-    for (auto file : queue.find_incoming<busy::File>(&project)) {
+    for (auto file : graph.find_incoming<busy::File>(&project)) {
         if (colors.at(file) == Color::Compilable) {
             auto objPath = "obj" / file->getPath();
             objPath.replace_extension(".o");
@@ -56,7 +56,7 @@ auto CompilePipe::setupLinking(busy::TranslationSet const& project) const -> std
     addSystemLibraries(project);
 
     auto dependencies = std::unordered_set<TranslationSet const*>{};
-    queue.visit_incoming<TranslationSet const>(&project, [&](TranslationSet const& project) {
+    graph.visit_incoming<TranslationSet const>(&project, [&](TranslationSet const& project) {
         if (colors.at(&project) == Color::Compilable) {
             auto target = [&]() {
                 auto type = getTargetType(project, projects_with_deps.at(&project), sharedLibraries);

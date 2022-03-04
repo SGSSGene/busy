@@ -13,16 +13,16 @@ namespace busy {
 using TranslationSetMap = std::map<TranslationSet const*, std::tuple<std::set<TranslationSet const*>, std::set<TranslationSet const*>>>;
 
 struct CompilePipe {
-    using Q        = Queue<busy::TranslationSet const, busy::File const>;
+    using G        = Graph<TranslationSet const, File const>;
+    using Q        = Queue<G>;
     enum class Color { Ignored, Compilable };
-    using ColorMap = std::map<Q::Node, Color>;
+    using ColorMap = std::map<G::Node, Color>;
 
     std::string       toolchainCall;
     TranslationSetMap const& projects_with_deps;
     std::set<std::string> const& toolchainOptions;
     std::set<std::string> const& sharedLibraries;
-    Q::Nodes          nodes;
-    Q::Edges          edges;
+    G                 graph;
     Q                 queue;
     ColorMap          colors;
     std::mutex        mutex;
@@ -32,22 +32,26 @@ struct CompilePipe {
         , projects_with_deps {_projects_with_deps}
         , toolchainOptions   {_toolchainOptions}
         , sharedLibraries    {_sharedLibraries}
-        , queue {loadQueue()}
+        , graph {loadGraph()}
+        , queue {graph}
     {}
 
     [[nodiscard]]
-    auto loadQueue() -> Q {
+    auto loadGraph() -> G {
+        auto nodes = G::Nodes{};
+        auto edges = G::Edges{};
+
         for (auto& [project, dep] : projects_with_deps) {
             nodes.push_back(project);
             for (auto& file : project->getFiles()) {
                 nodes.emplace_back(&file);
-                edges.emplace_back(Q::Edge{&file, project});
+                edges.emplace_back(G::Edge{&file, project});
             }
             for (auto& d : std::get<0>(dep)) {
-                edges.emplace_back(Q::Edge{d, project});
+                edges.emplace_back(G::Edge{d, project});
             }
         }
-        return Queue{nodes, edges};
+        return Graph{std::move(nodes), std::move(edges)};
     }
 
     [[nodiscard]]
@@ -55,7 +59,7 @@ struct CompilePipe {
         auto outFile = file.getPath().lexically_normal().replace_extension(".o");
         auto inFile  = file.getPath();
 
-        auto& project = queue.find_outgoing<busy::TranslationSet const>(&file);
+        auto& project = graph.find_outgoing<busy::TranslationSet const>(&file);
 
         auto params = std::vector<std::string>{};
 
