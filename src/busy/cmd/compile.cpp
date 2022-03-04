@@ -59,20 +59,28 @@ auto getIngoingIncludes(TranslationSet const& project, auto const& projects_with
     return includes;
 }
 
-void compile() {
-    auto workPath   = std::filesystem::current_path();
-    auto config     = loadConfig(workPath, *cfgBuildPath, {cfgBusyPath, *cfgBusyPath});
-    auto fileLock   = FileLock{};
-    auto cacheGuard = loadFileCache(*cfgYamlCache);
 
-    // load busy files
-    auto [allProjects, packages] = busy::readPackage(config.rootDir, config.busyFile);
+struct Compile {
+    // FileLock ensuring that only instance of busy is running at a time
+    FileLock              fileLock   {};
+    // Path where this tool was executed
+    std::filesystem::path workPath   {std::filesystem::current_path()};
+    // load build configuration file
+    Config                config     {loadConfig(workPath, *cfgBuildPath, {cfgBusyPath, *cfgBusyPath})};
+    // ScopeGuard to keep file cache in memory
+    finally               cacheGuard {loadFileCache(*cfgYamlCache)};
 
-    packages.insert(begin(packages), user_sharedPath);
-    packages.insert(begin(packages), global_sharedPath);
+    // Terminal colors
+    fmt::text_style fg_green  {isInteractive()? fg(fmt::terminal_color::green): fmt::text_style{}};
+    fmt::text_style fg_yellow {isInteractive()? fg(fmt::terminal_color::yellow): fmt::text_style{}};
+    fmt::text_style fg_red    {isInteractive()? fg(fmt::terminal_color::red): fmt::text_style{}};
 
-    // check if toolchain is configured differently
-    if (cfgToolchain or config.toolchain.name.empty()) {
+
+    Package rootPackage;
+    std::vector<TranslationSet>&        allProjects {rootPackage.translationSets};
+    std::vector<std::filesystem::path>& packages    {rootPackage.packages};
+
+    void updateToolchain() {
         auto toolchains = searchForToolchains(packages);
         auto iter = [&]() {
             if (cfgToolchain) {
@@ -95,31 +103,14 @@ void compile() {
         updateToolchainOptions(config, true, *cfgOptions);
         fmt::print("Setting toolchain to {} ({})\n", config.toolchain.name, config.toolchain.call);
     }
-    auto toolchainOptions = updateToolchainOptions(config, false, *cfgOptions);
 
-    fmt::print("using toolchain {} ({})\n", config.toolchain.name, config.toolchain.call);
-    fmt::print("  with options: {}\n", fmt::join(config.toolchain.options, " "));
-
-
-    // update shared/static libraries
-    for (auto s : *cfgShared) {
-        config.sharedLibraries.insert(s);
-    }
-    for (auto s : *cfgStatic) {
-        config.sharedLibraries.erase(s);
+    void saveConfig() {
+        YAML::Emitter out;
+        out << fon::yaml::serialize(config);
+        std::ofstream(global_busyConfigFile) << out.c_str();
     }
 
-    // check consistency of packages
-    fmt::print("checking consistency...");
-    checkConsistency(allProjects);
-    fmt::print("done\n");
-
-    auto projects = normalizeTranslationSets(allProjects);
-
-    auto projects_with_deps = createTranslationSets(projects);
-
-    // discover targets
-    if (cfgTargets) {
+    auto onlyIncludeRequiredDeps(auto projects_with_deps) {
         auto names = std::set<std::string>{};
         for (auto n : *cfgTargets) {
             names.insert(n);
@@ -134,31 +125,17 @@ void compile() {
         for (auto r : removeTranslationSets) {
             projects_with_deps.erase(r);
         }
+        return projects_with_deps;
     }
 
-    // Save config
-    {
-        YAML::Emitter out;
-        out << fon::yaml::serialize(config);
-        std::ofstream(global_busyConfigFile) << out.c_str();
-    }
-
-
-    fmt::print("checking files...");
-    auto jobs = [&]() -> std::size_t {
+    auto getNbrThreads() const -> size_t {
         if (*cfgJobs == 0) {
             return std::thread::hardware_concurrency();
         }
         return *cfgJobs;
-    }();
+    }
 
-    auto fg_green  = isInteractive()? fg(fmt::terminal_color::green): fmt::text_style{};
-    auto fg_yellow = isInteractive()? fg(fmt::terminal_color::yellow): fmt::text_style{};
-    auto fg_red    = isInteractive()? fg(fmt::terminal_color::red): fmt::text_style{};
-
-    bool rebuild = cfgRebuild;
-    auto compilerHash = std::string{};
-    {
+    auto initToolchain() {
         auto args = std::vector<std::string>{config.toolchain.call, "init", config.rootDir};
         if (not config.toolchain.options.empty()) {
             args.emplace_back("--options");
@@ -168,177 +145,235 @@ void compile() {
         }
         auto cout = execute(args, false);
         auto node = YAML::Load(cout);
-        rebuild      = YAML::Node{node["rebuild"]}.as<bool>(rebuild);
-        jobs         = std::min(jobs, YAML::Node{node["max_jobs"]}.as<std::size_t>(jobs));
-        compilerHash = YAML::Node{node["hash"]}.as<std::string>(compilerHash);
+
+        auto rebuild      = YAML::Node{node["rebuild"]}.as<bool>(cfgRebuild);
+        auto compilerHash = YAML::Node{node["hash"]}.as<std::string>(std::string{});
+        auto jobs         = std::min(getNbrThreads(), YAML::Node{node["max_jobs"]}.as<std::size_t>(getNbrThreads()));
+
+        return std::make_tuple(rebuild, compilerHash, jobs);
     }
 
-    auto [estimatedTimes, estimatedTotalTime] = computeEstimationTimes(config, projects_with_deps, rebuild, compilerHash, jobs);
-
-    auto failedCompilations = std::unordered_set<std::string>{};
-    fmt::print("done\n");
-    fmt::print("{} files need processing\n", estimatedTimes.size());
-
-    for (auto const& project : projects) {
-        auto args = std::vector<std::string>{config.toolchain.call, "setup_translation_set", config.rootDir, project->getPath(), "--isystem"};
-        for (auto const& i : getIngoingIncludes(*project, projects_with_deps)) {
-            args.emplace_back(i);
+    void setupTranslationSets(auto const& projects, auto const& projects_with_deps) {
+        for (auto const& project : projects) {
+            auto args = std::vector<std::string>{config.toolchain.call, "setup_translation_set", config.rootDir, project->getPath(), "--isystem"};
+            for (auto const& i : getIngoingIncludes(*project, projects_with_deps)) {
+                args.emplace_back(i);
+            }
+            auto cout = execute(args, false);
         }
-        auto cout = execute(args, false);
     }
 
-    // checks if there are any files to compile, and if actually compile them
-    if (not estimatedTimes.empty()) {
+    Compile() {
 
-        fmt::print("start compiling...\n");
-        auto consolePrinter = ConsolePrinter{estimatedTimes, estimatedTotalTime};
-        auto pipe           = CompilePipe{config.toolchain.call, projects_with_deps, config.toolchain.options, config.sharedLibraries};
+        // load busy files
+        rootPackage = busy::readPackage(config.rootDir, config.busyFile);
 
-        auto multiPipe = MultiCompilePipe{pipe, jobs};
+        // add paths to places where to search for toolchains !TODO this reads as those are actually valid package places
+        packages.insert(begin(packages), user_sharedPath);
+        packages.insert(begin(packages), global_sharedPath);
 
-        std::mutex mutex;
-        multiPipe.work(overloaded {
-            [&](busy::File const& file, auto const& params, auto const&) {
-                auto startTime  = std::chrono::file_clock::now();
-                auto path       = file.getPath();
+        // Is a toolchain set? or is a new toolchain requested?
+        if (config.toolchain.name.empty() or cfgToolchain) {
+            updateToolchain();
+        }
+        auto toolchainOptions = updateToolchainOptions(config, false, *cfgOptions);
 
-                auto g = std::unique_lock{mutex};
-                auto& fileInfo = getFileInfos().get(path);
-                g.unlock();
-                if (estimatedTimes.count(&file) == 0) {
-                    return fileInfo.compilable?CompilePipe::Color::Compilable:CompilePipe::Color::Ignored;
-                }
+        fmt::print("using toolchain {} ({})\n", config.toolchain.name, config.toolchain.call);
+        fmt::print("  with options: {}\n", fmt::join(config.toolchain.options, " "));
 
-                consolePrinter.startJob(&file, "compiling " + path.string());
 
-                fileInfo.needRecompiling = true;
-                // store file date before compiling
-                g.lock();
-                auto hash    = getFileCache().getHash(path);
-                failedCompilations.insert(file.getPath());
-                g.unlock();
+        // update shared/static libraries
+        for (auto s : *cfgShared) {
+            config.sharedLibraries.insert(s);
+        }
+        for (auto s : *cfgStatic) {
+            config.sharedLibraries.erase(s);
+        }
 
-                // compiling
-                auto cout = execute(params, cfgVerbose);
-                auto node = YAML::Load(cout);
+        // check consistency of packages
+        fmt::print("checking consistency...");
+        checkConsistency(allProjects);
+        fmt::print("done\n");
 
-                bool cached          = YAML::Node{node["cached"]}.as<bool>(false);
-                fileInfo.compilable  = YAML::Node{node["compilable"]}.as<bool>(false);
-                fileInfo.outputFiles = {};
-                for (YAML::Node const& n : node["output_files"]) {
-                    fileInfo.outputFiles.push_back(n.as<std::string>());
-                }
+        saveConfig();
 
-                auto dependencies = FileInfo::Dependencies{};
-                //!TODO should work with `auto`, but doesn't for some reason
-                for (YAML::Node const& n : node["dependencies"]) {
-                    auto path    = FileInfo::Path{n.as<std::string>()};
-                    auto hash    = computeHash(path);
-                    auto modTime = getFileModificationTime(path);
+        auto projects = normalizeTranslationSets(allProjects);
 
-                    //!TODO handle when files changes inbetween
-                    if (modTime > startTime) {
-                        auto f = [](auto t) {
-                            return std::chrono::duration_cast<std::chrono::seconds>(t.time_since_epoch()).count();
-                        };
-                            fmt::print("file changed??? {} {} {} {} {}\n", f(modTime), f(startTime), path, std::filesystem::current_path(), hash);
-                    //        throw std::runtime_error("file changed");
-                        //status = 2; // file changed in between
+        auto projects_with_deps = createTranslationSets(projects);
+
+        // discover targets
+        if (cfgTargets) {
+            projects_with_deps = onlyIncludeRequiredDeps(projects_with_deps);
+        }
+
+        fmt::print("checking files...");
+        auto [rebuild, compilerHash, jobs] = initToolchain();
+        auto [estimatedTimes, estimatedTotalTime] = computeEstimationTimes(config, projects_with_deps, rebuild, compilerHash, jobs);
+
+        auto failedCompilations = std::unordered_set<std::string>{};
+        fmt::print("done\n");
+        fmt::print("{} files need processing\n", estimatedTimes.size());
+
+        setupTranslationSets(projects, projects_with_deps);
+
+        // checks if there are any files to compile, and if actually compile them
+        if (not estimatedTimes.empty()) {
+
+            fmt::print("start compiling...\n");
+            auto consolePrinter = ConsolePrinter{estimatedTimes, estimatedTotalTime};
+            auto pipe           = CompilePipe{config.toolchain.call, projects_with_deps, config.toolchain.options, config.sharedLibraries};
+
+            auto multiPipe = MultiCompilePipe{pipe, jobs};
+
+            std::mutex mutex;
+            multiPipe.work(overloaded {
+                [&](busy::File const& file, auto const& params, auto const&) {
+                    auto startTime  = std::chrono::file_clock::now();
+                    auto path       = file.getPath();
+
+                    auto g = std::unique_lock{mutex};
+                    auto& fileInfo = getFileInfos().get(path);
+                    g.unlock();
+                    if (estimatedTimes.count(&file) == 0) {
+                        return fileInfo.compilable?CompilePipe::Color::Compilable:CompilePipe::Color::Ignored;
                     }
-                    dependencies.emplace_back(path, hash);
-                }
-                auto std_out = YAML::Node{node["stdout"]}.as<std::string>("");
-                auto std_err = YAML::Node{node["stderr"]}.as<std::string>("");
 
-                fileInfo.dependencies    = dependencies;
-                fileInfo.hash            = hash;
-                fileInfo.needRecompiling = false;
-                fileInfo.hasWarnings     = not std_err.empty();
-                fileInfo.compilerHash    = compilerHash;
+                    consolePrinter.startJob(&file, "compiling " + path.string());
+
+                    fileInfo.needRecompiling = true;
+                    // store file date before compiling
+                    g.lock();
+                    auto hash    = getFileCache().getHash(path);
+                    failedCompilations.insert(file.getPath());
+                    g.unlock();
+
+                    // compiling
+                    auto cout = execute(params, cfgVerbose);
+                    auto node = YAML::Load(cout);
+
+                    bool cached          = YAML::Node{node["cached"]}.as<bool>(false);
+                    fileInfo.compilable  = YAML::Node{node["compilable"]}.as<bool>(false);
+                    fileInfo.outputFiles = {};
+                    for (YAML::Node const& n : node["output_files"]) {
+                        fileInfo.outputFiles.push_back(n.as<std::string>());
+                    }
+
+                    auto dependencies = FileInfo::Dependencies{};
+                    //!TODO should work with `auto`, but doesn't for some reason
+                    for (YAML::Node const& n : node["dependencies"]) {
+                        auto path    = FileInfo::Path{n.as<std::string>()};
+                        auto hash    = computeHash(path);
+                        auto modTime = getFileModificationTime(path);
+
+                        //!TODO handle when files changes inbetween
+                        if (modTime > startTime) {
+                            auto f = [](auto t) {
+                                return std::chrono::duration_cast<std::chrono::seconds>(t.time_since_epoch()).count();
+                            };
+                                fmt::print("file changed??? {} {} {} {} {}\n", f(modTime), f(startTime), path, std::filesystem::current_path(), hash);
+                        //        throw std::runtime_error("file changed");
+                            //status = 2; // file changed in between
+                        }
+                        dependencies.emplace_back(path, hash);
+                    }
+                    auto std_out = YAML::Node{node["stdout"]}.as<std::string>("");
+                    auto std_err = YAML::Node{node["stderr"]}.as<std::string>("");
+
+                    fileInfo.dependencies    = dependencies;
+                    fileInfo.hash            = hash;
+                    fileInfo.needRecompiling = false;
+                    fileInfo.hasWarnings     = not std_err.empty();
+                    fileInfo.compilerHash    = compilerHash;
 
 
-                auto compileTime = consolePrinter.finishedJob(&file, "compiling " + path.string());
-                if (not cached or fileInfo.compileTime < compileTime) {
-                    fileInfo.compileTime = compileTime;
-                }
-                fileInfo.modTime = startTime;
-                g.lock();
-                failedCompilations.erase(file.getPath());
-                g.unlock();
+                    auto compileTime = consolePrinter.finishedJob(&file, "compiling " + path.string());
+                    if (not cached or fileInfo.compileTime < compileTime) {
+                        fileInfo.compileTime = compileTime;
+                    }
+                    fileInfo.modTime = startTime;
+                    g.lock();
+                    failedCompilations.erase(file.getPath());
+                    g.unlock();
 
-                return fileInfo.compilable? CompilePipe::Color::Compilable: CompilePipe::Color::Ignored;
-            }, [&](busy::TranslationSet const& project, auto const& params, auto const&) {
-                auto& fileInfo = getFileInfos().get(project.getPath());
+                    return fileInfo.compilable? CompilePipe::Color::Compilable: CompilePipe::Color::Ignored;
+                }, [&](busy::TranslationSet const& project, auto const& params, auto const&) {
+                    auto& fileInfo = getFileInfos().get(project.getPath());
 
-                if (estimatedTimes.count(&project) == 0) {
+                    if (estimatedTimes.count(&project) == 0) {
+                        return fileInfo.compilable?CompilePipe::Color::Compilable:CompilePipe::Color::Ignored;
+                    }
+
+                    consolePrinter.startJob(&project, "linking " + project.getName());
+                    auto cout = execute(params, cfgVerbose);
+                    auto node = YAML::Load(cout);
+                    bool cached         = YAML::Node{node["cached"]}.as<bool>(false);
+                    fileInfo.compilable = YAML::Node{node["compilable"]}.as<bool>(false);
+                    fileInfo.outputFiles = {};
+                    for (YAML::Node const& n : node["output_files"]) {
+                        fileInfo.outputFiles.push_back(n.as<std::string>());
+                    }
+
+                    fileInfo.compilerHash    = compilerHash;
+
+                    auto compileTime = consolePrinter.finishedJob(&project, "linking " + project.getName());
+                    if (not cached or fileInfo.compileTime < compileTime) {
+                        fileInfo.compileTime = compileTime;
+                    }
+
                     return fileInfo.compilable?CompilePipe::Color::Compilable:CompilePipe::Color::Ignored;
                 }
-
-                consolePrinter.startJob(&project, "linking " + project.getName());
-                auto cout = execute(params, cfgVerbose);
-                auto node = YAML::Load(cout);
-                bool cached         = YAML::Node{node["cached"]}.as<bool>(false);
-                fileInfo.compilable = YAML::Node{node["compilable"]}.as<bool>(false);
-                fileInfo.outputFiles = {};
-                for (YAML::Node const& n : node["output_files"]) {
-                    fileInfo.outputFiles.push_back(n.as<std::string>());
+            });
+            multiPipe.join();
+            if (multiPipe.compileError) {
+                fmt::print("{} files with {}:\n", failedCompilations.size(), fmt::format(fg_red, "errors"));
+                for (auto const& f : failedCompilations) {
+                    fmt::print("  - {}\n", fmt::format(fg_yellow, "{}", f));
                 }
-
-                fileInfo.compilerHash    = compilerHash;
-
-                auto compileTime = consolePrinter.finishedJob(&project, "linking " + project.getName());
-                if (not cached or fileInfo.compileTime < compileTime) {
-                    fileInfo.compileTime = compileTime;
-                }
-
-                return fileInfo.compilable?CompilePipe::Color::Compilable:CompilePipe::Color::Ignored;
+                throw CompileError{};
             }
-        });
-        multiPipe.join();
-        if (multiPipe.compileError) {
-            fmt::print("{} files with {}:\n", failedCompilations.size(), fmt::format(fg_red, "errors"));
-            for (auto const& f : failedCompilations) {
-                fmt::print("  - {}\n", fmt::format(fg_yellow, "{}", f));
-            }
-            throw CompileError{};
         }
-    }
-    execute({config.toolchain.call, "finalize"}, false);
-    fmt::print("done\n");
+        execute({config.toolchain.call, "finalize"}, false);
+        fmt::print("done\n");
 
-    int warnings = 0;
-    int external_warnings = 0;
-    visitFilesWithWarnings(config, projects_with_deps, [&](File const& file, FileInfo const&) {
-        if (*file.getPath().begin() == external) {
-            external_warnings += 1;
+        int warnings = 0;
+        int external_warnings = 0;
+        visitFilesWithWarnings(config, projects_with_deps, [&](File const& file, FileInfo const&) {
+            if (*file.getPath().begin() == external) {
+                external_warnings += 1;
+            } else {
+                warnings += 1;
+            }
+        }, nullptr);
+
+        if (warnings == 0 and external_warnings == 0) {
+            fmt::print("all files {}\n", fmt::format(fg_green, "warning free"));
         } else {
-            warnings += 1;
-        }
-    }, nullptr);
-
-    if (warnings == 0 and external_warnings == 0) {
-        fmt::print("all files {}\n", fmt::format(fg_green, "warning free"));
-    } else {
-        if (warnings > 0) {
-            fmt::print("{} files with {}\n", warnings, fmt::format(fg_red, "warnings"));
-            visitFilesWithWarnings(config, projects_with_deps, [&](File const& file, FileInfo const&) {
-                if (*file.getPath().begin() != external) {
-                    fmt::print("  - {}\n", file.getPath());
-                }
-            }, nullptr);
-        }
-        if (external_warnings > 0) {
-            fmt::print("{} external files with {}\n", external_warnings, fmt::format(fg_red, "warnings"));
-            if (cfgVerbose) {
+            if (warnings > 0) {
+                fmt::print("{} files with {}\n", warnings, fmt::format(fg_red, "warnings"));
                 visitFilesWithWarnings(config, projects_with_deps, [&](File const& file, FileInfo const&) {
-                    if (*file.getPath().begin() == external) {
+                    if (*file.getPath().begin() != external) {
                         fmt::print("  - {}\n", file.getPath());
                     }
                 }, nullptr);
             }
+            if (external_warnings > 0) {
+                fmt::print("{} external files with {}\n", external_warnings, fmt::format(fg_red, "warnings"));
+                if (cfgVerbose) {
+                    visitFilesWithWarnings(config, projects_with_deps, [&](File const& file, FileInfo const&) {
+                        if (*file.getPath().begin() == external) {
+                            fmt::print("  - {}\n", file.getPath());
+                        }
+                    }, nullptr);
+                }
+            }
+            fmt::print("to inspect warnings call {}\n", fmt::format(fg_yellow, "`busy status <file>`"));
         }
-        fmt::print("to inspect warnings call {}\n", fmt::format(fg_yellow, "`busy status <file>`"));
+
     }
+};
+
+void compile() {
+    auto app = Compile{};
 }
 
 }
