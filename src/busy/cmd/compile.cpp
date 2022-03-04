@@ -357,7 +357,7 @@ struct Compile {
                 }, nullptr);
             }
             if (external_warnings > 0) {
-                fmt::print("{} external files with {}\n", external_warnings, fmt::format(fg_red, "warnings"));
+                fmt::print("{} external files with {}\n", external_warnings, fmt::format(fg_yellow, "warnings"));
                 if (cfgVerbose) {
                     visitFilesWithWarnings(config, projects_with_deps, [&](File const& file, FileInfo const&) {
                         if (*file.getPath().begin() == external) {
@@ -368,7 +368,7 @@ struct Compile {
             }
             fmt::print("to inspect warnings call {}\n", fmt::format(fg_yellow, "`busy status <file>`"));
         }
-
+        fmt::print("Compilation was a {}\n", fmt::format(fg_green, "Success!"));
     }
 };
 
