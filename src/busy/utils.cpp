@@ -215,18 +215,48 @@ auto updateToolchainOptions(Config& config, bool reset, std::vector<std::string>
 
 auto computeEstimationTimes(Config const& config, TranslationSetMap const& projects_with_deps, bool clean, std::string const& _compilerHash, std::size_t jobs) -> std::tuple<ConsolePrinter::EstimatedTimes, std::chrono::milliseconds> {
     auto estimatedTimes = ConsolePrinter::EstimatedTimes{};
-    auto pipe           = CompilePipe{config.toolchain.call, projects_with_deps, config.toolchain.options, config.sharedLibraries};
-    auto threadTimings = std::vector<std::chrono::milliseconds>(jobs, std::chrono::milliseconds{0});
-    auto readyTimings  = std::vector<std::chrono::milliseconds>{};
-    for (std::size_t i{0}; i < pipe.size(); ++i) {
-        readyTimings.emplace_back(std::chrono::milliseconds{0});
-    }
-    while (not pipe.empty()) {
-        auto work = pipe.pop();
+
+
+    using G  = Graph<TranslationSet const, File const>;
+    using Q  = Queue<G>;
+    auto graph = [&]() {
+        auto nodes = G::Nodes{};
+        auto edges = G::Edges{};
+        for (auto& [project, dep] : projects_with_deps) {
+            nodes.push_back(project);
+            for (auto& file : project->getFiles()) {
+                nodes.emplace_back(&file);
+                edges.emplace_back(G::Edge{&file, project});
+            }
+            for (auto& d : std::get<0>(dep)) {
+                edges.emplace_back(G::Edge{d, project});
+            }
+        }
+        return G{std::move(nodes), std::move(edges)};
+    }();
+    auto queue = Q{graph};
+
+
+    struct Thread {
+        decltype(queue.pop()) work{nullptr};
+        std::chrono::milliseconds finishesAt{};
+    };
+    auto threads = std::vector<Thread>(jobs);
+    auto sortThreads = [&]() {
+        std::sort(begin(threads), end(threads), [](auto const& lhs, auto const& rhs) {
+            return lhs.finishesAt < rhs.finishesAt;
+        });
+    };
+
+    auto queueAWorkLoad = [&](auto work) {
+        auto& t = threads.front();
+        if (t.work != nullptr) {
+            queue.dispatch(t.work, [](auto) {});
+        }
         auto duration = std::chrono::milliseconds{};
-        auto otherProcesses = pipe.size();
-        pipe.dispatch(work, overloaded {
-            [&](busy::File const& file, auto const& /*params*/, auto const& /*deps*/) {
+
+        queue.visit(work, overloaded {
+            [&](busy::File const& file) {
                 auto& fileInfo = getFileInfos().get(file.getPath());
                 if (clean
                     or (fileInfo.hasChanged() and fileInfo.compilable)
@@ -235,7 +265,13 @@ auto computeEstimationTimes(Config const& config, TranslationSetMap const& proje
                     duration = fileInfo.compileTime;
                 }
                 return CompilePipe::Color::Compilable;
-            }, [&](busy::TranslationSet const& project, auto const& /*params*/, auto const& deps) {
+            }, [&](busy::TranslationSet const& project) {
+
+                auto deps = std::unordered_set<TranslationSet const*>{};
+                graph.visit_incoming<TranslationSet const>(&project, [&](TranslationSet const& project) {
+                    deps.insert(&project);
+                });
+
                 auto& fileInfo = getFileInfos().get(project.getPath());
                 auto anyChanges = [&]() {
                     for (auto const& d : deps) {
@@ -268,19 +304,36 @@ auto computeEstimationTimes(Config const& config, TranslationSetMap const& proje
                 return CompilePipe::Color::Compilable;
             }
         });
-        // find smallest thread with timings
-        threadTimings[0] = std::min(readyTimings.front(), threadTimings.front()) + duration;
-        readyTimings.erase(begin(readyTimings));
-        auto newProcesses = pipe.size() - otherProcesses;
-        for (std::size_t i{0}; i < newProcesses; ++i) {
-            readyTimings.push_back(threadTimings[0]);
+
+
+        t.work = work;
+        t.finishesAt += duration;
+        sortThreads();
+    };
+
+    while (!queue.empty()) {
+        auto next = queue.pop();
+        queueAWorkLoad(next);
+        auto activeThreads = std::accumulate(begin(threads), end(threads), 0, [](auto a, auto const& t) { return a + t.work?1:0; });
+        while (queue.empty() and activeThreads > 0) {
+            for (auto& t : threads) {
+                if (t.work) {
+                    queue.dispatch(t.work, [](auto) {});
+                    for (auto& t2 : threads) {
+                        t2.finishesAt = std::max(t2.finishesAt, t.finishesAt);
+                    }
+                    t.work = nullptr;
+                    activeThreads = std::accumulate(begin(threads), end(threads), 0, [](auto a, auto const& t) { return a + t.work?1:0; });
+                    sortThreads();
+                    break;
+                }
+            }
         }
-        std::sort(begin(threadTimings), end(threadTimings));
-        std::sort(begin(readyTimings), end(readyTimings));
     }
 
-    return {estimatedTimes, threadTimings.back()};
+    return {estimatedTimes, threads.back().finishesAt};
 }
+
 
 auto execute(std::vector<std::string> params, bool verbose) -> std::string {
     if (verbose) {

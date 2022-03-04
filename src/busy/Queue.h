@@ -56,9 +56,7 @@ public:
 
     template <typename L>
     void dispatch(IntNode const* node, L const& l) {
-        std::visit([&](auto ptr) {
-            l(*ptr);
-        }, node->value);
+        visit(node, l);
 
         auto g = std::lock_guard{mutex};
         for (auto n : node->outNode) {
@@ -69,6 +67,13 @@ public:
             }
         }
     }
+    template <typename L>
+    void visit(IntNode const* node, L const& l) {
+        std::visit([&](auto ptr) {
+            l(*ptr);
+        }, node->value);
+    }
+
 };
 
 }
