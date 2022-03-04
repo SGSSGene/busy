@@ -20,7 +20,7 @@ auto CompilePipe::loadGraph() -> G {
     return Graph{std::move(nodes), std::move(edges)};
 }
 
-auto CompilePipe::setupCompiling (busy::File const& file) const -> std::vector<std::string> {
+auto CompilePipe::setupTranslationUnit(busy::File const& file) const -> std::vector<std::string> {
     auto outFile = file.getPath().lexically_normal().replace_extension(".o");
     auto inFile  = file.getPath();
 
@@ -55,7 +55,7 @@ auto CompilePipe::setupCompiling (busy::File const& file) const -> std::vector<s
 }
 
 
-auto CompilePipe::setupLinking(busy::TranslationSet const& project) const -> std::tuple<std::vector<std::string>, std::unordered_set<TranslationSet const*>> {
+auto CompilePipe::setupTranslationSet(busy::TranslationSet const& project) const -> std::tuple<std::vector<std::string>, std::unordered_set<TranslationSet const*>> {
 
     auto [action, target] = [&]() -> std::tuple<std::string, std::filesystem::path> {
         auto type = getTargetType(project, projects_with_deps.at(&project), sharedLibraries);

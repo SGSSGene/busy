@@ -40,9 +40,9 @@ struct CompilePipe {
     auto loadGraph() -> G;
 
     [[nodiscard]]
-    auto setupCompiling (busy::File const& file) const -> std::vector<std::string>;
+    auto setupTranslationUnit(File const& file) const -> std::vector<std::string>;
 
-    [[nodiscard]] auto setupLinking(busy::TranslationSet const& project) const -> std::tuple<std::vector<std::string>, std::unordered_set<TranslationSet const*>>;
+    [[nodiscard]] auto setupTranslationSet(TranslationSet const& project) const -> std::tuple<std::vector<std::string>, std::unordered_set<TranslationSet const*>>;
 
 
     [[nodiscard]]
@@ -57,13 +57,13 @@ struct CompilePipe {
 
 
     [[nodiscard]]
-    auto extract(busy::File const& file) const -> std::tuple<std::vector<std::string>, std::nullptr_t> {
-        return {setupCompiling(file), nullptr};
+    auto extract(File const& file) const -> std::tuple<std::vector<std::string>, std::nullptr_t> {
+        return {setupTranslationUnit(file), nullptr};
     }
 
     [[nodiscard]]
-    auto extract(busy::TranslationSet const& project) const -> std::tuple<std::vector<std::string>, std::unordered_set<TranslationSet const*>> {
-        return setupLinking(project);
+    auto extract(TranslationSet const& project) const -> std::tuple<std::vector<std::string>, std::unordered_set<TranslationSet const*>> {
+        return setupTranslationSet(project);
     }
 
     auto pop() {
