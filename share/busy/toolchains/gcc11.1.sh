@@ -21,7 +21,7 @@ BUILD_SCRIPTS="${0}"
 REAL_CALL="${@}"
 
 expected_major=11
-expected_minor_ge=1
+expected_minor=1
 
 declare -A profiles
 profiles=(

@@ -29,7 +29,7 @@ version_minor=$(echo ${version} | cut -d "." -f 2)
 version_patch=$(echo ${version} | cut -d "." -f 3)
 
 # check if version numbers match
-if [ "${version_major}" != "${expected_major}" ] || [ "${version_minor}" -lt "${expected_minor_ge}" ]; then
+if [ "${version_major}" != "${expected_major}" ] || [ "${version_minor}" != "${expected_minor}" ]; then
     exit -1
 fi
 
