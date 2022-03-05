@@ -19,7 +19,7 @@ void TranslationSet::analyseFiles(std::filesystem::path const& _root, std::files
             continue;
         }
 
-        mFiles.emplace_back(_root, relative(e.path(), _root).lexically_normal());
+        mFiles.emplace_back(_root, relative("/doesntexist" / e.path(), "/doesntexist" / _root).lexically_normal());
     }
 
     // Discover legacy include paths
@@ -31,7 +31,7 @@ void TranslationSet::analyseFiles(std::filesystem::path const& _root, std::files
             if (not is_regular_file(e)) {
                 continue;
             }
-            auto path = relative(e.path(), _root).lexically_normal();
+            auto path = relative("/doesntexist" / e.path(), "/doesntexist" / _root).lexically_normal();
             mFiles.emplace_back(_root, std::move(path));
         }
     }

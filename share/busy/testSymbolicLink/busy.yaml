@@ -1,0 +1,6 @@
+projects:
+  - name: helloWorld
+    type: executable
+  - name: helloWorld2
+    type: executable
+
