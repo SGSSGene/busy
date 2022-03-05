@@ -22,6 +22,17 @@ auto checkIfMakroSystemInclude(char const* str) -> bool {
     return *str == '<';
 }
 
+auto checkIfMakroQuoteInclude(char const* str) -> bool {
+    skipAllWhiteSpaces(str);
+    if (strncmp(str, "#include", 8) != 0) {
+        return false;
+    }
+    str += 8;
+    skipAllWhiteSpaces(str);
+    return *str == '"';
+}
+
+
 auto readIncludes(std::filesystem::path const& _file) -> std::set<std::filesystem::path>{
     auto dependenciesAsString = std::set<std::string>{};
 
@@ -30,7 +41,9 @@ auto readIncludes(std::filesystem::path const& _file) -> std::set<std::filesyste
     auto ifs  = std::ifstream(_file);
     auto line = std::string{};
     while (std::getline(ifs, line)) {
-        if (checkIfMakroSystemInclude(line.c_str())) {
+        auto systemInclude = checkIfMakroSystemInclude(line.c_str());
+        auto quoteInclude  = checkIfMakroQuoteInclude(line.c_str());
+        if (systemInclude || quoteInclude) {
             auto parts = explode(line, {' ', '\t'});
 
             if (parts.size() == 0) continue;
@@ -42,8 +55,11 @@ auto readIncludes(std::filesystem::path const& _file) -> std::set<std::filesyste
                 return parts[1];
             }();
 
-            auto pos1 = includeFile.find('<') + 1;
-            auto pos2 = includeFile.find('>') - pos1;
+            char d1 = systemInclude?'<':'"';
+            char d2 = systemInclude?'>':'"';
+
+            auto pos1 = includeFile.find(d1) + 1;
+            auto pos2 = includeFile.find(d2, pos1) - pos1;
 
             auto file = includeFile.substr(pos1, pos2);
 
