@@ -159,7 +159,7 @@ struct Compile {
             for (auto const& i : getIngoingIncludes(*project, projects_with_deps)) {
                 args.emplace_back(i);
             }
-            auto cout = execute(args, false);
+            auto cout = execute(args, cfgVerbose);
         }
     }
 
