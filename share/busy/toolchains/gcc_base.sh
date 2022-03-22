@@ -98,8 +98,6 @@ elif [ "$1" == "setup_translation_set" ] ; then
     shift; tsName="$1"
     shift;
 
-    echo $REAL_CALL
-
     rm -rf environments/${tsName}/includes
     mkdir -p environments/${tsName}/includes/local
     mkdir -p environments/${tsName}/includes/system
@@ -108,7 +106,8 @@ elif [ "$1" == "setup_translation_set" ] ; then
           "--isystem systemIncludes" \
           "--" "$@"
     for f in "${projectIncludes[@]}"; do
-        ln -s "$(realpath "${rootDir}/${f}")" -T "environments/${tsName}/includes/local/$(basename "${f}")"
+        target="environments/${tsName}/includes/local/$(basename "${f}")"
+        ln -s "$(realpath "${rootDir}/${f}" --relative-to "$(dirname ${target})")" -T "${target}"
     done
     for f in "${systemIncludes[@]}"; do
         i=0
@@ -119,7 +118,7 @@ elif [ "$1" == "setup_translation_set" ] ; then
         done
         mkdir -p "environments/${tsName}/includes/system/$i"
 
-        ln -s "$(realpath "${rootDir}/${f}")" -T "${target}"
+        ln -s "$(realpath "${rootDir}/${f}" --relative-to "$(dirname ${target})")" -T "${target}"
     done
 
     exit 0
