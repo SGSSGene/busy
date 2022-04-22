@@ -104,6 +104,7 @@ elif [ "$1" == "setup_translation_set" ] ; then
 
     parse "--ilocal  projectIncludes" \
           "--isystem systemIncludes" \
+          "--verbose verbose" \
           "--" "$@"
     for f in "${projectIncludes[@]}"; do
         target="environments/${tsName}/includes/local/$(basename "${f}")"
