@@ -155,9 +155,9 @@ elif [ "$1" == "compile" ]; then
     i=0
     target="environments/${tsName}/includes/system/$i"
     while [ -d ${target} ]; do
-        systemIncludes+=("environments/${tsName}/includes/system/$i")
+        systemIncludes+=("${target}")
         i=$(expr $i + 1)
-        target="environments/${tsName}/includes/system/$i/$(basename "${f}")"
+        target="environments/${tsName}/includes/system/$i"
     done
 
     projectIncludes+=($(dirname ${projectIncludes[-1]})) #!TODO this line should not be needed
