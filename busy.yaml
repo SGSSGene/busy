@@ -1,8 +1,5 @@
 projects:
   - name: busy
     type: executable
-    legacy:
-      systemLibraries:
-        - stdc++fs
   - name: demangle
     type: library
