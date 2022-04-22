@@ -24,7 +24,8 @@
 namespace busy {
 
 FileLock::FileLock() {
-    fd = ::open(global_lockFile.c_str(), O_CREAT | O_RDWR | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+    lockFile = absolute(global_lockFile);
+    fd = ::open(lockFile.c_str(), O_CREAT | O_RDWR | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
     if (fd == -1) {
         throw std::runtime_error("can't access .lock");
     }
@@ -34,7 +35,7 @@ FileLock::FileLock() {
 }
 FileLock::~FileLock() {
     close(fd);
-    remove(global_lockFile);
+    remove(lockFile);
 }
 
 

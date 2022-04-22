@@ -17,6 +17,7 @@ namespace busy {
 struct CompileError {};
 struct FileLock {
     int fd{-1};
+    std::filesystem::path lockFile;
     FileLock();
     ~FileLock();
 };
