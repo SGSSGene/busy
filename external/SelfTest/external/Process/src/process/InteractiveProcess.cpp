@@ -1,5 +1,6 @@
 #include "InteractiveProcess.h"
 
+#include <array>
 #include <cerrno>
 #include <cstdio>
 #include <cstdlib>

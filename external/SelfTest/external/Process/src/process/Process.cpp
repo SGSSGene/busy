@@ -1,5 +1,6 @@
 #include "Process.h"
 
+#include <array>
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
