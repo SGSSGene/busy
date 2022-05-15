@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cstdio>
+#include <cstdlib>
 #include <fcntl.h>
 #include <fmt/format.h>
 #include <fmt/ostream.h>
@@ -454,6 +455,9 @@ auto readFullFile(std::filesystem::path const& file) -> std::vector<std::byte> {
     return buffer;
 }
 
+auto getenv(std::string const& key) -> std::string {
+    return std::getenv(key.c_str());
+}
 
 
 }

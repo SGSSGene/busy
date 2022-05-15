@@ -29,6 +29,11 @@ public:
     }
 
     [[nodiscard]]
+    auto getRoot() const -> auto const& {
+        return mRoot;
+    }
+
+    [[nodiscard]]
     auto getPath() const -> auto const& {
         return mPath;
     }

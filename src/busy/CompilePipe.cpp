@@ -22,7 +22,7 @@ auto CompilePipe::loadGraph() -> G {
 
 auto CompilePipe::setupTranslationUnit(busy::File const& file) const -> std::vector<std::string> {
     auto outFile = file.getPath().lexically_normal().replace_extension(".o");
-    auto inFile  = file.getPath();
+    auto inFile  = file.getRoot() / file.getPath();
 
     auto& project = graph.find_outgoing<busy::TranslationSet const>(&file);
 

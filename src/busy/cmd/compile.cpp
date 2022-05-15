@@ -28,6 +28,28 @@ auto cmdDefault = sargp::Task{[]{
 
 auto cfgTargets = cmd.Parameter<std::vector<std::string>>({}, "", "project target", []{}, &comp::projects);
 
+auto loadAllPackages(std::filesystem::path const& rootDir, std::filesystem::path const& busyFile) -> busy::Package {
+    auto [translationSets, packages] = busy::readPackage(rootDir, busyFile);
+
+    {
+        auto packagesPath = std::filesystem::path{"packages"};
+        if (is_directory(packagesPath)) {
+            for (auto const& entry : std::filesystem::directory_iterator{packagesPath}) {
+                packagesPath = relative(entry.path(), rootDir);
+                auto [externalTranslationSets, packagePaths] = busy::readPackage(rootDir, packagesPath / "busy.yaml");
+                for (auto& e : externalTranslationSets) {
+                    translationSets.emplace_back(std::move(e));
+                }
+                for (auto& e : packagePaths) {
+                    packages.emplace_back(std::move(e));
+                }
+            }
+        }
+    }
+    return {translationSets, packages};
+}
+
+
 
 auto getIngoingProjects(TranslationSet const& project, auto const& projects_with_deps) {
     auto const& [ingoing, outgoing] = projects_with_deps.at(&project);
@@ -166,7 +188,8 @@ struct Compile {
     Compile() {
 
         // load busy files
-        rootPackage = busy::readPackage(config.rootDir, config.busyFile);
+        rootPackage = loadAllPackages(config.rootDir, config.busyFile);
+        //rootPackage = busy::readPackage(config.rootDir, config.busyFile);
 
         // add paths to places where to search for toolchains !TODO this reads as those are actually valid package places
         packages.insert(begin(packages), user_sharedPath);
@@ -229,7 +252,9 @@ struct Compile {
             multiPipe.work(overloaded {
                 [&](busy::File const& file, auto const& params, auto const&) {
                     auto startTime  = std::chrono::file_clock::now();
-                    auto path       = file.getPath();
+                    auto path       = file.getRoot() / file.getPath();
+
+
 
                     auto g = std::unique_lock{mutex};
                     auto& fileInfo = getFileInfos().get(path);

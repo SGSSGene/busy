@@ -47,5 +47,7 @@ void safeFileWrite(std::filesystem::path const& _dest, std::filesystem::path con
 auto exceptionToString(std::exception const& e, int level = 0) -> std::string;
 auto readFullFile(std::filesystem::path const& file) -> std::vector<std::byte>;
 
+auto getenv(std::string const& key) -> std::string;
+
 
 }

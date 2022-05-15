@@ -21,7 +21,7 @@ struct FileCache {
     std::unordered_map<std::string, std::tuple<Time, Hash>> files;
 
     auto getHash(Path _path) -> std::string {
-        _path = std::filesystem::relative(_path);
+        _path = relative(_path);
 //        _path = _path.lexically_normal();
         auto str_path = std::string{_path};
         auto iter = files.find(str_path);
