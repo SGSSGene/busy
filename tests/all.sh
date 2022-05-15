@@ -10,7 +10,6 @@ BUSY='busy'
 
 cd "${0%/*}"
 
-
 ( # check normal compilation of executable works
     rm -rf testProject/build
     mkdir -p testProject/build
@@ -89,3 +88,20 @@ cd "${0%/*}"
     rm -rf external-build
 )
 
+
+( # check compilation of external located packages
+    rm -rf external-build
+    $BUSY --toolchain "gcc 12.1" --build external-build testExternalyProvided/myApp/busy.yaml > /dev/null
+    mkdir external-build/packages
+    (
+        cd external-build/packages
+        ln -s ../../testExternalyProvided/myLib
+    )
+    $BUSY --build external-build --toolchain "gcc 12.1" testExternalyProvided/myApp/busy.yaml > /dev/null
+    if [ "$(external-build/bin/myApp)" != "17" ]; then
+        echo "failed"
+        exit 1
+    fi
+    rm -rf external-build
+
+)
