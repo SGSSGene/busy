@@ -109,11 +109,16 @@ struct Compile {
                 return toolchains.find(*cfgToolchain);
             }
             for (auto iter = begin(toolchains); iter != end(toolchains); ++iter) {
-                if (iter->first.find("gcc") != std::string::npos
-                    or iter->first.find("clang") != std::string::npos) {
+                if (iter->first.find("gcc") != std::string::npos) {
                     return iter;
                 }
             }
+            for (auto iter = begin(toolchains); iter != end(toolchains); ++iter) {
+                if (iter->first.find("clang") != std::string::npos) {
+                    return iter;
+                }
+            }
+
             return toolchains.begin();
         }();
         if (iter == toolchains.end()) {
