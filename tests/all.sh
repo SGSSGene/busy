@@ -91,8 +91,7 @@ cd "${0%/*}"
 
 ( # check compilation of external located packages
     rm -rf external-build
-    $BUSY --toolchain "gcc 12.1" --build external-build testExternalyProvided/myApp/busy.yaml > /dev/null
-    mkdir external-build/packages
+    mkdir -p external-build/packages
     (
         cd external-build/packages
         ln -s ../../testExternalyProvided/myLib
@@ -103,5 +102,4 @@ cd "${0%/*}"
         exit 1
     fi
     rm -rf external-build
-
 )
