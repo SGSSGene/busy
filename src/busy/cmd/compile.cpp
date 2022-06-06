@@ -274,7 +274,7 @@ struct Compile {
                     // store file date before compiling
                     g.lock();
                     auto hash    = getFileCache().getHash(path);
-                    failedCompilations.insert(file.getPath());
+                    failedCompilations.insert(path);
                     g.unlock();
 
                     // compiling
@@ -322,7 +322,7 @@ struct Compile {
                     }
                     fileInfo.modTime = startTime;
                     g.lock();
-                    failedCompilations.erase(file.getPath());
+                    failedCompilations.erase(path);
                     g.unlock();
 
                     return fileInfo.compilable? CompilePipe::Color::Compilable: CompilePipe::Color::Ignored;

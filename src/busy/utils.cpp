@@ -259,7 +259,8 @@ auto computeEstimationTimes(TranslationSetMap const& projects_with_deps, bool cl
 
         queue.visit(work, overloaded {
             [&](busy::File const& file) {
-                auto& fileInfo = getFileInfos().get(file.getPath());
+                auto path = file.getRoot() / file.getPath();
+                auto& fileInfo = getFileInfos().get(path);
                 if (clean
                     or (fileInfo.hasChanged() and fileInfo.compilable)
                     or fileInfo.compilerHash != _compilerHash) {
