@@ -119,7 +119,9 @@ elif [ "$1" == "setup_translation_set" ] ; then
             i=$(expr $i + 1)
             target="environments/${tsName}/includes/system/$i"
         done
-        target=${target}/${p2}
+        if [ ! -z "${p2}" ]; then
+            target=${target}/${p2}
+        fi
         mkdir -p "$(dirname ${target})"
         if [ "${p1:0:1}" = "/" ]; then
             ln -s "${p1}" -T "${target}"

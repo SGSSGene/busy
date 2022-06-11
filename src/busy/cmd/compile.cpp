@@ -180,6 +180,7 @@ struct Compile {
 
     void setupTranslationSets(auto const& projects, auto const& projects_with_deps) {
         for (auto const& project : projects) {
+            if (projects_with_deps.find(project) == end(projects_with_deps)) continue;
             auto args = std::vector<std::string>{config.toolchain.call, "setup_translation_set", config.rootDir, project->getPath(), "--isystem"};
             for (auto const& i : getIngoingIncludes(*project, projects_with_deps)) {
                 args.emplace_back(i);

@@ -2,7 +2,7 @@
 
 namespace busy {
 
-TranslationSet::TranslationSet(std::string _name, std::string _type, std::filesystem::path const& _root, std::filesystem::path const& _sourcePath, std::map<std::filesystem::path, std::filesystem::path> _legacyIncludePaths, std::set<std::string> _systemLibraries)
+TranslationSet::TranslationSet(std::string _name, std::string _type, std::filesystem::path const& _root, std::filesystem::path const& _sourcePath, LegacyIncludePaths _legacyIncludePaths, std::set<std::string> _systemLibraries)
     : mName               { std::move(_name) }
     , mType               { std::move(_type) }
     , mPath               { _sourcePath.lexically_normal() }
@@ -12,7 +12,7 @@ TranslationSet::TranslationSet(std::string _name, std::string _type, std::filesy
     analyseFiles(_root, mPath, mLegacyIncludePaths);
 }
 
-void TranslationSet::analyseFiles(std::filesystem::path const& _root, std::filesystem::path const& _sourcePath, std::map<std::filesystem::path, std::filesystem::path> const& _legacyIncludePaths) {
+void TranslationSet::analyseFiles(std::filesystem::path const& _root, std::filesystem::path const& _sourcePath, LegacyIncludePaths const& _legacyIncludePaths) {
     // Discover header, cpp and c files
     if (is_directory(_root / _sourcePath)) {
         for (auto const &e : std::filesystem::recursive_directory_iterator(_root / _sourcePath)) {
