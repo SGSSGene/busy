@@ -44,9 +44,9 @@ auto CompilePipe::setupTranslationUnit(busy::File const& file) const -> std::vec
     // add all include paths
     params.emplace_back("--ilocal");
 
-    params.emplace_back(project.getPath());
-    for (auto const& p : project.getLegacyIncludePaths()) {
-        params.emplace_back(p);
+    params.emplace_back(project.getPath().string());
+    for (auto const& [p1, p2] : project.getLegacyIncludePaths()) {
+        params.emplace_back(p1.string() + ":" + p2.string());
     }
     if (params.back() == "--ilocal") params.pop_back();
 

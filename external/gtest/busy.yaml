@@ -3,6 +3,6 @@ projects:
   - name: gtest
     legacy:
       includes:
-        - include
+        - include/gtest
       systemLibraries:
         - pthread

@@ -112,14 +112,22 @@ elif [ "$1" == "setup_translation_set" ] ; then
     done
     for f in "${systemIncludes[@]}"; do
         i=0
-        target="environments/${tsName}/includes/system/$i/$(basename "${f}")"
+        p1=$(echo ${f} | cut -d ':' -f 1)
+        p2=$(echo ${f} | cut -d ':' -f 2)
+        target="environments/${tsName}/includes/system/$i"
         while [ -e ${target} ]; do
             i=$(expr $i + 1)
-            target="environments/${tsName}/includes/system/$i/$(basename "${f}")"
+            target="environments/${tsName}/includes/system/$i"
         done
-        mkdir -p "environments/${tsName}/includes/system/$i"
-
-        ln -s "$(realpath "${rootDir}/${f}" --relative-to "$(dirname ${target})")" -T "${target}"
+        target=${target}/${p2}
+        mkdir -p "$(dirname ${target})"
+        if [ "${p1:0:1}" = "/" ]; then
+            ln -s "${p1}" -T "${target}"
+        else
+            echo realpath "${rootDir}/${p1}" --relative-to "$(dirname ${target})"
+            echo ln -s "$(realpath "${rootDir}/${p1}" --relative-to "$(dirname ${target})")" -T "${target}"
+            ln -s "$(realpath "${rootDir}/${p1}" --relative-to "$(dirname ${target})")" -T "${target}"
+        fi
     done
 
     exit 0

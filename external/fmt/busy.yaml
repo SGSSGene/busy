@@ -3,4 +3,4 @@ projects:
     type: library
     legacy:
       includes:
-        - include
+        - include/fmt

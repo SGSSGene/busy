@@ -71,11 +71,9 @@ auto getIngoingIncludes(TranslationSet const& project, auto const& projects_with
     auto includes = std::vector<std::string>{};
     auto ingoingProjects = getIngoingProjects(project, projects_with_deps);
     for (auto p : ingoingProjects) {
-        includes.push_back(p->getPath());
-        for (auto i : p->getLegacyIncludePaths()) {
-            for (auto const& path : std::filesystem::directory_iterator(i)) {
-                includes.emplace_back(path.path().string());
-            }
+        includes.push_back(p->getPath().string() + ":" + p->getName());
+        for (auto [i1, i2] : p->getLegacyIncludePaths()) {
+            includes.emplace_back(i1.string() + ":" + i2.string());
         }
     }
     return includes;

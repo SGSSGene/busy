@@ -15,13 +15,13 @@ private:
     std::string mType;
     std::filesystem::path mPath;
 
-    std::vector<File>                     mFiles;
-    std::vector<std::filesystem::path>    mLegacyIncludePaths;
-    std::set<std::string>                 mSystemLibraries;
+    std::vector<File>                                      mFiles;
+    std::map<std::filesystem::path, std::filesystem::path> mLegacyIncludePaths;
+    std::set<std::string>                                  mSystemLibraries;
 
 
 public:
-    TranslationSet(std::string _name, std::string _type, std::filesystem::path const& _root, std::filesystem::path const& _sourcePath, std::vector<std::filesystem::path> _legacyIncludePaths, std::set<std::string> _systemLibraries);
+    TranslationSet(std::string _name, std::string _type, std::filesystem::path const& _root, std::filesystem::path const& _sourcePath, std::map<std::filesystem::path, std::filesystem::path> _legacyIncludePaths, std::set<std::string> _systemLibraries);
 
     [[nodiscard]]
     auto getFiles() const -> auto const&{
@@ -49,7 +49,7 @@ public:
     }
 
     [[nodiscard]]
-    auto getLegacyIncludePaths() const -> std::vector<std::filesystem::path> const& {
+    auto getLegacyIncludePaths() const -> std::map<std::filesystem::path, std::filesystem::path> const& {
         return mLegacyIncludePaths;
     }
 
@@ -96,7 +96,7 @@ public:
     }
 
 private:
-    void analyseFiles(std::filesystem::path const& _root, std::filesystem::path const& _sourcePath, std::vector<std::filesystem::path> const& _legacyIncludePaths);
+    void analyseFiles(std::filesystem::path const& _root, std::filesystem::path const& _sourcePath, std::map<std::filesystem::path, std::filesystem::path> const& _legacyIncludePaths);
 };
 
 }

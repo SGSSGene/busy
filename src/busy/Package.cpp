@@ -59,13 +59,25 @@ auto readPackage(std::filesystem::path _workspaceRoot, std::filesystem::path con
             for (auto n : node["projects"]) {
                 auto name = n["name"].as<std::string>();
                 auto type = n["type"].as<std::string>("");
-                projectNames.erase(name);
                 auto path = _path / "src" / name;
-                auto legacyIncludePaths = std::vector<fs::path>{};
+                projectNames.erase(name);
+                auto legacyIncludePaths = std::map<fs::path, fs::path>{};
                 auto legacySystemLibraries    = std::set<std::string>{};
 
                 for (auto const& e : n["legacy"]["includes"]) {
-                    legacyIncludePaths.push_back(_path / e.as<std::string>());
+                    if (e.IsScalar()) {
+                        auto path = std::filesystem::path{e.as<std::string>()};
+                        if (path.is_relative()) {
+                            path = _path / path;
+                        }
+                        legacyIncludePaths.try_emplace(path, name);
+                    } else {
+                        auto path1 = std::filesystem::path{begin(e)->first.as<std::string>()};
+                        auto path2 = std::filesystem::path{begin(e)->second.as<std::string>()};
+                        if (path1.is_relative()) path1 = _path / path1;
+                        if (path2.is_relative()) path2 = _path / path2;
+                        legacyIncludePaths.try_emplace(path1, path2);
+                    }
                 }
                 for (auto const& e : n["legacy"]["systemLibraries"]) {
                     legacySystemLibraries.insert(e.as<std::string>());
@@ -77,7 +89,7 @@ auto readPackage(std::filesystem::path _workspaceRoot, std::filesystem::path con
         // add all projects that weren't defined in "projects" section of busy.yaml
         for (auto const& p : projectNames) {
             auto path = _path / "src" / p;
-            retTranslationSets.emplace_back(p, "", _workspaceRoot, path, std::vector<fs::path>{}, std::set<std::string>{});
+            retTranslationSets.emplace_back(p, "", _workspaceRoot, path, std::map<fs::path, fs::path>{}, std::set<std::string>{});
         }
 
 

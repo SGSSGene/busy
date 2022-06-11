@@ -63,8 +63,12 @@ void printTranslationSets(std::map<TranslationSet const*, std::tuple<std::set<Tr
         }
         if (not project.getLegacyIncludePaths().empty()) {
             fmt::print("    includePath:\n");
-            for (auto const& p : project.getLegacyIncludePaths()) {
-                fmt::print("    - {}\n", p);
+            for (auto const& [p1, p2] : project.getLegacyIncludePaths()) {
+                if (p1 != p2) {
+                    fmt::print("    - {}: {}\n", p1, p2);
+                } else {
+                    fmt::print("    - {}\n", p1);
+                }
             }
         }
     }

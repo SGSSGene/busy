@@ -10,17 +10,18 @@ auto isDependentTranslationSet(std::set<std::filesystem::path> const& _allInclud
 
     auto files = _project.getFiles();
     for (auto const& file : files) {
-        // check if is includable by default path
+        // check if it can be included by default path
         {
             auto path = _project.getName() / relative(file.getPath(), _project.getPath());
             if (_allIncludes.count(path)) {
                 return true;
             }
         }
-        // check if it is includable by legacy include path
+        // check if it can be included by legacy include path
         {
-            for (auto const& p : _project.getLegacyIncludePaths()) {
-                auto path = relative(file.getPath(), p);
+            //!TODO This seems odd??
+            for (auto const& [p1, p2] : _project.getLegacyIncludePaths()) {
+                auto path = p2 / relative(file.getPath(), p1);
                 if (_allIncludes.count(path)) {
                     return true;
                 }
