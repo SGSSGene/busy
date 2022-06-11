@@ -124,8 +124,6 @@ elif [ "$1" == "setup_translation_set" ] ; then
         if [ "${p1:0:1}" = "/" ]; then
             ln -s "${p1}" -T "${target}"
         else
-            echo realpath "${rootDir}/${p1}" --relative-to "$(dirname ${target})"
-            echo ln -s "$(realpath "${rootDir}/${p1}" --relative-to "$(dirname ${target})")" -T "${target}"
             ln -s "$(realpath "${rootDir}/${p1}" --relative-to "$(dirname ${target})")" -T "${target}"
         fi
     done
