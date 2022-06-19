@@ -9,6 +9,7 @@ auto CompilePipe::loadGraph() -> G {
 
     for (auto& [project, dep] : projects_with_deps) {
         nodes.push_back(project);
+        if (project->isFullyDefined()) { continue; }
         for (auto& file : project->getFiles()) {
             nodes.emplace_back(&file);
             edges.emplace_back(G::Edge{&file, project});

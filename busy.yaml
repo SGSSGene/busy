@@ -2,14 +2,28 @@ projects:
   - name: demangle
     type: library
   - name: fmt
+    fullyDefined: true
     legacy:
       includes:
         - /usr/include/fmt: fmt
       systemLibraries:
         - fmt
   - name: yaml-cpp
+    fullyDefined: true
     legacy:
       includes:
         - /usr/include/yaml-cpp: yaml-cpp
       systemLibraries:
         - yaml-cpp
+  - name: libstdc++-gcc12.1
+    type: library
+    fullyDefined: true
+    legacy:
+      includes:
+        - /usr/include/c++/12.1.0: ""
+        - /usr/include/c++/12.1.0/x86_64-pc-linux-gnu/: ""
+        - /usr/include/c++/12.1.0/backward: ""
+        - /usr/lib/gcc/x86_64-pc-linux-gnu/12.1.0/include: ""
+        - /usr/lib/gcc/x86_64-pc-linux-gnu/12.1.0/include-fixed: ""
+        - src/libstdc++-gcc12.1/gcc12.1-includes: ""
+

@@ -31,7 +31,7 @@ public:
 
 public:
     [[nodiscard]]
-    auto findIntNode(Node v) -> auto&{
+    auto findIntNode(Node v) -> auto& {
         for (auto& n : intNodes) {
             if (n.value == v) {
                 return n;

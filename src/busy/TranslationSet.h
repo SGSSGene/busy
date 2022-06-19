@@ -19,10 +19,16 @@ private:
     std::vector<File>     mFiles;
     LegacyIncludePaths    mLegacyIncludePaths;
     std::set<std::string> mSystemLibraries;
+    bool                  fullyDefined;
 
 
 public:
-    TranslationSet(std::string _name, std::string _type, std::filesystem::path const& _root, std::filesystem::path const& _sourcePath, LegacyIncludePaths _legacyIncludePaths, std::set<std::string> _systemLibraries);
+    TranslationSet(std::string _name, std::string _type, std::filesystem::path const& _root, std::filesystem::path const& _sourcePath, LegacyIncludePaths _legacyIncludePaths, std::set<std::string> _systemLibraries, bool _fullyDefined);
+
+    [[nodiscard]]
+    auto isFullyDefined() const {
+        return fullyDefined;
+    }
 
     [[nodiscard]]
     auto getFiles() const -> auto const&{

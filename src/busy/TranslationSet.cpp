@@ -2,12 +2,13 @@
 
 namespace busy {
 
-TranslationSet::TranslationSet(std::string _name, std::string _type, std::filesystem::path const& _root, std::filesystem::path const& _sourcePath, LegacyIncludePaths _legacyIncludePaths, std::set<std::string> _systemLibraries)
+TranslationSet::TranslationSet(std::string _name, std::string _type, std::filesystem::path const& _root, std::filesystem::path const& _sourcePath, LegacyIncludePaths _legacyIncludePaths, std::set<std::string> _systemLibraries, bool _fullyDefined)
     : mName               { std::move(_name) }
     , mType               { std::move(_type) }
     , mPath               { _sourcePath.lexically_normal() }
     , mLegacyIncludePaths { std::move(_legacyIncludePaths) }
     , mSystemLibraries    { std::move(_systemLibraries) }
+    , fullyDefined        { _fullyDefined}
 {
     analyseFiles(_root, mPath, mLegacyIncludePaths);
 }
@@ -20,7 +21,7 @@ void TranslationSet::analyseFiles(std::filesystem::path const& _root, std::files
                 continue;
             }
 
-            mFiles.emplace_back(_root, relative("/doesntexist/a/b/c/d/e" / e.path(), "/doesntexist/a/b/c/d/e" / _root).lexically_normal());
+            mFiles.emplace_back(_root, relative("/doesntexist/a/b/c/d/e" / e.path(), "/doesntexist/a/b/c/d/e" / _root).lexically_normal(), not fullyDefined);
         }
     }
 

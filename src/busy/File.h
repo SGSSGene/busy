@@ -21,11 +21,13 @@ private:
     std::set<std::filesystem::path> mIncludes;
 public:
 
-    File(std::filesystem::path const& _root, std::filesystem::path _path)
+    File(std::filesystem::path const& _root, std::filesystem::path _path, bool _scan = true)
         : mRoot     { _root }
         , mPath     { std::move(_path) }
     {
-        readFile(_root / mPath);
+        if (_scan) {
+            readFile(_root / mPath);
+        }
     }
 
     [[nodiscard]]

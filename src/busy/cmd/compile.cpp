@@ -51,7 +51,7 @@ auto loadAllPackages(std::filesystem::path const& rootDir, std::filesystem::path
 
 
 
-auto getIngoingProjects(TranslationSet const& project, auto const& projects_with_deps) {
+auto getIngoingProjects(TranslationSet const& project, auto const& projects_with_deps) -> std::vector<TranslationSet const*> {
     auto const& [ingoing, outgoing] = projects_with_deps.at(&project);
     auto stack = std::vector<TranslationSet const*>{};
     size_t processI{};
@@ -67,7 +67,7 @@ auto getIngoingProjects(TranslationSet const& project, auto const& projects_with
     }
     return stack;
 }
-auto getIngoingIncludes(TranslationSet const& project, auto const& projects_with_deps) {
+auto getIngoingIncludes(TranslationSet const& project, auto const& projects_with_deps) -> std::vector<std::string> {
     auto includes = std::vector<std::string>{};
     auto ingoingProjects = getIngoingProjects(project, projects_with_deps);
     for (auto p : ingoingProjects) {
@@ -257,8 +257,6 @@ struct Compile {
                 [&](busy::File const& file, auto const& params, auto const&) {
                     auto startTime  = std::chrono::file_clock::now();
                     auto path       = file.getRoot() / file.getPath();
-
-
 
                     auto g = std::unique_lock{mutex};
                     auto& fileInfo = getFileInfos().get(path);
