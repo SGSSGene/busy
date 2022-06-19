@@ -8,8 +8,9 @@ namespace {
 
 void showDeps();
 
-auto cmd     = sargp::Command{"show-deps", "show dependencies of projects", showDeps};
-auto cfgTree = cmd.Flag("tree", "prints projects as a tree");
+auto cmd       = sargp::Command{"show-deps", "show dependencies of projects", showDeps};
+auto cfgTree   = cmd.Flag("tree", "prints projects as a tree");
+auto cfgExtras = cmd.Flag("all", "show all packages, even outside of this repository");
 
 
 auto loadAllPackages(std::filesystem::path const& rootDir, std::filesystem::path const& busyFile) -> busy::Package {

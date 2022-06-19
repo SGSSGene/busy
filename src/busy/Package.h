@@ -8,6 +8,7 @@
 namespace busy {
 
 struct Package {
+    // List of all translations sets (aka a list of all libraries/executables)
     std::vector<TranslationSet>         translationSets;
     std::vector<std::filesystem::path>  packages;
 };

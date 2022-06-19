@@ -74,6 +74,10 @@ for key in ${!profiles[@]}; do
     deps=${deps:2}
     echo $deps]
 done
+echo "    extraPackages:"
+for key in ${!extraPackages[@]}; do
+    echo "      - ${key}"
+done
 exit 0
 fi
 
@@ -98,9 +102,9 @@ elif [ "$1" == "setup_translation_set" ] ; then
     shift; tsName="$1"
     shift;
 
-    rm -rf environments/${tsName}/includes
-    mkdir -p environments/${tsName}/includes/local
-    mkdir -p environments/${tsName}/includes/system
+    rm -rf   "environments/${tsName}/includes"
+    mkdir -p "environments/${tsName}/includes/local"
+    mkdir -p "environments/${tsName}/includes/system"
 
     parse "--ilocal  projectIncludes" \
           "--isystem systemIncludes" \
@@ -174,13 +178,15 @@ elif [ "$1" == "compile" ]; then
 
     diagnostic="-fdiagnostics-color=always -fdiagnostics-show-template-tree -fdiagnostics-format=text"
 
-    parameters="${parameters} -nostdinc -nostdinc++
-        -isystem /usr/include/c++/12.1.0
-        -isystem /usr/include/c++/12.1.0/x86_64-pc-linux-gnu/
-        -isystem /usr/include/c++/12.1.0/backward
-        -isystem /usr/lib/gcc/x86_64-pc-linux-gnu/12.1.0/include
-        -isystem /usr/lib/gcc/x86_64-pc-linux-gnu/12.1.0/include-fixed
-        -isystem \"${0%/*}\"/gcc12.1-includes"
+    parameters="${parameters} -nostdinc -nostdinc++"
+
+#    parameters="${parameters} -nostdinc -nostdinc++
+#        -isystem /usr/include/c++/12.1.0
+#        -isystem /usr/include/c++/12.1.0/x86_64-pc-linux-gnu/
+#        -isystem /usr/include/c++/12.1.0/backward
+#        -isystem /usr/lib/gcc/x86_64-pc-linux-gnu/12.1.0/include
+#        -isystem /usr/lib/gcc/x86_64-pc-linux-gnu/12.1.0/include-fixed
+#        -isystem \"${0%/*}\"/gcc12.1-includes"
 
 
     filetype="$(echo "${inputFile}" | rev | cut -d "." -f 1 | rev)";

@@ -1,5 +1,15 @@
 projects:
-  - name: busy
-    type: executable
   - name: demangle
     type: library
+  - name: fmt
+    legacy:
+      includes:
+        - /usr/include/fmt: fmt
+      systemLibraries:
+        - fmt
+  - name: yaml-cpp
+    legacy:
+      includes:
+        - /usr/include/yaml-cpp: yaml-cpp
+      systemLibraries:
+        - yaml-cpp

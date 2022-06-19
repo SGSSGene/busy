@@ -1,6 +1,0 @@
-name: yaml-cpp
-projects:
-  - name: yaml-cpp
-    noWarnings: true
-    warningsAsErrors: false
-    autoDependenciesDiscovery: false

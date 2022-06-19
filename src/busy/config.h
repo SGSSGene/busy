@@ -41,15 +41,18 @@ struct Config {
     std::filesystem::path busyFile {};
     std::set<std::string> sharedLibraries {};
 
+    std::vector<std::filesystem::path> extraPackagesPaths;
+
 
     template <typename Node, typename Self>
     static void reflect(Node& node, Self& self) {
-        node["toolchain_name"]    % self.toolchain.name;
-        node["toolchain_call"]    % self.toolchain.call;
-        node["toolchain_options"] % self.toolchain.options;
-        node["rootDir"]           % self.rootDir;
-        node["busyFile"]          % self.busyFile;
-        node["sharedLibraries"]   % self.sharedLibraries;
+        node["toolchain_name"]     % self.toolchain.name;
+        node["toolchain_call"]     % self.toolchain.call;
+        node["toolchain_options"]  % self.toolchain.options;
+        node["rootDir"]            % self.rootDir;
+        node["busyFile"]           % self.busyFile;
+        node["sharedLibraries"]    % self.sharedLibraries;
+        node["extraPackagesPaths"] % self.extraPackagesPaths;
     }
 
 };

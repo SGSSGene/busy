@@ -56,4 +56,9 @@ profile_link_libraries=(
     ["profile"]=" gcov"
 )
 
+declare -A extraPackages
+extraPackages=(
+    "stdlib"
+)
+
 source "${0%/*}"/gcc_base.sh

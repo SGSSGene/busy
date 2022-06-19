@@ -75,7 +75,6 @@ auto readPackage(std::filesystem::path _workspaceRoot, std::filesystem::path con
                         auto path1 = std::filesystem::path{begin(e)->first.as<std::string>()};
                         auto path2 = std::filesystem::path{begin(e)->second.as<std::string>()};
                         if (path1.is_relative()) path1 = _path / path1;
-                        if (path2.is_relative()) path2 = _path / path2;
                         legacyIncludePaths.emplace_back(path1, path2);
                     }
                 }
