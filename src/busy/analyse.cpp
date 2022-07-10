@@ -1,6 +1,8 @@
 #include "analyse.h"
 
 #include <cassert>
+#include <fmt/format.h>
+#include <iomanip>
 
 
 namespace busy {
@@ -44,7 +46,7 @@ auto findDependentTranslationSets(TranslationSet const& _project, std::vector<Tr
 }
 
 auto groupTranslationSets(std::vector<TranslationSet> const& _projects) {
-    // put all translationsets with the same name into one group
+    // put all translation sets with the same name into one group
     auto groupedTranslationSets = std::map<std::string, std::vector<TranslationSet const*>>{};
     for (auto const& p : _projects) {
         groupedTranslationSets[p.getName()].emplace_back(&p);
@@ -90,7 +92,10 @@ void checkConsistency(std::vector<TranslationSet> const& _projects) {
                 for (auto const& p2 : list) {
                     if (p1 == p2) continue;
                     if (not p1->isEquivalent(*p2)) {
-                        throw std::runtime_error("two projects don't seem to be the same: " + p1->getName());
+                        auto diff = p1->difference(*p2);
+                        auto errorList = fmt::format("  - {}", fmt::join(diff, "\n  - "));
+                        auto error = fmt::format("the translation set {} appears to be different in two locations: \"{}\" and \"{}\"\n{}\n", p1->getName(), p1->getPath().string(), p2->getPath().string(), errorList);
+                        throw std::runtime_error(error);
                     }
                 }
             }

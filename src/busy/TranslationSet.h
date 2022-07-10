@@ -2,10 +2,13 @@
 
 #include "File.h"
 
+#include <fmt/format.h>
+#include <iomanip>
 #include <map>
 #include <set>
 #include <string>
 #include <vector>
+
 
 namespace busy {
 
@@ -100,6 +103,46 @@ public:
             }
         }
         return true;
+    }
+
+    [[nodiscard]]
+    auto difference(TranslationSet const& _other) const -> std::vector<std::string> {
+        auto results = std::vector<std::string>{};
+        if (mName != _other.mName) {
+            results.emplace_back(fmt::format("different names \"{}\" → \"{}\"", mName, _other.mName));
+        }
+        if (mFiles.size() != _other.mFiles.size()) {
+            results.emplace_back(fmt::format("different number of files {} → {}", mFiles.size(), _other.mFiles.size()));
+        }
+        if (mSystemLibraries != _other.mSystemLibraries) {
+            auto appearLeft = std::vector<std::string>{};
+            std::ranges::set_difference(mSystemLibraries, _other.mSystemLibraries, std::back_inserter(appearLeft));
+
+            auto appearRight = std::vector<std::string>{};
+            std::ranges::set_difference(_other.mSystemLibraries, mSystemLibraries, std::back_inserter(appearRight));
+
+            auto s = fmt::format("different system libraries defined ({}) and ({})", fmt::join(appearLeft, ", "), fmt::join(appearRight, ", "));
+            results.emplace_back(std::move(s));
+        }
+
+        auto hasSameFile = [&](auto const& _file) {
+            for (auto const& f : _other.mFiles) {
+                if (f.isEquivalent(_file)) {
+                    return true;
+                }
+            }
+            return false;
+        };
+
+
+        for (auto const& file : mFiles) {
+            if (not hasSameFile(file)) {
+                auto s = fmt::format("couldn't find the same file for {}", file.getPath().string());
+                results.emplace_back(std::move(s));
+            }
+        }
+
+        return results;
     }
 
 private:
