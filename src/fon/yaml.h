@@ -6,6 +6,7 @@
 #include "utils.h"
 
 #include <cassert>
+#include <functional>
 #include <yaml-cpp/yaml.h>
 
 namespace fon::yaml {
