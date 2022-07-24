@@ -38,12 +38,12 @@ profiles=(
 
 declare -A profile_compile_param
 profile_compile_param=(
-    ["native"]=" -MD -O3 -march=native "
-    ["release"]=" -MD -O3"
-    ["release_with_symbols"]=" -MD -O3 -ggdb"
-    ["debug"]=" -MD -O0 -ggdb"
-    ["profile"]=" -MD -fprofile-arcs -ftest-coverage -fPIC"
-    ["strict"]=" -MD -Wall -Wextra -Wpedantic"
+    ["native"]=" -O3 -march=native "
+    ["release"]=" -O3"
+    ["release_with_symbols"]=" -O3 -ggdb"
+    ["debug"]=" -O0 -ggdb"
+    ["profile"]=" -fprofile-arcs -ftest-coverage -fPIC"
+    ["strict"]=" -Wall -Wextra -Wpedantic"
 )
 
 declare -A profile_link_param

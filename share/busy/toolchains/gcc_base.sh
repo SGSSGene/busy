@@ -6,8 +6,8 @@
 # $ <$0> finialize <rootDir>
 # $ <$0> setup_translation_set <rootDir> <ts_name> -ilocal <includes>... -isystem <system includes>...
 # $ <$0> compile <ts_name> input.cpp output.o
-# $ <$0> link static_library output.a -i obj1.o obj2.o lib2.a -l pthread armadillo
-# $ <$0> link executable output.exe -i obj1.o obj2.o lib2.a -l pthread armadillo
+# $ <$0> link static_library output.a --input obj1.o obj2.o lib2.a --llibraries pthread armadillo
+# $ <$0> link executable output.exe --input obj1.o obj2.o lib2.a --llibraries pthread armadillo
 
 # Return values:
 # 0 on success
@@ -102,18 +102,29 @@ elif [ "$1" == "setup_translation_set" ] ; then
     shift; tsName="$1"
     shift;
 
+    # Accept cmd arguments
+    parse "--ilocal  projectIncludes" \
+          "--isystem systemIncludes" \
+          "--" "$@"
+
     rm -rf   "environments/${tsName}/includes"
     mkdir -p "environments/${tsName}/includes/local"
     mkdir -p "environments/${tsName}/includes/system"
+    mkdir -p "environments/${tsName}/src"
+    mkdir -p "environments/${tsName}/obj"
 
-    parse "--ilocal  projectIncludes" \
-          "--isystem systemIncludes" \
-          "--verbose verbose" \
-          "--" "$@"
+
+
+    # Link 'src' into environments
+    ln -fs "$(realpath "${rootDir}/src/${tsName}" --relative-to "environments/${tsName}/src")" "environments/${tsName}/src/${tsName}"
+
+    # Link project includes into environments
     for f in "${projectIncludes[@]}"; do
         target="environments/${tsName}/includes/local/$(basename "${f}")"
         ln -s "$(realpath "${rootDir}/${f}" --relative-to "$(dirname ${target})")" -T "${target}"
     done
+
+    # Link system includes into environments
     for f in "${systemIncludes[@]}"; do
         i=0
         p1=$(echo ${f} | cut -d ':' -f 1)
@@ -138,26 +149,29 @@ elif [ "$1" == "setup_translation_set" ] ; then
 elif [ "$1" == "compile" ]; then
     shift; tsName="$1"
     shift; inputFile="$1"
-    shift; outputFile="$1"
     shift
 
-    dependencyFile=$(echo "${outputFile}" | rev | cut -b 3- | rev | xargs -I '{}' echo '{}.d')
-    stdoutFile="tmp/${outputFile}.stdout"
-    stderrFile="tmp/${outputFile}.stderr"
-    export CCACHE_LOGFILE="tmp/${outputFile}.ccache"
-    mkdir -p $(dirname ${stdoutFile})
+    shift; outputFile="$1"
 
-    outputFiles+=("${outputFile}" "${dependencyFile}" "${stdoutFile}" "${stderrFile}")
+
+    objPath="environments/${tsName}/obj"
+
+    objectFile="${objPath}/${inputFile}.o"
+    dependencyFile="${objPath}/${inputFile}.d"
+    stdoutFile="${objPath}/${inputFile}.stdout"
+    stderrFile="${objPath}/${inputFile}.stderr"
+    export CCACHE_LOGFILE="${objPath}/${inputFile}.ccache"
+
+    outputFiles+=("${objectFile}" "${dependencyFile}" "${stdoutFile}" "${stderrFile}")
     if [ "${CCACHE}" -eq 1 ]; then
         outputFiles+=(${CCACHE_LOGFILE})
     fi
 
     parse "--ilocal  projectIncludes" \
           "--isystem systemIncludes" \
-          "--verbose verbose" \
           "--" "$@"
 
-    parameters=""
+    parameters=" -MD "
     for key in ${!profile_compile_param[@]}; do
         if [[ "${options[@]} " =~ " ${key} " ]]; then
             parameters+="${profile_compile_param[$key]}"
@@ -172,40 +186,32 @@ elif [ "$1" == "compile" ]; then
         target="environments/${tsName}/includes/system/$i"
     done
 
-    projectIncludes+=($(dirname ${projectIncludes[-1]})) #!TODO this line should not be needed
     projectIncludes=$(implode " -iquote " "${projectIncludes[@]}")
     systemIncludes=$(implode " -isystem " "${systemIncludes[@]}")
 
     diagnostic="-fdiagnostics-color=always -fdiagnostics-show-template-tree -fdiagnostics-format=text"
 
+    # remove all stdlibs
     parameters="${parameters} -nostdinc -nostdinc++"
 
-#    parameters="${parameters} -nostdinc -nostdinc++
-#        -isystem /usr/include/c++/12.1.0
-#        -isystem /usr/include/c++/12.1.0/x86_64-pc-linux-gnu/
-#        -isystem /usr/include/c++/12.1.0/backward
-#        -isystem /usr/lib/gcc/x86_64-pc-linux-gnu/12.1.0/include
-#        -isystem /usr/lib/gcc/x86_64-pc-linux-gnu/12.1.0/include-fixed
-#        -isystem \"${0%/*}\"/gcc12.1-includes"
-
-
+    inputFile="environments/${tsName}/src/${tsName}/${inputFile}"
     filetype="$(echo "${inputFile}" | rev | cut -d "." -f 1 | rev)";
     if [[ "${filetype}" =~ ^(cpp|cc)$ ]]; then
-        call="${CXX} ${CXX_STD} ${parameters} ${diagnostic} -c ${inputFile} -o ${outputFile} $projectIncludes $systemIncludes"
+        call="${CXX} ${CXX_STD} ${parameters} ${diagnostic} -c ${inputFile} -o ${objectFile} $projectIncludes $systemIncludes"
     elif [ "${filetype}" = "c" ]; then
-        call="${C} ${C_STD} ${parameters} ${diagnostic} -c ${inputFile} -o ${outputFile} $projectIncludes $systemIncludes"
+        call="${C} ${C_STD} ${parameters} ${diagnostic} -c ${inputFile} -o ${objectFile} $projectIncludes $systemIncludes"
     else
         exit 0
     fi
 elif [ "$1" == "link" ]; then
+    shift; tsName="$1"
     shift; target="$1"
-    shift; outputFile="$1"
     shift
 
-    stdoutFile="tmp/${outputFile}.stdout"
-    stderrFile="tmp/${outputFile}.stderr"
-    export CCACHE_LOGFILE="tmp/${outputFile}.ccache"
-    mkdir -p $(dirname ${stdoutFile})
+    outputFile="bin/${tsName}"
+    stdoutFile="environments/${tsName}/obj/${tsName}.stdout"
+    stderrFile="environments/${tsName}/obj/${tsName}.stderr"
+    export CCACHE_LOGFILE="environments/${tsName}/obj/${tsName}.ccache"
 
     outputFiles+=("${outputFile}" "${stdoutFile}" "${stderrFile}")
     if [ "${CCACHE}" -eq 1 ]; then
@@ -215,7 +221,6 @@ elif [ "$1" == "link" ]; then
     parse "--input         inputFiles" \
           "--llibraries    localLibraries" \
           "--syslibraries  sysLibraries" \
-          "--verbose       verbose" \
           "--" "$@"
 
     parameters=""
@@ -236,9 +241,14 @@ elif [ "$1" == "link" ]; then
     if [ "${#inputFiles[@]}" -eq 0 ]; then
         echo "compilable: false"
         exit 0
+    fi
+
+    for i in "${!inputFiles[@]}"; do
+        inputFiles[i]="environments/${tsName}/obj/${inputFiles[i]}.o"
+    done
 
     # Executable
-    elif [ "${target}" == "executable" ]; then
+    if [ "${target}" == "executable" ]; then
         call="${CXX} -rdynamic ${parameters} -fdiagnostics-color=always -o ${outputFile} ${inputFiles[@]} ${localLibraries[@]} ${sysLibraries[@]}"
     # Shared library
     elif [ "${target}" == "shared_library" ]; then

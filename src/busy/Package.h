@@ -15,7 +15,7 @@ struct Package {
 
 auto readPackage(std::filesystem::path _workspaceRoot, std::filesystem::path const& _path) -> Package;
 
-constexpr std::string_view external{"external"};
+inline constexpr std::string_view external{"external"};
 
 
 }

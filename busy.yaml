@@ -15,6 +15,15 @@ projects:
         - /usr/include/yaml-cpp: yaml-cpp
       systemLibraries:
         - yaml-cpp
+  - name: busy
+    dependencies:
+      - stdlib
+      - yaml-cpp
+      - base64
+      - fon
+      - picosha2
+      - sargparse
+      - process
   - name: libstdc++-gcc12.1
     type: library
     fullyDefined: true
