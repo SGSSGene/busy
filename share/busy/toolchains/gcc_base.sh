@@ -116,7 +116,7 @@ elif [ "$1" == "setup_translation_set" ] ; then
 
 
     # Link 'src' into environments
-    ln -fs "$(realpath "${rootDir}/src/${tsName}" --relative-to "environments/${tsName}/src")" "environments/${tsName}/src/${tsName}"
+    ln -fs "$(realpath "${rootDir}/src/${tsName}" --relative-to "environments/${tsName}/src")" -T "environments/${tsName}/src/${tsName}"
 
     # Link project includes into environments
     for f in "${projectIncludes[@]}"; do
