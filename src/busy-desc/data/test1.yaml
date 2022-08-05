@@ -5,6 +5,14 @@ translationSets:
     language: c++
     dependencies:
       - stdlib
+      - fLib
+      - gLib
+  - name: fLib
+    type: library
+    language: c++
+  - name: gLib
+    type: library
+    language: c++
 
   - name: stdlib
     type: library

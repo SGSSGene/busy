@@ -114,7 +114,6 @@ elif [ "$1" == "setup_translation_set" ] ; then
     mkdir -p "environments/${tsName}/obj"
 
 
-
     # Link 'src' into environments
     ln -fs "$(realpath "${rootDir}/src/${tsName}" --relative-to "environments/${tsName}/src")" -T "environments/${tsName}/src/${tsName}"
 
@@ -208,20 +207,16 @@ elif [ "$1" == "link" ]; then
     shift; target="$1"
     shift
 
-    outputFile="bin/${tsName}"
-    stdoutFile="environments/${tsName}/obj/${tsName}.stdout"
-    stderrFile="environments/${tsName}/obj/${tsName}.stderr"
-    export CCACHE_LOGFILE="environments/${tsName}/obj/${tsName}.ccache"
-
-    outputFiles+=("${outputFile}" "${stdoutFile}" "${stderrFile}")
-    if [ "${CCACHE}" -eq 1 ]; then
-        outputFiles+=(${CCACHE_LOGFILE})
-    fi
-
     parse "--input         inputFiles" \
           "--llibraries    localLibraries" \
           "--syslibraries  sysLibraries" \
           "--" "$@"
+
+
+    outputFile="bin/${tsName}"
+    stdoutFile="environments/${tsName}/obj/${tsName}.stdout"
+    stderrFile="environments/${tsName}/obj/${tsName}.stderr"
+    export CCACHE_LOGFILE="environments/${tsName}/obj/${tsName}.ccache"
 
     parameters=""
     for key in ${!profile_link_param[@]}; do
@@ -229,13 +224,17 @@ elif [ "$1" == "link" ]; then
             parameters+="${profile_link_param[$key]}"
         fi
     done
-    for key in ${!profile_link_libraries[@]}; do
-        if [[ "${options[@]} " =~ " ${key} " ]]; then
-            sysLibraries+=("${profile_link_libraries[$key]}")
-        fi
-    done
 
     sysLibraries=($(implode " -l" "${sysLibraries[@]}"))
+
+    inputFilesTmp=()
+    for i in "${!inputFiles[@]}"; do
+        filetype="$(echo "${inputFiles[i]}" | rev | cut -d "." -f 1 | rev)"
+        if [[ "${filetype}" =~ ^(cpp|cc)$ ]]; then
+            inputFilesTmp+=("environments/${tsName}/obj/${inputFiles[i]}.o")
+        fi
+    done
+    inputFiles=("${inputFilesTmp[@]}")
 
     # Header only
     if [ "${#inputFiles[@]}" -eq 0 ]; then
@@ -243,26 +242,34 @@ elif [ "$1" == "link" ]; then
         exit 0
     fi
 
-    for i in "${!inputFiles[@]}"; do
-        inputFiles[i]="environments/${tsName}/obj/${inputFiles[i]}.o"
+    localLibrariesAsStr=""
+    for i in "${localLibraries[@]}"; do
+        if [ -e "bin/${i}.a" ]; then
+            localLibrariesAsStr+=" bin/${i}.a"
+        fi
     done
-
     # Executable
     if [ "${target}" == "executable" ]; then
-        call="${CXX} -rdynamic ${parameters} -fdiagnostics-color=always -o ${outputFile} ${inputFiles[@]} ${localLibraries[@]} ${sysLibraries[@]}"
+        call="${CXX} -rdynamic ${parameters} -fdiagnostics-color=always -o ${outputFile} ${inputFiles[@]} ${localLibrariesAsStr} ${sysLibraries[@]}"
     # Shared library
     elif [ "${target}" == "shared_library" ]; then
-        call="${CXX} -rdynamic -shared ${parameters} -fdiagnostics-color=always -o ${outputFile} ${inputFiles[@]} ${localLibraries[@]} ${sysLibraries[@]}"
+        call="${CXX} -rdynamic -shared ${parameters} -fdiagnostics-color=always -o ${outputFile} ${inputFiles[@]} ${localLibrariesAsStr} ${sysLibraries[@]}"
     # Static library
     elif [ "${target}" == "static_library" ]; then
-        objectFile="tmp/lib/${outputFile}.o"
+        outputFile="${outputFile}.a"
+        objectFile="environments/${tsName}/obj/${tsName}.o"
         mkdir -p $(dirname ${objectFile})
         outputFiles+=("${objectFile}")
         call="${LD} -Ur -o ${objectFile} ${inputFiles[@]} && ${AR} rcs ${outputFile} ${objectFile}"
-
     else
         exit -1
     fi
+    outputFiles+=("${outputFile}" "${stdoutFile}" "${stderrFile}")
+    if [ "${CCACHE}" -eq 1 ]; then
+        outputFiles+=(${CCACHE_LOGFILE})
+    fi
+
+
 else
     exit -1
 fi

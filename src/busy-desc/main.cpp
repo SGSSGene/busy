@@ -43,6 +43,71 @@ auto join(std::vector<std::string> c) -> std::string {
     return s;
 }
 
+
+void translate(auto const& root, auto const& allSets, auto const& tool, auto const& buildPath) {
+    auto deps = findDeps(root, allSets);
+    for (auto d : deps) {
+        translate(d, allSets, tool, buildPath);
+//        std::cout << d.name << "\n";
+    }
+    std::cout << "\n\nTRANSLATING: " << root.name << "\n";
+    if (root.precompiled) {
+        return;
+    }
+
+    {
+        auto cmd = busy::genCall::setup_translation_set(tool, buildPath, root, deps);
+        std::cout << "(cd " << buildPath << "; " << join(cmd) << ")\n";
+        auto p = process::Process{cmd, buildPath};
+        auto o = p.cout();
+        auto e = p.cerr();
+        std::cout << o << "\n";
+        std::cout << e << "\n";
+        std::cout << "\n";
+    }
+
+
+    std::vector<std::filesystem::path> objFiles;
+    auto tsPath = root.path / "src" / root.name;
+    for (auto f : std::filesystem::recursive_directory_iterator(tsPath)) {
+        if (f.is_regular_file()) {
+            std::cout << relative(f, tsPath) << "\n";
+            auto cmd = busy::genCall::compilation(tool, root, relative(f, tsPath), {"default"});
+            objFiles.emplace_back(relative(f, tsPath).string());
+
+            std::cout << "(cd " << buildPath << "; " << join(cmd) << ")\n";
+            auto p = process::Process{cmd, buildPath};
+            auto o = p.cout();
+            auto e = p.cerr();
+            std::cout << o << "\n";
+            std::cout << e << "\n";
+
+            std::cout << "\n";
+        }
+    }
+//    auto linking(std::filesystem::path const& _tool, std::string const& _type, std::filesystem::path output, std::vector<std::filesystem::path> const& _objFiles, desc::TranslationSet const& ts, std::vector<desc::TranslationSet> const& deps) {
+
+    {
+        auto type = [&]() -> std::string {
+            if (root.type == "executable") {
+                return "executable";
+            } else if (root.type == "library") {
+                return "static_library";
+            }
+            throw "unknown translation set target";
+        }();
+        auto cmd = busy::genCall::linking(tool, root, type, objFiles, deps);
+        std::cout << "(cd " << buildPath << "; " << join(cmd) << ")\n";
+        auto p = process::Process{cmd, buildPath};
+        auto o = p.cout();
+        auto e = p.cerr();
+        std::cout << o << "\n";
+        std::cout << e << "\n";
+
+        std::cout << "\n";
+    }
+}
+
 int main(int argc, char const* argv[]) {
     if (argc <= 1) return 1;
     try {
@@ -55,52 +120,9 @@ int main(int argc, char const* argv[]) {
             auto path = desc.path / "src" / ts.name;
         }
         auto root = allSets.at("myApp");
-        auto deps = findDeps(root, allSets);
         auto tool = std::string{"../../../toolchains.d/gcc12.1.sh"};
+        translate(root, allSets, tool, buildPath);
 
-        {
-            auto cmd = busy::genCall::setup_translation_set(tool, buildPath, root, deps);
-            std::cout << "(cd " << buildPath << "; " << join(cmd) << ")\n";
-            auto p = process::Process{cmd, buildPath};
-            auto o = p.cout();
-            auto e = p.cerr();
-            std::cout << o << "\n";
-            std::cout << e << "\n";
-            std::cout << "\n";
-        }
-
-
-        std::vector<std::filesystem::path> objFiles;
-        auto tsPath = root.path / "src" / root.name;
-        for (auto f : std::filesystem::recursive_directory_iterator(tsPath)) {
-            if (f.is_regular_file()) {
-                std::cout << relative(f, tsPath) << "\n";
-                auto cmd = busy::genCall::compilation(tool, root, relative(f, tsPath), {"default"});
-                objFiles.emplace_back(relative(f, tsPath).string());
-
-                std::cout << "(cd " << buildPath << "; " << join(cmd) << ")\n";
-                auto p = process::Process{cmd, buildPath};
-                auto o = p.cout();
-                auto e = p.cerr();
-                std::cout << o << "\n";
-                std::cout << e << "\n";
-
-                std::cout << "\n";
-            }
-        }
-//    auto linking(std::filesystem::path const& _tool, std::string const& _type, std::filesystem::path output, std::vector<std::filesystem::path> const& _objFiles, desc::TranslationSet const& ts, std::vector<desc::TranslationSet> const& deps) {
-
-        {
-            auto cmd = busy::genCall::linking(tool, root, "executable", objFiles, deps);
-            std::cout << "(cd " << buildPath << "; " << join(cmd) << ")\n";
-            auto p = process::Process{cmd, buildPath};
-            auto o = p.cout();
-            auto e = p.cerr();
-            std::cout << o << "\n";
-            std::cout << e << "\n";
-
-            std::cout << "\n";
-        }
 
 
 

@@ -1,7 +1,8 @@
 #pragma once
 
-#include <vector>
+#include <fmt/format.h>
 #include <ranges>
+#include <vector>
 
 #include "Desc.h"
 
@@ -14,12 +15,12 @@ namespace busy::genCall {
 
         r.emplace_back("--isystem");
         for (auto [key, value] : ts.legacy.includes) {
-            r.emplace_back(key + ":" + value);
+            r.emplace_back(fmt::format("\"{}:{}\"", key, value));
         }
         for (auto const& d : deps) {
-            r.emplace_back("src/" + d.name);
+            r.emplace_back(fmt::format("\"src/{}:{}\"", d.name, d.name));
             for (auto [key, value] : d.legacy.includes) {
-                r.emplace_back(key + ":" + value);
+                r.emplace_back(fmt::format("\"{}:{}\"", key , value));
             }
         }
         if (r.back() == "--isystem") r.pop_back();
@@ -42,16 +43,19 @@ namespace busy::genCall {
         for (auto v : _objFiles) {
             r.emplace_back(v);
         }
-        r.emplace_back("-llibraries");
+        r.emplace_back("--llibraries");
         for (auto v : ts.legacy.libraries) {
             r.emplace_back(v);
         }
         for (auto const& d : deps) {
+            if (!d.precompiled) {
+                r.emplace_back(d.name);
+            }
             for (auto v : d.legacy.libraries) {
                 r.emplace_back(v);
             }
         }
-        if (r.back() == "-llibraries") r.pop_back();
+        if (r.back() == "--llibraries") r.pop_back();
         return r;
     }
 }

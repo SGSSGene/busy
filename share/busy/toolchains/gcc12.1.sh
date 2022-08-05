@@ -50,12 +50,8 @@ declare -A profile_link_param
 profile_link_param=(
     ["release_with_symbols"]=" -g3 -ggdb"
     ["debug"]=" -g3 -ggdb"
+    ["profile"]=" -lgcov"
 )
-declare -A profile_link_libraries
-profile_link_libraries=(
-    ["profile"]=" gcov"
-)
-
 declare -A extraPackages
 extraPackages=(
     "stdlib"
