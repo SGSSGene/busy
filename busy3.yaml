@@ -1,0 +1,38 @@
+file-version: 1.0.0
+translationSets:
+  - name: busy-desc
+    type: executable
+    language: c++
+    dependencies:
+      - stdlib
+      - fmt
+      - yaml-cpp
+  - name: stdlib
+    type: library
+    language: c++
+    precompiled: true
+    legacy:
+      includes:
+        /usr/include/c++/12.1.0: ""
+        /usr/include/c++/12.1.0/x86_64-pc-linux-gnu/: ""
+        /usr/include/c++/12.1.0/backward: ""
+        /usr/lib/gcc/x86_64-pc-linux-gnu/12.1.0/include: ""
+        /usr/lib/gcc/x86_64-pc-linux-gnu/12.1.0/include-fixed: ""
+        src/stdlib/gcc12.1-includes: ""
+  - name: fmt
+    type: library
+    language: c++
+    precompiled: true
+    legacy:
+      libraries:
+        - fmt
+  - name: yaml-cpp
+    type: library
+    language: c++
+    precompiled: true
+    legacy:
+      libraries:
+        - yaml-cpp
+
+
+

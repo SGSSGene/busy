@@ -44,18 +44,24 @@ namespace busy::genCall {
             r.emplace_back(v);
         }
         r.emplace_back("--llibraries");
-        for (auto v : ts.legacy.libraries) {
-            r.emplace_back(v);
-        }
         for (auto const& d : deps) {
             if (!d.precompiled) {
                 r.emplace_back(d.name);
             }
+        }
+        if (r.back() == "--llibraries") r.pop_back();
+
+        r.emplace_back("--syslibraries");
+        for (auto v : ts.legacy.libraries) {
+            r.emplace_back(v);
+        }
+        for (auto const& d : deps) {
             for (auto v : d.legacy.libraries) {
                 r.emplace_back(v);
             }
         }
-        if (r.back() == "--llibraries") r.pop_back();
+        if (r.back() == "--syslibraries") r.pop_back();
+
         return r;
     }
 }

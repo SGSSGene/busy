@@ -112,15 +112,19 @@ int main(int argc, char const* argv[]) {
     if (argc <= 1) return 1;
     try {
         auto buildPath = std::filesystem::path{"build"};
-        auto path = std::filesystem::path{argv[1]};
+        auto busyFile = std::filesystem::path{argv[1]};
 
-        auto desc = busy::desc::loadDesc(path, buildPath);
+        std::string mainExe; //!TODO smarter way to decide this ;-)
+        auto desc = busy::desc::loadDesc(busyFile, buildPath);
         for (auto ts : desc.translationSets) {
+            if (mainExe.empty()) mainExe = ts.name;
             allSets[ts.name] = ts;
             auto path = desc.path / "src" / ts.name;
         }
-        auto root = allSets.at("myApp");
-        auto tool = std::string{"../../../toolchains.d/gcc12.1.sh"};
+        auto root = allSets.at(mainExe);
+//        auto tool = std::string{"../../../toolchains.d/gcc12.1.sh"}; //!TODO Smater way to decide on the toolchain
+        auto tool = std::string{"../toolchains.d/gcc12.1.sh"}; //!TODO Smater way to decide on the toolchain
+
         translate(root, allSets, tool, buildPath);
 
 
