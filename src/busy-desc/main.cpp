@@ -48,7 +48,6 @@ void translate(auto const& root, auto const& allSets, auto const& tool, auto con
     auto deps = findDeps(root, allSets);
     for (auto d : deps) {
         translate(d, allSets, tool, buildPath);
-//        std::cout << d.name << "\n";
     }
     std::cout << "\n\nTRANSLATING: " << root.name << "\n";
     if (root.precompiled) {
@@ -65,7 +64,6 @@ void translate(auto const& root, auto const& allSets, auto const& tool, auto con
         std::cout << e << "\n";
         std::cout << "\n";
     }
-
 
     std::vector<std::filesystem::path> objFiles;
     auto tsPath = root.path / "src" / root.name;
@@ -110,9 +108,12 @@ void translate(auto const& root, auto const& allSets, auto const& tool, auto con
 
 int main(int argc, char const* argv[]) {
     if (argc <= 1) return 1;
+    // ./build/bin/busy-desc busy3.yaml build toolchains.d/gcc12.1.sh
     try {
-        auto buildPath = std::filesystem::path{"build"};
-        auto busyFile = std::filesystem::path{argv[1]};
+        auto busyFile  = std::filesystem::path{argv[1]};
+        auto buildPath = std::filesystem::path{argv[2]};
+        auto toolchain = std::filesystem::path{argv[3]};
+        toolchain = relative(absolute(toolchain), buildPath);
 
         std::string mainExe; //!TODO smarter way to decide this ;-)
         auto desc = busy::desc::loadDesc(busyFile, buildPath);
@@ -122,13 +123,7 @@ int main(int argc, char const* argv[]) {
             auto path = desc.path / "src" / ts.name;
         }
         auto root = allSets.at(mainExe);
-//        auto tool = std::string{"../../../toolchains.d/gcc12.1.sh"}; //!TODO Smater way to decide on the toolchain
-        auto tool = std::string{"../toolchains.d/gcc12.1.sh"}; //!TODO Smater way to decide on the toolchain
-
-        translate(root, allSets, tool, buildPath);
-
-
-
+        translate(root, allSets, toolchain, buildPath);
 
 
     } catch (char const* p) {
