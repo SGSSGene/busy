@@ -293,9 +293,8 @@ fi
 eval $call 1>>${stdoutFile} 2>${stderrFile}
 errorCode=$?
 
+echo "call: $call"
 echo "stdout: |+"
-echo $REAL_CALL | sed 's/^/    /'
-echo $call | sed 's/^/    /'
 cat ${stdoutFile} | sed 's/^/    /'
 echo "stderr: |+"
 cat ${stderrFile} | sed 's/^/    /'
