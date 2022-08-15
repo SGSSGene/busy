@@ -75,11 +75,13 @@ void translate(auto const& root, auto const& allSets, auto const& tool, auto con
 
             std::cout << "(cd " << buildPath << "; " << join(cmd) << ")\n";
             auto p = process::Process{cmd, buildPath};
+            auto answer = busy::answer::parseCompilation(p.cout());
+            if (!p.cerr().empty()) {
+                throw std::runtime_error(std::string{"Unexpected error with the build system:"}
+                    + std::string{p.cerr()});
+            }
             auto o = p.cout();
-            auto e = p.cerr();
             std::cout << o << "\n";
-            std::cout << e << "\n";
-
             std::cout << "\n";
         }
     }

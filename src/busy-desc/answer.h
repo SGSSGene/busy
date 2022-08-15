@@ -17,8 +17,8 @@ struct Compilation {
     std::vector<std::string> outputFiles{};
 };
 
-auto parseCompilation(std::string output) -> Compilation {
-    auto node = YAML::Load(output);
+inline auto parseCompilation(std::string_view output) -> Compilation {
+    auto node = YAML::Load(std::string{output});
     return Compilation {
         .stdout = node["stdout"].as<std::string>(),
         .stderr = node["stderr"].as<std::string>(),
