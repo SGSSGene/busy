@@ -137,11 +137,12 @@ elif [ "$1" == "setup_translation_set" ] ; then
             target=${target}/${p2}
         fi
         mkdir -p "$(dirname ${target})"
-        if [ "${p1:0:1}" = "/" ]; then
-            ln -s "${p1}" -T "${target}"
-        else
-            ln -s "$(realpath "${rootDir}/${p1}" --relative-to "$(dirname ${target})")" -T "${target}"
+        if [ "${p1:0:1}" != "/" ]; then
+            p1="$(realpath "${rootDir}/${p1}" --relative-to "$(dirname ${target})")"
         fi
+        ln -s "${p1}" -T "${target}"
+
+
     done
 
     exit 0
