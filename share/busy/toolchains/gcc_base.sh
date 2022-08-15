@@ -201,6 +201,12 @@ elif [ "$1" == "compile" ]; then
     elif [ "${filetype}" = "c" ]; then
         call="${C} ${C_STD} ${parameters} ${diagnostic} -c ${inputFile} -o ${objectFile} $projectIncludes $systemIncludes"
     else
+        echo "stdout:"
+        echo "stderr:"
+        echo "dependencies: []"
+        echo "cached: false"
+        echo "compilable: false"
+        echo "output_files: []"
         exit 0
     fi
 elif [ "$1" == "link" ]; then
