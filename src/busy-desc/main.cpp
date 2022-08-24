@@ -4,6 +4,7 @@
 #include "Process.h"
 
 #include <iostream>
+#include <fmt/format.h>
 #include <unordered_set>
 #include <unordered_map>
 #include <queue>
@@ -44,6 +45,20 @@ auto join(std::vector<std::string> c) -> std::string {
 }
 
 
+auto translateUnit(auto tool, auto root, auto buildPath, auto tuPath) {
+    auto cmd = busy::genCall::compilation(tool, root, tuPath, {"default"});
+
+    auto call = std::string{fmt::format("(cd {}; {})", buildPath.string(), fmt::join(cmd, " "))};
+
+    auto p = process::Process{cmd, buildPath};
+    auto answer = busy::answer::parseCompilation(p.cout());
+    if (!p.cerr().empty()) {
+        throw std::runtime_error(std::string{"Unexpected error with the build system:"}
+            + std::string{p.cerr()});
+    }
+    return std::make_tuple(call, answer);
+}
+
 void translate(auto const& root, auto const& allSets, auto const& tool, auto const& buildPath) {
     auto deps = findDeps(root, allSets);
     for (auto d : deps) {
@@ -69,19 +84,11 @@ void translate(auto const& root, auto const& allSets, auto const& tool, auto con
     auto tsPath = root.path / "src" / root.name;
     for (auto f : std::filesystem::recursive_directory_iterator(tsPath)) {
         if (f.is_regular_file()) {
-            std::cout << relative(f, tsPath) << "\n";
-            auto cmd = busy::genCall::compilation(tool, root, relative(f, tsPath), {"default"});
-            objFiles.emplace_back(relative(f, tsPath).string());
-
-            std::cout << "(cd " << buildPath << "; " << join(cmd) << ")\n";
-            auto p = process::Process{cmd, buildPath};
-            auto answer = busy::answer::parseCompilation(p.cout());
-            if (!p.cerr().empty()) {
-                throw std::runtime_error(std::string{"Unexpected error with the build system:"}
-                    + std::string{p.cerr()});
-            }
-            auto o = p.cout();
-            std::cout << o << "\n";
+            auto tuPath = relative(f, tsPath);
+            objFiles.emplace_back(tuPath.string());
+            auto [call, answer] = translateUnit(tool, root, buildPath, tuPath);
+            std::cout << call << "\n";
+            std::cout << answer.stdout << "\n";
             std::cout << "\n";
         }
     }
