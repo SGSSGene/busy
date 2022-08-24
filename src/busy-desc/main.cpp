@@ -10,7 +10,11 @@
 #include <queue>
 
 using TranslationMap = std::unordered_map<std::string, busy::desc::TranslationSet>;
-TranslationMap allSets;
+struct Workspace {
+    std::filesystem::path buildPath;
+    std::filesystem::path toolchain;
+    TranslationMap        allSets;
+};
 
 auto findDeps(busy::desc::TranslationSet const& root, TranslationMap const& map) {
     auto deps = std::vector<busy::desc::TranslationSet>{};
@@ -44,18 +48,10 @@ auto join(std::vector<std::string> c) -> std::string {
     return s;
 }
 
-struct Workspace {
-    std::filesystem::path buildPath;
-    std::filesystem::path toolchain;
-    TranslationMap        allSets;
-};
-
-
 auto translateUnit(auto tool, auto root, auto buildPath, auto tuPath) {
     auto cmd = busy::genCall::compilation(tool, root, tuPath, {"default"});
 
     auto call = std::string{fmt::format("(cd {}; {})", buildPath.string(), fmt::join(cmd, " "))};
-
     auto p = process::Process{cmd, buildPath};
     auto answer = busy::answer::parseCompilation(p.cout());
     if (!p.cerr().empty()) {
@@ -65,20 +61,21 @@ auto translateUnit(auto tool, auto root, auto buildPath, auto tuPath) {
     return std::make_tuple(call, answer);
 }
 
-void translate(auto const& root, auto const& allSets, Workspace const& workspace) {
+void translate(busy::desc::TranslationSet const& target, Workspace const& workspace) {
     auto const& toolchain = workspace.toolchain;
     auto const& buildPath = workspace.buildPath;
-    auto deps = findDeps(root, allSets);
+    auto const& allSets   = workspace.allSets;
+    auto deps = findDeps(target, allSets);
     for (auto d : deps) {
-        translate(d, allSets, workspace);
+        translate(d, workspace);
     }
-    std::cout << "\n\nTRANSLATING: " << root.name << "\n";
-    if (root.precompiled) {
+    std::cout << "\n\nTRANSLATING: " << target.name << "\n";
+    if (target.precompiled) {
         return;
     }
 
     {
-        auto cmd = busy::genCall::setup_translation_set(toolchain, buildPath, root, deps);
+        auto cmd = busy::genCall::setup_translation_set(toolchain, buildPath, target, deps);
         std::cout << "(cd " << buildPath << "; " << join(cmd) << ")\n";
         auto p = process::Process{cmd, buildPath};
         auto o = p.cout();
@@ -89,12 +86,12 @@ void translate(auto const& root, auto const& allSets, Workspace const& workspace
     }
 
     std::vector<std::filesystem::path> objFiles;
-    auto tsPath = root.path / "src" / root.name;
+    auto tsPath = target.path / "src" / target.name;
     for (auto f : std::filesystem::recursive_directory_iterator(tsPath)) {
         if (f.is_regular_file()) {
             auto tuPath = relative(f, tsPath);
             objFiles.emplace_back(tuPath.string());
-            auto [call, answer] = translateUnit(toolchain, root, buildPath, tuPath);
+            auto [call, answer] = translateUnit(toolchain, target, buildPath, tuPath);
             std::cout << call << "\n";
             std::cout << answer.stdout << "\n";
             std::cout << "\n";
@@ -104,14 +101,14 @@ void translate(auto const& root, auto const& allSets, Workspace const& workspace
 
     {
         auto type = [&]() -> std::string {
-            if (root.type == "executable") {
+            if (target.type == "executable") {
                 return "executable";
-            } else if (root.type == "library") {
+            } else if (target.type == "library") {
                 return "static_library";
             }
             throw "unknown translation set target";
         }();
-        auto cmd = busy::genCall::linking(toolchain, root, type, objFiles, deps);
+        auto cmd = busy::genCall::linking(toolchain, target, type, objFiles, deps);
         std::cout << "(cd " << buildPath << "; " << join(cmd) << ")\n";
         auto p = process::Process{cmd, buildPath};
         auto o = p.cout();
@@ -138,11 +135,11 @@ int main(int argc, char const* argv[]) {
         auto desc = busy::desc::loadDesc(busyFile, workspace.buildPath);
         for (auto ts : desc.translationSets) {
             if (mainExe.empty()) mainExe = ts.name;
-            allSets[ts.name] = ts;
+            workspace.allSets[ts.name] = ts;
             auto path = desc.path / "src" / ts.name;
         }
-        auto root = allSets.at(mainExe);
-        translate(root, allSets, workspace);
+        auto root = workspace.allSets.at(mainExe);
+        translate(root, workspace);
 
 
     } catch (char const* p) {
