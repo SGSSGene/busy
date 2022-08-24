@@ -39,15 +39,6 @@ auto findDeps(busy::desc::TranslationSet const& root, TranslationMap const& map)
     return deps;
 }
 
-auto join(std::vector<std::string> c) -> std::string {
-    if (c.empty()) return "";
-    std::string s = c[0];
-    for (size_t i{1}; i < c.size(); ++i) {
-        s += " " + c[i];
-    }
-    return s;
-}
-
 auto translateUnit(auto tool, auto root, auto buildPath, auto tuPath) {
     auto cmd = busy::genCall::compilation(tool, root, tuPath, {"default"});
 
@@ -76,7 +67,7 @@ void translate(busy::desc::TranslationSet const& target, Workspace const& worksp
 
     {
         auto cmd = busy::genCall::setup_translation_set(toolchain, buildPath, target, deps);
-        std::cout << "(cd " << buildPath << "; " << join(cmd) << ")\n";
+        fmt::print("(cd {}; {})\n", buildPath.string(), fmt::join(cmd, " "));
         auto p = process::Process{cmd, buildPath};
         auto o = p.cout();
         auto e = p.cerr();
@@ -109,7 +100,7 @@ void translate(busy::desc::TranslationSet const& target, Workspace const& worksp
             throw "unknown translation set target";
         }();
         auto cmd = busy::genCall::linking(toolchain, target, type, objFiles, deps);
-        std::cout << "(cd " << buildPath << "; " << join(cmd) << ")\n";
+        fmt::print("(cd {}; {})\n", buildPath.string(), fmt::join(cmd, " "));
         auto p = process::Process{cmd, buildPath};
         auto o = p.cout();
         auto e = p.cerr();
