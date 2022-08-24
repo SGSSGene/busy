@@ -6,8 +6,6 @@
 
 namespace busy::answer {
 
-struct SetupTranslationUnit {};
-
 struct Compilation {
     std::string stdout;
     std::string stderr;
