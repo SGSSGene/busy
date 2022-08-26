@@ -137,7 +137,9 @@ int main(int argc, char const* argv[]) {
         auto buildPath = std::filesystem::path{argv[2]};
         auto toolchain = std::filesystem::path{argv[3]};
 
-        toolchain = relative(absolute(toolchain), buildPath);
+        if (toolchain.is_relative()) {
+            toolchain = relative(absolute(toolchain), buildPath);
+        }
 
         auto workspace = Workspace {
             .buildPath = buildPath,
