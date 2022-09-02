@@ -130,34 +130,39 @@ struct Workspace {
 };
 
 int main(int argc, char const* argv[]) {
-    if (argc != 4) return 1;
-    // ./build/bin/busy-desc busy3.yaml build toolchains.d/gcc12.1.sh
+    if (argc != 5) return 1;
+
+    // ./build/bin/busy-desc compile busy3.yaml build toolchains.d/gcc12.1.sh
+    auto mode = std::string{argv[1]};
+
     try {
-        auto busyFile  = std::filesystem::path{argv[1]};
-        auto buildPath = std::filesystem::path{argv[2]};
-        auto toolchain = std::filesystem::path{argv[3]};
+        if (mode == "compile") {
+            auto busyFile  = std::filesystem::path{argv[2]};
+            auto buildPath = std::filesystem::path{argv[3]};
+            auto toolchain = std::filesystem::path{argv[4]};
 
-        if (toolchain.is_relative()) {
-            toolchain = relative(absolute(toolchain), buildPath);
+            if (toolchain.is_relative()) {
+                toolchain = relative(absolute(toolchain), buildPath);
+            }
+
+            auto workspace = Workspace {
+                .buildPath = buildPath,
+                .toolchain = { .buildPath = buildPath,
+                               .toolchain = toolchain },
+            };
+
+            std::string mainExe; //!TODO smarter way to decide this ;-)
+            auto desc = busy::desc::loadDesc(busyFile, workspace.buildPath);
+            for (auto ts : desc.translationSets) {
+                if (mainExe.empty()) mainExe = ts.name;
+                workspace.allSets[ts.name] = ts;
+                auto path = desc.path / "src" / ts.name;
+            }
+            auto root = workspace.allSets.at(mainExe);
+            workspace.translate(root);
         }
-
-        auto workspace = Workspace {
-            .buildPath = buildPath,
-            .toolchain = { .buildPath = buildPath,
-                           .toolchain = toolchain },
-        };
-
-        std::string mainExe; //!TODO smarter way to decide this ;-)
-        auto desc = busy::desc::loadDesc(busyFile, workspace.buildPath);
-        for (auto ts : desc.translationSets) {
-            if (mainExe.empty()) mainExe = ts.name;
-            workspace.allSets[ts.name] = ts;
-            auto path = desc.path / "src" / ts.name;
-        }
-        auto root = workspace.allSets.at(mainExe);
-        workspace.translate(root);
-
-
+    } catch (std::exception const& e) {
+        std::cout << e.what() << "\n";
     } catch (char const* p) {
         std::cout << p << "\n";
     }
