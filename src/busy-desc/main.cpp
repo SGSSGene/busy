@@ -130,7 +130,7 @@ struct Workspace {
 };
 
 int main(int argc, char const* argv[]) {
-    if (argc <= 1) return 1;
+    if (argc != 4) return 1;
     // ./build/bin/busy-desc busy3.yaml build toolchains.d/gcc12.1.sh
     try {
         auto busyFile  = std::filesystem::path{argv[1]};
