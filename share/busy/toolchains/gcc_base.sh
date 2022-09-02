@@ -60,6 +60,7 @@ toolchains:
   - name: "${NAME}"
     version: "${version}"
     detail: "${version_detailed}"
+    languages: ["c++", "c"]
     which:
       - "${CXX}"
       - "${C}"

@@ -10,8 +10,20 @@
 #include <queue>
 
 struct Toolchain {
-    std::filesystem::path buildPath;
-    std::filesystem::path toolchain;
+    std::filesystem::path    buildPath;
+    std::filesystem::path    toolchain;
+    std::vector<std::string> languages;
+
+    void detectLanguages() {
+        auto cmd = std::vector<std::string>{toolchain, "info"};
+        auto p = process::Process{cmd, buildPath};
+        auto node = YAML::Load(std::string{p.cout()});
+        for (auto n : node["toolchains"]) {
+            for (auto l : n["languages"]) {
+                languages.emplace_back(l.as<std::string>());
+            }
+        }
+    }
 
     /** compiles a single translation unit
      */
@@ -68,9 +80,9 @@ struct Toolchain {
 
 using TranslationMap = std::unordered_map<std::string, busy::desc::TranslationSet>;
 struct Workspace {
-    std::filesystem::path buildPath;
-    TranslationMap        allSets;
-    Toolchain             toolchain;
+    std::filesystem::path  buildPath;
+    TranslationMap         allSets;
+    std::vector<Toolchain> toolchains;
 
     /** Returns a list of TranslationSets that tu is depending on
      */
@@ -97,6 +109,19 @@ struct Workspace {
         return deps;
     }
 
+    /** returns tool change with appropiate language
+     */
+    auto getToolchain(std::string const& lang) const -> Toolchain const& {
+        for (auto const& t : toolchains) {
+            for (auto const& l : t.languages) {
+                if (l == lang) {
+                    return t;
+                }
+            }
+        }
+        throw std::runtime_error("No toolchain found which provides: " + lang);
+    }
+
     /** Translates a tu and its dependencnies
      */
     void translate(busy::desc::TranslationSet const& ts) const {
@@ -108,6 +133,8 @@ struct Workspace {
         if (ts.precompiled) {
             return;
         }
+
+        auto& toolchain = getToolchain(ts.language);
 
         toolchain.setupTranslationSet(ts, deps);
 
@@ -125,12 +152,10 @@ struct Workspace {
         }
         toolchain.finishTranslationSet(ts, objFiles, deps);
     }
-
-
 };
 
 int main(int argc, char const* argv[]) {
-    if (argc != 5) return 1;
+    if (argc < 5) return 1;
 
     // ./build/bin/busy-desc compile busy3.yaml build toolchains.d/gcc12.1.sh
     auto mode = std::string{argv[1]};
@@ -139,16 +164,21 @@ int main(int argc, char const* argv[]) {
         if (mode == "compile") {
             auto busyFile  = std::filesystem::path{argv[2]};
             auto buildPath = std::filesystem::path{argv[3]};
-            auto toolchain = std::filesystem::path{argv[4]};
 
-            if (toolchain.is_relative()) {
-                toolchain = relative(absolute(toolchain), buildPath);
+            auto toolchains = std::vector<Toolchain>{};
+            for (size_t i{4}; i < argc; ++i) {
+                auto t = std::filesystem::path{argv[i]};
+                if (t.is_relative()) {
+                    t = relative(absolute(t), buildPath);
+                }
+
+                toolchains.emplace_back(buildPath, std::move(t));
+                toolchains.back().detectLanguages();
             }
 
             auto workspace = Workspace {
                 .buildPath = buildPath,
-                .toolchain = { .buildPath = buildPath,
-                               .toolchain = toolchain },
+                .toolchains = std::move(toolchains),
             };
 
             std::string mainExe; //!TODO smarter way to decide this ;-)
