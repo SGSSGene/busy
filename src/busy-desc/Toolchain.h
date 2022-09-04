@@ -30,13 +30,22 @@ private:
             }
         }
     }
+
+    auto formatCall(std::span<std::string> _cmd) const {
+        if (buildPath == ".") {
+            return fmt::format("{}", fmt::join(_cmd, " "));
+        } else {
+            return fmt::format("(cd {}; {})", buildPath.string(), fmt::join(_cmd, " "));
+        }
+    }
+
 public:
     /** compiles a single translation unit
      */
     auto translateUnit(auto tuName, auto tuPath) const {
         auto cmd = busy::genCall::compilation(toolchain, tuName, tuPath, {"default"});
 
-        auto call = std::string{fmt::format("(cd {}; {})", buildPath.string(), fmt::join(cmd, " "))};
+        auto call = formatCall(cmd);
         auto p = process::Process{cmd, buildPath};
         auto answer = busy::answer::parseCompilation(p.cout());
         if (!p.cerr().empty()) {
@@ -51,7 +60,8 @@ public:
      */
     void setupTranslationSet(auto const& ts, auto const& dependencies) const {
         auto cmd = busy::genCall::setup_translation_set(toolchain, buildPath, ts, dependencies);
-        fmt::print("(cd {}; {})\n", buildPath.string(), fmt::join(cmd, " "));
+        auto call = formatCall(cmd);
+        fmt::print("{}\n", formatCall(cmd));
         auto p = process::Process{cmd, buildPath};
         fmt::print("{}\n{}\n\n", p.cout(), p.cerr());
     }
@@ -69,7 +79,7 @@ public:
             throw "unknown translation set target";
         }();
         auto cmd = busy::genCall::linking(toolchain, ts, type, objFiles, dependencies);
-        fmt::print("(cd {}; {})\n", buildPath.string(), fmt::join(cmd, " "));
+        fmt::print("{}\n", formatCall(cmd));
         auto p = process::Process{cmd, buildPath};
         fmt::print("{}\n{}\n\n", p.cout(), p.cerr());
     }
