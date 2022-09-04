@@ -1,8 +1,12 @@
 #pragma once
 
+#include "Process.h"
+
 #include <filesystem>
 #include <string>
 #include <vector>
+#include <fmt/format.h>
+#include <iostream>
 
 struct Toolchain {
     std::filesystem::path    buildPath;
