@@ -12,6 +12,32 @@
 #include <unordered_map>
 #include <unordered_set>
 
+struct Arguments {
+    std::filesystem::path buildPath{"."};
+    std::optional<std::filesystem::path> busyFile;
+    std::vector<std::filesystem::path> addToolchains;
+
+    Arguments(int argc, char const* const* argv) {
+        auto busyFile  = std::filesystem::path{};
+        auto toolchains = std::vector<Toolchain>{};
+        for (int i{2}; i < argc; ++i) {
+            if (argv[i] == std::string_view{"-f"} and i+1 < argc) {
+                ++i;
+                busyFile = argv[i];
+            } else if (argv[i] == std::string_view{"-t"} and i+1 < argc) {
+                ++i;
+                addToolchains.emplace_back(argv[i]);
+            } else {
+                if (buildPath.empty()) {
+                    buildPath = argv[i];
+                } else {
+                    throw std::runtime_error("unexpected parameter: " + std::string{argv[i]});
+                }
+            }
+        }
+    }
+};
+
 
 int main(int argc, char const* argv[]) {
     if (argc < 2) return 1;
@@ -21,43 +47,15 @@ int main(int argc, char const* argv[]) {
 
     try {
         if (mode == "compile") {
-            auto buildPath = std::filesystem::path{};
+            auto args = Arguments{argc, argv};
 
-            auto busyFile  = std::filesystem::path{};
-            auto toolchains = std::vector<Toolchain>{};
-            for (int i{2}; i < argc; ++i) {
-                if (argv[i] == std::string_view{"-f"} and i+1 < argc) {
-                    ++i;
-                    busyFile = argv[i];
-                } else if (argv[i] == std::string_view{"-t"} and i+1 < argc) {
-                    ++i;
-                    auto t = std::filesystem::path{argv[i]};
-                    if (t.is_relative()) {
-                        t = relative(absolute(t), buildPath);
-                    }
-
-                    toolchains.emplace_back(buildPath, std::move(t));
-                } else {
-                    if (buildPath.empty()) {
-                        buildPath = argv[i];
-                    } else {
-                        throw std::runtime_error("unexpected parameter: " + std::string{argv[i]});
-                    }
-                }
+            auto workspace = Workspace{args.buildPath};
+            if (args.busyFile) {
+                workspace.busyFile = *args.busyFile;
             }
-            if (buildPath.empty()) {
-                buildPath = ".";
+            for (auto&& t : args.addToolchains) {
+                workspace.toolchains.emplace_back(args.buildPath, std::move(t));
             }
-
-
-            auto workspace = Workspace{buildPath};
-            if (!busyFile.empty()) {
-                workspace.busyFile = busyFile;
-            }
-            for (auto&& t : toolchains) {
-                workspace.toolchains.emplace_back(std::move(t));
-            }
-            toolchains.clear();
 
             std::string mainExe; //!TODO smarter way to decide this ;-)
             auto desc = busy::desc::loadDesc(workspace.busyFile, workspace.buildPath);
