@@ -26,6 +26,8 @@ translationSets:
     legacy:
       libraries:
         - fmt
+    dependencies:
+      - stdlib
   - name: yaml-cpp
     type: library
     language: c++
@@ -33,3 +35,5 @@ translationSets:
     legacy:
       libraries:
         - yaml-cpp
+    dependencies:
+      - stdlib

@@ -18,6 +18,7 @@ struct Arguments {
     std::filesystem::path buildPath{"."};
     std::optional<std::filesystem::path> busyFile;
     std::vector<std::filesystem::path> addToolchains;
+    std::vector<std::string> trailing; // trailing commands
 
     Arguments(int argc, char const* const* argv) {
         auto busyFile  = std::filesystem::path{};
@@ -34,7 +35,7 @@ struct Arguments {
                 if (buildPath.empty()) {
                     buildPath = argv[i];
                 } else {
-                    throw std::runtime_error("unexpected parameter: " + std::string{argv[i]});
+                    trailing.emplace_back(argv[i]);
                 }
             }
         }
@@ -69,13 +70,18 @@ int main(int argc, char const* argv[]) {
             updateWorkspace(workspace);
 
             // load busyFile
-            std::string mainExe; //!TODO smarter way to decide this ;-)
             auto desc = busy::desc::loadDesc(workspace.busyFile, workspace.buildPath);
             for (auto ts : desc.translationSets) {
-                if (mainExe.empty()) mainExe = ts.name;
                 workspace.allSets[ts.name] = ts;
             }
-            auto root = workspace.allSets.at(mainExe);
+
+            auto root = [&]() -> std::string {
+                if (args.trailing.size()) {
+                    return args.trailing.front();
+                }
+                auto r = workspace.findExecutables();
+                return r.front();
+            }();
 
             // translate main executable
             workspace.translate(root);

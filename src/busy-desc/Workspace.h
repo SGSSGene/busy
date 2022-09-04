@@ -17,7 +17,6 @@ struct Workspace {
     TranslationMap         allSets;
     std::vector<Toolchain> toolchains;
 
-
     Workspace(std::filesystem::path const& _buildPath)
         : buildPath{_buildPath}
     {
@@ -111,10 +110,12 @@ public:
 
     /** Translates a tu and its dependencnies
      */
-    void translate(busy::desc::TranslationSet const& ts) const {
+    void translate(std::string const& tsName) const {
+        auto& ts = allSets.at(tsName);
+
         auto deps = findDependencies(ts);
         for (auto d : deps) {
-            translate(d);
+            translate(d.name);
         }
         fmt::print("\n\nTRANSLATING: {}\n", ts.name);
         if (ts.precompiled) {
@@ -136,6 +137,17 @@ public:
             }
         }
         toolchain.finishTranslationSet(ts, objFiles, deps);
+    }
+
+    /** Find all translation sets with executables
+     */
+    auto findExecutables() const -> std::vector<std::string> {
+        auto res = std::vector<std::string>{};
+        for (auto [name, ts] : allSets) {
+            if (ts.type != "executable") continue;
+            res.emplace_back(ts.name);
+        }
+        return res;
     }
 };
 
