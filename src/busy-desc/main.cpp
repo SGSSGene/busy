@@ -71,8 +71,8 @@ int main(int argc, char const* argv[]) {
             workspace.save();
         }
     } catch (std::exception const& e) {
-        std::cout << e.what() << "\n";
+        fmt::print("{}\n", e.what());
     } catch (char const* p) {
-        std::cout << p << "\n";
+        fmt::print("{}\n", p);
     }
 }

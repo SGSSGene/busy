@@ -53,11 +53,7 @@ public:
         auto cmd = busy::genCall::setup_translation_set(toolchain, buildPath, ts, dependencies);
         fmt::print("(cd {}; {})\n", buildPath.string(), fmt::join(cmd, " "));
         auto p = process::Process{cmd, buildPath};
-        auto o = p.cout();
-        auto e = p.cerr();
-        std::cout << o << "\n";
-        std::cout << e << "\n";
-        std::cout << "\n";
+        fmt::print("{}\n{}\n\n", p.cout(), p.cerr());
     }
 
     /**
@@ -75,10 +71,7 @@ public:
         auto cmd = busy::genCall::linking(toolchain, ts, type, objFiles, dependencies);
         fmt::print("(cd {}; {})\n", buildPath.string(), fmt::join(cmd, " "));
         auto p = process::Process{cmd, buildPath};
-        auto o = p.cout();
-        auto e = p.cerr();
-        std::cout << o << "\n";
-        std::cout << e << "\n";
+        fmt::print("{}\n{}\n\n", p.cout(), p.cerr());
     }
 };
 

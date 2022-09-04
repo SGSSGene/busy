@@ -4,7 +4,6 @@
 
 #include <filesystem>
 #include <fstream>
-#include <iostream>
 #include <queue>
 #include <string>
 #include <unordered_map>
@@ -117,7 +116,7 @@ public:
         for (auto d : deps) {
             translate(d);
         }
-        std::cout << "\n\nTRANSLATING: " << ts.name << "\n";
+        fmt::print("\n\nTRANSLATING: {}\n", ts.name);
         if (ts.precompiled) {
             return;
         }
@@ -133,9 +132,7 @@ public:
                 auto tuPath = relative(f, tsPath);
                 objFiles.emplace_back(tuPath.string());
                 auto [call, answer] = toolchain.translateUnit(ts, tuPath);
-                std::cout << call << "\n";
-                std::cout << answer.stdout << "\n";
-                std::cout << "\n";
+                fmt::print("{}\n{}\n\n", call, answer.stdout);
             }
         }
         toolchain.finishTranslationSet(ts, objFiles, deps);
