@@ -3,11 +3,12 @@
 #include "answer.h"
 #include "Process.h"
 
-#include <iostream>
 #include <fmt/format.h>
-#include <unordered_set>
-#include <unordered_map>
+#include <fstream>
+#include <iostream>
 #include <queue>
+#include <unordered_map>
+#include <unordered_set>
 
 struct Toolchain {
     std::filesystem::path    buildPath;
@@ -73,16 +74,67 @@ struct Toolchain {
         auto e = p.cerr();
         std::cout << o << "\n";
         std::cout << e << "\n";
-
     }
-
 };
 
 using TranslationMap = std::unordered_map<std::string, busy::desc::TranslationSet>;
 struct Workspace {
     std::filesystem::path  buildPath;
+    std::filesystem::path  busyConfigFile;
+    std::filesystem::path  busyFile;
     TranslationMap         allSets;
     std::vector<Toolchain> toolchains;
+
+
+    Workspace(std::filesystem::path const& _buildPath)
+        : buildPath{_buildPath}
+    {}
+
+    void loadOrInit() {
+        std::error_code ec;
+        create_directories(buildPath, ec);
+        if (ec) {
+            throw std::runtime_error("build folder " + buildPath.string() + " could not be created: "
+                                     + ec.message());
+        }
+        busyConfigFile = buildPath / "busy_config.yaml";
+
+        if (exists(busyConfigFile)) {
+            auto node = YAML::LoadFile(busyConfigFile.string());
+            auto config_version = node["config-version"].as<std::string>("");
+            if (config_version == "1") {
+                // load busyFile
+                busyFile = node["busyFile"].as<std::string>();
+                if (busyFile.is_relative()) {
+                    busyFile = relative(buildPath / busyFile);
+                }
+                // load toolchains
+                if (node["toolchains"].IsSequence()) {
+                    for (auto e : node["toolchains"]) {
+                        toolchains.emplace_back(buildPath, e.as<std::string>());
+                        toolchains.back().detectLanguages();
+                    }
+                }
+            } else {
+                throw std::runtime_error("unknown config-version: " + config_version);
+            }
+        }
+    }
+
+    void save() {
+        auto node = YAML::Node{};
+        node["config-version"] = "1";
+        if (busyFile.is_relative()) {
+            node["busyFile"] = relative(busyFile, buildPath).string();
+        } else {
+            node["busyFile"] = busyFile.string();
+        }
+        for (auto const& t : toolchains) {
+            node["toolchains"].push_back(t.toolchain.string());
+        }
+        auto ofs = std::ofstream{busyConfigFile};
+        ofs << node;
+    }
 
     /** Returns a list of TranslationSets that tu is depending on
      */
@@ -155,34 +207,55 @@ struct Workspace {
 };
 
 int main(int argc, char const* argv[]) {
-    if (argc < 5) return 1;
+    if (argc < 2) return 1;
 
     // ./build/bin/busy-desc compile busy3.yaml build toolchains.d/gcc12.1.sh
     auto mode = std::string{argv[1]};
 
     try {
         if (mode == "compile") {
-            auto busyFile  = std::filesystem::path{argv[2]};
-            auto buildPath = std::filesystem::path{argv[3]};
+            auto buildPath = std::filesystem::path{};
 
+            auto busyFile  = std::filesystem::path{};
             auto toolchains = std::vector<Toolchain>{};
-            for (size_t i{4}; i < argc; ++i) {
-                auto t = std::filesystem::path{argv[i]};
-                if (t.is_relative()) {
-                    t = relative(absolute(t), buildPath);
-                }
+            for (int i{2}; i < argc; ++i) {
+                if (argv[i] == std::string_view{"-f"} and i+1 < argc) {
+                    ++i;
+                    busyFile = argv[i];
+                } else if (argv[i] == std::string_view{"-t"} and i+1 < argc) {
+                    ++i;
+                    auto t = std::filesystem::path{argv[i]};
+                    if (t.is_relative()) {
+                        t = relative(absolute(t), buildPath);
+                    }
 
-                toolchains.emplace_back(buildPath, std::move(t));
-                toolchains.back().detectLanguages();
+                    toolchains.emplace_back(buildPath, std::move(t));
+                    toolchains.back().detectLanguages();
+                } else {
+                    if (buildPath.empty()) {
+                        buildPath = argv[i];
+                    } else {
+                        throw std::runtime_error("unexpected parameter: " + std::string{argv[i]});
+                    }
+                }
+            }
+            if (buildPath.empty()) {
+                buildPath = ".";
             }
 
-            auto workspace = Workspace {
-                .buildPath = buildPath,
-                .toolchains = std::move(toolchains),
-            };
+
+            auto workspace = Workspace{buildPath};
+            workspace.loadOrInit();
+            if (!busyFile.empty()) {
+                workspace.busyFile = busyFile;
+            }
+            for (auto&& t : toolchains) {
+                workspace.toolchains.emplace_back(std::move(t));
+            }
+            toolchains.clear();
 
             std::string mainExe; //!TODO smarter way to decide this ;-)
-            auto desc = busy::desc::loadDesc(busyFile, workspace.buildPath);
+            auto desc = busy::desc::loadDesc(workspace.busyFile, workspace.buildPath);
             for (auto ts : desc.translationSets) {
                 if (mainExe.empty()) mainExe = ts.name;
                 workspace.allSets[ts.name] = ts;
@@ -190,6 +263,7 @@ int main(int argc, char const* argv[]) {
             }
             auto root = workspace.allSets.at(mainExe);
             workspace.translate(root);
+            workspace.save();
         }
     } catch (std::exception const& e) {
         std::cout << e.what() << "\n";
