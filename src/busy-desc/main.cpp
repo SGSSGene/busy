@@ -16,7 +16,7 @@
 int main(int argc, char const* argv[]) {
     if (argc < 2) return 1;
 
-    // ./build/bin/busy-desc compile busy3.yaml build toolchains.d/gcc12.1.sh
+    // ./build/bin/busy-desc compile build -f busy3.yaml -t toolchains.d/gcc12.1.sh
     auto mode = std::string{argv[1]};
 
     try {
