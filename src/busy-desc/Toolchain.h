@@ -13,6 +13,13 @@ struct Toolchain {
     std::filesystem::path    toolchain;
     std::vector<std::string> languages;
 
+    Toolchain(std::filesystem::path _buildPath, std::filesystem::path _toolchain)
+        : buildPath{std::move(_buildPath)}
+        , toolchain{std::move(_toolchain)}
+    {
+        detectLanguages();
+    }
+private:
     void detectLanguages() {
         auto cmd = std::vector<std::string>{toolchain, "info"};
         auto p = process::Process{cmd, buildPath};
@@ -23,7 +30,7 @@ struct Toolchain {
             }
         }
     }
-
+public:
     /** compiles a single translation unit
      */
     auto translateUnit(auto tuName, auto tuPath) const {

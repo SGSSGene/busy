@@ -37,7 +37,6 @@ int main(int argc, char const* argv[]) {
                     }
 
                     toolchains.emplace_back(buildPath, std::move(t));
-                    toolchains.back().detectLanguages();
                 } else {
                     if (buildPath.empty()) {
                         buildPath = argv[i];

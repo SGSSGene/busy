@@ -48,7 +48,6 @@ private:
                 if (node["toolchains"].IsSequence()) {
                     for (auto e : node["toolchains"]) {
                         toolchains.emplace_back(buildPath, e.as<std::string>());
-                        toolchains.back().detectLanguages();
                     }
                 }
             } else {
