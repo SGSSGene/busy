@@ -24,7 +24,9 @@ struct Arguments {
     Arguments(int argc, char const* const* argv) {
         auto busyFile  = std::filesystem::path{};
         auto toolchains = std::vector<Toolchain>{};
-        mode = argv[1];
+        if (argc > 1) {
+            mode = argv[1];
+        }
         for (int i{2}; i < argc; ++i) {
             if (argv[i] == std::string_view{"-f"} and i+1 < argc) {
                 ++i;
