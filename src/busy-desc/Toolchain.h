@@ -17,10 +17,6 @@ struct Toolchain {
         : buildPath{std::move(_buildPath)}
         , toolchain{std::move(_toolchain)}
     {
-        if (toolchain.is_relative()) {
-            toolchain = relative(absolute(toolchain), buildPath);
-        }
-
         detectLanguages();
     }
 private:

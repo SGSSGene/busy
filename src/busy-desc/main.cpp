@@ -65,6 +65,10 @@ int main(int argc, char const* argv[]) {
 
         // add more toolchains if set by commandline
         for (auto&& t : args.addToolchains) {
+            if (t.is_relative()) {
+                t = relative(absolute(std::move(t)), args.buildPath);
+            }
+
             workspace.toolchains.emplace_back(args.buildPath, std::move(t));
         }
     };

@@ -38,10 +38,7 @@ private:
             auto config_version = node["config-version"].as<std::string>("");
             if (config_version == "1") {
                 // load busyFile
-                busyFile = node["busyFile"].as<std::string>();
-                if (busyFile.is_relative()) {
-                    busyFile = relative(buildPath / busyFile);
-                }
+                busyFile = convertToRelativeByCwd(node["busyFile"].as<std::string>());
                 // load toolchains
                 if (node["toolchains"].IsSequence()) {
                     for (auto e : node["toolchains"]) {
@@ -55,14 +52,24 @@ private:
     }
 
 public:
+
+    auto convertToRelativeByBuildPath(std::filesystem::path const& p) const -> std::filesystem::path {
+        if (p.is_relative()) {
+            return relative(p, buildPath);
+        }
+        return p;
+    }
+    auto convertToRelativeByCwd(std::filesystem::path const& p) const -> std::filesystem::path {
+        if (p.is_relative()) {
+            return relative(buildPath / p);
+        }
+        return p;
+    }
+
     void save() {
         auto node = YAML::Node{};
         node["config-version"] = "1";
-        if (busyFile.is_relative()) {
-            node["busyFile"] = relative(busyFile, buildPath).string();
-        } else {
-            node["busyFile"] = busyFile.string();
-        }
+        node["busyFile"] = convertToRelativeByBuildPath(busyFile).string();
         for (auto const& t : toolchains) {
             node["toolchains"].push_back(t.toolchain.string());
         }
