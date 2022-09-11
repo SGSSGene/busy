@@ -47,7 +47,7 @@ public:
     /** compiles a single translation unit
      */
     auto translateUnit(auto tuName, auto tuPath) const {
-        auto cmd = busy::genCall::compilation(toolchain, tuName, tuPath, {"default"});
+        auto cmd = busy::genCall::compilation(toolchain, tuName, tuPath, {"debug"});
 
         auto call = formatCall(cmd);
         auto p = process::Process{cmd, buildPath};
