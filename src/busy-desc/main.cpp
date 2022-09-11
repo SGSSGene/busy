@@ -16,7 +16,7 @@
 
 struct Arguments {
     std::string mode;
-    std::filesystem::path buildPath{"."};
+    std::filesystem::path buildPath{};
     std::optional<std::filesystem::path> busyFile;
     std::vector<std::filesystem::path> addToolchains;
     std::vector<std::string> trailing; // trailing commands
@@ -41,6 +41,9 @@ struct Arguments {
                     trailing.emplace_back(argv[i]);
                 }
             }
+        }
+        if (buildPath.empty()) {
+            buildPath = ".";
         }
     }
 };
