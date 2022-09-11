@@ -4,6 +4,7 @@
 #include "Process.h"
 #include "Toolchain.h"
 #include "Workspace.h"
+#include "error_fmt.h"
 
 #include <fmt/format.h>
 #include <fmt/std.h>
@@ -127,7 +128,7 @@ int main(int argc, char const* argv[]) {
             }
             workspace.save();
         } else {
-            throw std::runtime_error("unknown mode: " + args.mode);
+            throw error_fmt{"unknown mode \"{}\", valid modes are \"compile\", \"status\", \"info\"", args.mode};
         }
     } catch (std::exception const& e) {
         fmt::print("{}\n", e.what());
