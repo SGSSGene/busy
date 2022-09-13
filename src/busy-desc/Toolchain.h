@@ -1,17 +1,21 @@
 #pragma once
 
 #include "Process.h"
+#include "error_fmt.h"
+#include "file_time.h"
 
 #include <filesystem>
-#include <string>
-#include <vector>
+#include <fmt/chrono.h>
 #include <fmt/format.h>
 #include <iostream>
+#include <string>
+#include <vector>
 
 struct Toolchain {
     std::filesystem::path    buildPath;
     std::filesystem::path    toolchain;
     std::vector<std::string> languages;
+    std::vector<std::string> options;
 
     Toolchain(std::filesystem::path _buildPath, std::filesystem::path _toolchain)
         : buildPath{std::move(_buildPath)}
@@ -43,15 +47,20 @@ public:
     /** compiles a single translation unit
      */
     auto translateUnit(auto tuName, auto tuPath) const {
+        auto start = file_time.now();
         auto cmd = busy::genCall::compilation(toolchain, tuName, tuPath, {"debug"});
 
         auto call = formatCall(cmd);
         auto p = process::Process{cmd, buildPath};
         auto answer = busy::answer::parseCompilation(p.cout());
         if (!p.cerr().empty()) {
-            throw std::runtime_error(std::string{"Unexpected error with the build system:"}
-                + std::string{p.cerr()});
+            throw error_fmt("Unexpected error with the build system: {}", p.cerr());
         }
+        auto end = file_time.now();
+
+        answer.compileStartTime = start;
+        answer.compileDuration  = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() / 1000.;
+
         return std::make_tuple(call, answer);
     }
 

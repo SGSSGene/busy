@@ -3,6 +3,8 @@
 #include "Toolchain.h"
 
 #include <filesystem>
+#include <fmt/std.h>
+#include <fmt/chrono.h>
 #include <fstream>
 #include <queue>
 #include <string>
@@ -10,12 +12,38 @@
 #include <unordered_set>
 
 using TranslationMap = std::unordered_map<std::string, busy::desc::TranslationSet>;
+struct FileTimestampCache {
+
+    std::map<std::filesystem::path, std::chrono::system_clock::time_point> cache;
+
+    auto get(std::filesystem::path const& p) {
+        auto iter = cache.find(p);
+        if (iter == cache.end()) {
+            cache.try_emplace(p, file_time(p));
+            iter = cache.find(p);
+        }
+        return iter->second;
+    }
+};
+
 struct Workspace {
     std::filesystem::path  buildPath;
     std::filesystem::path  busyConfigFile;
     std::filesystem::path  busyFile;
     TranslationMap         allSets;
     std::vector<Toolchain> toolchains;
+
+    FileTimestampCache     fileModTime;
+
+    struct FileInfo {
+        bool    noCompilation{};
+        std::chrono::system_clock::time_point lastCompile{};
+        double  duration{};
+        std::vector<std::filesystem::path> dependencies;
+    };
+
+    std::map<std::filesystem::path, FileInfo> fileInfos;
+
 
     Workspace(std::filesystem::path const& _buildPath)
         : buildPath{_buildPath}
@@ -43,6 +71,22 @@ private:
                 if (node["toolchains"].IsSequence()) {
                     for (auto e : node["toolchains"]) {
                         toolchains.emplace_back(buildPath, e.as<std::string>());
+                    }
+                }
+                if (node["fileInfos"].IsSequence()) {
+                    for (auto e : node["fileInfos"]) {
+                        auto name          = e["name"].as<std::string>();
+                        auto noCompilation = e["noCompilation"].as<bool>(false);
+                        using namespace std::chrono;
+                        auto lastCompile   = system_clock::time_point{system_clock::duration{e["lastCompile"].as<int64_t>()}};
+                        auto duration      = e["duration"].as<double>();
+                        auto deps          = std::vector<std::filesystem::path>{};
+                        if (e["dependencies"].IsSequence()) {
+                            for (auto n : e["dependencies"]) {
+                                deps.push_back(n.as<std::string>());
+                            }
+                        }
+                        fileInfos.try_emplace(name, FileInfo{noCompilation, lastCompile, duration, deps});
                     }
                 }
             } else {
@@ -73,6 +117,19 @@ public:
         for (auto const& t : toolchains) {
             node["toolchains"].push_back(t.toolchain.string());
         }
+        for (auto const& [path, value] : fileInfos) {
+            auto n = YAML::Node{};
+            n["name"]          = path.string();
+            n["noCompilation"] = value.noCompilation;
+            using namespace std::chrono;
+            n["lastCompile"]   = value.lastCompile.time_since_epoch().count();
+            n["duration"]      = value.duration;
+            for (auto d : value.dependencies) {
+                n["dependencies"].push_back(d.string());
+            }
+            node["fileInfos"].push_back(n);
+        }
+
         auto ofs = std::ofstream{busyConfigFile};
         ofs << node;
     }
@@ -117,7 +174,7 @@ public:
 
     /** Translates a tu and its dependencnies
      */
-    void translate(std::string const& tsName) const {
+    void translate(std::string const& tsName) {
         auto& ts = allSets.at(tsName);
 
         auto deps = findDependencies(ts);
@@ -138,9 +195,33 @@ public:
         for (auto f : std::filesystem::recursive_directory_iterator(tsPath)) {
             if (f.is_regular_file()) {
                 auto tuPath = relative(f, tsPath);
+                auto& finfo = fileInfos[tuPath];
                 objFiles.emplace_back(tuPath.string());
-                auto [call, answer] = toolchain.translateUnit(ts, tuPath);
-                fmt::print("{}\n{}\n\n", call, answer.stdout);
+
+                auto recompile = fileModTime.get(f) > finfo.lastCompile;
+                try {
+                    for (auto d : finfo.dependencies) {
+                        recompile |= fileModTime.get(buildPath / d) > finfo.lastCompile;
+                    }
+                } catch(std::exception const& e) {
+                    recompile = true;
+                }
+                if (recompile) {
+                    fmt::print("compare: {} > {} , {}\n", fileModTime.get(f), finfo.lastCompile, recompile);
+                    auto [call, answer] = toolchain.translateUnit(ts, tuPath);
+                    fmt::print("{}\n{}\n\n", call, answer.stdout);
+                    fmt::print("duration: {}\n", answer.compileDuration);
+                    if (answer.stderr.empty()) {
+                        finfo.lastCompile = answer.compileStartTime;
+                        finfo.duration    = answer.compileDuration;
+                    }
+                    finfo.dependencies.clear();
+                    for (auto d : answer.dependencies) {
+                        finfo.dependencies.push_back(d);
+                    }
+                } else {
+                    fmt::print("skipping {}\n", tuPath);
+                }
             }
         }
         toolchain.finishTranslationSet(ts, objFiles, deps);

@@ -10,6 +10,8 @@ struct Compilation {
     std::string stdout;
     std::string stderr;
     std::vector<std::string> dependencies;
+    std::chrono::system_clock::time_point compileStartTime;
+    double                                compileDuration;
     bool cached{};
     bool compilable{};
     std::vector<std::string> outputFiles{};
