@@ -18,14 +18,21 @@ struct Compilation {
 inline auto parseCompilation(std::string_view output) -> Compilation {
     try {
         auto node = YAML::Load(std::string{output});
-        return Compilation {
-            .stdout = node["stdout"].as<std::string>(""),
-            .stderr = node["stderr"].as<std::string>(""),
-            .dependencies = node["dependencies"].as<std::vector<std::string>>(),
-            .cached = node["cached"].as<bool>(),
-            .compilable = node["compilable"].as<bool>(),
-            .outputFiles = node["output_files"].as<std::vector<std::string>>(),
-        };
+        if (node.IsMap()) {
+            return Compilation {
+                .stdout = node["stdout"].IsNull()?std::string{""}:node["stdout"].as<std::string>(""),
+                .stderr = node["stderr"].IsNull()?std::string{""}:node["stderr"].as<std::string>(""),
+                .dependencies = node["dependencies"].as<std::vector<std::string>>(),
+                .cached = node["cached"].as<bool>(),
+                .compilable = node["compilable"].as<bool>(),
+                .outputFiles = node["output_files"].as<std::vector<std::string>>(),
+            };
+        } else {
+            return Compilation {
+                .stdout = "",
+                .stderr = "No valid return message",
+            };
+        }
     } catch (std::exception const& e) {
         return Compilation {
             .stdout = std::string{output},
