@@ -134,17 +134,17 @@ public:
         ofs << node;
     }
 
-    /** Returns a list of TranslationSets that tu is depending on
+    /** Returns a list of TranslationSets that ts is depending on
      */
-    auto findDependencies(busy::desc::TranslationSet const& tu) const {
+    auto findDependencies(busy::desc::TranslationSet const& ts) const {
         auto deps  = std::vector<busy::desc::TranslationSet>{};
         auto found = std::unordered_set<std::string>{};
 
         auto open = std::queue<std::string>{};
-        for (auto d : tu.dependencies) {
+        for (auto d : ts.dependencies) {
             open.emplace(d);
         }
-        found.insert(tu.name);
+        found.insert(ts.name);
 
         while (!open.empty()) {
             auto n = open.front();
@@ -159,7 +159,16 @@ public:
         return deps;
     }
 
-    /** returns tool change with appropiate language
+    auto findDependencyNames(std::string const& tsName) const {
+        auto ss = std::unordered_set<std::string>{};
+        auto& ts = allSets.at(tsName);
+        for (auto s : findDependencies(ts)) {
+            ss.insert(s.name);
+        }
+        return ss;
+    }
+
+    /** returns tool change with appropriate language
      */
     auto getToolchain(std::string const& lang) const -> Toolchain const& {
         for (auto const& t : toolchains) {
@@ -172,15 +181,12 @@ public:
         throw std::runtime_error("No toolchain found which provides: " + lang);
     }
 
-    /** Translates a tu and its dependencnies
+    /** Translates a tu and its dependencies
      */
     void translate(std::string const& tsName) {
         auto& ts = allSets.at(tsName);
 
         auto deps = findDependencies(ts);
-        for (auto d : deps) {
-            translate(d.name);
-        }
         fmt::print("\n\nTRANSLATING: {}\n", ts.name);
         if (ts.precompiled) {
             return;

@@ -7,9 +7,11 @@
 #include "Workspace.h"
 #include "error_fmt.h"
 
+#include <condition_variable>
 #include <fmt/format.h>
 #include <fmt/std.h>
 #include <fstream>
+#include <functional>
 #include <iostream>
 #include <queue>
 #include <unordered_map>
@@ -49,6 +51,70 @@ struct Arguments {
     }
 };
 
+struct WorkQueue {
+    struct Job {
+        ssize_t                  blockingJobs{};
+        std::function<void()>    job;
+        std::vector<std::string> waitingJobs; // Jobs that are waiting for this job
+    };
+
+    std::mutex                 mutex;
+    std::condition_variable    cv;
+    std::map<std::string, Job> allJobs;
+    std::vector<std::string>   readyJobs;
+    ssize_t                    jobsDone{};
+
+
+    /* Inserts a job
+     */
+    void insert(std::string name, std::function<void()> func, std::unordered_set<std::string> const& blockingJobs) {
+        auto job = Job {
+            .blockingJobs = ssize(blockingJobs),
+            .job          = [this, name, func]() {
+                func();
+                auto g = std::lock_guard{mutex};
+                for (auto j : allJobs.at(name).waitingJobs) {
+                    allJobs.at(j).blockingJobs -= 1;
+                    if (allJobs.at(j).blockingJobs == 0) {
+                        readyJobs.emplace_back(j);
+                    }
+                }
+                jobsDone += 1;
+                cv.notify_all();
+            }
+        };
+
+        auto g = std::lock_guard{mutex};
+        for (auto const& j : blockingJobs) {
+            allJobs[j].waitingJobs.push_back(name);
+        }
+        allJobs[name].blockingJobs = job.blockingJobs;
+        allJobs[name].job          = job.job;
+        if (blockingJobs.size() == 0) {
+            readyJobs.emplace_back(name);
+        }
+    }
+
+    bool processJob() {
+        if (jobsDone == allJobs.size()) {
+            return false;
+        }
+
+        auto g = std::unique_lock{mutex};
+        if (!readyJobs.empty()) {
+            auto last = readyJobs.back();
+            readyJobs.pop_back();
+            auto const& j = allJobs.at(last).job;
+            g.unlock();
+            j();
+        } else {
+            cv.wait(g);
+        }
+
+        return true;
+    }
+};
+
 
 int main(int argc, char const* argv[]) {
     if (argc < 1) return 1;
@@ -76,7 +142,6 @@ int main(int argc, char const* argv[]) {
 
     try {
         if (args.mode == "compile") {
-
             auto workspace = Workspace{args.buildPath};
             updateWorkspace(workspace);
 
@@ -94,8 +159,25 @@ int main(int argc, char const* argv[]) {
                 return r.front();
             }();
 
-            // translate main executable
-            workspace.translate(root);
+            auto wq = WorkQueue{};
+            auto all = workspace.findDependencyNames(root);
+            all.insert(root);
+            for (auto ts : all) {
+                auto deps = workspace.findDependencyNames(ts);
+                wq.insert(ts, [ts, &workspace]() {
+                    workspace.translate(ts);
+                }, deps);
+            }
+
+            // translate all jobs
+            auto t = std::vector<std::jthread>{};
+            auto threadCt = 16;
+            for (ssize_t i{0}; i < threadCt; ++i) {
+                t.emplace_back([&]() {
+                    while (wq.processJob());
+                });
+            }
+            t.clear();
             workspace.save();
         } else if (args.mode == "status" || args.mode.empty()) {
             auto workspace = Workspace{args.buildPath};
