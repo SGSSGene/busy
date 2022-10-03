@@ -3,9 +3,10 @@
 #include "Toolchain.h"
 
 #include <filesystem>
-#include <fmt/std.h>
 #include <fmt/chrono.h>
+#include <fmt/std.h>
 #include <fstream>
+#include <mutex>
 #include <queue>
 #include <string>
 #include <unordered_map>
@@ -44,6 +45,7 @@ struct Workspace {
 
     std::map<std::filesystem::path, FileInfo> fileInfos;
 
+    std::mutex              mutex;
 
     Workspace(std::filesystem::path const& _buildPath)
         : buildPath{_buildPath}
@@ -184,6 +186,8 @@ public:
     /** Translates a tu and its dependencies
      */
     void translate(std::string const& tsName) {
+        auto g = std::unique_lock{mutex};
+
         auto& ts = allSets.at(tsName);
 
         auto deps = findDependencies(ts);
@@ -214,7 +218,9 @@ public:
                 }
                 if (recompile) {
                     fmt::print("compare: {} > {} , {}\n", fileModTime.get(f), finfo.lastCompile, recompile);
+                    g.unlock();
                     auto [call, answer] = toolchain.translateUnit(ts, tuPath);
+                    g.lock();
                     fmt::print("{}\n{}\n\n", call, answer.stdout);
                     fmt::print("duration: {}\n", answer.compileDuration);
                     if (answer.stderr.empty()) {
