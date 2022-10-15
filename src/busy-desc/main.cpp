@@ -23,25 +23,28 @@ struct Arguments {
     std::optional<std::filesystem::path> busyFile;
     std::vector<std::filesystem::path> addToolchains;
     std::vector<std::string> trailing; // trailing commands
+    bool clean{};
 
-    Arguments(int argc, char const* const* argv) {
+    Arguments(std::vector<std::string_view> args) {
         auto busyFile  = std::filesystem::path{};
         auto toolchains = std::vector<Toolchain>{};
-        if (argc > 1) {
-            mode = argv[1];
+        if (ssize(args) > 1) {
+            mode = args[1];
         }
-        for (int i{2}; i < argc; ++i) {
-            if (argv[i] == std::string_view{"-f"} and i+1 < argc) {
+        for (int i{2}; i < ssize(args); ++i) {
+            if (args[i] == "-f" and i+1 < ssize(args)) {
                 ++i;
-                busyFile = argv[i];
-            } else if (argv[i] == std::string_view{"-t"} and i+1 < argc) {
+                busyFile = args[i];
+            } else if (args[i] == "-t" and i+1 < ssize(args)) {
                 ++i;
-                addToolchains.emplace_back(argv[i]);
+                addToolchains.emplace_back(args[i]);
+            } else if (args[i] == "--clean") {
+                clean = true;
             } else {
                 if (buildPath.empty()) {
-                    buildPath = argv[i];
+                    buildPath = args[i];
                 } else {
-                    trailing.emplace_back(argv[i]);
+                    trailing.emplace_back(args[i]);
                 }
             }
         }
@@ -117,10 +120,15 @@ struct WorkQueue {
 
 
 int main(int argc, char const* argv[]) {
-    if (argc < 1) return 1;
-
     // ./build/bin/busy-desc compile build -f busy3.yaml -t toolchains.d/gcc12.1.sh
-    auto args = Arguments{argc, argv};
+    auto args = [&]() {
+        auto args = std::vector<std::string_view>{};
+        args.reserve(argc);
+        for (int i{0}; i < argc; ++i) {
+            args.emplace_back(argv[i]);
+        }
+        return Arguments{args};
+    }();
 
 
     // this will add cli options to the workspace
