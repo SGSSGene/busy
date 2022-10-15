@@ -186,8 +186,6 @@ public:
     /** Translates a translaten set
      */
     void translate(std::string const& tsName, bool force_compilation) {
-        auto g = std::unique_lock{mutex};
-
         auto& ts = allSets.at(tsName);
 
         auto deps = findDependencies(ts);
@@ -204,6 +202,8 @@ public:
         auto tsPath = ts.path / "src" / ts.name;
         for (auto f : std::filesystem::recursive_directory_iterator(tsPath)) {
             if (f.is_regular_file()) {
+                auto g = std::unique_lock{mutex};
+
                 auto tuPath = relative(f, tsPath);
                 auto& finfo = fileInfos[tuPath];
                 objFiles.emplace_back(tuPath.string());
