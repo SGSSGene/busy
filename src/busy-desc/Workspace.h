@@ -183,7 +183,7 @@ public:
         throw std::runtime_error("No toolchain found which provides: " + lang);
     }
 
-    /** Translates a tu and its dependencies
+    /** Translates a translaten set
      */
     void translate(std::string const& tsName, bool force_compilation) {
         auto g = std::unique_lock{mutex};
