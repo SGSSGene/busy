@@ -185,7 +185,7 @@ public:
 
     /** Translates a tu and its dependencies
      */
-    void translate(std::string const& tsName) {
+    void translate(std::string const& tsName, bool force_compilation) {
         auto g = std::unique_lock{mutex};
 
         auto& ts = allSets.at(tsName);
@@ -209,6 +209,7 @@ public:
                 objFiles.emplace_back(tuPath.string());
 
                 auto recompile = fileModTime.get(f) > finfo.lastCompile;
+                recompile |= force_compilation;
                 try {
                     for (auto d : finfo.dependencies) {
                         recompile |= fileModTime.get(buildPath / d) > finfo.lastCompile;

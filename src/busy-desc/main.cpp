@@ -172,8 +172,8 @@ int main(int argc, char const* argv[]) {
             all.insert(root);
             for (auto ts : all) {
                 auto deps = workspace.findDependencyNames(ts);
-                wq.insert(ts, [ts, &workspace]() {
-                    workspace.translate(ts);
+                wq.insert(ts, [ts, &workspace, &args]() {
+                    workspace.translate(ts, args.clean);
                 }, deps);
             }
 
