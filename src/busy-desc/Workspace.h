@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <fmt/chrono.h>
 #include <fmt/std.h>
+#include <functional>
 #include <fstream>
 #include <mutex>
 #include <queue>
@@ -183,61 +184,101 @@ public:
         throw std::runtime_error("No toolchain found which provides: " + lang);
     }
 
+
+    struct TranslateSet {
+        Workspace& ws;
+        std::string tsName;
+        bool forceCompilation{};
+
+        busy::desc::TranslationSet& ts;
+        std::vector<busy::desc::TranslationSet> deps;
+        Toolchain const& toolchain;
+        std::vector<std::filesystem::path> objFiles;
+        std::filesystem::path tsPath;
+
+        TranslateSet(Workspace& ws, std::string tsName, bool forceCompilation)
+            : ws{ws}
+            , tsName{tsName}
+            , forceCompilation{forceCompilation}
+            , ts{ws.allSets.at(tsName)}
+            , deps{ws.findDependencies(ts)}
+            , toolchain{ws.getToolchain(ts.language)}
+            , tsPath{ts.path / "src" / ts.name}
+        {
+            fmt::print("\n\nTRANSLATING: {}\n", ts.name);
+            if (ts.precompiled) {
+                return;
+            }
+            toolchain.setupTranslationSet(ts, deps);
+        }
+
+        auto allTranslationJobs() -> std::vector<std::function<void()>> {
+            auto jobs = std::vector<std::function<void()>>{};
+            if (ts.precompiled) {
+                return jobs;
+            }
+
+
+            for (auto _f : std::filesystem::recursive_directory_iterator(tsPath)) {
+                if (!_f.is_regular_file()) continue;
+                auto f = std::filesystem::path{_f};
+
+                jobs.emplace_back([&, f]() {
+                    auto g = std::unique_lock{ws.mutex};
+
+                    auto tuPath = relative(f, tsPath);
+                    auto& finfo = ws.fileInfos[tuPath];
+                    objFiles.emplace_back(tuPath.string());
+
+                    auto recompile = ws.fileModTime.get(f) > finfo.lastCompile;
+                    recompile |= forceCompilation;
+                    try {
+                        for (auto d : finfo.dependencies) {
+                            recompile |= ws.fileModTime.get(ws.buildPath / d) > finfo.lastCompile;
+                        }
+                    } catch(std::exception const& e) {
+                        recompile = true;
+                    }
+                    if (recompile) {
+                        fmt::print("compare: {} > {} , {}\n", ws.fileModTime.get(f), finfo.lastCompile, recompile);
+                        g.unlock();
+                        auto [call, answer] = toolchain.translateUnit(ts, tuPath);
+                        g.lock();
+                        fmt::print("{}\n{}\n\n", call, answer.stdout);
+                        fmt::print("duration: {}\n", answer.compileDuration);
+                        if (answer.stderr.empty()) {
+                            finfo.lastCompile = answer.compileStartTime;
+                            finfo.duration    = answer.compileDuration;
+                        }
+                        finfo.dependencies.clear();
+                        for (auto d : answer.dependencies) {
+                            finfo.dependencies.push_back(d);
+                        }
+                    } else {
+                        fmt::print("skipping {}\n", tuPath);
+                    }
+                });
+            }
+
+            return jobs;
+        }
+
+
+        ~TranslateSet() {
+            if (ts.precompiled) {
+                return;
+            }
+            toolchain.finishTranslationSet(ts, objFiles, deps);
+        }
+    };
+
     /** Translates a translaten set
      */
-    void translate(std::string const& tsName, bool force_compilation) {
-        auto& ts = allSets.at(tsName);
-
-        auto deps = findDependencies(ts);
-        fmt::print("\n\nTRANSLATING: {}\n", ts.name);
-        if (ts.precompiled) {
-            return;
+    void translate(std::string const& tsName, bool forceCompilation) {
+        auto ts = TranslateSet{*this, tsName, forceCompilation};
+        for (auto j : ts.allTranslationJobs()) {
+            j();
         }
-
-        auto& toolchain = getToolchain(ts.language);
-
-        toolchain.setupTranslationSet(ts, deps);
-
-        auto objFiles = std::vector<std::filesystem::path>{};
-        auto tsPath = ts.path / "src" / ts.name;
-        for (auto f : std::filesystem::recursive_directory_iterator(tsPath)) {
-            if (f.is_regular_file()) {
-                auto g = std::unique_lock{mutex};
-
-                auto tuPath = relative(f, tsPath);
-                auto& finfo = fileInfos[tuPath];
-                objFiles.emplace_back(tuPath.string());
-
-                auto recompile = fileModTime.get(f) > finfo.lastCompile;
-                recompile |= force_compilation;
-                try {
-                    for (auto d : finfo.dependencies) {
-                        recompile |= fileModTime.get(buildPath / d) > finfo.lastCompile;
-                    }
-                } catch(std::exception const& e) {
-                    recompile = true;
-                }
-                if (recompile) {
-                    fmt::print("compare: {} > {} , {}\n", fileModTime.get(f), finfo.lastCompile, recompile);
-                    g.unlock();
-                    auto [call, answer] = toolchain.translateUnit(ts, tuPath);
-                    g.lock();
-                    fmt::print("{}\n{}\n\n", call, answer.stdout);
-                    fmt::print("duration: {}\n", answer.compileDuration);
-                    if (answer.stderr.empty()) {
-                        finfo.lastCompile = answer.compileStartTime;
-                        finfo.duration    = answer.compileDuration;
-                    }
-                    finfo.dependencies.clear();
-                    for (auto d : answer.dependencies) {
-                        finfo.dependencies.push_back(d);
-                    }
-                } else {
-                    fmt::print("skipping {}\n", tuPath);
-                }
-            }
-        }
-        toolchain.finishTranslationSet(ts, objFiles, deps);
     }
 
     /** Find all translation sets with executables
