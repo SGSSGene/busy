@@ -26,8 +26,6 @@ struct Arguments {
     bool clean{};
 
     Arguments(std::vector<std::string_view> args) {
-        auto busyFile  = std::filesystem::path{};
-        auto toolchains = std::vector<Toolchain>{};
         if (ssize(args) > 1) {
             mode = args[1];
         }
