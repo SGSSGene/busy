@@ -212,8 +212,8 @@ public:
             toolchain.setupTranslationSet(ts, deps);
         }
 
-        auto allTranslationJobs() -> std::vector<std::function<void()>> {
-            auto jobs = std::vector<std::function<void()>>{};
+        auto allTranslationJobs() -> std::vector<std::tuple<std::string, std::function<void()>>> {
+            auto jobs = std::vector<std::tuple<std::string, std::function<void()>>>{};
             if (ts.precompiled) {
                 return jobs;
             }
@@ -223,7 +223,8 @@ public:
                 if (!_f.is_regular_file()) continue;
                 auto f = std::filesystem::path{_f};
 
-                jobs.emplace_back([&, f]() {
+                auto name = tsName + "/" + relative(_f, tsPath).string();
+                jobs.emplace_back(name, [this, f]() {
                     auto g = std::unique_lock{ws.mutex};
 
                     auto tuPath = relative(f, tsPath);
@@ -274,11 +275,16 @@ public:
 
     /** Translates a translaten set
      */
-    void translate(std::string const& tsName, bool forceCompilation) {
-        auto ts = TranslateSet{*this, tsName, forceCompilation};
-        for (auto j : ts.allTranslationJobs()) {
-            j();
+    auto translate(std::string const& tsName, bool forceCompilation) -> std::vector<std::tuple<std::string, std::function<void()>>> {
+        auto jobs = std::vector<std::tuple<std::string, std::function<void()>>>{};
+        auto ts = std::make_shared<TranslateSet>(*this, tsName, forceCompilation);
+
+        for (auto [name, j] : ts->allTranslationJobs()) {
+            jobs.emplace_back(name, [j, ts]() {
+                j();
+            });
         }
+        return jobs;
     }
 
     /** Find all translation sets with executables

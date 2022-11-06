@@ -67,21 +67,16 @@ struct WorkQueue {
 
 
     /* Inserts a job
+     * \param name: name of this job a unique identifier
+     * \param func: the function to execute to solve this job
+     * \param blockingJobs: a list of jobs that have to be finished before this one
      */
     void insert(std::string name, std::function<void()> func, std::unordered_set<std::string> const& blockingJobs) {
         auto job = Job {
             .blockingJobs = ssize(blockingJobs),
             .job          = [this, name, func]() {
                 func();
-                auto g = std::lock_guard{mutex};
-                for (auto j : allJobs.at(name).waitingJobs) {
-                    allJobs.at(j).blockingJobs -= 1;
-                    if (allJobs.at(j).blockingJobs == 0) {
-                        readyJobs.emplace_back(j);
-                    }
-                }
-                jobsDone += 1;
-                cv.notify_all();
+                finishJobs(name);
             }
         };
 
@@ -94,6 +89,25 @@ struct WorkQueue {
         if (blockingJobs.size() == 0) {
             readyJobs.emplace_back(name);
         }
+    }
+    /* Insert a child job
+     * Will check which other jobs it blocks and increase their count
+     **/
+    void insertChild(std::string name, std::string parentName, std::function<void()> func) {
+         auto job = Job {
+            .blockingJobs = 0,
+            .job          = [this, name, func]() {
+                func();
+                finishJobs(name);
+            }
+        };
+
+        auto g = std::lock_guard{mutex};
+        for (auto const& d : allJobs[parentName].waitingJobs) {
+            allJobs[d].blockingJobs += 1;
+        }
+        allJobs[name].job          = job.job;
+        readyJobs.emplace_back(name);
     }
 
     bool processJob() {
@@ -113,6 +127,18 @@ struct WorkQueue {
         }
 
         return true;
+    }
+
+    void finishJobs(std::string const& name) {
+        auto g = std::lock_guard{mutex};
+        for (auto j : allJobs.at(name).waitingJobs) {
+            allJobs.at(j).blockingJobs -= 1;
+            if (allJobs.at(j).blockingJobs == 0) {
+                readyJobs.emplace_back(j);
+            }
+        }
+        jobsDone += 1;
+        cv.notify_all();
     }
 };
 
@@ -170,8 +196,10 @@ int main(int argc, char const* argv[]) {
             all.insert(root);
             for (auto ts : all) {
                 auto deps = workspace.findDependencyNames(ts);
-                wq.insert(ts, [ts, &workspace, &args]() {
-                    workspace.translate(ts, args.clean);
+                wq.insert(ts, [ts, &workspace, &args, &wq]() {
+                    for (auto [name, j] : workspace.translate(ts, args.clean)) {
+                        wq.insertChild(name, ts, j);
+                    }
                 }, deps);
             }
 
