@@ -23,6 +23,7 @@ struct Arguments {
     std::optional<std::filesystem::path> busyFile;
     std::vector<std::filesystem::path> addToolchains;
     std::vector<std::string> trailing; // trailing commands
+    bool verbose{};
     bool clean{};
 
     Arguments(std::vector<std::string_view> args) {
@@ -38,6 +39,8 @@ struct Arguments {
                 addToolchains.emplace_back(args[i]);
             } else if (args[i] == "--clean") {
                 clean = true;
+            } else if (args[i] == "--verbose") {
+                verbose = true;
             } else {
                 if (buildPath.empty()) {
                     buildPath = args[i];
@@ -197,7 +200,7 @@ int main(int argc, char const* argv[]) {
             for (auto ts : all) {
                 auto deps = workspace.findDependencyNames(ts);
                 wq.insert(ts, [ts, &workspace, &args, &wq]() {
-                    for (auto [name, j] : workspace.translate(ts, args.clean)) {
+                    for (auto [name, j] : workspace.translate(ts, args.verbose, args.clean)) {
                         wq.insertChild(name, ts, j);
                     }
                 }, deps);

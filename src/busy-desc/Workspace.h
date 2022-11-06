@@ -188,6 +188,7 @@ public:
     struct TranslateSet {
         Workspace& ws;
         std::string tsName;
+        bool verbose{};
         bool forceCompilation{};
 
         busy::desc::TranslationSet& ts;
@@ -196,21 +197,35 @@ public:
         std::vector<std::filesystem::path> objFiles;
         std::filesystem::path tsPath;
 
-        TranslateSet(Workspace& ws, std::string tsName, bool forceCompilation)
+        TranslateSet(Workspace& ws, std::string tsName, bool _verbose, bool forceCompilation)
             : ws{ws}
             , tsName{tsName}
+            , verbose{_verbose}
             , forceCompilation{forceCompilation}
             , ts{ws.allSets.at(tsName)}
             , deps{ws.findDependencies(ts)}
             , toolchain{ws.getToolchain(ts.language)}
             , tsPath{ts.path / "src" / ts.name}
         {
-            fmt::print("\n\nTRANSLATING: {}\n", ts.name);
             if (ts.precompiled) {
                 return;
             }
-            toolchain.setupTranslationSet(ts, deps);
+            if (verbose) {
+                fmt::print("\n\nBegin translation set: {}\n", ts.name);
+            }
+            toolchain.setupTranslationSet(ts, deps, verbose);
         }
+
+        ~TranslateSet() {
+            if (ts.precompiled) {
+                return;
+            }
+            toolchain.finishTranslationSet(ts, objFiles, deps, verbose);
+            if (verbose) {
+                fmt::print("\n\nFinished translation set: {}\n", ts.name);
+            }
+        }
+
 
         auto allTranslationJobs() -> std::vector<std::tuple<std::string, std::function<void()>>> {
             auto jobs = std::vector<std::tuple<std::string, std::function<void()>>>{};
@@ -241,12 +256,16 @@ public:
                         recompile = true;
                     }
                     if (recompile) {
-                        fmt::print("compare: {} > {} , {}\n", ws.fileModTime.get(f), finfo.lastCompile, recompile);
+                        if (verbose) {
+                            fmt::print("compare: {} > {} , {}\n", ws.fileModTime.get(f), finfo.lastCompile, recompile);
+                        }
                         g.unlock();
                         auto [call, answer] = toolchain.translateUnit(ts, tuPath);
                         g.lock();
-                        fmt::print("{}\n{}\n\n", call, answer.stdout);
-                        fmt::print("duration: {}\n", answer.compileDuration);
+                        if (verbose) {
+                            fmt::print("{}\n{}\n\n", call, answer.stdout);
+                            fmt::print("duration: {}\n", answer.compileDuration);
+                        }
                         if (answer.stderr.empty()) {
                             finfo.lastCompile = answer.compileStartTime;
                             finfo.duration    = answer.compileDuration;
@@ -256,28 +275,22 @@ public:
                             finfo.dependencies.push_back(d);
                         }
                     } else {
-                        fmt::print("skipping {}\n", tuPath);
+                        if (verbose) {
+                            fmt::print("skipping {}\n", tuPath);
+                        }
                     }
                 });
             }
 
             return jobs;
         }
-
-
-        ~TranslateSet() {
-            if (ts.precompiled) {
-                return;
-            }
-            toolchain.finishTranslationSet(ts, objFiles, deps);
-        }
     };
 
     /** Translates a translaten set
      */
-    auto translate(std::string const& tsName, bool forceCompilation) -> std::vector<std::tuple<std::string, std::function<void()>>> {
+    auto translate(std::string const& tsName, bool verbose, bool forceCompilation) -> std::vector<std::tuple<std::string, std::function<void()>>> {
         auto jobs = std::vector<std::tuple<std::string, std::function<void()>>>{};
-        auto ts = std::make_shared<TranslateSet>(*this, tsName, forceCompilation);
+        auto ts = std::make_shared<TranslateSet>(*this, tsName, verbose, forceCompilation);
 
         for (auto [name, j] : ts->allTranslationJobs()) {
             jobs.emplace_back(name, [j, ts]() {

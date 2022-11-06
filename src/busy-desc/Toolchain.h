@@ -67,18 +67,22 @@ public:
     /**
      * setup translation set
      */
-    void setupTranslationSet(auto const& ts, auto const& dependencies) const {
+    void setupTranslationSet(auto const& ts, auto const& dependencies, bool verbose) const {
         auto cmd = busy::genCall::setup_translation_set(toolchain, buildPath, ts, dependencies);
         auto call = formatCall(cmd);
-        fmt::print("{}\n", formatCall(cmd));
+        if (verbose) {
+            fmt::print("{}\n", formatCall(cmd));
+        }
         auto p = process::Process{cmd, buildPath};
-        fmt::print("{}\n{}\n\n", p.cout(), p.cerr());
+        if (verbose) {
+            fmt::print("{}\n{}\n\n", p.cout(), p.cerr());
+        }
     }
 
     /**
      * finish translation set
      */
-    void finishTranslationSet(auto const& ts, auto const& objFiles, auto const& dependencies) const {
+    void finishTranslationSet(auto const& ts, auto const& objFiles, auto const& dependencies, bool verbose) const {
         auto type = [&]() -> std::string {
             if (ts.type == "executable") {
                 return "executable";
@@ -88,9 +92,13 @@ public:
             throw "unknown translation set target";
         }();
         auto cmd = busy::genCall::linking(toolchain, ts, type, objFiles, dependencies);
-        fmt::print("{}\n", formatCall(cmd));
+        if (verbose) {
+            fmt::print("{}\n", formatCall(cmd));
+        }
         auto p = process::Process{cmd, buildPath};
-        fmt::print("{}\n{}\n\n", p.cout(), p.cerr());
+        if (verbose) {
+            fmt::print("{}\n{}\n\n", p.cout(), p.cerr());
+        }
     }
 };
 
