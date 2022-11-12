@@ -157,7 +157,10 @@ elif [ "$1" == "compile" ]; then
 
     objPath="environments/${tsName}/obj"
 
+    mkdir -p "$(dirname "${objPath}/${inputFile}")"
+
     objectFile="${objPath}/${inputFile}.o"
+
     dependencyFile="${objPath}/${inputFile}.d"
     stdoutFile="${objPath}/${inputFile}.stdout"
     stderrFile="${objPath}/${inputFile}.stderr"
