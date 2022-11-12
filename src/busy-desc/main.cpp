@@ -180,9 +180,22 @@ int main(int argc, char const* argv[]) {
             auto workspace = Workspace{args.buildPath};
             updateWorkspace(workspace);
 
+            // load other description files
+            if (auto ptr = std::getenv("BUSY_PATH")) {
+                auto s = std::string{ptr};
+                for (auto const& d : std::filesystem::directory_iterator{s}) {
+                    auto desc = busy::desc::loadDesc(d.path(), workspace.buildPath);
+                    for (auto ts : desc.translationSets) {
+                        fmt::print("ts: {} (system)\n", ts.name);
+                        workspace.allSets[ts.name] = ts;
+                    }
+                }
+            }
+
             // load busyFile
             auto desc = busy::desc::loadDesc(workspace.busyFile, workspace.buildPath);
             for (auto ts : desc.translationSets) {
+                fmt::print("ts: {} (local)\n", ts.name);
                 workspace.allSets[ts.name] = ts;
             }
 

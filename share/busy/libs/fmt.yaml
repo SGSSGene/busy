@@ -1,0 +1,11 @@
+file-version: 1.0.0
+translationSets:
+  - name: fmt
+    type: library
+    language: c++
+    precompiled: true
+    legacy:
+      libraries:
+        - fmt
+    dependencies:
+      - stdlib

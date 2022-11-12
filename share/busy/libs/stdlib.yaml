@@ -1,0 +1,14 @@
+file-version: 1.0.0
+translationSets:
+  - name: stdlib
+    type: library
+    language: c++
+    precompiled: true
+    legacy:
+      includes:
+        /usr/include/c++/12.2.0: ""
+        /usr/include/c++/12.2.0/x86_64-pc-linux-gnu/: ""
+        /usr/include/c++/12.2.0/backward: ""
+        /usr/lib/gcc/x86_64-pc-linux-gnu/12.2.0/include: ""
+        /usr/lib/gcc/x86_64-pc-linux-gnu/12.2.0/include-fixed: ""
+        src/stdlib/gcc12.2-includes: ""
