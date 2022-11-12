@@ -36,6 +36,7 @@ struct Workspace {
     std::vector<Toolchain> toolchains;
 
     FileTimestampCache     fileModTime;
+    bool firstLoad{true};
 
     struct FileInfo {
         bool    noCompilation{};
@@ -65,6 +66,7 @@ private:
         busyConfigFile = buildPath / "busy_config.yaml";
 
         if (exists(busyConfigFile)) {
+            firstLoad = false;
             auto node = YAML::LoadFile(busyConfigFile.string());
             auto config_version = node["config-version"].as<std::string>("");
             if (config_version == "1") {

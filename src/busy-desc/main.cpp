@@ -149,12 +149,12 @@ struct WorkQueue {
 void loadAllBusyFiles(Workspace& workspace) {
     // load other description files
     if (auto ptr = std::getenv("HOME")) {
-        auto s = std::filesystem::path{ptr} / ".local/share/busy/libs";
+        auto s = std::filesystem::path{ptr} / ".config/busy/packages";
         if (exists(s)) {
             for (auto const& d : std::filesystem::directory_iterator{s}) {
                 auto desc = busy::desc::loadDesc(d.path(), workspace.buildPath);
                 for (auto ts : desc.translationSets) {
-                    fmt::print("ts: {} (~/.local/hare/busy/libs)\n", ts.name);
+                    fmt::print("ts: {} (~/.config/busy/packages)\n", ts.name);
                     workspace.allSets[ts.name] = ts;
                 }
             }
@@ -197,9 +197,19 @@ int main(int argc, char const* argv[]) {
 
     // this will add cli options to the workspace
     auto updateWorkspace = [&](auto& workspace) {
+
+        auto busyFile = args.busyFile;
+        if (workspace.firstLoad and !busyFile) {
+            if (exists(std::filesystem::path{"busy.yaml"})) {
+                busyFile = "busy.yaml";
+            } else if (exists(std::filesystem::path{"../busy.yaml"})) {
+                busyFile = "../busy.yaml";
+            }
+        }
+
         // set new busy file if set by commandline
-        if (args.busyFile) {
-            workspace.busyFile = *args.busyFile;
+        if (busyFile) {
+            workspace.busyFile = *busyFile;
         }
 
         // add more toolchains if set by commandline
