@@ -146,6 +146,43 @@ struct WorkQueue {
 };
 
 
+void loadAllBusyFiles(Workspace& workspace) {
+    // load other description files
+    if (auto ptr = std::getenv("HOME")) {
+        auto s = std::filesystem::path{ptr} / ".local/share/busy/libs";
+        if (exists(s)) {
+            for (auto const& d : std::filesystem::directory_iterator{s}) {
+                auto desc = busy::desc::loadDesc(d.path(), workspace.buildPath);
+                for (auto ts : desc.translationSets) {
+                    fmt::print("ts: {} (~/.local/hare/busy/libs)\n", ts.name);
+                    workspace.allSets[ts.name] = ts;
+                }
+            }
+        }
+    }
+
+
+    // load other description files
+    if (auto ptr = std::getenv("BUSY_PATH")) {
+        auto s = std::string{ptr};
+        for (auto const& d : std::filesystem::directory_iterator{s}) {
+            auto desc = busy::desc::loadDesc(d.path(), workspace.buildPath);
+            for (auto ts : desc.translationSets) {
+                fmt::print("ts: {} (BUSY_PATH)\n", ts.name);
+                workspace.allSets[ts.name] = ts;
+            }
+        }
+    }
+
+    // load busyFile
+    auto desc = busy::desc::loadDesc(workspace.busyFile, workspace.buildPath);
+    for (auto ts : desc.translationSets) {
+        fmt::print("ts: {} (local)\n", ts.name);
+        workspace.allSets[ts.name] = ts;
+    }
+}
+
+
 int main(int argc, char const* argv[]) {
     // ./build/bin/busy-desc compile build -f busy3.yaml -t toolchains.d/gcc12.1.sh
     auto args = [&]() {
@@ -180,24 +217,7 @@ int main(int argc, char const* argv[]) {
             auto workspace = Workspace{args.buildPath};
             updateWorkspace(workspace);
 
-            // load other description files
-            if (auto ptr = std::getenv("BUSY_PATH")) {
-                auto s = std::string{ptr};
-                for (auto const& d : std::filesystem::directory_iterator{s}) {
-                    auto desc = busy::desc::loadDesc(d.path(), workspace.buildPath);
-                    for (auto ts : desc.translationSets) {
-                        fmt::print("ts: {} (system)\n", ts.name);
-                        workspace.allSets[ts.name] = ts;
-                    }
-                }
-            }
-
-            // load busyFile
-            auto desc = busy::desc::loadDesc(workspace.busyFile, workspace.buildPath);
-            for (auto ts : desc.translationSets) {
-                fmt::print("ts: {} (local)\n", ts.name);
-                workspace.allSets[ts.name] = ts;
-            }
+            loadAllBusyFiles(workspace);
 
             auto root = [&]() -> std::string {
                 if (args.trailing.size()) {

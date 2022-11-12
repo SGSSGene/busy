@@ -61,15 +61,29 @@ auto loadTranslationSets(YAML::Node node, std::filesystem::path path, std::files
     return result;
 }
 
-auto loadDesc(std::filesystem::path _file, std::filesystem::path _buildPath) {
+auto loadDesc(std::filesystem::path _file, std::filesystem::path _buildPath) -> Desc {
     auto root = YAML::LoadFile(_file);
     _file.remove_filename();
     auto path = _file / root["path"].as<std::string>(".");
-    return Desc {
+    auto ret = Desc {
         .version         = root["version"].as<std::string>("0.0.1"),
         .path            = path,
         .translationSets = loadTranslationSets(root["translationSets"], path, _buildPath),
     };
+
+    auto includes = root["include"];
+    if (includes.IsSequence()) {
+        for (auto include : includes) {
+            auto path = _file / std::filesystem::path{include.as<std::string>()};
+            for (auto d : std::filesystem::directory_iterator{path}) {
+                auto desc = loadDesc(d.path(), _buildPath);
+                for (auto ts : desc.translationSets) {
+                    ret.translationSets.emplace_back(ts);
+                }
+            }
+        }
+    }
+    return ret;
 }
 
 }
