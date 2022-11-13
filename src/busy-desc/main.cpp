@@ -7,6 +7,7 @@
 #include "Workspace.h"
 #include "error_fmt.h"
 
+#include <cassert>
 #include <condition_variable>
 #include <fmt/format.h>
 #include <fmt/std.h>
@@ -102,14 +103,16 @@ struct WorkQueue {
             .job          = [this, name, func]() {
                 func();
                 finishJobs(name);
-            }
+            },
+            .waitingJobs = allJobs[parentName].waitingJobs
         };
 
         auto g = std::lock_guard{mutex};
-        for (auto const& d : allJobs[parentName].waitingJobs) {
+        for (auto const& d :job.waitingJobs) {
             allJobs[d].blockingJobs += 1;
         }
         allJobs[name].job          = job.job;
+        allJobs[name].waitingJobs  = job.waitingJobs;
         readyJobs.emplace_back(name);
     }
 
