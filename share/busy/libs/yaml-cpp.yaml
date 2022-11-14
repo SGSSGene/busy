@@ -7,5 +7,7 @@ translationSets:
     legacy:
       libraries:
         - yaml-cpp
+      includes:
+        /usr/include/yaml-cpp: "yaml-cpp"
     dependencies:
       - stdlib

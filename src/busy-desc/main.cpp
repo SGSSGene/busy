@@ -155,6 +155,7 @@ void loadAllBusyFiles(Workspace& workspace) {
         auto s = std::filesystem::path{ptr} / ".config/busy/packages";
         if (exists(s)) {
             for (auto const& d : std::filesystem::directory_iterator{s}) {
+                if (!d.is_regular_file()) continue;
                 auto desc = busy::desc::loadDesc(d.path(), workspace.buildPath);
                 for (auto ts : desc.translationSets) {
                     fmt::print("ts: {} (~/.config/busy/packages)\n", ts.name);
@@ -169,6 +170,7 @@ void loadAllBusyFiles(Workspace& workspace) {
     if (auto ptr = std::getenv("BUSY_PATH")) {
         auto s = std::string{ptr};
         for (auto const& d : std::filesystem::directory_iterator{s}) {
+            if (!d.is_regular_file()) continue;
             auto desc = busy::desc::loadDesc(d.path(), workspace.buildPath);
             for (auto ts : desc.translationSets) {
                 fmt::print("ts: {} (BUSY_PATH)\n", ts.name);

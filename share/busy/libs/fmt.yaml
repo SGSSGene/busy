@@ -7,5 +7,7 @@ translationSets:
     legacy:
       libraries:
         - fmt
+      includes:
+        /usr/include/fmt: "fmt"
     dependencies:
       - stdlib
