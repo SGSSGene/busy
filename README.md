@@ -1,12 +1,10 @@
 # busy - (BUild SYstem)
-build system and repository manager for c++ projects.
+build system for c++ projects.
 
 
 Main Idea
 =========
-- automatic dependencies discovery
 - minimal configuration of projects
-
 
 Installation
 ============
@@ -17,7 +15,7 @@ Installation
    ./bootstrap.sh
    sudo cp busy /usr/bin
 ```
-   
+
 
 How to use it
 =============
