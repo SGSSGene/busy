@@ -13,6 +13,20 @@
 # 0 on success
 # -1 error
 
+
+failure() {
+  local lineno=$2
+  local fn=$3
+  local exitstatus=$4
+  local msg=$5
+  local lineno_fns=${1% 0}
+  if [[ "$lineno_fns" != "0" ]] ; then
+    lineno="${lineno} ${lineno_fns}"
+  fi
+  echo "${BASH_SOURCE[1]}:${fn}[${lineno}] Failed with status ${exitstatus}: $msg"
+}
+trap 'failure "${BASH_LINENO[*]}" "$LINENO" "${FUNCNAME[*]:-script}" "$?" "$BASH_COMMAND"' ERR
+
 if [ -z "${BUSY_TOOLCHAIN_CALL}" ]; then
     exit -1
 fi
@@ -259,6 +273,7 @@ elif [ "$1" == "link" ]; then
             localLibrariesAsStr+=" bin/${i}.a"
         fi
     done
+
     # Executable
     if [ "${target}" == "executable" ]; then
         call="${CXX} -rdynamic ${parameters} -fdiagnostics-color=always -o ${outputFile} ${inputFiles[@]} ${localLibrariesAsStr} ${sysLibraries[@]}"
@@ -273,14 +288,13 @@ elif [ "$1" == "link" ]; then
         outputFiles+=("${objectFile}")
         call="${LD} -Ur -o ${objectFile} ${inputFiles[@]} && ${AR} rcs ${outputFile} ${objectFile}"
     else
+        echo "unknown target ${target}"
         exit -1
     fi
     outputFiles+=("${outputFile}" "${stdoutFile}" "${stderrFile}")
     if [ "${CCACHE}" -eq 1 ]; then
         outputFiles+=(${CCACHE_LOGFILE})
     fi
-
-
 else
     exit -1
 fi
@@ -291,10 +305,10 @@ fi
 
 mkdir -p $(dirname ${outputFile})
 : > ${stdoutFile}
-if [ -n "${set_verbose}" ]; then
+if [ -n "${set_verbose-}" ]; then
     echo $call>>${stdoutFile}
 fi
-eval $call 1>>${stdoutFile} 2>${stderrFile}
+eval $call 1>>${stdoutFile} 2>${stderrFile} || true
 errorCode=$?
 
 echo "call: \"${call}\""
@@ -305,7 +319,7 @@ cat ${stderrFile} | sed 's/^/    /'
 
 
 echo "dependencies:"
-if [ "${errorCode}" -eq 0 ] && [ -n "${dependencyFile}" ]; then
+if [ "${errorCode}" -eq 0 ] && [ -n "${dependencyFile-}" ]; then
     parseDepFile ${dependencyFile}
 fi
 

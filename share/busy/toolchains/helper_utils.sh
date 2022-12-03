@@ -10,7 +10,7 @@ function parseMode {
     fi
 }
 function parseValue {
-    if [ -n "${parseMode}" ]; then
+    if [ -n "${parseMode-}" ]; then
         eval "${parseMode}+=(${1})"
         r="1"
     fi
@@ -28,11 +28,11 @@ function parse {
         r=
         for arg in "${arguments[@]}"; do
             if [ -z "${r}" ]; then
-                parseMode "$1" ${arg}
+                parseMode "${1-}" ${arg}
             fi
         done
         if [ -z "$r" ]; then
-            parseValue "$1"
+            parseValue "${1-}"
         fi
     done
 }
@@ -46,8 +46,6 @@ function implode {
 
 function parseDepFile {
     file="$1"
-    shift
-    output="$2"
     shift
 
     cat ${file} | \

@@ -9,6 +9,8 @@
 # 0 on success
 # -1 error
 
+set -Eeuo pipefail -o functrace
+
 BUSY_TOOLCHAIN_CALL=1
 NAME="gcc 12.2"
 CXX=/usr/bin/g++
