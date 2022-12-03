@@ -262,7 +262,7 @@ public:
                             fmt::print("compare: {} > {} , {}\n", ws.fileModTime.get(f), finfo.lastCompile, recompile);
                         }
                         g.unlock();
-                        auto [call, answer] = toolchain.translateUnit(ts, tuPath);
+                        auto [call, answer] = toolchain.translateUnit(ts, tuPath, verbose);
                         g.lock();
                         if (verbose) {
                             fmt::print("{}\n{}\n\n", call, answer.stdout);

@@ -46,11 +46,15 @@ private:
 public:
     /** compiles a single translation unit
      */
-    auto translateUnit(auto tuName, auto tuPath) const {
+    auto translateUnit(auto tuName, auto tuPath, bool verbose) const {
         auto start = file_time.now();
         auto cmd = busy::genCall::compilation(toolchain, tuName, tuPath, {"debug"});
 
         auto call = formatCall(cmd);
+
+        if (verbose) {
+            fmt::print("{}\n", formatCall(cmd));
+        }
         auto p = process::Process{cmd, buildPath};
         auto answer = busy::answer::parseCompilation(p.cout());
         if (!p.cerr().empty()) {
