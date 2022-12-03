@@ -150,13 +150,15 @@ struct WorkQueue {
 
 
 void loadAllBusyFiles(Workspace& workspace) {
+    auto rootDir = workspace.busyFile;
+    rootDir.remove_filename();
     // load other description files
     if (auto ptr = std::getenv("HOME")) {
         auto s = std::filesystem::path{ptr} / ".config/busy/packages";
         if (exists(s)) {
             for (auto const& d : std::filesystem::directory_iterator{s}) {
                 if (!d.is_regular_file()) continue;
-                auto desc = busy::desc::loadDesc(d.path(), workspace.buildPath);
+                auto desc = busy::desc::loadDesc(d.path(), rootDir);
                 for (auto ts : desc.translationSets) {
                     fmt::print("ts: {} (~/.config/busy/packages)\n", ts.name);
                     workspace.allSets[ts.name] = ts;
@@ -171,7 +173,7 @@ void loadAllBusyFiles(Workspace& workspace) {
         auto s = std::string{ptr};
         for (auto const& d : std::filesystem::directory_iterator{s}) {
             if (!d.is_regular_file()) continue;
-            auto desc = busy::desc::loadDesc(d.path(), workspace.buildPath);
+            auto desc = busy::desc::loadDesc(d.path(), rootDir);
             for (auto ts : desc.translationSets) {
                 fmt::print("ts: {} (BUSY_PATH)\n", ts.name);
                 workspace.allSets[ts.name] = ts;
@@ -180,7 +182,7 @@ void loadAllBusyFiles(Workspace& workspace) {
     }
 
     // load busyFile
-    auto desc = busy::desc::loadDesc(workspace.busyFile, workspace.buildPath);
+    auto desc = busy::desc::loadDesc(workspace.busyFile, rootDir);
     for (auto ts : desc.translationSets) {
         fmt::print("ts: {} (local)\n", ts.name);
         workspace.allSets[ts.name] = ts;
