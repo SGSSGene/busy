@@ -1,1 +1,0 @@
-/usr/include/ttyent.h
