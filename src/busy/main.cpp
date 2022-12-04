@@ -295,7 +295,9 @@ int main(int argc, char const* argv[]) {
                 fmt::print("  type: {}\n", ts.type);
                 fmt::print("  language: {}\n", ts.language);
                 fmt::print("  precompiled: {}\n", ts.precompiled);
-                fmt::print("  path: {}\n", ts.path / "src" / ts.name);
+                auto path = ts.path / "src" / ts.name;
+                path = path.lexically_normal();
+                fmt::print("  path: {}\n", path);
                 fmt::print("  deps:\n");
                 for (auto d : ts.dependencies) {
                     fmt::print("    - {}\n", d);
