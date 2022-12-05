@@ -1,0 +1,11 @@
+translationSets:
+  - name: app
+    type: executable
+    language: c++
+    dependencies:
+      - mylib
+  - name: mylib
+    type: library
+    language: c++
+    dependencies:
+      - stdlib

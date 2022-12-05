@@ -1,3 +1,3 @@
 #pragma once
 
-int f();
+void f();
