@@ -149,7 +149,8 @@ struct WorkQueue {
 };
 
 
-void loadAllBusyFiles(Workspace& workspace) {
+auto loadAllBusyFiles(Workspace& workspace, bool verbose) -> std::map<std::string, std::filesystem::path> {
+    auto toolchains = std::map<std::string, std::filesystem::path>{};
     auto rootDir = workspace.busyFile;
     rootDir.remove_filename();
     // load other description files
@@ -160,8 +161,13 @@ void loadAllBusyFiles(Workspace& workspace) {
                 if (!d.is_regular_file()) continue;
                 auto desc = busy::desc::loadDesc(d.path(), rootDir);
                 for (auto ts : desc.translationSets) {
-                    fmt::print("ts: {} (~/.config/busy/packages)\n", ts.name);
+                    if (verbose) {
+                        fmt::print("ts: {} (~/.config/busy/packages)\n", ts.name);
+                    }
                     workspace.allSets[ts.name] = ts;
+                }
+                for (auto [key, value] : desc.toolchains) {
+                    toolchains[key] = value;
                 }
             }
         }
@@ -175,8 +181,13 @@ void loadAllBusyFiles(Workspace& workspace) {
             if (!d.is_regular_file()) continue;
             auto desc = busy::desc::loadDesc(d.path(), rootDir);
             for (auto ts : desc.translationSets) {
-                fmt::print("ts: {} (BUSY_PATH)\n", ts.name);
+                if (verbose) {
+                    fmt::print("ts: {} (BUSY_PATH)\n", ts.name);
+                }
                 workspace.allSets[ts.name] = ts;
+            }
+            for (auto [key, value] : desc.toolchains) {
+                toolchains[key] = value;
             }
         }
     }
@@ -184,9 +195,15 @@ void loadAllBusyFiles(Workspace& workspace) {
     // load busyFile
     auto desc = busy::desc::loadDesc(workspace.busyFile, rootDir);
     for (auto ts : desc.translationSets) {
-        fmt::print("ts: {} (local)\n", ts.name);
+        if (verbose) {
+            fmt::print("ts: {} (local)\n", ts.name);
+        }
         workspace.allSets[ts.name] = ts;
     }
+    for (auto [key, value] : desc.toolchains) {
+        toolchains[key] = value;
+    }
+    return toolchains;
 }
 
 
@@ -218,14 +235,15 @@ int main(int argc, char const* argv[]) {
         if (busyFile) {
             workspace.busyFile = *busyFile;
         }
+    };
 
+    auto updateWorkspaceToolchains = [&](auto& workspace, std::map<std::string, std::filesystem::path> const& toolchains) {
         // add more toolchains if set by commandline
-        for (auto&& t : args.addToolchains) {
-            if (t.is_relative()) {
-                t = relative(absolute(std::move(t)), args.buildPath);
+        for (auto t : args.addToolchains) {
+            if (toolchains.find(t) == toolchains.end()) {
+                throw "unknown toolchain";
             }
-
-            workspace.toolchains.emplace_back(args.buildPath, std::move(t));
+            workspace.toolchains.emplace_back(args.buildPath, toolchains.at(t));
         }
     };
 
@@ -234,7 +252,10 @@ int main(int argc, char const* argv[]) {
             auto workspace = Workspace{args.buildPath};
             updateWorkspace(workspace);
 
-            loadAllBusyFiles(workspace);
+            auto toolchains = loadAllBusyFiles(workspace, args.verbose);
+
+            updateWorkspaceToolchains(workspace, toolchains);
+
 
             auto root = [&]() -> std::string {
                 if (args.trailing.size()) {
@@ -273,6 +294,8 @@ int main(int argc, char const* argv[]) {
             // load busyFile
             auto desc = busy::desc::loadDesc(workspace.busyFile, workspace.buildPath);
 
+            updateWorkspaceToolchains(workspace, desc.toolchains);
+
             fmt::print("available ts:\n");
             for (auto type : {"executable", "library"}) {
                 fmt::print("  {}:\n", type);
@@ -280,6 +303,10 @@ int main(int argc, char const* argv[]) {
                     if (ts.type != type) continue;
                     fmt::print("    - {}{}\n", ts.name, ts.precompiled?" (precompiled)":"");
                 }
+            }
+            fmt::print("available toolchains:\n");
+            for (auto [key, value] : desc.toolchains) {
+                fmt::print("    {}: {}\n", key, value);
             }
             workspace.save();
         } else if (args.mode == "info") {

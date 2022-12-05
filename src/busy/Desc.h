@@ -24,6 +24,7 @@ struct Desc {
     std::string                 version;
     std::filesystem::path       path;
     std::vector<TranslationSet> translationSets;
+    std::map<std::string, std::filesystem::path> toolchains;
 };
 
 auto loadTupleList(YAML::Node node) {
@@ -67,6 +68,16 @@ auto loadTranslationSets(YAML::Node node, std::filesystem::path path, std::files
     return result;
 }
 
+auto loadToolchains(YAML::Node node) {
+    auto res = std::map<std::string, std::filesystem::path>{};
+    if (node.IsDefined() and node.IsMap()) {
+        for (auto iter : node) {
+            res[iter.first.as<std::string>()] = iter.second.as<std::string>();
+        }
+    }
+    return res;
+}
+
 auto loadDesc(std::filesystem::path _file, std::filesystem::path _rootPath) -> Desc {
     if (_file.is_relative()) {
         _file = relative(_file);
@@ -80,6 +91,7 @@ auto loadDesc(std::filesystem::path _file, std::filesystem::path _rootPath) -> D
         .version         = root["version"].as<std::string>("0.0.1"),
         .path            = path,
         .translationSets = loadTranslationSets(root["translationSets"], path, _rootPath),
+        .toolchains      = loadToolchains(root["toolchains"]),
     };
 
     auto includes = root["include"];
@@ -91,6 +103,9 @@ auto loadDesc(std::filesystem::path _file, std::filesystem::path _rootPath) -> D
                 auto desc = loadDesc(d.path(), _rootPath);
                 for (auto ts : desc.translationSets) {
                     ret.translationSets.emplace_back(ts);
+                }
+                for (auto [key, value] : desc.toolchains) {
+                    ret.toolchains[key] = value;
                 }
             }
         }
