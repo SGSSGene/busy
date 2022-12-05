@@ -1,8 +1,0 @@
-name: gtest
-projects:
-  - name: gtest
-    legacy:
-      includes:
-        - include
-      systemLibraries:
-        - pthread

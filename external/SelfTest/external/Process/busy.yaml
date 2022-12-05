@@ -1,8 +1,0 @@
-name: Process
-projects:
-  - name: process
-    legacy:
-      systemLibraries:
-        - pthread
-    depLibraries:
-      - pthread
