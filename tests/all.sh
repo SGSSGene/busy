@@ -13,7 +13,7 @@ set -Eeuo pipefail
     mkdir -p ${build_path}
     cd ${build_path}
 
-    busy compile -f ${project}/busy.yaml -t ../../toolchains.d/gcc12.2.sh
+    busy compile -f ${project}/busy.yaml -t gcc12.2
 
     if [ "$(bin/app)" != "Hello World" ]; then
         echo "failed"
@@ -31,7 +31,7 @@ set -Eeuo pipefail
     mkdir -p ${build_path}
     cd ${build_path}
 
-    busy compile -f ${project}/busy.yaml -t ../../toolchains.d/gcc12.2.sh
+    busy compile -f ${project}/busy.yaml -t gcc12.2
 
     if [ "$(bin/app)" != "Hello World" ]; then
         echo "failed"
@@ -40,3 +40,5 @@ set -Eeuo pipefail
     cd ..
     rm -rf ${build_path}
 )
+
+echo "Success"
