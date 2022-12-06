@@ -1,2 +1,2 @@
 toolchains:
-  gcc12.2: toolchains.d/gcc12.2.sh
+  gcc12.2: src/toolchains/gcc12.2.sh

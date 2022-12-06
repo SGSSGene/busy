@@ -167,7 +167,13 @@ auto loadAllBusyFiles(Workspace& workspace, bool verbose) -> std::map<std::strin
                     workspace.allSets[ts.name] = ts;
                 }
                 for (auto [key, value] : desc.toolchains) {
-                    toolchains[key] = value;
+                    if (value.is_absolute()) {
+                        toolchains[key] = value;
+                    } else {
+                        auto path = absolute(d);
+                        path.remove_filename();
+                        toolchains[key] = relative(path / value, rootDir);
+                    }
                 }
             }
         }
@@ -187,7 +193,13 @@ auto loadAllBusyFiles(Workspace& workspace, bool verbose) -> std::map<std::strin
                 workspace.allSets[ts.name] = ts;
             }
             for (auto [key, value] : desc.toolchains) {
-                toolchains[key] = value;
+                if (value.is_absolute()) {
+                    toolchains[key] = value;
+                } else {
+                    auto path = absolute(d);
+                    path.remove_filename();
+                    toolchains[key] = relative(path / value, rootDir);
+                }
             }
         }
     }
@@ -201,7 +213,14 @@ auto loadAllBusyFiles(Workspace& workspace, bool verbose) -> std::map<std::strin
         workspace.allSets[ts.name] = ts;
     }
     for (auto [key, value] : desc.toolchains) {
-        toolchains[key] = value;
+        if (value.is_absolute()) {
+            toolchains[key] = value;
+        } else {
+            auto path = absolute(workspace.busyFile);
+            path.remove_filename();
+            toolchains[key] = relative(path / value, rootDir);
+        }
+
     }
     return toolchains;
 }

@@ -104,8 +104,19 @@ auto loadDesc(std::filesystem::path _file, std::filesystem::path _rootPath) -> D
                 for (auto ts : desc.translationSets) {
                     ret.translationSets.emplace_back(ts);
                 }
+                auto path = absolute(d);
+                path.remove_filename();
+
                 for (auto [key, value] : desc.toolchains) {
-                    ret.toolchains[key] = value;
+                    auto tc = [&]() -> std::filesystem::path {
+                        if (value.is_absolute()) {
+                            return value;
+                        } else {
+                            return relative(path / value);
+                        }
+                    }();
+
+                    ret.toolchains[key] = tc;
                 }
             }
         }
