@@ -271,6 +271,8 @@ public:
                         if (answer.stderr.empty()) {
                             finfo.lastCompile = answer.compileStartTime;
                             finfo.duration    = answer.compileDuration;
+                        } else {
+                            throw std::runtime_error(fmt::format("error compiling:\n{}\n", answer.stderr));
                         }
                         finfo.dependencies.clear();
                         for (auto d : answer.dependencies) {

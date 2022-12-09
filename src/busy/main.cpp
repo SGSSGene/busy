@@ -1,4 +1,3 @@
-
 #include "Desc.h"
 #include "genCall.h"
 #include "answer.h"
@@ -146,6 +145,10 @@ struct WorkQueue {
         jobsDone += 1;
         cv.notify_all();
     }
+
+    void flush() {
+        cv.notify_all();
+    }
 };
 
 
@@ -287,6 +290,7 @@ int main(int argc, char const* argv[]) {
             auto wq = WorkQueue{};
             auto all = workspace.findDependencyNames(root);
             all.insert(root);
+            std::atomic_bool errorAppeared{false};
             for (auto ts : all) {
                 auto deps = workspace.findDependencyNames(ts);
                 wq.insert(ts, [ts, &workspace, &args, &wq]() {
@@ -301,11 +305,22 @@ int main(int argc, char const* argv[]) {
             auto threadCt = 16;
             for (ssize_t i{0}; i < threadCt; ++i) {
                 t.emplace_back([&]() {
-                    while (wq.processJob());
+                    try {
+                        while (!errorAppeared and wq.processJob());
+                    } catch(std::exception const& e) {
+                        if (!errorAppeared) {
+                            fmt::print("compile error: {}\n", e.what());
+                            wq.flush();
+                        }
+                        errorAppeared = true;
+                    }
                 });
             }
             t.clear();
             workspace.save();
+            if (errorAppeared) {
+                return 1;
+            }
         } else if (args.mode == "status" || args.mode.empty()) {
             auto workspace = Workspace{args.buildPath};
             updateWorkspace(workspace);
