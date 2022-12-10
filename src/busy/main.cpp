@@ -234,7 +234,7 @@ auto loadAllBusyFiles(Workspace& workspace, bool verbose) -> std::map<std::strin
 
 
 int main(int argc, char const* argv[]) {
-    // ./build/bin/busy-desc compile build -f busy3.yaml -t toolchains.d/gcc12.1.sh
+    // ./build/bin/busy compile -f busy.yaml -t gcc12.2.sh
     auto args = [&]() {
         auto args = std::vector<std::string_view>{};
         args.reserve(argc);
