@@ -282,7 +282,7 @@ int main(int argc, char const* argv[]) {
     };
 
     try {
-        if (args.mode == "compile") {
+        if (args.mode == "compile" || args.mode.empty()) {
             auto workspace = Workspace{args.buildPath};
             updateWorkspace(workspace);
 
@@ -333,7 +333,7 @@ int main(int argc, char const* argv[]) {
             if (errorAppeared) {
                 return 1;
             }
-        } else if (args.mode == "status" || args.mode.empty()) {
+        } else if (args.mode == "status") {
             auto workspace = Workspace{args.buildPath};
             updateWorkspace(workspace);
 
