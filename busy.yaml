@@ -7,5 +7,3 @@ translationSets:
       - stdlib
       - fmt
       - yaml-cpp
-include:
-  - share/busy/libs

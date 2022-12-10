@@ -187,15 +187,22 @@ auto loadAllBusyFiles(Workspace& workspace, bool verbose) -> std::map<std::strin
     }
 
 
-    // load other description files
-    if (auto ptr = std::getenv("BUSY_PATH")) {
-        auto s = std::string{ptr};
-        for (auto const& d : std::filesystem::directory_iterator{s}) {
+    // load description as if "BUSY_ROOT" is the root, if non given, assuming "/usr"
+    auto busy_root = [&]() -> std::filesystem::path {
+        if (auto ptr = std::getenv("BUSY_ROOT")) {
+            auto s = std::string{ptr};
+            return s;
+        }
+        return "/usr";
+    }();
+
+    if (exists(busy_root / "share/busy")) {
+        for (auto const& d : std::filesystem::directory_iterator{busy_root / "share/busy"}) {
             if (!d.is_regular_file()) continue;
             auto desc = busy::desc::loadDesc(d.path(), rootDir);
             for (auto ts : desc.translationSets) {
                 if (verbose) {
-                    fmt::print("ts: {} (BUSY_PATH)\n", ts.name);
+                    fmt::print("ts: {} (BUSY_ROOT)\n", ts.name);
                 }
                 workspace.allSets[ts.name] = ts;
             }
