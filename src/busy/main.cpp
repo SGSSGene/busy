@@ -25,6 +25,7 @@ struct Arguments {
     std::vector<std::string> trailing; // trailing commands
     bool verbose{};
     bool clean{};
+    std::filesystem::path prefix{}; // prefix for install
 
     Arguments(std::vector<std::string_view> args) {
         if (ssize(args) > 1) {
@@ -41,6 +42,9 @@ struct Arguments {
                 clean = true;
             } else if (args[i] == "--verbose") {
                 verbose = true;
+            } else if (args[i] == "--prefix" and i+1 < ssize(args)) {
+                ++i;
+                prefix = args[i];
             } else {
                 if (buildPath.empty()) {
                     buildPath = args[i];
@@ -371,20 +375,23 @@ int main(int argc, char const* argv[]) {
             workspace.save();
         } else if (args.mode == "install") {
             // Installs into local folder
-            if (auto ptr = std::getenv("HOME")) {
-                auto s = std::filesystem::path{ptr} / ".config/busy/env";
-                create_directories(s / "bin");
-                create_directories(s / "lib");
-
-                for (auto const& d : std::filesystem::directory_iterator{"bin"}) {
-                    std::error_code ec;
-                    std::filesystem::copy(d.path(), s / "bin", std::filesystem::copy_options::overwrite_existing, ec);
-                    if (ec) {
-                        throw error_fmt{"could not copy {} to {} with message {}", absolute(d.path()), s / "bin", ec.message()};
-                    }
+            auto prefix = [&]() -> std::filesystem::path {
+                if (!args.prefix.empty()) return args.prefix;
+                if (auto ptr = std::getenv("HOME")) {
+                    return std::filesystem::path{ptr} / ".config/busy/env";
                 }
-            } else {
-                throw error_fmt{"can't acces HOME variable"};
+                throw error_fmt{"Trouble with the HOME variable, maybe it is not set?"};
+            }();
+
+            create_directories(prefix / "bin");
+            create_directories(prefix / "lib");
+
+            for (auto const& d : std::filesystem::directory_iterator{"bin"}) {
+                std::error_code ec;
+                std::filesystem::copy(d.path(), prefix / "bin", std::filesystem::copy_options::overwrite_existing, ec);
+                if (ec) {
+                    throw error_fmt{"could not copy {} to {} with message {}", absolute(d.path()), prefix / "bin", ec.message()};
+                }
             }
         } else {
             throw error_fmt{"unknown mode \"{}\", valid modes are \"compile\", \"status\", \"info\"", args.mode};
