@@ -1,0 +1,9 @@
+file-version: 1.0.0
+translationSets:
+  - name: eigen3
+    type: library
+    language: c++
+    precompiled: true
+    legacy:
+      includes:
+        /usr/include/eigen3: "eigen3"

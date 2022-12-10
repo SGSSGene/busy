@@ -1,0 +1,11 @@
+file-version: 1.0.0
+translationSets:
+  - name: catch2
+    type: library
+    language: c++
+    precompiled: true
+    legacy:
+      includes:
+        /usr/include/catch2: "catch2"
+    dependencies:
+      - stdlib

@@ -1,0 +1,12 @@
+file-version: 1.0.0
+translationSets:
+  - name: armadillo
+    type: library
+    language: c++
+    precompiled: true
+    legacy:
+      includes:
+        src/armadillo: ""
+      libraries:
+        - armadillo
+
