@@ -43,6 +43,27 @@ set -Eeuo pipefail
     rm -rf ${build_path}
 )
 
+
+# check if installation of executable and libraries work
+(
+    build_path="test-build"
+    project="../libraryPlusApp"
+    rm -rf ${build_path}
+    mkdir -p ${build_path}
+    cd ${build_path}
+
+    busy compile -f ${project}/busy.yaml -t gcc12.2
+    busy install --prefix fake-root
+
+    if [ ! -f "fake-root/bin/app" ] || [ ! -f "fake-root/lib/mylib.a" ]; then
+        echo "failed"
+        exit 1
+    fi
+    cd ..
+    rm -rf ${build_path}
+)
+
+
 # check compilation fail
 (
     build_path="test-build"

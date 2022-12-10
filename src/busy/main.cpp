@@ -383,16 +383,27 @@ int main(int argc, char const* argv[]) {
                 throw error_fmt{"Trouble with the HOME variable, maybe it is not set?"};
             }();
 
-            create_directories(prefix / "bin");
-            create_directories(prefix / "lib");
-
-            for (auto const& d : std::filesystem::directory_iterator{"bin"}) {
-                std::error_code ec;
-                std::filesystem::copy(d.path(), prefix / "bin", std::filesystem::copy_options::overwrite_existing, ec);
-                if (ec) {
-                    throw error_fmt{"could not copy {} to {} with message {}", absolute(d.path()), prefix / "bin", ec.message()};
+            if (auto p = std::filesystem::path{"bin"}; is_directory(p)) {
+                create_directories(prefix / p);
+                for (auto const& d : std::filesystem::directory_iterator{p}) {
+                    std::error_code ec;
+                    std::filesystem::copy(d.path(), prefix / p, std::filesystem::copy_options::overwrite_existing, ec);
+                    if (ec) {
+                        throw error_fmt{"could not copy {} to {} with message {}", absolute(d.path()), prefix / p, ec.message()};
+                    }
                 }
             }
+            if (auto p = std::filesystem::path{"lib"}; is_directory(p)) {
+                create_directories(prefix / p);
+                for (auto const& d : std::filesystem::directory_iterator{p}) {
+                    std::error_code ec;
+                    std::filesystem::copy(d.path(), prefix / p, std::filesystem::copy_options::overwrite_existing, ec);
+                    if (ec) {
+                        throw error_fmt{"could not copy {} to {} with message {}", absolute(d.path()), prefix / p, ec.message()};
+                    }
+                }
+            }
+
         } else {
             throw error_fmt{"unknown mode \"{}\", valid modes are \"compile\", \"status\", \"info\"", args.mode};
         }
