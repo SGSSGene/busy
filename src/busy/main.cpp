@@ -404,6 +404,55 @@ int main(int argc, char const* argv[]) {
                 }
             }
 
+            auto workspace = Workspace{args.buildPath};
+            updateWorkspace(workspace);
+
+            // load busyFile
+            auto desc = busy::desc::loadDesc(workspace.busyFile, workspace.buildPath);
+
+            for (auto ts : desc.translationSets) {
+                if (ts.precompiled) continue;
+                if (ts.type != "library") continue;
+                if (ts.language == "c++") {
+                    create_directories(prefix / "include");
+                    create_directories(prefix / "share/busy");
+
+                    // install includes
+                    {
+                        auto path = (ts.path / "src" / ts.name);
+                        std::error_code ec;
+                        auto options = std::filesystem::copy_options::overwrite_existing | std::filesystem::copy_options::recursive;
+                        std::filesystem::copy(path, prefix / "include" / ts.name, options, ec);
+                        if (ec) {
+                            throw error_fmt{"could not copy {} to {} with message {}", path, prefix / "include" / ts.name, ec.message()};
+                        }
+                    }
+                    // install a busy.yaml file
+                    {
+                        auto path = prefix / "share/busy" / ts.name;
+                        path.replace_extension("yaml");
+                        auto ofs = std::ofstream{path};
+                        ofs << "file-version: 1.0.0\n";
+                        ofs << "translationSets:\n";
+                        ofs << "  - name: " << ts.name << "\n";
+                        ofs << "    type: library\n";
+                        ofs << "    language: c++\n";
+                        ofs << "    precompiled: true\n";
+                        ofs << "    legacy:\n";
+                        ofs << "      libraries:\n";
+                        ofs << "        - " << ts.name << "\n";
+                        ofs << "      includes:\n";
+                        ofs << "        - ../../include/" << ts.name << ": " << ts.name << "\n";
+                        ofs << "      dependencies:\n";
+                        for (auto d : ts.dependencies) {
+                            ofs << "        - " << d << "\n";
+                        }
+
+                    }
+                } else {
+                    throw error_fmt{"unknown install language {}", ts.language};
+                }
+            }
         } else {
             throw error_fmt{"unknown mode \"{}\", valid modes are \"compile\", \"status\", \"info\"", args.mode};
         }

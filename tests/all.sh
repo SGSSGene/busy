@@ -55,7 +55,9 @@ set -Eeuo pipefail
     busy compile -f ${project}/busy.yaml -t gcc12.2
     busy install --prefix fake-root
 
-    if [ ! -f "fake-root/bin/app" ] || [ ! -f "fake-root/lib/mylib.a" ]; then
+    if [ ! -f "fake-root/bin/app" ] || [ ! -f "fake-root/lib/mylib.a" ] \
+       || [ ! -f "fake-root/include/mylib/f.h" ] \
+       || [ ! -f "fake-root/share/busy/mylib.yaml" ]; then
         echo "failed"
         exit 1
     fi
