@@ -269,8 +269,8 @@ elif [ "$1" == "link" ]; then
 
     localLibrariesAsStr=""
     for i in "${localLibraries[@]}"; do
-        if [ -e "bin/${i}.a" ]; then
-            localLibrariesAsStr+=" bin/${i}.a"
+        if [ -e "lib/${i}.a" ]; then
+            localLibrariesAsStr+=" lib/${i}.a"
         fi
     done
 
@@ -282,7 +282,7 @@ elif [ "$1" == "link" ]; then
         call="${CXX} -rdynamic -shared ${parameters} -fdiagnostics-color=always -o ${outputFile} ${inputFiles[@]} ${localLibrariesAsStr} ${sysLibraries[@]}"
     # Static library
     elif [ "${target}" == "static_library" ]; then
-        outputFile="${outputFile}.a"
+        outputFile="lib/${tsName}.a"
         objectFile="environments/${tsName}/obj/${tsName}.o"
         mkdir -p $(dirname ${objectFile})
         outputFiles+=("${objectFile}")
