@@ -212,7 +212,8 @@ auto loadAllBusyFiles(Workspace& workspace, bool verbose) -> std::map<std::strin
                 } else {
                     auto path = absolute(d);
                     path.remove_filename();
-                    toolchains[key] = relative(path / value, rootDir);
+                    path = path / value;
+                    toolchains[key] = path;
                 }
             }
         }
