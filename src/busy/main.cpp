@@ -169,14 +169,14 @@ auto loadAllBusyFiles(Workspace& workspace, bool verbose) -> std::map<std::strin
     rootDir.remove_filename();
     // load other description files
     if (auto ptr = std::getenv("HOME")) {
-        auto s = std::filesystem::path{ptr} / ".config/busy/packages";
+        auto s = std::filesystem::path{ptr} / ".config/busy/env/share/busy";
         if (exists(s)) {
             for (auto const& d : std::filesystem::directory_iterator{s}) {
                 if (!d.is_regular_file()) continue;
                 auto desc = busy::desc::loadDesc(d.path(), rootDir);
                 for (auto ts : desc.translationSets) {
                     if (verbose) {
-                        fmt::print("ts: {} (~/.config/busy/packages)\n", ts.name);
+                        fmt::print("ts: {} (~/.config/busy/env/share/busy)\n", ts.name);
                     }
                     workspace.allSets[ts.name] = ts;
                 }
