@@ -461,7 +461,7 @@ int main(int argc, char const* argv[]) {
                         ofs << "    legacy:\n";
                         if (hasLibrary.contains(ts.name + ".a")) {
                             ofs << "      libraries:\n";
-                            ofs << "        - lib" << ts.name << "\n";
+                            ofs << "        - " << ts.name << "\n";
                         }
                         ofs << "      includes:\n";
                         ofs << "        ../../include/" << ts.name << ": " << ts.name << "\n";

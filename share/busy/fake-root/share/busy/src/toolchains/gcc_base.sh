@@ -232,11 +232,11 @@ elif [ "$1" == "link" ]; then
     shift; target="$1"
     shift
 
-    parse "--input         inputFiles" \
-          "--llibraries    localLibraries" \
-          "--syslibraries  sysLibraries" \
+    parse "--input           inputFiles" \
+          "--llibraries      localLibraries" \
+          "--syslibrarypaths sysLibraryPaths" \
+          "--syslibraries    sysLibraries" \
           "--" "$@"
-
 
     outputFile="bin/${tsName}"
     stdoutFile="environments/${tsName}/obj/${tsName}.stdout"
@@ -249,8 +249,6 @@ elif [ "$1" == "link" ]; then
             parameters+="${profile_link_param[$key]}"
         fi
     done
-
-    sysLibraries=($(implode " -l" "${sysLibraries[@]}"))
 
     inputFilesTmp=()
     for i in "${!inputFiles[@]}"; do
@@ -274,12 +272,15 @@ elif [ "$1" == "link" ]; then
         fi
     done
 
+    sysLibraryPaths=($(implode " -L" "${sysLibraryPaths[@]}"))
+    sysLibraries=($(implode " -l" "${sysLibraries[@]}"))
+
     # Executable
     if [ "${target}" == "executable" ]; then
-        call="${CXX} -rdynamic ${parameters} -fdiagnostics-color=always -o ${outputFile} ${inputFiles[@]} ${localLibrariesAsStr} ${sysLibraries[@]}"
+        call="${CXX} -rdynamic ${parameters} -fdiagnostics-color=always -o ${outputFile} ${inputFiles[@]} ${localLibrariesAsStr} ${sysLibraryPaths[@]} ${sysLibraries[@]}"
     # Shared library
     elif [ "${target}" == "shared_library" ]; then
-        call="${CXX} -rdynamic -shared ${parameters} -fdiagnostics-color=always -o ${outputFile} ${inputFiles[@]} ${localLibrariesAsStr} ${sysLibraries[@]}"
+        call="${CXX} -rdynamic -shared ${parameters} -fdiagnostics-color=always -o ${outputFile} ${inputFiles[@]} ${localLibrariesAsStr} ${sysLibraryPaths[@]} ${sysLibraries[@]}"
     # Static library
     elif [ "${target}" == "static_library" ]; then
         outputFile="lib/${tsName}.a"

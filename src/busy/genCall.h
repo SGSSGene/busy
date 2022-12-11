@@ -51,6 +51,12 @@ namespace busy::genCall {
         }
         if (r.back() == "--llibraries") r.pop_back();
 
+        if (auto ptr = std::getenv("HOME")) {
+            r.emplace_back("--syslibrarypaths");
+            auto s = std::filesystem::path{ptr} / ".config/busy/env/lib";
+            r.emplace_back(s);
+        }
+
         r.emplace_back("--syslibraries");
         for (auto v : ts.legacy.libraries) {
             r.emplace_back(v);
@@ -61,6 +67,8 @@ namespace busy::genCall {
             }
         }
         if (r.back() == "--syslibraries") r.pop_back();
+
+
 
         return r;
     }
