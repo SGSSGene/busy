@@ -247,7 +247,7 @@ public:
                     auto g = std::unique_lock{ws.mutex};
 
                     auto tuPath = relative(f, tsPath);
-                    auto& finfo = ws.fileInfos[tuPath];
+                    auto& finfo = ws.fileInfos[tsName / tuPath];
                     objFiles.emplace_back(tuPath.string());
 
                     auto recompile = ws.fileModTime.get(f) > finfo.lastCompile;
