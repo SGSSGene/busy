@@ -409,13 +409,17 @@ int main(int argc, char const* argv[]) {
                     }
                 }
             }
+            auto hasLibrary = std::unordered_set<std::string>{};
             if (auto p = std::filesystem::path{"lib"}; is_directory(p)) {
                 create_directories(prefix / p);
                 for (auto const& d : std::filesystem::directory_iterator{p}) {
+                    auto tsName = d.path().filename().string();
+                    hasLibrary.insert(tsName);
+                    auto targetPath = prefix / p / ("lib" + tsName);
                     std::error_code ec;
-                    std::filesystem::copy(d.path(), prefix / p, std::filesystem::copy_options::overwrite_existing, ec);
+                    std::filesystem::copy(d.path(), targetPath, std::filesystem::copy_options::overwrite_existing, ec);
                     if (ec) {
-                        throw error_fmt{"could not copy {} to {} with message {}", absolute(d.path()), prefix / p, ec.message()};
+                        throw error_fmt{"could not copy {} to {} with message {}", absolute(d.path()), targetPath, ec.message()};
                     }
                 }
             }
@@ -455,8 +459,10 @@ int main(int argc, char const* argv[]) {
                         ofs << "    language: c++\n";
                         ofs << "    precompiled: true\n";
                         ofs << "    legacy:\n";
-                        ofs << "      libraries:\n";
-                        ofs << "        - " << ts.name << "\n";
+                        if (hasLibrary.contains(ts.name + ".a")) {
+                            ofs << "      libraries:\n";
+                            ofs << "        - lib" << ts.name << "\n";
+                        }
                         ofs << "      includes:\n";
                         ofs << "        ../../include/" << ts.name << ": " << ts.name << "\n";
                         ofs << "    dependencies:\n";
