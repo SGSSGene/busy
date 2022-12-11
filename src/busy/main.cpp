@@ -459,9 +459,9 @@ int main(int argc, char const* argv[]) {
                         ofs << "        - " << ts.name << "\n";
                         ofs << "      includes:\n";
                         ofs << "        ../../include/" << ts.name << ": " << ts.name << "\n";
-                        ofs << "      dependencies:\n";
+                        ofs << "    dependencies:\n";
                         for (auto d : ts.dependencies) {
-                            ofs << "        - " << d << "\n";
+                            ofs << "      - " << d << "\n";
                         }
 
                     }
