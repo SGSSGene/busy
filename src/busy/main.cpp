@@ -23,6 +23,7 @@ struct Arguments {
     std::optional<std::filesystem::path> busyFile;
     std::vector<std::filesystem::path> addToolchains;
     std::vector<std::string> trailing; // trailing commands
+    std::vector<std::string> options; // toolchain options
     bool verbose{};
     bool clean{};
     std::filesystem::path prefix{}; // prefix for install
@@ -38,6 +39,9 @@ struct Arguments {
             } else if (args[i] == "-t" and i+1 < ssize(args)) {
                 ++i;
                 addToolchains.emplace_back(args[i]);
+            } else if (args[i] == "--options" and i+1 < ssize(args)) {
+                ++i;
+                options.emplace_back(args[i]);
             } else if (args[i] == "--clean") {
                 clean = true;
             } else if (args[i] == "--verbose") {
@@ -55,6 +59,9 @@ struct Arguments {
         }
         if (buildPath.empty()) {
             buildPath = ".";
+        }
+        if (options.empty()) {
+            options.push_back("debug");
         }
     }
 };
@@ -306,7 +313,7 @@ int main(int argc, char const* argv[]) {
             for (auto ts : all) {
                 auto deps = workspace.findDependencyNames(ts);
                 wq.insert(ts, [ts, &workspace, &args, &wq]() {
-                    for (auto [name, j] : workspace.translate(ts, args.verbose, args.clean)) {
+                    for (auto [name, j] : workspace.translate(ts, args.verbose, args.clean, args.options)) {
                         wq.insertChild(name, ts, j);
                     }
                 }, deps);

@@ -46,9 +46,9 @@ private:
 public:
     /** compiles a single translation unit
      */
-    auto translateUnit(auto tuName, auto tuPath, bool verbose) const {
+    auto translateUnit(auto tuName, auto tuPath, bool verbose, std::vector<std::string> const& options) const {
         auto start = file_time.now();
-        auto cmd = busy::genCall::compilation(toolchain, tuName, tuPath, {"debug"});
+        auto cmd = busy::genCall::compilation(toolchain, tuName, tuPath, options);
 
         auto call = formatCall(cmd);
 

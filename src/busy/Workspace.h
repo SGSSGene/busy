@@ -198,8 +198,9 @@ public:
         Toolchain const& toolchain;
         std::vector<std::filesystem::path> objFiles;
         std::filesystem::path tsPath;
+        std::vector<std::string> options;
 
-        TranslateSet(Workspace& ws, std::string tsName, bool _verbose, bool forceCompilation)
+        TranslateSet(Workspace& ws, std::string tsName, bool _verbose, bool forceCompilation, std::vector<std::string> options)
             : ws{ws}
             , tsName{tsName}
             , verbose{_verbose}
@@ -208,6 +209,7 @@ public:
             , deps{ws.findDependencies(ts)}
             , toolchain{ws.getToolchain(ts.language)}
             , tsPath{ts.path / "src" / ts.name}
+            , options{std::move(options)}
         {
             if (ts.precompiled) {
                 return;
@@ -262,7 +264,7 @@ public:
                             fmt::print("compare: {} > {} , {}\n", ws.fileModTime.get(f), finfo.lastCompile, recompile);
                         }
                         g.unlock();
-                        auto [call, answer] = toolchain.translateUnit(ts, tuPath, verbose);
+                        auto [call, answer] = toolchain.translateUnit(ts, tuPath, verbose, options);
                         g.lock();
                         if (verbose) {
                             fmt::print("{}\n{}\n\n", call, answer.stdout);
@@ -292,9 +294,9 @@ public:
 
     /** Translates a translaten set
      */
-    auto translate(std::string const& tsName, bool verbose, bool forceCompilation) -> std::vector<std::tuple<std::string, std::function<void()>>> {
+    auto translate(std::string const& tsName, bool verbose, bool forceCompilation, std::vector<std::string> options) -> std::vector<std::tuple<std::string, std::function<void()>>> {
         auto jobs = std::vector<std::tuple<std::string, std::function<void()>>>{};
-        auto ts = std::make_shared<TranslateSet>(*this, tsName, verbose, forceCompilation);
+        auto ts = std::make_shared<TranslateSet>(*this, tsName, verbose, forceCompilation, std::move(options));
 
         for (auto [name, j] : ts->allTranslationJobs()) {
             jobs.emplace_back(name, [j, ts]() {
