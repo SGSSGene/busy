@@ -1,0 +1,13 @@
+file-version: 1.0.0
+translationSets:
+  - name: jsoncpp
+    type: library
+    language: c++
+    precompiled: true
+    legacy:
+      libraries:
+        - jsoncpp
+      includes:
+        /usr/include/json: "json"
+    dependencies:
+      - stdlib

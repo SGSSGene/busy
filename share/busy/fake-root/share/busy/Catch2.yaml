@@ -1,6 +1,6 @@
 file-version: 1.0.0
 translationSets:
-  - name: catch2
+  - name: Catch2
     type: library
     language: c++
     precompiled: true
