@@ -458,7 +458,7 @@ int main(int argc, char const* argv[]) {
                         ofs << "      libraries:\n";
                         ofs << "        - " << ts.name << "\n";
                         ofs << "      includes:\n";
-                        ofs << "        - ../../include/" << ts.name << ": " << ts.name << "\n";
+                        ofs << "        ../../include/" << ts.name << ": " << ts.name << "\n";
                         ofs << "      dependencies:\n";
                         for (auto d : ts.dependencies) {
                             ofs << "        - " << d << "\n";
