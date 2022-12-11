@@ -298,17 +298,18 @@ int main(int argc, char const* argv[]) {
             updateWorkspaceToolchains(workspace, toolchains);
 
 
-            auto root = [&]() -> std::string {
+            auto root = [&]() -> std::vector<std::string> {
                 if (args.trailing.size()) {
-                    return args.trailing.front();
+                    return {args.trailing.front()};
                 }
-                auto r = workspace.findExecutables();
-                return r.front();
+                return workspace.findExecutables();
             }();
 
             auto wq = WorkQueue{};
             auto all = workspace.findDependencyNames(root);
-            all.insert(root);
+            for (auto r : root) {
+                all.insert(r);
+            }
             std::atomic_bool errorAppeared{false};
             for (auto ts : all) {
                 auto deps = workspace.findDependencyNames(ts);
