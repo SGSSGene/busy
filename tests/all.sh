@@ -17,7 +17,7 @@ set -Eeuo pipefail
 
     str="$(bin/app)";
     if [ "${str}" != "Hello World" ]; then
-        echo "failed"
+        echo "failed 1"
         exit 1
     fi
     cd ..
@@ -36,7 +36,7 @@ set -Eeuo pipefail
 
     str="$(bin/app)";
     if [ "${str}" != "Hello World" ]; then
-        echo "failed"
+        echo "failed 2"
         exit 1
     fi
     cd ..
@@ -55,10 +55,10 @@ set -Eeuo pipefail
     busy compile -f ${project}/busy.yaml -t gcc12.2
     busy install --prefix fake-root
 
-    if [ ! -f "fake-root/bin/app" ] || [ ! -f "fake-root/lib/mylib.a" ] \
+    if [ ! -f "fake-root/bin/app" ] || [ ! -f "fake-root/lib/libmylib.a" ] \
        || [ ! -f "fake-root/include/mylib/f.h" ] \
        || [ ! -f "fake-root/share/busy/mylib.yaml" ]; then
-        echo "failed"
+        echo "failed 3"
         exit 1
     fi
     cd ..
@@ -88,7 +88,7 @@ END
         echo "${str}"
         echo "${exp}"
         echo $ret
-        echo "failed"
+        echo "failed 4"
         exit 1
     fi
     cd ..
