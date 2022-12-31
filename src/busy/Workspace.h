@@ -206,6 +206,9 @@ public:
         bool verbose{};
         bool forceCompilation{};
 
+
+        bool abort{false};
+
         busy::desc::TranslationSet& ts;
         std::vector<busy::desc::TranslationSet> deps;
         Toolchain const& toolchain;
@@ -234,10 +237,16 @@ public:
         }
 
         ~TranslateSet() {
+            if (abort) return;
+
             if (ts.precompiled) {
                 return;
             }
-            toolchain.finishTranslationSet(ts, objFiles, deps, verbose);
+            auto [call, answer] = toolchain.finishTranslationSet(ts, objFiles, deps, verbose);
+            if (!answer.stderr.empty()) {
+                throw std::runtime_error(fmt::format("error linking:\n{}\n", answer.stderr));
+            }
+
             if (verbose) {
                 fmt::print("\n\nFinished translation set: {}\n", ts.name);
             }
@@ -257,46 +266,51 @@ public:
 
                 auto name = tsName + "/" + relative(_f, tsPath).string();
                 jobs.emplace_back(name, [this, f]() {
-                    auto g = std::unique_lock{ws.mutex};
-
-                    auto tuPath = relative(f, tsPath);
-                    auto& finfo = ws.fileInfos[tsName / tuPath];
-                    objFiles.emplace_back(tuPath.string());
-
-                    auto recompile = ws.fileModTime.get(f) > finfo.lastCompile;
-                    recompile |= forceCompilation;
                     try {
-                        for (auto d : finfo.dependencies) {
-                            recompile |= ws.fileModTime.get(ws.buildPath / d) > finfo.lastCompile;
+                        auto g = std::unique_lock{ws.mutex};
+
+                        auto tuPath = relative(f, tsPath);
+                        auto& finfo = ws.fileInfos[tsName / tuPath];
+                        objFiles.emplace_back(tuPath.string());
+
+                        auto recompile = ws.fileModTime.get(f) > finfo.lastCompile;
+                        recompile |= forceCompilation;
+                        try {
+                            for (auto d : finfo.dependencies) {
+                                recompile |= ws.fileModTime.get(ws.buildPath / d) > finfo.lastCompile;
+                            }
+                        } catch(std::exception const& e) {
+                            recompile = true;
                         }
-                    } catch(std::exception const& e) {
-                        recompile = true;
-                    }
-                    if (recompile) {
-                        if (verbose) {
-                            fmt::print("compare: {} > {} , {}\n", ws.fileModTime.get(f), finfo.lastCompile, recompile);
-                        }
-                        g.unlock();
-                        auto [call, answer] = toolchain.translateUnit(ts, tuPath, verbose, options);
-                        g.lock();
-                        if (verbose) {
-                            fmt::print("{}\n{}\n\n", call, answer.stdout);
-                            fmt::print("duration: {}\n", answer.compileDuration);
-                        }
-                        if (answer.stderr.empty()) {
-                            finfo.lastCompile = answer.compileStartTime;
-                            finfo.duration    = answer.compileDuration;
+                        if (recompile) {
+                            if (verbose) {
+                                fmt::print("compare: {} > {} , {}\n", ws.fileModTime.get(f), finfo.lastCompile, recompile);
+                            }
+                            g.unlock();
+                            auto [call, answer] = toolchain.translateUnit(ts, tuPath, verbose, options);
+                            g.lock();
+                            if (verbose) {
+                                fmt::print("{}\n{}\n\n", call, answer.stdout);
+                                fmt::print("duration: {}\n", answer.compileDuration);
+                            }
+                            if (answer.stderr.empty()) {
+                                finfo.lastCompile = answer.compileStartTime;
+                                finfo.duration    = answer.compileDuration;
+                            } else {
+                                throw std::runtime_error(fmt::format("error compiling:\n{}\n", answer.stderr));
+                            }
+                            finfo.dependencies.clear();
+                            for (auto d : answer.dependencies) {
+                                finfo.dependencies.push_back(d);
+                            }
                         } else {
-                            throw std::runtime_error(fmt::format("error compiling:\n{}\n", answer.stderr));
+                            if (verbose) {
+                                fmt::print("skipping {}\n", tuPath);
+                            }
                         }
-                        finfo.dependencies.clear();
-                        for (auto d : answer.dependencies) {
-                            finfo.dependencies.push_back(d);
-                        }
-                    } else {
-                        if (verbose) {
-                            fmt::print("skipping {}\n", tuPath);
-                        }
+                    } catch(...) {
+                        abort = true;
+                        throw;
                     }
                 });
             }

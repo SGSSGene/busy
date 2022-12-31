@@ -24,7 +24,7 @@ set -Eeuo pipefail
     rm -rf ${build_path}
 )
 
-# check normal compilation of executable works
+# check normal compilation of executable and libraries works
 (
     build_path="test-build"
     project="../libraryPlusApp"
@@ -95,4 +95,23 @@ END
     rm -rf ${build_path}
 )
 
-echo "Success"
+# check linkage fail
+(
+    build_path="test-build"
+    project="../brokenLinkageApp"
+    rm -rf ${build_path}
+    mkdir -p ${build_path}
+    cd ${build_path}
+
+    str="$(busy compile -f ${project}/busy.yaml -t gcc12.2 2>&1 || true)"
+
+    if [ -z "${str}" ]; then
+        echo "${str}"
+        echo "failed 5"
+        exit 1
+    fi
+    cd ..
+    rm -rf ${build_path}
+)
+
+echo Success

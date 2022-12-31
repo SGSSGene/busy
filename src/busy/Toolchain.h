@@ -86,7 +86,7 @@ public:
     /**
      * finish translation set
      */
-    void finishTranslationSet(auto const& ts, auto const& objFiles, auto const& dependencies, bool verbose) const {
+    auto finishTranslationSet(auto const& ts, auto const& objFiles, auto const& dependencies, bool verbose) const {
         auto type = [&]() -> std::string {
             if (ts.type == "executable") {
                 return "executable";
@@ -96,6 +96,9 @@ public:
             throw "unknown translation set target";
         }();
         auto cmd = busy::genCall::linking(toolchain, ts, type, objFiles, dependencies);
+
+        auto call = formatCall(cmd);
+
         if (verbose) {
             fmt::print("{}\n", formatCall(cmd));
         }
@@ -103,6 +106,11 @@ public:
         if (verbose) {
             fmt::print("{}\n{}\n\n", p.cout(), p.cerr());
         }
+        auto answer = busy::answer::parseCompilation(p.cout());
+        if (!p.cerr().empty()) {
+            throw error_fmt("Unexpected error with the build system: {}", p.cerr());
+        }
+        return std::make_tuple(call, answer);
     }
 };
 

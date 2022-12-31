@@ -21,10 +21,16 @@ inline auto parseCompilation(std::string_view output) -> Compilation {
     try {
         auto node = YAML::Load(std::string{output});
         if (node.IsMap()) {
+
+            auto dependencies = std::vector<std::string>{};
+            if (node["dependencies"].IsSequence()) {
+                dependencies = node["dependencies"].as<std::vector<std::string>>();
+            }
+
             return Compilation {
                 .stdout = node["stdout"].IsNull()?std::string{""}:node["stdout"].as<std::string>(""),
                 .stderr = node["stderr"].IsNull()?std::string{""}:node["stderr"].as<std::string>(""),
-                .dependencies = node["dependencies"].as<std::vector<std::string>>(),
+                .dependencies = dependencies,
                 .cached = node["cached"].as<bool>(),
                 .compilable = node["compilable"].as<bool>(),
                 .outputFiles = node["output_files"].as<std::vector<std::string>>(),
