@@ -222,6 +222,7 @@ elif [ "$1" == "compile" ]; then
         echo "stdout:"
         echo "stderr:"
         echo "dependencies: []"
+        echo "success: true"
         echo "cached: false"
         echo "compilable: false"
         echo "output_files: []"
@@ -336,6 +337,11 @@ if [ "${CCACHE}" -eq 1 ] && [ -f "${CCACHE_LOGFILE}" ]; then
 fi
 echo "cached: ${is_cached}"
 echo "compilable: true"
+if [ "${errorCode}" -eq 0 ]; then
+   echo "success: true"
+else
+   echo "success: false"
+fi
 echo "output_files:"
 for f in "${outputFiles[@]}"; do
     echo "  - ${f}"

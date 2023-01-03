@@ -14,6 +14,7 @@ struct Compilation {
     double                                compileDuration;
     bool cached{};
     bool compilable{};
+    bool success{};
     std::vector<std::string> outputFiles{};
 };
 
@@ -33,6 +34,7 @@ inline auto parseCompilation(std::string_view output) -> Compilation {
                 .dependencies = dependencies,
                 .cached = node["cached"].as<bool>(),
                 .compilable = node["compilable"].as<bool>(),
+                .success = node["success"].as<bool>(false),
                 .outputFiles = node["output_files"].as<std::vector<std::string>>(),
             };
         } else {

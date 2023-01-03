@@ -106,10 +106,10 @@ public:
         if (verbose) {
             fmt::print("{}\n{}\n\n", p.cout(), p.cerr());
         }
-        auto answer = busy::answer::parseCompilation(p.cout());
         if (!p.cerr().empty()) {
             throw error_fmt("Unexpected error with the build system: {}", p.cerr());
         }
+        auto answer = busy::answer::parseCompilation(p.cout());
         return std::make_tuple(call, answer);
     }
 };

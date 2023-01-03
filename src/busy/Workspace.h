@@ -243,7 +243,7 @@ public:
                 return;
             }
             auto [call, answer] = toolchain.finishTranslationSet(ts, objFiles, deps, verbose);
-            if (!answer.stderr.empty()) {
+            if (!answer.success) {
                 throw std::runtime_error(fmt::format("error linking:\n{}\n", answer.stderr));
             }
 
@@ -293,12 +293,12 @@ public:
                                 fmt::print("{}\n{}\n\n", call, answer.stdout);
                                 fmt::print("duration: {}\n", answer.compileDuration);
                             }
-                            if (answer.stderr.empty()) {
-                                finfo.lastCompile = answer.compileStartTime;
-                                finfo.duration    = answer.compileDuration;
-                            } else {
+                            if (!answer.success) {
                                 throw std::runtime_error(fmt::format("error compiling:\n{}\n", answer.stderr));
                             }
+
+                            finfo.lastCompile = answer.compileStartTime;
+                            finfo.duration    = answer.compileDuration;
                             finfo.dependencies.clear();
                             for (auto d : answer.dependencies) {
                                 finfo.dependencies.push_back(d);
