@@ -306,11 +306,10 @@ int main(int argc, char const* argv[]) {
             }();
 
             auto wq = WorkQueue{};
-            auto all = workspace.findDependencyNames(root);
+            auto all = workspace.findDependencyNames(root); // All Translation units which root depence on
             for (auto r : root) {
                 all.insert(r);
             }
-            std::atomic_bool errorAppeared{false};
             for (auto ts : all) {
                 auto deps = workspace.findDependencyNames(ts);
                 wq.insert(ts, [ts, &workspace, &args, &wq]() {
@@ -321,6 +320,8 @@ int main(int argc, char const* argv[]) {
             }
 
             // translate all jobs
+            std::atomic_bool errorAppeared{false};
+
             auto t = std::vector<std::jthread>{};
             auto threadCt = 16;
             for (ssize_t i{0}; i < threadCt; ++i) {
@@ -330,9 +331,9 @@ int main(int argc, char const* argv[]) {
                     } catch(std::exception const& e) {
                         if (!errorAppeared) {
                             fmt::print("compile error: {}\n", e.what());
-                            wq.flush();
                         }
                         errorAppeared = true;
+                        wq.flush();
                     }
                 });
             }
