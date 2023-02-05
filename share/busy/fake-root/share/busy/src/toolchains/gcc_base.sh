@@ -313,8 +313,9 @@ mkdir -p $(dirname ${outputFile})
 if [ -n "${set_verbose-}" ]; then
     echo $call>>${stdoutFile}
 fi
-eval $call 1>>${stdoutFile} 2>${stderrFile} || true
-errorCode=$?
+
+errorCode=0
+eval $call 1>>${stdoutFile} 2>${stderrFile} || errorCode=$?
 
 echo "call: \"${call}\""
 echo "stdout: |+"
