@@ -84,7 +84,7 @@ struct WorkQueue {
     /* Inserts a job
      * \param name: name of this job a unique identifier
      * \param func: the function to execute to solve this job
-     * \param blockingJobs: a list of jobs that have to be finished before this one
+     * \param blockingJobs: a list of jobs that have to be finished before this one (jobs that have to be executed before this one)
      */
     void insert(std::string name, std::function<void()> func, std::unordered_set<std::string> const& blockingJobs) {
         auto g = std::lock_guard{mutex};
@@ -103,25 +103,6 @@ struct WorkQueue {
             readyJobs.emplace_back(name);
         }
     }
-    /* Insert a child job
-     * Will check which other jobs it blocks and increase their count
-     **/
-    void insertChild(std::string name, std::string parentName, std::function<void()> func) {
-        auto const& parent = allJobs.at(parentName);
-
-        auto g = std::lock_guard{mutex};
-        for (auto const& d : parent.waitingJobs) {
-            allJobs[d].blockingJobs += 1;
-        }
-        auto& job = allJobs[name];
-        if (!job.name.empty()) {
-            throw std::runtime_error("duplicate job name \"" + name + "\", abort!");
-        }
-        job.name = name;
-        job.job  = std::move(func);
-        job.waitingJobs.insert(job.waitingJobs.end(), parent.waitingJobs.begin(), parent.waitingJobs.end());
-        readyJobs.emplace_back(name);
-    }
 
     bool processJob() {
         auto g = std::unique_lock{mutex};
@@ -134,6 +115,7 @@ struct WorkQueue {
             readyJobs.pop_back();
             auto const& job = allJobs.at(last);
             g.unlock();
+//            std::cout << "processing: " << job.name << "\n";
             job.job();
             finishJob(job.name);
         } else {
@@ -311,12 +293,23 @@ int main(int argc, char const* argv[]) {
                 all.insert(r);
             }
             for (auto ts : all) {
-                auto deps = workspace.findDependencyNames(ts);
-                wq.insert(ts, [ts, &workspace, &args, &wq]() {
-                    for (auto [name, j] : workspace.translate(ts, args.verbose, args.clean, args.options)) {
-                        wq.insertChild(name, ts, j);
-                    }
-                }, deps);
+                wq.insert(ts + "/setup", [ts, &workspace, &args, &wq]() {
+                    workspace._translateSetup(ts, args.verbose);
+                }, {});
+                auto units = std::unordered_set<std::string>{};
+                for (auto const& unit : workspace._listTranslateUnits(ts)) {
+                    wq.insert(ts + "/unit/" + unit, [ts, &workspace, &args, unit]() {
+                        workspace._translateUnit(ts, unit, args.verbose, args.clean, args.options);
+                    }, {ts + "/setup"});
+                    units.emplace(ts + "/unit/" + unit);
+                }
+                units.emplace(ts + "/setup");
+                for (auto dep : workspace.findDependencyNames(ts)) {
+                    units.emplace(dep + "/linkage");
+                }
+                wq.insert(ts + "/linkage", [ts, &workspace, &args]() {
+                    workspace._translateLinkage(ts, args.verbose);
+                }, units);
             }
 
             // translate all jobs

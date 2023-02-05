@@ -32,7 +32,7 @@ inline auto parseCompilation(std::string_view output) -> Compilation {
                 .stdout = node["stdout"].IsNull()?std::string{""}:node["stdout"].as<std::string>(""),
                 .stderr = node["stderr"].IsNull()?std::string{""}:node["stderr"].as<std::string>(""),
                 .dependencies = dependencies,
-                .cached = node["cached"].as<bool>(),
+                .cached = node["cached"].as<bool>(false),
                 .compilable = node["compilable"].as<bool>(),
                 .success = node["success"].as<bool>(false),
                 .outputFiles = node["output_files"].as<std::vector<std::string>>(),
