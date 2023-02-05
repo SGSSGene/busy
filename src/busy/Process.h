@@ -1,37 +1,30 @@
 #pragma once
+
 #include <array>
 #include <filesystem>
 #include <memory>
-#include <sstream>
+#include <ranges>
+#include <span>
 #include <string>
+#include <sys/wait.h>
 #include <thread>
 #include <vector>
-#include <sys/wait.h>
 
 namespace process {
 
-constexpr inline int READ_END = 0;
-constexpr inline int WRITE_END = 1;
-
-inline auto explode(std::string input, char c) -> std::vector<std::string> {
-    auto retList = std::vector<std::string>{};
-    std::istringstream str{input};
-    for (std::string s; std::getline(str, s, c);) {
-        retList.emplace_back(std::move(s));
-    }
-    return retList;
-}
-
 class Process final {
 private:
+    static constexpr int READ_END{0};
+    static constexpr int WRITE_END{1};
+
     std::array<int, 2> stdoutpipe;
     std::array<int, 2> stderrpipe;
     int status;
 
-    std::stringstream stdcout;
-    std::stringstream stdcerr;
+    std::vector<char> stdcout;
+    std::vector<char> stdcerr;
 public:
-    Process(std::vector<std::string> const& prog, std::filesystem::path const& _cwd = std::filesystem::current_path()) {
+    Process(std::span<std::string> prog, std::filesystem::path const& _cwd = std::filesystem::current_path()) {
         int ret1 = pipe(stdoutpipe.data());
         int ret2 = pipe(stderrpipe.data());
         if (ret1 == -1 || ret2 == -1) {
@@ -56,14 +49,15 @@ public:
     auto operator=(Process const&) -> Process& = delete;
     auto operator=(Process&&) -> Process& = delete;
 
-    [[nodiscard]] auto cout() const { return stdcout.view(); }
-    [[nodiscard]] auto cerr() const { return stdcerr.view(); }
+    [[nodiscard]] auto cout() const { return std::string_view{stdcout.begin(), stdcout.end()}; }
+    [[nodiscard]] auto cerr() const { return std::string_view{stdcerr.begin(), stdcerr.end()}; }
     [[nodiscard]] auto getStatus() const -> int { return status; }
 private:
-    void childProcess(std::vector<std::string> const& _prog) {
+    void childProcess(std::span<std::string> _prog) {
         auto envPath = std::string{getenv("PATH")};
         auto execStr = [&]() -> std::string {
-            for (std::filesystem::path _s : explode(envPath, ':')) {
+            for (auto s : std::views::split(envPath, ":")) {
+                auto _s = std::filesystem::path{s.begin(), s.end()};
                 if (std::filesystem::exists(_s / _prog[0])) {
                     return _s / _prog[0];
                 }
@@ -71,8 +65,8 @@ private:
             return _prog[0];
         }();
 
-        std::vector<char*> argv;
-        for (auto& a : _prog) {
+        auto argv = std::vector<char*>{};
+        for (auto const& a : _prog) {
             argv.push_back(const_cast<char*>(a.c_str()));
         }
         argv.push_back(nullptr);
@@ -89,12 +83,19 @@ private:
 
     void parentProcess(pid_t pid) {
         auto readUntilEnd = [](auto& file, auto& out) {
-            std::array<char, 4096> buffer;
             while (true) {
-                if (auto size = read(file, buffer.data(), buffer.size()); size >= 0) {
-                    out << std::string_view{buffer.data(), buffer.data()+size};
-                    if (size == 0) return;
-                } else return;
+                auto origSize = out.size();
+                if (out.capacity() - out.size() > 4096) {
+                    out.resize(out.capacity() * 2);
+                } else {
+                    out.resize(out.capacity());
+                }
+                auto size = read(file, out.data() + origSize, out.size() - origSize);
+                if (size <= 0) {
+                    out.resize(origSize);
+                    return;
+                }
+                out.resize(origSize + size);
             }
         };
         auto t1 = std::jthread{[&] { readUntilEnd(stdoutpipe[READ_END], stdcout); }};
