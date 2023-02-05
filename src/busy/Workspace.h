@@ -174,7 +174,7 @@ public:
         return ss;
     }
 
-    auto findDependencyNames(std::span<std::string> const& tsNames) const {
+    auto findDependencyNames(std::span<std::string const> tsNames) const {
         auto ss = std::unordered_set<std::string>{};
         for (auto const& tsName : tsNames) {
             auto& ts = allSets.at(tsName);
