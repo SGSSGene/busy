@@ -1,13 +1,13 @@
 #pragma once
 
-#include <fmt/format.h>
-#include <ranges>
-#include <vector>
-
 #include "Desc.h"
 
+#include <fmt/format.h>
+#include <span>
+#include <vector>
+
 namespace busy::genCall {
-    auto setup_translation_set(std::filesystem::path const& _tool, std::filesystem::path _buildPath, desc::TranslationSet ts, std::vector<desc::TranslationSet> const& deps) {
+    auto setup_translation_set(std::filesystem::path const& _tool, std::filesystem::path _buildPath, desc::TranslationSet ts, std::span<desc::TranslationSet const> deps) {
         auto r = std::vector<std::string>{_tool.string(), "setup_translation_set", relative(ts.path, _buildPath).string(), ts.name};
 
         r.emplace_back("--ilocal");
@@ -26,7 +26,7 @@ namespace busy::genCall {
         if (r.back() == "--isystem") r.pop_back();
         return r;
     }
-    auto compilation(std::filesystem::path const& _tool, desc::TranslationSet const& ts, std::filesystem::path const& input, std::vector<std::string> options) {
+    auto compilation(std::filesystem::path const& _tool, desc::TranslationSet const& ts, std::filesystem::path const& input, std::span<std::string const> options) {
         auto r = std::vector<std::string>{_tool.string(), "compile", ts.name};
         r.emplace_back(input.string());
         if (not options.empty()) {
@@ -37,7 +37,7 @@ namespace busy::genCall {
         }
         return r;
     }
-    auto linking(std::filesystem::path const& _tool, desc::TranslationSet const& ts, std::string const& _type, std::vector<std::filesystem::path> const& _objFiles, std::vector<desc::TranslationSet> const& deps) {
+    auto linking(std::filesystem::path const& _tool, desc::TranslationSet const& ts, std::string const& _type, std::span<std::filesystem::path const> _objFiles, std::span<desc::TranslationSet const> deps) {
         auto r = std::vector<std::string>{_tool.string(), "link", ts.name, _type};
         r.emplace_back("--input");
         for (auto v : _objFiles) {
