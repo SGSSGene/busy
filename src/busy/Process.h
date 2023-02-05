@@ -86,7 +86,7 @@ private:
             out.reserve(4096);
             while (true) {
                 auto origSize = out.size();
-                if (out.capacity() - out.size() > 4096) {
+                if (out.capacity() - out.size() < 4096) {
                     out.resize(out.capacity() * 2);
                 } else {
                     out.resize(out.capacity());
