@@ -24,6 +24,7 @@ struct Arguments {
     std::vector<std::filesystem::path> addToolchains;
     std::vector<std::string> trailing; // trailing commands
     std::vector<std::string> options; // toolchain options
+    size_t                   jobs{1}; // how many threads/jobs in parallel?
     bool verbose{};
     bool clean{};
     std::filesystem::path prefix{}; // prefix for install
@@ -39,6 +40,9 @@ struct Arguments {
             } else if (args[i] == "-t" and i+1 < ssize(args)) {
                 ++i;
                 addToolchains.emplace_back(args[i]);
+            } else if ((args[i] == "-j" or args[i] == "--jobs") and i+1 < ssize(args)) {
+                ++i;
+                jobs = std::stod(std::string{args[i]});
             } else if (args[i] == "--options" and i+1 < ssize(args)) {
                 ++i;
                 options.emplace_back(args[i]);
@@ -50,6 +54,9 @@ struct Arguments {
                 ++i;
                 prefix = args[i];
             } else {
+                if (args[i].size() and args[i][0] == '-') {
+                    throw std::runtime_error("unknown argument " + std::string{args[i]});
+                }
                 if (buildPath.empty()) {
                     buildPath = args[i];
                 } else {
@@ -316,8 +323,7 @@ int main(int argc, char const* argv[]) {
             std::atomic_bool errorAppeared{false};
 
             auto t = std::vector<std::jthread>{};
-            auto threadCt = 16;
-            for (ssize_t i{0}; i < threadCt; ++i) {
+            for (ssize_t i{0}; i < args.jobs; ++i) {
                 t.emplace_back([&]() {
                     try {
                         while (!errorAppeared and wq.processJob());
