@@ -262,8 +262,8 @@ elif [ "$1" == "link" ]; then
 
     # Header only
     if [ "${#inputFiles[@]}" -eq 0 ]; then
-        echo "success: true"
         echo "compilable: false"
+        echo "success: true"
         echo "cached: false"
         echo "output_files: []"
         exit 0

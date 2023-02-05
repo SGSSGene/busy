@@ -59,5 +59,3 @@ function parseDepFile {
             }
         }' | tail -n +2 | sort
 }
-
-
