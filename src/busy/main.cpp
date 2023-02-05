@@ -68,9 +68,10 @@ struct Arguments {
 
 struct WorkQueue {
     struct Job {
-        ssize_t                  blockingJobs{};
+        std::string              name;
+        ssize_t                  blockingJobs{}; // Number of Jobs that are blocking this job
         std::function<void()>    job;
-        std::vector<std::string> waitingJobs; // Jobs that are waiting for this job
+        std::vector<std::string> waitingJobs;    // Jobs that are waiting for this job
     };
 
     std::mutex                 mutex;
@@ -87,21 +88,19 @@ struct WorkQueue {
      */
     void insert(std::string name, std::function<void()> func, std::unordered_set<std::string> const& blockingJobs) {
         auto job = Job {
+            .name         = std::move(name),
             .blockingJobs = ssize(blockingJobs),
-            .job          = [this, name, func]() {
-                func();
-                finishJobs(name);
-            }
+            .job          = std::move(func),
         };
 
         auto g = std::lock_guard{mutex};
         for (auto const& j : blockingJobs) {
-            allJobs[j].waitingJobs.push_back(name);
+            allJobs[j].waitingJobs.push_back(job.name);
         }
         allJobs[name].blockingJobs = job.blockingJobs;
         allJobs[name].job          = job.job;
         if (blockingJobs.size() == 0) {
-            readyJobs.emplace_back(name);
+            readyJobs.emplace_back(job.name);
         }
     }
     /* Insert a child job
@@ -109,12 +108,10 @@ struct WorkQueue {
      **/
     void insertChild(std::string name, std::string parentName, std::function<void()> func) {
          auto job = Job {
+            .name         = std::move(name),
             .blockingJobs = 0,
-            .job          = [this, name, func]() {
-                func();
-                finishJobs(name);
-            },
-            .waitingJobs = allJobs[parentName].waitingJobs
+            .job          = std::move(func),
+            .waitingJobs  = allJobs[parentName].waitingJobs
         };
 
         auto g = std::lock_guard{mutex};
@@ -123,21 +120,22 @@ struct WorkQueue {
         }
         allJobs[name].job          = job.job;
         allJobs[name].waitingJobs  = job.waitingJobs;
-        readyJobs.emplace_back(name);
+        readyJobs.emplace_back(job.name);
     }
 
     bool processJob() {
+        auto g = std::unique_lock{mutex};
         if (jobsDone == allJobs.size()) {
             return false;
         }
 
-        auto g = std::unique_lock{mutex};
         if (!readyJobs.empty()) {
             auto last = readyJobs.back();
             readyJobs.pop_back();
-            auto const& j = allJobs.at(last).job;
+            auto const& job = allJobs.at(last);
             g.unlock();
-            j();
+            job.job();
+            finishJob(job.name);
         } else {
             cv.wait(g);
         }
@@ -145,7 +143,8 @@ struct WorkQueue {
         return true;
     }
 
-    void finishJobs(std::string const& name) {
+private:
+    void finishJob(std::string const& name) {
         auto g = std::lock_guard{mutex};
         for (auto j : allJobs.at(name).waitingJobs) {
             allJobs.at(j).blockingJobs -= 1;
@@ -157,6 +156,7 @@ struct WorkQueue {
         cv.notify_all();
     }
 
+public:
     void flush() {
         cv.notify_all();
     }
