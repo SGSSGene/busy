@@ -83,6 +83,7 @@ private:
 
     void parentProcess(pid_t pid) {
         auto readUntilEnd = [](auto& file, auto& out) {
+            out.reserve(4096);
             while (true) {
                 auto origSize = out.size();
                 if (out.capacity() - out.size() > 4096) {
