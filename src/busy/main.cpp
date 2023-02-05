@@ -87,40 +87,40 @@ struct WorkQueue {
      * \param blockingJobs: a list of jobs that have to be finished before this one
      */
     void insert(std::string name, std::function<void()> func, std::unordered_set<std::string> const& blockingJobs) {
-        auto job = Job {
-            .name         = std::move(name),
-            .blockingJobs = ssize(blockingJobs),
-            .job          = std::move(func),
-        };
-
         auto g = std::lock_guard{mutex};
         for (auto const& j : blockingJobs) {
-            allJobs[j].waitingJobs.push_back(job.name);
+            allJobs[j].waitingJobs.push_back(name);
         }
-        allJobs[name].blockingJobs = job.blockingJobs;
-        allJobs[name].job          = job.job;
+        auto& job = allJobs[name];
+        if (!job.name.empty()) {
+            throw std::runtime_error("duplicate job name \"" + name + "\", abort!");
+        }
+        job.name          = name;
+        job.blockingJobs += ssize(blockingJobs);
+        job.job           = std::move(func);
+
         if (blockingJobs.size() == 0) {
-            readyJobs.emplace_back(job.name);
+            readyJobs.emplace_back(name);
         }
     }
     /* Insert a child job
      * Will check which other jobs it blocks and increase their count
      **/
     void insertChild(std::string name, std::string parentName, std::function<void()> func) {
-         auto job = Job {
-            .name         = std::move(name),
-            .blockingJobs = 0,
-            .job          = std::move(func),
-            .waitingJobs  = allJobs[parentName].waitingJobs
-        };
+        auto const& parent = allJobs.at(parentName);
 
         auto g = std::lock_guard{mutex};
-        for (auto const& d :job.waitingJobs) {
+        for (auto const& d : parent.waitingJobs) {
             allJobs[d].blockingJobs += 1;
         }
-        allJobs[name].job          = job.job;
-        allJobs[name].waitingJobs  = job.waitingJobs;
-        readyJobs.emplace_back(job.name);
+        auto& job = allJobs[name];
+        if (!job.name.empty()) {
+            throw std::runtime_error("duplicate job name \"" + name + "\", abort!");
+        }
+        job.name = name;
+        job.job  = std::move(func);
+        job.waitingJobs.insert(job.waitingJobs.end(), parent.waitingJobs.begin(), parent.waitingJobs.end());
+        readyJobs.emplace_back(name);
     }
 
     bool processJob() {
