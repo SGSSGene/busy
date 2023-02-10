@@ -1,6 +1,0 @@
-name: test
-projects:
-  - name: helloWorld
-    type: executable
-    description: |
-Simplest imaginable hello World program, to demonstrate busy

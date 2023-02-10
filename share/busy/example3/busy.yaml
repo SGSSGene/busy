@@ -1,6 +1,0 @@
-name: test
-projects:
-  - name: appHelloWorld
-    type: executable
-    description: |
-Hello World program depending on a static library
