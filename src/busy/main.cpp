@@ -30,10 +30,7 @@ struct Arguments {
     std::filesystem::path prefix{}; // prefix for install
 
     Arguments(std::vector<std::string_view> args) {
-        if (ssize(args) > 1) {
-            mode = args[1];
-        }
-        for (int i{2}; i < ssize(args); ++i) {
+        for (int i{1}; i < ssize(args); ++i) {
             if (args[i] == "-f" and i+1 < ssize(args)) {
                 ++i;
                 busyFile = args[i];
@@ -57,7 +54,9 @@ struct Arguments {
                 if (args[i].size() and args[i][0] == '-') {
                     throw std::runtime_error("unknown argument " + std::string{args[i]});
                 }
-                if (buildPath.empty()) {
+                if (mode.empty()) {
+                    mode = args[i];
+                } else if (buildPath.empty()) {
                     buildPath = args[i];
                 } else {
                     trailing.emplace_back(args[i]);
