@@ -97,27 +97,25 @@ auto loadDesc(std::filesystem::path _file, std::filesystem::path _rootPath) -> D
     auto includes = root["include"];
     if (includes.IsSequence()) {
         for (auto include : includes) {
-            auto path = _file / std::filesystem::path{include.as<std::string>()};
-            for (auto d : std::filesystem::directory_iterator{path}) {
-                if (!d.is_regular_file()) continue;
-                auto desc = loadDesc(d.path(), _rootPath);
-                for (auto ts : desc.translationSets) {
-                    ret.translationSets.emplace_back(ts);
-                }
-                auto path = absolute(d);
-                path.remove_filename();
+            auto d = _file / std::filesystem::path{include.as<std::string>()};
+            if (!is_regular_file(d)) continue;
+            auto desc = loadDesc(d, _rootPath);
+            for (auto ts : desc.translationSets) {
+                ret.translationSets.emplace_back(ts);
+            }
+            auto path = absolute(d);
+            path.remove_filename();
 
-                for (auto [key, value] : desc.toolchains) {
-                    auto tc = [&]() -> std::filesystem::path {
-                        if (value.is_absolute()) {
-                            return value;
-                        } else {
-                            return relative(path / value);
-                        }
-                    }();
+            for (auto [key, value] : desc.toolchains) {
+                auto tc = [&]() -> std::filesystem::path {
+                    if (value.is_absolute()) {
+                        return value;
+                    } else {
+                        return relative(path / value);
+                    }
+                }();
 
-                    ret.toolchains[key] = tc;
-                }
+                ret.toolchains[key] = tc;
             }
         }
     }
