@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# chaneg into script directory
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+cd "$DIR"
+
+
 set -Eeuo pipefail
 mkdir -p bootstrap.d
 cd bootstrap.d
