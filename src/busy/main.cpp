@@ -476,9 +476,9 @@ int main(int argc, char const* argv[]) {
                         }
                         for (auto [key, value] : ts.legacy.includes) {
                             if (std::filesystem::path{key}.is_absolute()) {
-                                ofs << "        " << key << ":" << value << "\n";
+                                ofs << "        " << key << ": " << value << "\n";
                             } else {
-                                ofs << "        ../../include/" << ts.name << "/" << value << ":" << value << "\n";
+                                ofs << "        ../../include/" << ts.name << "/" << value << ": " << value << "\n";
                             }
                         }
                         if (ts.dependencies.size()) {
