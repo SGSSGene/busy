@@ -496,6 +496,8 @@ int main(int argc, char const* argv[]) {
                     auto ofs = std::ofstream{path};
                     ofs << "file-version: 1.0.0\n";
                     ofs << "translationSets:\n";
+                    ofs << "  - name: " << ts.name << "\n";
+                    ofs << "    type: toolchain\n";
 
                     // install includes
                     {
