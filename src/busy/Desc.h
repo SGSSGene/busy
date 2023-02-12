@@ -14,6 +14,7 @@ struct TranslationSet {
     std::string              language;
     std::vector<std::string> dependencies;
     bool                     precompiled;
+    bool                     installed;
     struct {
         std::vector<std::tuple<std::string, std::string>> includes;
         std::vector<std::string> libraries;
@@ -48,6 +49,7 @@ auto loadTranslationSet(YAML::Node node, std::filesystem::path path, std::filesy
         .language     = node["language"].as<std::string>(),
         .dependencies = node["dependencies"].as<std::vector<std::string>>(std::vector<std::string>{}),
         .precompiled  = node["precompiled"].as<bool>(false),
+        .installed    = node["installed"].as<bool>(false),
         .legacy {
             .includes  = loadTupleList(node["legacy"]["includes"]),
             .libraries = node["legacy"]["libraries"].as<std::vector<std::string>>(std::vector<std::string>{}),

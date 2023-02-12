@@ -354,7 +354,7 @@ int main(int argc, char const* argv[]) {
                 fmt::print("  {}:\n", type);
                 for (auto const& [key, ts] : workspace.allSets) {
                     if (ts.type != type) continue;
-                    fmt::print("    - {}{}\n", ts.name, ts.precompiled?" (precompiled)":"");
+                    fmt::print("    - {}{}{}\n", ts.name, ts.precompiled?" (precompiled)":"", ts.installed?" (installed)":"");
                 }
             }
             fmt::print("available toolchains:\n");
@@ -375,6 +375,7 @@ int main(int argc, char const* argv[]) {
                 fmt::print("  type: {}\n", ts.type);
                 fmt::print("  language: {}\n", ts.language);
                 fmt::print("  precompiled: {}\n", ts.precompiled);
+                fmt::print("  installed: {}\n", ts.installed);
                 auto path = ts.path / "src" / ts.name;
                 path = path.lexically_normal();
                 fmt::print("  path: {}\n", path);
@@ -398,6 +399,7 @@ int main(int argc, char const* argv[]) {
                 throw error_fmt{"Trouble with the HOME variable, maybe it is not set?"};
             }();
 
+            // copy all binaries to target folder
             if (auto p = std::filesystem::path{"bin"}; is_directory(p)) {
                 create_directories(prefix / p);
                 for (auto const& d : std::filesystem::directory_iterator{p}) {
@@ -408,6 +410,7 @@ int main(int argc, char const* argv[]) {
                     }
                 }
             }
+            // copy libraries to target folder
             auto hasLibrary = std::unordered_set<std::string>{};
             if (auto p = std::filesystem::path{"lib"}; is_directory(p)) {
                 create_directories(prefix / p);
@@ -430,22 +433,43 @@ int main(int argc, char const* argv[]) {
             auto desc = busy::desc::loadDesc(workspace.busyFile, workspace.buildPath);
 
             for (auto ts : desc.translationSets) {
-                if (ts.precompiled) continue;
+                if (ts.installed) continue;
                 if (ts.type != "library") continue;
                 if (ts.language == "c++") {
                     create_directories(prefix / "include");
                     create_directories(prefix / "share/busy");
 
+                    // remove all previous installed files
+                    std::filesystem::remove_all(prefix / "include" / ts.name);
+
                     // install includes
                     {
-                        auto path = (ts.path / "src" / ts.name);
-                        std::error_code ec;
-                        auto options = std::filesystem::copy_options::overwrite_existing | std::filesystem::copy_options::recursive;
-                        std::filesystem::copy(path, prefix / "include" / ts.name, options, ec);
-                        if (ec) {
-                            throw error_fmt{"could not copy {} to {} with message {}", path, prefix / "include" / ts.name, ec.message()};
+                        auto path = ts.path / "src" / ts.name;
+                        // any files to copy?
+                        if (exists(path)) {
+                            std::error_code ec;
+                            auto options = std::filesystem::copy_options::overwrite_existing | std::filesystem::copy_options::recursive | std::filesystem::copy_options::copy_symlinks;
+                            std::filesystem::copy(path, prefix / "include" / ts.name, options, ec);
+                            if (ec) {
+                                throw error_fmt{"could not copy {} to {} with message {}", path, prefix / "include" / ts.name, ec.message()};
+                            }
                         }
                     }
+                    // copy legacy includes that are relative path over
+                    for (auto [key, value] : ts.legacy.includes) {
+                        auto path = std::filesystem::path{key};
+                        if (path.is_relative()) {
+                            std::error_code ec;
+                            auto options = std::filesystem::copy_options::overwrite_existing | std::filesystem::copy_options::recursive | std::filesystem::copy_options::copy_symlinks;
+                            auto target = prefix / "include" / ts.name / value;
+                            std::filesystem::copy(path, target, options, ec);
+                            if (ec) {
+                                throw error_fmt{"could not copy {} to {} with message {}", path, target, ec.message()};
+                            }
+                        }
+                    }
+
+
                     // install a busy.yaml file
                     {
                         auto path = prefix / "share/busy" / ts.name;
@@ -456,17 +480,28 @@ int main(int argc, char const* argv[]) {
                         ofs << "  - name: " << ts.name << "\n";
                         ofs << "    type: library\n";
                         ofs << "    language: c++\n";
-                        ofs << "    precompiled: true\n";
+                        ofs << "    installed: true\n";
                         ofs << "    legacy:\n";
                         if (hasLibrary.contains(ts.name + ".a")) {
                             ofs << "      libraries:\n";
                             ofs << "        - " << ts.name << "\n";
                         }
                         ofs << "      includes:\n";
-                        ofs << "        ../../include/" << ts.name << ": " << ts.name << "\n";
-                        ofs << "    dependencies:\n";
-                        for (auto d : ts.dependencies) {
-                            ofs << "      - " << d << "\n";
+                        if (exists(ts.path / "src" / ts.name)) {
+                            ofs << "        ../../include/" << ts.name << ": " << ts.name << "\n";
+                        }
+                        for (auto [key, value] : ts.legacy.includes) {
+                            if (std::filesystem::path{key}.is_absolute()) {
+                                ofs << "        " << key << ":" << value << "\n";
+                            } else {
+                                ofs << "        ../../include/" << ts.name << "/" << value << ":" << value << "\n";
+                            }
+                        }
+                        if (ts.dependencies.size()) {
+                            ofs << "    dependencies:\n";
+                            for (auto d : ts.dependencies) {
+                                ofs << "      - " << d << "\n";
+                            }
                         }
 
                     }

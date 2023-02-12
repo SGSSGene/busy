@@ -45,7 +45,7 @@ namespace busy::genCall {
         }
         r.emplace_back("--llibraries");
         for (auto const& d : deps) {
-            if (!d.precompiled) {
+            if (!d.precompiled && !d.installed) {
                 r.emplace_back(d.name);
             }
         }

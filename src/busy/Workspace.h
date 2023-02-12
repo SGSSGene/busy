@@ -200,7 +200,7 @@ public:
     auto _translateSetup(std::string const& tsName, bool verbose) {
         auto const& ts = allSets.at(tsName);
 
-        if (ts.precompiled) {
+        if (ts.installed) {
             return;
         }
         if (verbose) {
@@ -216,7 +216,7 @@ public:
         auto tsPath = ts.path / "src" / tsName;
 
         auto units = std::vector<std::string>{};
-        if (ts.precompiled) {
+        if (ts.precompiled || ts.installed) {
             return units;
         }
         for (auto _f : std::filesystem::recursive_directory_iterator(tsPath)) {
@@ -277,7 +277,7 @@ public:
         auto tsPath    = ts.path / "src" / tsName;
         auto deps      = findDependencies(ts);
         auto toolchain = getToolchain(ts.language);
-        if (ts.precompiled) {
+        if (ts.installed) {
             return;
         }
         auto objFiles = std::vector<std::filesystem::path>{};
