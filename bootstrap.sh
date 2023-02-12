@@ -13,8 +13,28 @@ set -Eeuo pipefail
 mkdir -p bootstrap.d
 cd bootstrap.d
 
+echo "building temporary busy executable"
 g++ -std=c++20 ../src/busy/main.cpp -lyaml-cpp -lfmt -O0 -ggdb3 -o busy
-export BUSY_ROOT=../share/busy/fake-root/
+
+
+echo "creating proper busy environment"
+mkdir -p build
+mkdir -p tmp-root
+
+for f in "compilers" "stdlib" "yaml-cpp" "fmt"; do
+    rm -rf build
+    (
+        mkdir build && cd $_
+        ../busy compile -f ../../share/busy/fake-root/share/busy/$f.yaml
+        ../busy install --prefix ../tmp-root
+        if [ -n "${install}" ]; then
+            ../busy install
+        fi
+    )
+done
+
+echo "compiling busy with busy"
+export BUSY_ROOT=tmp-root
 ./busy compile -f ../busy.yaml -t gcc12.2
 rm busy
 if [ -n "${install}" ]; then

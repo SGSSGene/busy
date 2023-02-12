@@ -168,9 +168,8 @@ auto loadAllBusyFiles(Workspace& workspace, bool verbose) -> std::map<std::strin
                     }
                     workspace.allSets[ts.name] = ts;
                     if (ts.type == "toolchain") {
-                        auto path = absolute(std::filesystem::path{ts.name} / "toolchain.sh");
+                        auto path = absolute(d.path() / "../.." / std::filesystem::path{ts.name} / "toolchain.sh");
                         toolchains[ts.name] = path;
-
                     }
                 }
             }
@@ -197,7 +196,7 @@ auto loadAllBusyFiles(Workspace& workspace, bool verbose) -> std::map<std::strin
                 }
                 workspace.allSets[ts.name] = ts;
                 if (ts.type == "toolchain") {
-                    auto path = absolute(std::filesystem::path{ts.name} / "toolchain.sh");
+                    auto path = absolute(d.path() / "../.." / std::filesystem::path{ts.name} / "toolchain.sh");
                     toolchains[ts.name] = path;
                 }
             }
@@ -466,19 +465,22 @@ int main(int argc, char const* argv[]) {
                         ofs << "    language: c++\n";
                         ofs << "    installed: true\n";
                         ofs << "    legacy:\n";
+                        ofs << "      libraries:\n";
                         if (hasLibrary.contains(ts.name + ".a")) {
-                            ofs << "      libraries:\n";
-                            ofs << "        - " << ts.name << "\n";
+                            ofs << "        - \"" << ts.name << "\"\n";
+                        }
+                        for (auto l : ts.legacy.libraries) {
+                            ofs << "        - \"" << l << "\"\n";
                         }
                         ofs << "      includes:\n";
                         if (exists(ts.path / "src" / ts.name)) {
-                            ofs << "        ../../include/" << ts.name << ": " << ts.name << "\n";
+                            ofs << "        ../../include/" << ts.name << ": \"" << ts.name << "\"\n";
                         }
                         for (auto [key, value] : ts.legacy.includes) {
                             if (std::filesystem::path{key}.is_absolute()) {
-                                ofs << "        " << key << ": " << value << "\n";
+                                ofs << "        " << key << ": \"" << value << "\"\n";
                             } else {
-                                ofs << "        ../../include/" << ts.name << "/" << value << ": " << value << "\n";
+                                ofs << "        ../../include/" << ts.name << "/" << value << ": \"" << value << "\"\n";
                             }
                         }
                         if (ts.dependencies.size()) {
