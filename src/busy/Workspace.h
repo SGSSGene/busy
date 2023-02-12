@@ -151,13 +151,16 @@ public:
             open.emplace(d);
         }
         found.insert(ts.name);
-
         while (!open.empty()) {
             auto n = open.front();
             open.pop();
             found.insert(n);
+            if (allSets.find(n) == allSets.end()) {
+               throw std::runtime_error("dependency \"" + n + "\" not found");
+            }
             deps.push_back(allSets.at(n));
             for (auto d : allSets.at(n).dependencies) {
+
                 open.emplace(d);
             }
         }
