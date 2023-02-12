@@ -1,2 +1,3 @@
-toolchains:
-  gcc12.2: src/toolchains/gcc12.2.sh
+translationSets:
+  - name: gcc12.2
+    type: toolchain

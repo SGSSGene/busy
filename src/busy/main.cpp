@@ -167,14 +167,10 @@ auto loadAllBusyFiles(Workspace& workspace, bool verbose) -> std::map<std::strin
                         fmt::print("ts: {} (~/.config/busy/env/share/busy)\n", ts.name);
                     }
                     workspace.allSets[ts.name] = ts;
-                }
-                for (auto [key, value] : desc.toolchains) {
-                    if (value.is_absolute()) {
-                        toolchains[key] = value;
-                    } else {
-                        auto path = absolute(d);
-                        path.remove_filename();
-                        toolchains[key] = path / value;
+                    if (ts.type == "toolchain") {
+                        auto path = absolute(std::filesystem::path{ts.name} / "toolchain.sh");
+                        toolchains[ts.name] = path;
+
                     }
                 }
             }
@@ -200,15 +196,9 @@ auto loadAllBusyFiles(Workspace& workspace, bool verbose) -> std::map<std::strin
                     fmt::print("ts: {} (BUSY_ROOT)\n", ts.name);
                 }
                 workspace.allSets[ts.name] = ts;
-            }
-            for (auto [key, value] : desc.toolchains) {
-                if (value.is_absolute()) {
-                    toolchains[key] = value;
-                } else {
-                    auto path = absolute(d);
-                    path.remove_filename();
-                    path = path / value;
-                    toolchains[key] = path;
+                if (ts.type == "toolchain") {
+                    auto path = absolute(std::filesystem::path{ts.name} / "toolchain.sh");
+                    toolchains[ts.name] = path;
                 }
             }
         }
@@ -221,16 +211,10 @@ auto loadAllBusyFiles(Workspace& workspace, bool verbose) -> std::map<std::strin
             fmt::print("ts: {} (local)\n", ts.name);
         }
         workspace.allSets[ts.name] = ts;
-    }
-    for (auto [key, value] : desc.toolchains) {
-        if (value.is_absolute()) {
-            toolchains[key] = value;
-        } else {
-            auto path = absolute(workspace.busyFile);
-            path.remove_filename();
-            toolchains[key] = relative(path / value, rootDir);
+        if (ts.type == "toolchain") {
+            auto path = absolute(std::filesystem::path{ts.name} / "toolchain.sh");
+            toolchains[ts.name] = path;
         }
-
     }
     return toolchains;
 }
@@ -434,8 +418,8 @@ int main(int argc, char const* argv[]) {
 
             for (auto ts : desc.translationSets) {
                 if (ts.installed) continue;
-                if (ts.type != "library") continue;
                 if (ts.language == "c++") {
+                    if (ts.type != "library") continue;
                     create_directories(prefix / "include");
                     create_directories(prefix / "share/busy");
 
@@ -504,6 +488,24 @@ int main(int argc, char const* argv[]) {
                             }
                         }
 
+                    }
+                } else if (ts.type == "toolchain") {
+                    create_directories(prefix / "share/busy");
+                    create_directories(prefix / "include");
+                    auto path = prefix / "share/busy" / (ts.name + ".yaml");
+                    auto ofs = std::ofstream{path};
+                    ofs << "file-version: 1.0.0\n";
+                    ofs << "translationSets:\n";
+
+                    // install includes
+                    {
+                        auto path = ts.path / "src" / ts.name;
+                        std::error_code ec;
+                        auto options = std::filesystem::copy_options::overwrite_existing | std::filesystem::copy_options::recursive | std::filesystem::copy_options::copy_symlinks;
+                        std::filesystem::copy(path, prefix / "share" / ts.name, options, ec);
+                        if (ec) {
+                            throw error_fmt{"could not copy {} to {} with message {}", path, prefix / "share" / ts.name, ec.message()};
+                        }
                     }
                 } else {
                     throw error_fmt{"unknown install language {}", ts.language};
