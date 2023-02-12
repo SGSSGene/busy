@@ -7,6 +7,9 @@ cd "$DIR"
 install=""
 if [ "$1" == "--install" ]; then
     install="y"
+elif [ -n "$1" ]; then
+    echo "unknown argument $1"
+    exit 255
 fi
 
 set -Eeuo pipefail
