@@ -168,7 +168,7 @@ auto loadAllBusyFiles(Workspace& workspace, bool verbose) -> std::map<std::strin
                     }
                     workspace.allSets[ts.name] = ts;
                     if (ts.type == "toolchain") {
-                        auto path = absolute(d.path() / "../.." / std::filesystem::path{ts.name} / "toolchain.sh");
+                        auto path = absolute(d.path().parent_path().parent_path() / std::filesystem::path{ts.name} / "toolchain.sh");
                         toolchains[ts.name] = path;
                     }
                 }
@@ -196,7 +196,7 @@ auto loadAllBusyFiles(Workspace& workspace, bool verbose) -> std::map<std::strin
                 }
                 workspace.allSets[ts.name] = ts;
                 if (ts.type == "toolchain") {
-                    auto path = absolute(d.path() / "../.." / std::filesystem::path{ts.name} / "toolchain.sh");
+                    auto path = absolute(d.path().parent_path().parent_path() / std::filesystem::path{ts.name} / "toolchain.sh");
                     toolchains[ts.name] = path;
                 }
             }
