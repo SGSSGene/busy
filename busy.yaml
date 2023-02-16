@@ -4,6 +4,11 @@ translationSets:
     type: executable
     language: c++
     dependencies:
+      - busy-lib
+  - name: busy-lib
+    type: library
+    language: c++
+    dependencies:
       - stdlib
       - fmt
       - yaml-cpp
