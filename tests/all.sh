@@ -134,4 +134,43 @@ END
     rm -rf ${build_path}
 )
 
+# check what happens if a dependency is missing
+(
+    build_path="test-build"
+    project="../singleAppWithMissingDependency"
+    rm -rf ${build_path}
+    mkdir -p ${build_path}
+    cd ${build_path}
+
+    str="$(busy compile -f ${project}/busy.yaml -t gcc12.2 2>&1 || true)"
+
+    if [ -z "${str}" ]; then
+        echo "${str}"
+        echo "failed 5"
+        exit 1
+    fi
+    cd ..
+    rm -rf ${build_path}
+)
+
+# check what happens if no toolchain is given
+(
+    build_path="test-build"
+    project="../singleApp"
+    rm -rf ${build_path}
+    mkdir -p ${build_path}
+    cd ${build_path}
+
+    str="$(busy compile -f ${project}/busy.yaml 2>&1 || true)"
+
+    if [ -z "${str}" ]; then
+        echo "${str}"
+        echo "failed 5"
+        exit 1
+    fi
+    cd ..
+    rm -rf ${build_path}
+)
+
+
 echo Success

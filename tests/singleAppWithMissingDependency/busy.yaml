@@ -1,0 +1,7 @@
+translationSets:
+  - name: app
+    type: executable
+    language: c++
+    dependencies:
+      - stdlib
+      - dependencymissing
