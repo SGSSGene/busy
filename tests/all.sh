@@ -13,7 +13,7 @@ set -Eeuo pipefail
     mkdir -p ${build_path}
     cd ${build_path}
 
-    busy compile -f ${project}/busy.yaml -t gcc12.2
+    busy compile -f ${project}/busy.yaml -t gcc12.2 -j 2 --clean
 
     str="$(bin/app)";
     if [ "${str}" != "Hello World" ]; then
