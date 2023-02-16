@@ -37,12 +37,21 @@ namespace busy::genCall {
         }
         return r;
     }
-    auto linking(std::filesystem::path const& _tool, desc::TranslationSet const& ts, std::string const& _type, std::span<std::filesystem::path const> _objFiles, std::span<desc::TranslationSet const> deps) {
+    auto linking(std::filesystem::path const& _tool, desc::TranslationSet const& ts, std::string const& _type, std::span<std::filesystem::path const> _objFiles, std::span<desc::TranslationSet const> deps, std::span<std::string const> options) {
         auto r = std::vector<std::string>{_tool.string(), "link", ts.name, _type};
+
+        if (not options.empty()) {
+            r.emplace_back("--options");
+            for (auto const& o : options) {
+                r.emplace_back(o);
+            }
+        }
+
         r.emplace_back("--input");
         for (auto v : _objFiles) {
             r.emplace_back(v);
         }
+
         r.emplace_back("--llibraries");
         for (auto const& d : deps) {
             if (!d.precompiled && !d.installed) {
@@ -67,6 +76,8 @@ namespace busy::genCall {
             }
         }
         if (r.back() == "--syslibraries") r.pop_back();
+
+
 
 
 

@@ -297,7 +297,7 @@ int main(int argc, char const* argv[]) {
                     units.emplace(dep + "/linkage");
                 }
                 wq.insert(ts + "/linkage", [ts, &workspace, &args]() {
-                    workspace._translateLinkage(ts, args.verbose);
+                    workspace._translateLinkage(ts, args.verbose, args.options);
                 }, units);
             }
 

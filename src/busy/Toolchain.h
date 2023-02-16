@@ -15,7 +15,6 @@ struct Toolchain {
     std::filesystem::path    buildPath;
     std::filesystem::path    toolchain;
     std::vector<std::string> languages;
-    std::vector<std::string> options;
 
     Toolchain(std::filesystem::path _buildPath, std::filesystem::path _toolchain)
         : buildPath{std::move(_buildPath)}
@@ -86,7 +85,7 @@ public:
     /**
      * finish translation set
      */
-    auto finishTranslationSet(auto const& ts, auto const& objFiles, auto const& dependencies, bool verbose) const {
+    auto finishTranslationSet(auto const& ts, auto const& objFiles, auto const& dependencies, bool verbose, std::span<std::string const> options) const {
         auto type = [&]() -> std::string {
             if (ts.type == "executable") {
                 return "executable";
@@ -95,7 +94,7 @@ public:
             }
             throw "unknown translation set target";
         }();
-        auto cmd = busy::genCall::linking(toolchain, ts, type, objFiles, dependencies);
+        auto cmd = busy::genCall::linking(toolchain, ts, type, objFiles, dependencies, options);
 
         auto call = formatCall(cmd);
 

@@ -275,7 +275,7 @@ public:
             finfo.dependencies.push_back(d);
         }
     }
-    auto _translateLinkage(std::string const& tsName, bool verbose) {
+    auto _translateLinkage(std::string const& tsName, bool verbose, std::vector<std::string> options) {
         auto const& ts = allSets.at(tsName);
         auto tsPath    = ts.path / "src" / tsName;
         auto deps      = findDependencies(ts);
@@ -289,7 +289,7 @@ public:
             auto tuPath    = relative(f, tsPath);
             objFiles.emplace_back(tuPath.string());
         }
-        auto [call, answer] = toolchain.finishTranslationSet(ts, objFiles, deps, verbose);
+        auto [call, answer] = toolchain.finishTranslationSet(ts, objFiles, deps, verbose, options);
         if (!answer.success) {
             throw std::runtime_error(fmt::format("error linking:\n{}\n", answer.stderr));
         }
