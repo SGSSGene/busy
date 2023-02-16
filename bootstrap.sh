@@ -28,7 +28,7 @@ for f in "compilers" "stdlib" "yaml-cpp" "fmt"; do
     rm -rf build
     (
         mkdir build && cd $_
-        ../busy compile -f ../../share/busy/fake-root/share/busy/$f.yaml
+        ../busy compile -f ../../extern/$f.yaml
         ../busy install --prefix ../tmp-root
         if [ -n "${install}" ]; then
             ../busy install
