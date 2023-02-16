@@ -1,0 +1,8 @@
+translationSets:
+  - name: app
+    type: executable
+    language: c++
+    dependencies:
+      - stdlib
+include:
+  - data/busy.yaml

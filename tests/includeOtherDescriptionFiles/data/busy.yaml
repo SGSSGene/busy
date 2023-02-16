@@ -1,0 +1,6 @@
+translationSets:
+  - name: something
+    type: library
+    language: c++
+    dependencies:
+      - stdlib

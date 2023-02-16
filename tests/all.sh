@@ -114,4 +114,24 @@ END
     rm -rf ${build_path}
 )
 
+
+# check what happens with unknown ts types
+(
+    build_path="test-build"
+    project="../includeOtherDescriptionFiles"
+    rm -rf ${build_path}
+    mkdir -p ${build_path}
+    cd ${build_path}
+
+    busy compile -f ${project}/busy.yaml -t gcc12.2
+
+    str="$(bin/app)";
+    if [ "${str}" != "Hello World" ]; then
+        echo "failed 1"
+        exit 1
+    fi
+    cd ..
+    rm -rf ${build_path}
+)
+
 echo Success
