@@ -17,7 +17,7 @@ mkdir -p bootstrap.d
 cd bootstrap.d
 
 echo "building temporary busy executable"
-g++ -std=c++20 ../src/busy/main.cpp -lyaml-cpp -lfmt -O0 -ggdb3 -o busy
+g++ -std=c++20 ../src/busy/main.cpp ../src/busy-lib/main.cpp -lyaml-cpp -lfmt -O0 -ggdb3 -o busy
 
 
 echo "creating proper busy environment"
