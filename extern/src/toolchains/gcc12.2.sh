@@ -41,18 +41,18 @@ profiles=(
 declare -A profile_compile_param
 profile_compile_param=(
     ["native"]=" -O3 -march=native "
-    ["release"]=" -O3"
-    ["release_with_symbols"]=" -O3 -ggdb"
-    ["debug"]=" -O0 -ggdb"
-    ["profile"]=" -fprofile-arcs -ftest-coverage -fPIC"
-    ["strict"]=" -Wall -Wextra -Wpedantic"
+    ["release"]=" -O3 "
+    ["release_with_symbols"]=" -O3 -ggdb "
+    ["debug"]=" -O0 -ggdb "
+    ["profile"]=" -O0 -g3 -p -pg --coverage -fPIC -fno-inline -fno-inline-small-functions -fno-default-inline -fbranch-probabilities "
+    ["strict"]=" -Wall -Wextra -Wpedantic "
 )
 
 declare -A profile_link_param
 profile_link_param=(
-    ["release_with_symbols"]=" -g3 -ggdb"
-    ["debug"]=" -g3 -ggdb"
-    ["profile"]=" -lgcov"
+    ["release_with_symbols"]=" -g3 -ggdb "
+    ["debug"]=" -g3 -ggdb "
+    ["profile"]=" -fprofile-arcs "
 )
 declare -A extraPackages
 extraPackages=(
