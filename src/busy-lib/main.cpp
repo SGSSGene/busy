@@ -34,6 +34,9 @@ struct Arguments {
             if (args[i] == "-f" and i+1 < ssize(args)) {
                 ++i;
                 busyFile = args[i];
+            } else if (args[i] == "-C" and i+1 < ssize(args)) {
+                ++i;
+                buildPath = args[i];
             } else if (args[i] == "-t" and i+1 < ssize(args)) {
                 ++i;
                 addToolchains.emplace_back(args[i]);
@@ -56,8 +59,6 @@ struct Arguments {
                 }
                 if (mode.empty()) {
                     mode = args[i];
-                } else if (buildPath.empty()) {
-                    buildPath = args[i];
                 } else {
                     trailing.emplace_back(args[i]);
                 }
