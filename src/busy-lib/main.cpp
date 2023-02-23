@@ -162,7 +162,7 @@ auto loadAllBusyFiles(Workspace& workspace, bool verbose) -> std::map<std::strin
         if (exists(s)) {
             for (auto const& d : std::filesystem::directory_iterator{s}) {
                 if (!d.is_regular_file()) continue;
-                auto desc = busy::desc::loadDesc(d.path(), rootDir);
+                auto desc = busy::desc::loadDesc(d.path(), rootDir, workspace.buildPath);
                 for (auto ts : desc.translationSets) {
                     if (verbose) {
                         fmt::print("ts: {} (~/.config/busy/env/share/busy)\n", ts.name);
@@ -190,7 +190,7 @@ auto loadAllBusyFiles(Workspace& workspace, bool verbose) -> std::map<std::strin
     if (exists(busy_root / "share/busy")) {
         for (auto const& d : std::filesystem::directory_iterator{busy_root / "share/busy"}) {
             if (!d.is_regular_file()) continue;
-            auto desc = busy::desc::loadDesc(d.path(), rootDir);
+            auto desc = busy::desc::loadDesc(d.path(), rootDir, workspace.buildPath);
             for (auto ts : desc.translationSets) {
                 if (verbose) {
                     fmt::print("ts: {} (BUSY_ROOT)\n", ts.name);
@@ -205,7 +205,7 @@ auto loadAllBusyFiles(Workspace& workspace, bool verbose) -> std::map<std::strin
     }
 
     // load busyFile
-    auto desc = busy::desc::loadDesc(workspace.busyFile, rootDir);
+    auto desc = busy::desc::loadDesc(workspace.busyFile, rootDir, workspace.buildPath);
     for (auto ts : desc.translationSets) {
         if (verbose) {
             fmt::print("ts: {} (local)\n", ts.name);
@@ -343,8 +343,11 @@ int app(std::span<std::string_view> _args) {
             auto workspace = Workspace{args.buildPath};
             updateWorkspace(workspace);
 
+            auto rootDir = workspace.busyFile;
+            rootDir.remove_filename();
+
             // load busyFile
-            auto desc = busy::desc::loadDesc(workspace.busyFile, workspace.buildPath);
+            auto desc = busy::desc::loadDesc(workspace.busyFile, rootDir, workspace.buildPath);
 
             auto printTS = [&](std::string const& tsName) {
                 fmt::print("{}:\n", tsName);
@@ -406,8 +409,11 @@ int app(std::span<std::string_view> _args) {
             auto workspace = Workspace{args.buildPath};
             updateWorkspace(workspace);
 
+            auto rootDir = workspace.busyFile;
+            rootDir.remove_filename();
+
             // load busyFile
-            auto desc = busy::desc::loadDesc(workspace.busyFile, workspace.buildPath);
+            auto desc = busy::desc::loadDesc(workspace.busyFile, rootDir, workspace.buildPath);
 
             for (auto ts : desc.translationSets) {
                 if (ts.installed) continue;
@@ -434,7 +440,12 @@ int app(std::span<std::string_view> _args) {
                     }
                     // copy legacy includes that are relative path over
                     for (auto [key, value] : ts.legacy.includes) {
+                        auto rootPath = workspace.busyFile;
+                        rootPath.remove_filename();
                         auto path = std::filesystem::path{key};
+                        if (path.is_relative()) {
+                            path = rootPath / path;
+                        }
                         if (path.is_relative()) {
                             std::error_code ec;
                             auto options = std::filesystem::copy_options::overwrite_existing | std::filesystem::copy_options::recursive | std::filesystem::copy_options::copy_symlinks;

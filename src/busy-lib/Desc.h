@@ -39,7 +39,7 @@ auto loadTupleList(YAML::Node node) {
 }
 
 
-auto loadTranslationSet(YAML::Node node, std::filesystem::path path, std::filesystem::path rootPath) {
+auto loadTranslationSet(YAML::Node node, std::filesystem::path path, std::filesystem::path rootPath, std::filesystem::path buildPath) {
     auto name = node["name"].as<std::string>();
     auto ts = TranslationSet {
         .name         = node["name"].as<std::string>(),
@@ -61,27 +61,31 @@ auto loadTranslationSet(YAML::Node node, std::filesystem::path path, std::filesy
     return ts;
 }
 
-auto loadTranslationSets(YAML::Node node, std::filesystem::path path, std::filesystem::path rootPath) {
+auto loadTranslationSets(YAML::Node node, std::filesystem::path path, std::filesystem::path rootPath, std::filesystem::path buildPath) {
     auto result = std::vector<TranslationSet>{};
     for (auto n : node) {
-        result.emplace_back(loadTranslationSet(n, path, rootPath));
+        result.emplace_back(loadTranslationSet(n, path, rootPath, buildPath));
     }
     return result;
 }
 
-auto loadDesc(std::filesystem::path _file, std::filesystem::path _rootPath) -> Desc {
+auto loadDesc(std::filesystem::path _file, std::filesystem::path _rootPath, std::filesystem::path _buildPath) -> Desc {
     if (_file.is_relative()) {
         _file = relative(_file);
     } else {
         _file = canonical(_file);
     }
+
+    if (_rootPath.empty()) _rootPath = ".";
+    auto rootPathFromBuild = relative(absolute(_rootPath), absolute(_buildPath));
+
     auto root = YAML::LoadFile(_file);
     _file.remove_filename();
     auto path = _file / root["path"].as<std::string>(".");
     auto ret = Desc {
         .version         = root["version"].as<std::string>("0.0.1"),
         .path            = path,
-        .translationSets = loadTranslationSets(root["translationSets"], path, _rootPath),
+        .translationSets = loadTranslationSets(root["translationSets"], path, _rootPath, _buildPath),
     };
 
     auto includes = root["include"];
@@ -89,7 +93,7 @@ auto loadDesc(std::filesystem::path _file, std::filesystem::path _rootPath) -> D
         for (auto include : includes) {
             auto d = _file / std::filesystem::path{include.as<std::string>()};
             if (!is_regular_file(d)) continue;
-            auto desc = loadDesc(d, _rootPath);
+            auto desc = loadDesc(d, _rootPath, _buildPath);
             for (auto ts : desc.translationSets) {
                 ret.translationSets.emplace_back(ts);
             }
