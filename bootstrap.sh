@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# chaneg into script directory
+# change into script directory
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 cd "$DIR"
 
@@ -13,8 +13,7 @@ elif [ -n "$1" ]; then
 fi
 
 set -Eeuo pipefail
-mkdir -p bootstrap.d
-cd bootstrap.d
+mkdir -p bootstrap.d && cd $_
 
 echo "building temporary busy executable"
 g++ -std=c++20 ../src/busy/main.cpp ../src/busy-lib/main.cpp -lyaml-cpp -lfmt -O0 -ggdb3 -o busy
