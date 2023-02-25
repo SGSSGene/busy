@@ -5,6 +5,7 @@ translationSets:
     language: c++
     dependencies:
       - busy-lib
+      - clice-main
   - name: busy-lib
     type: library
     language: c++
@@ -12,3 +13,15 @@ translationSets:
       - stdlib
       - fmt
       - yaml-cpp
+      - clice
+  - name: clice
+    type: library
+    language: c++
+    dependencies:
+      - stdlib
+      - fmt
+  - name: clice-main
+    type: library
+    language: c++
+    dependencies:
+      - clice

@@ -17,20 +17,79 @@
 #include <unordered_map>
 #include <unordered_set>
 
+#include <clice/clice.h>
+
+namespace {
+auto cliModeCompile = clice::Argument{ .arg    = {"compile"},
+                                       .desc   = {"compile everything"}
+                                     };
+auto cliModeStatus  = clice::Argument{ .arg    = {"status"},
+                                       .desc   = {"current status of compilation"}
+                                     };
+auto cliModeInfo    = clice::Argument{ .arg    = {"info"},
+                                       .desc   = {"print some infos about available packages"}
+                                     };
+auto cliModeInstall = clice::Argument{ .arg    = {"install"},
+                                       .desc   = {"install binaries to machine"}
+                                     };
+
+auto cliFile        = clice::Argument{ .arg    = {"-f"},
+                                       .desc   = "path to a busy.yaml file",
+                                       .value  = std::filesystem::path{},
+                                     };
+auto cliCwdPath     = clice::Argument{ .arg    = {"-C"},
+                                       .desc   = "path to the build path",
+                                       .value  = std::filesystem::path{"."},
+                                     };
+auto cliToolchain   = clice::Argument{ .arg    = {"-t"},
+                                       .desc   = "set a toolchain",
+                                       .value  = std::string{},
+                                     };
+auto cliJobs        = clice::Argument{ .arg    = {"-j"},
+                                       .desc   = "set the number of threads",
+                                       .value  = size_t{1},
+                                     };
+auto cliOptions     = clice::Argument{ .arg    = {"--options"},
+                                       .desc   = "options given to the toolchains",
+                                       .value  = std::vector<std::string>{},
+                                     };
+auto cliClean       = clice::Argument{ .arg    = {"--clean"},
+                                       .desc   = "force a rebuild",
+                                     };
+auto cliVerbose     = clice::Argument{ .arg    = {"--verbose"},
+                                       .desc   = "verbose run",
+                                     };
+auto cliPrefix      = clice::Argument{ .parent = &cliModeInstall,
+                                       .arg    = {"--prefix"},
+                                       .desc   = "prefix for installation",
+                                       .value = std::filesystem::path{},
+                                   };
+
+}
+
 struct Arguments {
     std::string mode;
-    std::filesystem::path buildPath{};
+    std::filesystem::path buildPath{"."};
     std::optional<std::filesystem::path> busyFile;
     std::vector<std::filesystem::path> addToolchains;
     std::vector<std::string> trailing; // trailing commands
-    std::vector<std::string> options; // toolchain options
+    std::vector<std::string> options{"debug"}; // toolchain options
     size_t                   jobs{1}; // how many threads/jobs in parallel?
     bool verbose{};
     bool clean{};
     std::filesystem::path prefix{}; // prefix for install
 
     Arguments(std::span<std::string_view> args) {
-        for (int i{1}; i < ssize(args); ++i) {
+        if (cliFile)      busyFile = *cliFile;
+        if (cliCwdPath)   buildPath = *cliCwdPath;
+        if (cliToolchain) addToolchains.emplace_back(*cliToolchain);
+        if (cliJobs)      jobs = *cliJobs;
+        if (cliOptions)   options= *cliOptions;
+        clean = cliClean;
+        verbose = cliVerbose;
+        if (cliPrefix)    prefix = *cliPrefix;
+
+/*        for (int i{1}; i < ssize(args); ++i) {
             if (args[i] == "-f" and i+1 < ssize(args)) {
                 ++i;
                 busyFile = args[i];
@@ -63,13 +122,13 @@ struct Arguments {
                     trailing.emplace_back(args[i]);
                 }
             }
-        }
-        if (buildPath.empty()) {
+        }*/
+/*        if (buildPath.empty()) {
             buildPath = ".";
         }
         if (options.empty()) {
             options.push_back("debug");
-        }
+        }*/
     }
 };
 
@@ -254,7 +313,8 @@ int app(std::span<std::string_view> _args) {
     };
 
     try {
-        if (args.mode == "compile" || args.mode.empty()) {
+        auto otherNotSet = !cliModeStatus and !cliModeInfo and !cliModeInstall;
+        if (cliModeCompile or otherNotSet) {
             auto workspace = Workspace{args.buildPath};
             updateWorkspace(workspace);
 
@@ -317,7 +377,7 @@ int app(std::span<std::string_view> _args) {
             if (errorAppeared) {
                 return 1;
             }
-        } else if (args.mode == "status") {
+        } else if (cliModeStatus) {
             auto workspace = Workspace{args.buildPath};
             updateWorkspace(workspace);
 
@@ -339,7 +399,7 @@ int app(std::span<std::string_view> _args) {
                 fmt::print("    {}: {}\n", key, value);
             }
             workspace.save();
-        } else if (args.mode == "info") {
+        } else if (cliModeInfo) {
             auto workspace = Workspace{args.buildPath};
             updateWorkspace(workspace);
 
@@ -369,7 +429,7 @@ int app(std::span<std::string_view> _args) {
                 printTS(ts.name);
             }
             workspace.save();
-        } else if (args.mode == "install") {
+        } else if (cliModeInstall) {
             // Installs into local folder
             auto prefix = [&]() -> std::filesystem::path {
                 if (!args.prefix.empty()) return args.prefix;
