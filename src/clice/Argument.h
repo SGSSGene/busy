@@ -77,6 +77,7 @@ struct Argument {
             return value;
         }
     }
+
     auto operator->() const -> auto const* {
         return &**this;
     }
