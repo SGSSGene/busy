@@ -1,12 +1,11 @@
+#include "Arguments.h"
 #include "Desc.h"
-#include "genCall.h"
-#include "answer.h"
 #include "Process.h"
 #include "Toolchain.h"
 #include "Workspace.h"
-#include "error_fmt.h"
 
 #include <cassert>
+#include <clice/clice.h>
 #include <condition_variable>
 #include <fmt/format.h>
 #include <fmt/std.h>
@@ -16,80 +15,6 @@
 #include <queue>
 #include <unordered_map>
 #include <unordered_set>
-
-#include <clice/clice.h>
-
-namespace {
-auto cliModeCompile = clice::Argument{ .arg    = {"compile"},
-                                       .desc   = {"compile everything"}
-                                     };
-auto cliModeStatus  = clice::Argument{ .arg    = {"status"},
-                                       .desc   = {"current status of compilation"}
-                                     };
-auto cliModeInfo    = clice::Argument{ .arg    = {"info"},
-                                       .desc   = {"print some infos about available packages"}
-                                     };
-auto cliModeInstall = clice::Argument{ .arg    = {"install"},
-                                       .desc   = {"install binaries to machine"}
-                                     };
-
-auto cliFile        = clice::Argument{ .arg    = {"-f"},
-                                       .desc   = "path to a busy.yaml file",
-                                       .value  = std::filesystem::path{},
-                                     };
-auto cliCwdPath     = clice::Argument{ .arg    = {"-C"},
-                                       .desc   = "path to the build path",
-                                       .value  = std::filesystem::path{"."},
-                                     };
-auto cliToolchain   = clice::Argument{ .arg    = {"-t"},
-                                       .desc   = "set a toolchain",
-                                       .value  = std::string{},
-                                     };
-auto cliJobs        = clice::Argument{ .arg    = {"-j"},
-                                       .desc   = "set the number of threads",
-                                       .value  = size_t{1},
-                                     };
-auto cliOptions     = clice::Argument{ .arg    = {"--options"},
-                                       .desc   = "options given to the toolchains",
-                                       .value  = std::vector<std::string>{},
-                                     };
-auto cliClean       = clice::Argument{ .arg    = {"--clean"},
-                                       .desc   = "force a rebuild",
-                                     };
-auto cliVerbose     = clice::Argument{ .arg    = {"--verbose"},
-                                       .desc   = "verbose run",
-                                     };
-auto cliPrefix      = clice::Argument{ .parent = &cliModeInstall,
-                                       .arg    = {"--prefix"},
-                                       .desc   = "prefix for installation",
-                                       .value = std::filesystem::path{},
-                                   };
-
-}
-
-struct Arguments {
-    std::string mode;
-    std::filesystem::path buildPath{"."};
-    std::optional<std::filesystem::path> busyFile;
-    std::vector<std::filesystem::path> addToolchains;
-    std::vector<std::string> trailing; // trailing commands
-    std::vector<std::string> options{"debug"}; // toolchain options
-    size_t                   jobs{1}; // how many threads/jobs in parallel?
-    bool verbose{};
-    bool clean{};
-    std::filesystem::path prefix{}; // prefix for install
-
-    Arguments() {
-        if (cliFile)      busyFile = *cliFile;
-        if (cliCwdPath)   buildPath = *cliCwdPath;
-        if (cliToolchain) addToolchains.emplace_back(*cliToolchain);
-        if (cliJobs)      jobs = *cliJobs;
-        if (cliOptions)   options= *cliOptions;
-        clean = cliClean;
-        verbose = cliVerbose;
-        if (cliPrefix)    prefix = *cliPrefix;
-    }
-};
 
 struct WorkQueue {
     struct Job {
@@ -241,19 +166,21 @@ auto loadAllBusyFiles(Workspace& workspace, bool verbose) -> std::map<std::strin
 int clice_main() {
 //int main(int argc, char const* argv[]) {
     // ./build/bin/busy compile -f busy.yaml -t gcc12.2.sh
-    auto args = Arguments{};
 
     // this will add cli options to the workspace
     auto updateWorkspace = [&](auto& workspace) {
 
-        auto busyFile = args.busyFile;
-        if (workspace.firstLoad and !busyFile) {
-            if (exists(std::filesystem::path{"busy.yaml"})) {
-                busyFile = "busy.yaml";
-            } else if (exists(std::filesystem::path{"../busy.yaml"})) {
-                busyFile = "../busy.yaml";
+        auto busyFile = [&]() -> std::optional<std::filesystem::path> {
+            if (cliFile) return *cliFile;
+
+            if (!workspace.firstLoad) return std::nullopt;
+
+            for (auto p : {"busy.yaml", "../busy.yaml"}) {
+                if (exists(std::filesystem::path{p})) {
+                    return p;
+                }
             }
-        }
+        }();
 
         // set new busy file if set by commandline
         if (busyFile) {
@@ -263,29 +190,30 @@ int clice_main() {
 
     auto updateWorkspaceToolchains = [&](auto& workspace, std::map<std::string, std::filesystem::path> const& toolchains) {
         // add more toolchains if set by commandline
-        for (auto t : args.addToolchains) {
+        for (auto t : *cliToolchains) {
             if (toolchains.find(t) == toolchains.end()) {
                 throw "unknown toolchain";
             }
-            workspace.toolchains.emplace_back(args.buildPath, toolchains.at(t));
+            workspace.toolchains.emplace_back(*cliBuildPath, toolchains.at(t));
         }
     };
 
     try {
         auto otherNotSet = !cliModeStatus and !cliModeInfo and !cliModeInstall;
         if (cliModeCompile or otherNotSet) {
-            auto workspace = Workspace{args.buildPath};
+            auto workspace = Workspace{*cliBuildPath};
             updateWorkspace(workspace);
 
-            auto toolchains = loadAllBusyFiles(workspace, args.verbose);
+            auto toolchains = loadAllBusyFiles(workspace, cliVerbose);
 
             updateWorkspaceToolchains(workspace, toolchains);
 
 
             auto root = [&]() -> std::vector<std::string> {
-                if (args.trailing.size()) {
-                    return {args.trailing.front()};
-                }
+                //!TODO how to do trailing values in clice?
+                //if (args.trailing.size()) {
+                //    return {args.trailing.front()};
+                //}
                 return workspace.findExecutables();
             }();
 
@@ -295,13 +223,13 @@ int clice_main() {
                 all.insert(r);
             }
             for (auto ts : all) {
-                wq.insert(ts + "/setup", [ts, &workspace, &args, &wq]() {
-                    workspace._translateSetup(ts, args.verbose);
+                wq.insert(ts + "/setup", [ts, &workspace, &wq]() {
+                    workspace._translateSetup(ts, cliVerbose);
                 }, {});
                 auto units = std::unordered_set<std::string>{};
                 for (auto const& unit : workspace._listTranslateUnits(ts)) {
-                    wq.insert(ts + "/unit/" + unit, [ts, &workspace, &args, unit]() {
-                        workspace._translateUnit(ts, unit, args.verbose, args.clean, args.options);
+                    wq.insert(ts + "/unit/" + unit, [ts, &workspace, unit]() {
+                        workspace._translateUnit(ts, unit, cliVerbose, cliClean, *cliOptions);
                     }, {ts + "/setup"});
                     units.emplace(ts + "/unit/" + unit);
                 }
@@ -309,8 +237,8 @@ int clice_main() {
                 for (auto dep : workspace.findDependencyNames(ts)) {
                     units.emplace(dep + "/linkage");
                 }
-                wq.insert(ts + "/linkage", [ts, &workspace, &args]() {
-                    workspace._translateLinkage(ts, args.verbose, args.options);
+                wq.insert(ts + "/linkage", [ts, &workspace]() {
+                    workspace._translateLinkage(ts, cliVerbose, *cliOptions);
                 }, units);
             }
 
@@ -318,7 +246,7 @@ int clice_main() {
             std::atomic_bool errorAppeared{false};
 
             auto t = std::vector<std::jthread>{};
-            for (ssize_t i{0}; i < args.jobs; ++i) {
+            for (ssize_t i{0}; i < *cliJobs; ++i) {
                 t.emplace_back([&]() {
                     try {
                         while (!errorAppeared and wq.processJob());
@@ -337,11 +265,11 @@ int clice_main() {
                 return 1;
             }
         } else if (cliModeStatus) {
-            auto workspace = Workspace{args.buildPath};
+            auto workspace = Workspace{*cliBuildPath};
             updateWorkspace(workspace);
 
             // load busy files
-            auto toolchains = loadAllBusyFiles(workspace, args.verbose);
+            auto toolchains = loadAllBusyFiles(workspace, cliVerbose);
 
             updateWorkspaceToolchains(workspace, toolchains);
 
@@ -359,7 +287,7 @@ int clice_main() {
             }
             workspace.save();
         } else if (cliModeInfo) {
-            auto workspace = Workspace{args.buildPath};
+            auto workspace = Workspace{*cliBuildPath};
             updateWorkspace(workspace);
 
             auto rootDir = workspace.busyFile;
@@ -391,7 +319,7 @@ int clice_main() {
         } else if (cliModeInstall) {
             // Installs into local folder
             auto prefix = [&]() -> std::filesystem::path {
-                if (!args.prefix.empty()) return args.prefix;
+                if (cliPrefix) return *cliPrefix;
                 if (auto ptr = std::getenv("HOME")) {
                     return std::filesystem::path{ptr} / ".config/busy/env";
                 }
@@ -425,7 +353,7 @@ int clice_main() {
                 }
             }
 
-            auto workspace = Workspace{args.buildPath};
+            auto workspace = Workspace{*cliBuildPath};
             updateWorkspace(workspace);
 
             auto rootDir = workspace.busyFile;
@@ -539,8 +467,6 @@ int clice_main() {
                     throw error_fmt{"unknown install language {}", ts.language};
                 }
             }
-        } else {
-            throw error_fmt{"unknown mode \"{}\", valid modes are \"compile\", \"status\", \"info\"", args.mode};
         }
     } catch (std::exception const& e) {
         fmt::print("{}\n", e.what());
