@@ -163,7 +163,7 @@ auto loadAllBusyFiles(Workspace& workspace, bool verbose) -> std::map<std::strin
 }
 
 
-int clice_main() {
+void app_main() {
 //int main(int argc, char const* argv[]) {
     // ./build/bin/busy compile -f busy.yaml -t gcc12.2.sh
 
@@ -180,6 +180,7 @@ int clice_main() {
                     return p;
                 }
             }
+            return std::nullopt;
         }();
 
         // set new busy file if set by commandline
@@ -262,7 +263,7 @@ int clice_main() {
             t.clear();
             workspace.save();
             if (errorAppeared) {
-                return 1;
+                exit(1);
             }
         } else if (cliModeStatus) {
             auto workspace = Workspace{*cliBuildPath};
@@ -473,5 +474,4 @@ int clice_main() {
     } catch (char const* p) {
         fmt::print("{}\n", p);
     }
-    return 0;
 }

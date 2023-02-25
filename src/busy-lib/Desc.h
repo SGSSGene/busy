@@ -27,7 +27,7 @@ struct Desc {
     std::vector<TranslationSet> translationSets;
 };
 
-auto loadTupleList(YAML::Node node) {
+inline auto loadTupleList(YAML::Node node) {
     auto v = std::vector<std::tuple<std::string, std::string>>{};
     if (!node.IsDefined()) return v;
     if (!node.IsMap()) throw "wrong type";
@@ -39,7 +39,7 @@ auto loadTupleList(YAML::Node node) {
 }
 
 
-auto loadTranslationSet(YAML::Node node, std::filesystem::path path, std::filesystem::path rootPath, std::filesystem::path buildPath) {
+inline auto loadTranslationSet(YAML::Node node, std::filesystem::path path, std::filesystem::path rootPath, std::filesystem::path buildPath) {
     auto name = node["name"].as<std::string>();
     auto ts = TranslationSet {
         .name         = node["name"].as<std::string>(),
@@ -61,7 +61,7 @@ auto loadTranslationSet(YAML::Node node, std::filesystem::path path, std::filesy
     return ts;
 }
 
-auto loadTranslationSets(YAML::Node node, std::filesystem::path path, std::filesystem::path rootPath, std::filesystem::path buildPath) {
+inline auto loadTranslationSets(YAML::Node node, std::filesystem::path path, std::filesystem::path rootPath, std::filesystem::path buildPath) {
     auto result = std::vector<TranslationSet>{};
     for (auto n : node) {
         result.emplace_back(loadTranslationSet(n, path, rootPath, buildPath));
@@ -69,7 +69,7 @@ auto loadTranslationSets(YAML::Node node, std::filesystem::path path, std::files
     return result;
 }
 
-auto loadDesc(std::filesystem::path _file, std::filesystem::path _rootPath, std::filesystem::path _buildPath) -> Desc {
+inline auto loadDesc(std::filesystem::path _file, std::filesystem::path _rootPath, std::filesystem::path _buildPath) -> Desc {
     if (_file.is_relative()) {
         _file = relative(_file);
     } else {

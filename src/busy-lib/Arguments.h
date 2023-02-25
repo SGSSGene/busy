@@ -7,7 +7,7 @@ inline auto cliModeCompile = clice::Argument{ .arg    = {"compile"},
                                               .desc   = {"compile everything"}
                                             };
 inline auto cliModeStatus  = clice::Argument{ .arg    = {"status"},
-                                              .desc   = {"current status of compilation"}
+                                              .desc   = {"current status of compilation"},
                                             };
 inline auto cliModeInfo    = clice::Argument{ .arg    = {"info"},
                                               .desc   = {"print some infos about available packages"}
@@ -33,7 +33,7 @@ inline auto cliJobs        = clice::Argument{ .arg    = {"-j"},
                                             };
 inline auto cliOptions     = clice::Argument{ .arg    = {"--options"},
                                               .desc   = "options given to the toolchains",
-                                              .value  = std::vector<std::string>{},
+                                              .value  = std::vector<std::string>{"debug"},
                                             };
 inline auto cliClean       = clice::Argument{ .arg    = {"--clean"},
                                               .desc   = "force a rebuild",

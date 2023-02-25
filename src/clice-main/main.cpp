@@ -7,16 +7,12 @@ auto cliHelp    = clice::Argument{ .arg    = {"--help"},
                                  };
 }
 
-int clice_main();
-
-int main(int argc, char const* const* argv) {
+void clice_main(int argc, char const* const* argv) {
     if (auto failed = clice::parse(argc, argv); failed) {
         std::cerr << "parsing failed: " << *failed << "\n";
-        return -1;
+        exit(1);
     }
     if (auto ptr = std::getenv("CLICE_COMPLETION"); ptr) {
-        return 0;
+        exit(0);
     }
-
-    return clice_main();
 }
