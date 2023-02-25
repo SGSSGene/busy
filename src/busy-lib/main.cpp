@@ -79,7 +79,7 @@ struct Arguments {
     bool clean{};
     std::filesystem::path prefix{}; // prefix for install
 
-    Arguments(std::span<std::string_view> args) {
+    Arguments() {
         if (cliFile)      busyFile = *cliFile;
         if (cliCwdPath)   buildPath = *cliCwdPath;
         if (cliToolchain) addToolchains.emplace_back(*cliToolchain);
@@ -88,47 +88,6 @@ struct Arguments {
         clean = cliClean;
         verbose = cliVerbose;
         if (cliPrefix)    prefix = *cliPrefix;
-
-/*        for (int i{1}; i < ssize(args); ++i) {
-            if (args[i] == "-f" and i+1 < ssize(args)) {
-                ++i;
-                busyFile = args[i];
-            } else if (args[i] == "-C" and i+1 < ssize(args)) {
-                ++i;
-                buildPath = args[i];
-            } else if (args[i] == "-t" and i+1 < ssize(args)) {
-                ++i;
-                addToolchains.emplace_back(args[i]);
-            } else if ((args[i] == "-j" or args[i] == "--jobs") and i+1 < ssize(args)) {
-                ++i;
-                jobs = std::stod(std::string{args[i]});
-            } else if (args[i] == "--options" and i+1 < ssize(args)) {
-                ++i;
-                options.emplace_back(args[i]);
-            } else if (args[i] == "--clean") {
-                clean = true;
-            } else if (args[i] == "--verbose") {
-                verbose = true;
-            } else if (args[i] == "--prefix" and i+1 < ssize(args)) {
-                ++i;
-                prefix = args[i];
-            } else {
-                if (args[i].size() and args[i][0] == '-') {
-                    throw std::runtime_error("unknown argument " + std::string{args[i]});
-                }
-                if (mode.empty()) {
-                    mode = args[i];
-                } else {
-                    trailing.emplace_back(args[i]);
-                }
-            }
-        }*/
-/*        if (buildPath.empty()) {
-            buildPath = ".";
-        }
-        if (options.empty()) {
-            options.push_back("debug");
-        }*/
     }
 };
 
@@ -279,10 +238,10 @@ auto loadAllBusyFiles(Workspace& workspace, bool verbose) -> std::map<std::strin
 }
 
 
-int app(std::span<std::string_view> _args) {
+int clice_main() {
 //int main(int argc, char const* argv[]) {
     // ./build/bin/busy compile -f busy.yaml -t gcc12.2.sh
-    auto args = Arguments{_args};
+    auto args = Arguments{};
 
     // this will add cli options to the workspace
     auto updateWorkspace = [&](auto& workspace) {
