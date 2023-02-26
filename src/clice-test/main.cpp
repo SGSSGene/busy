@@ -126,45 +126,48 @@ auto cliBTVectorInt = clice::Argument{ .parent = &cliBasicTypes,
 }
 
 int main(int argc, char** argv) {
-    if (auto failed = clice::parse(argc, argv); failed) {
-        std::cerr << "parsing failed: " << *failed << "\n";
-        return -1;
-    }
-    if (auto ptr = std::getenv("CLICE_COMPLETION"); ptr) {
-        return 0;
-    }
+    try {
+        if (auto failed = clice::parse(argc, argv); failed) {
+            std::cerr << "parsing failed: " << *failed << "\n";
+            return -1;
+        }
+        if (auto ptr = std::getenv("CLICE_COMPLETION"); ptr) {
+            return 0;
+        }
 
 
-    std::cout << cliAdd << "\n";
-    std::cout << "  " << cliVerbose << "\n";
-    std::cout << cliHelp << "\n";
-    std::cout << *cliNbr << "\n";
-    std::cout << cliInts << "\n";
-    for (auto i : *cliInts) {
-        std::cout << " - " << i << "\n";
-    }
-    std::cout << "auto: " << *cliAuto << "\n";
+        std::cout << cliAdd << "\n";
+        std::cout << "  " << cliVerbose << "\n";
+        std::cout << cliHelp << "\n";
+        std::cout << *cliNbr << "\n";
+        std::cout << cliInts << "\n";
+        for (auto i : *cliInts) {
+            std::cout << " - " << i << "\n";
+        }
+        std::cout << "auto: " << *cliAuto << "\n";
 
-    std::cout << "\n\nBasic Types: " << cliBasicTypes << "\n";
-    std::cout << "  --flag " << cliBTFlag << " " << "\n";
-    std::cout << "  --bool " << cliBTBool << " " << *cliBTBool << "\n";
-    std::cout << "  --uint8 " << cliBTUInt8 << " " << (int)*cliBTUInt8 << "\n";
-    std::cout << "  --int8 " << cliBTInt8 << " " << (int)*cliBTInt8 << "\n";
-    std::cout << "  --uint16 " << cliBTUInt16 << " " << *cliBTUInt16 << "\n";
-    std::cout << "  --int16 " << cliBTInt16 << " " << *cliBTInt16 << "\n";
-    std::cout << "  --uint32 " << cliBTUInt32 << " " << *cliBTUInt32 << "\n";
-    std::cout << "  --int32 " << cliBTInt32 << " " << *cliBTInt32 << "\n";
-    std::cout << "  --uint64 " << cliBTUInt64 << " " << *cliBTUInt64 << "\n";
-    std::cout << "  --int64 " << cliBTInt64 << " " << *cliBTInt64 << "\n";
-    std::cout << "  --char " << cliBTChar << " " << *cliBTChar << "\n";
-    std::cout << "  --string " << cliBTString << " " << *cliBTString << "\n";
-    std::cout << "  --mapped_bool " << cliBTMappedBool << " " << *cliBTMappedBool << "\n";
-    std::cout << "  --enum " << cliBTEnum << " " << (*cliBTEnum==MyEnumType::Foo?"foo":"bar") << "\n";
-    std::cout << "  --input " << cliBTInputPath << " " << *cliBTInputPath << "\n";
-    std::cout << "  --output " << cliBTOutputPath << " " << *cliBTOutputPath << "\n";
-    std::cout << "  --vector_int " << cliBTVectorInt << " " << (*cliBTVectorInt).size() << "\n";
-    for (auto x : *cliBTVectorInt) {
-        std::cout << "    " << x << "\n";
+        std::cout << "\n\nBasic Types: " << cliBasicTypes << "\n";
+        std::cout << "  --flag " << cliBTFlag << " " << "\n";
+        std::cout << "  --bool " << cliBTBool << " " << *cliBTBool << "\n";
+        std::cout << "  --uint8 " << cliBTUInt8 << " " << (int)*cliBTUInt8 << "\n";
+        std::cout << "  --int8 " << cliBTInt8 << " " << (int)*cliBTInt8 << "\n";
+        std::cout << "  --uint16 " << cliBTUInt16 << " " << *cliBTUInt16 << "\n";
+        std::cout << "  --int16 " << cliBTInt16 << " " << *cliBTInt16 << "\n";
+        std::cout << "  --uint32 " << cliBTUInt32 << " " << *cliBTUInt32 << "\n";
+        std::cout << "  --int32 " << cliBTInt32 << " " << *cliBTInt32 << "\n";
+        std::cout << "  --uint64 " << cliBTUInt64 << " " << *cliBTUInt64 << "\n";
+        std::cout << "  --int64 " << cliBTInt64 << " " << *cliBTInt64 << "\n";
+        std::cout << "  --char " << cliBTChar << " " << *cliBTChar << "\n";
+        std::cout << "  --string " << cliBTString << " " << *cliBTString << "\n";
+        std::cout << "  --mapped_bool " << cliBTMappedBool << " " << *cliBTMappedBool << "\n";
+        std::cout << "  --enum " << cliBTEnum << " " << (*cliBTEnum==MyEnumType::Foo?"foo":"bar") << "\n";
+        std::cout << "  --input " << cliBTInputPath << " " << *cliBTInputPath << "\n";
+        std::cout << "  --output " << cliBTOutputPath << " " << *cliBTOutputPath << "\n";
+        std::cout << "  --vector_int " << cliBTVectorInt << " " << (*cliBTVectorInt).size() << "\n";
+        for (auto x : *cliBTVectorInt) {
+            std::cout << "    " << x << "\n";
+        }
+    } catch (std::exception const& e) {
+        std::cerr << "error: " << e.what() << "\n";
     }
-
 }
