@@ -16,17 +16,31 @@ auto _ = cliModeStatus.run([]() {
 
     updateWorkspaceToolchains(workspace, toolchains);
 
+    auto allSets = std::vector<std::tuple<std::string, busy::desc::TranslationSet const*>>{};
+    for (auto const& [key, ts] : workspace.allSets) {
+        allSets.emplace_back(key, &ts);
+    }
+
+    std::ranges::sort(allSets, [](auto const& lhs, auto const& rhs) {
+        auto const& lts = *std::get<1>(lhs);
+        auto const& rts = *std::get<1>(rhs);
+
+        return std::tie(lts.precompiled, lts.installed, std::get<0>(lhs)) <
+               std::tie(rts.precompiled, lts.installed, std::get<0>(rhs));
+    });
+
+
     fmt::print("available ts:\n");
     for (auto type : {"executable", "library"}) {
         fmt::print("  {}:\n", type);
-        for (auto const& [key, ts] : workspace.allSets) {
-            if (ts.type != type) continue;
-            fmt::print("    - {}{}{}\n", ts.name, ts.precompiled?" (precompiled)":"", ts.installed?" (installed)":"");
+        for (auto const& [key, ts] : allSets) {
+            if (ts->type != type) continue;
+            fmt::print("    - {}{}{}\n", ts->name, ts->precompiled?" (precompiled)":"", ts->installed?" (installed)":"");
         }
     }
     fmt::print("available toolchains:\n");
     for (auto [key, value] : toolchains) {
-        fmt::print("    {}: {}\n", key, value);
+        fmt::print("    - {}: {}\n", key, value);
     }
     workspace.save();
     exit(0);
