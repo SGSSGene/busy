@@ -3,7 +3,10 @@
 namespace {
 auto cliHelp    = clice::Argument{ .arg    = {"--help"},
                                    .desc   = "prints the help page",
-                                   .cb     = []{ std::cout << clice::generateHelp(); exit(0); },
+                                   .cb     = []{
+                                        std::cout << clice::generateHelp();
+                                        exit(0);
+                                    },
                                  };
 }
 
