@@ -1,4 +1,4 @@
-#include "clice.h"
+#include <clice/clice.h>
 
 #include <iostream>
 

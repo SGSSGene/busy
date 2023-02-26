@@ -24,7 +24,7 @@ struct ArgumentBase {
 
     std::function<void()> init;
     std::function<void(std::string_view)> fromString;
-    std::function<void()> cb = [](){};
+    std::function<void()> cb;
 
     ArgumentBase() = delete;
     ArgumentBase(ArgumentBase* parent);

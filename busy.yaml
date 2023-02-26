@@ -25,3 +25,8 @@ translationSets:
     language: c++
     dependencies:
       - clice
+  - name: clice-test
+    type: executable
+    language: c++
+    dependencies:
+      - clice
