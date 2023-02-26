@@ -165,8 +165,8 @@ auto loadAllBusyFiles(Workspace& workspace, bool verbose) -> std::map<std::strin
 
 
 void app_main() {
-    auto otherSet = cliModeStatus or !cliModeInfo or !cliModeInstall;
-    if (!cliModeCompile or otherSet) return;
+    auto otherSet = cliModeStatus or cliModeInfo or cliModeInstall;
+    if (!cliModeCompile and otherSet) return;
     auto workspace = Workspace{*cliBuildPath};
     updateWorkspace(workspace);
 
