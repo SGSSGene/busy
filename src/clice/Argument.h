@@ -54,7 +54,7 @@ struct Argument {
     bool isSet{};
     T value{};
     mutable std::any anyType; // used if T is a callback
-    std::function<void()> cb = [](){};
+    std::function<void()> cb;
     std::optional<std::unordered_map<std::string, T>> mapping;
     std::vector<std::string> tags;
 
@@ -95,6 +95,7 @@ struct Argument {
         {
             arg.arg  = desc.arg;
             arg.desc = desc.desc;
+            arg.cb   = desc.cb;
             if constexpr (std::same_as<std::filesystem::path, T>) {
                 arg.completion = " -f ";
             } else if (desc.mapping) {
@@ -107,7 +108,6 @@ struct Argument {
             arg.tags = desc.tags;
             arg.init = [&]() {
                 desc.isSet = true;
-                arg.cb = desc.cb;
                 if constexpr (std::same_as<nullptr_t, T>) {
                 } else if constexpr (std::is_arithmetic_v<T>
                                      || std::same_as<std::string, T>

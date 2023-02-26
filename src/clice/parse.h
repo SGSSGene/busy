@@ -93,7 +93,9 @@ inline auto parse(int argc, char const* const* argv) -> std::optional<std::strin
         auto f = std::function<void(std::vector<clice::ArgumentBase*>)>{};
         f = [&](auto const& args) {
             for (auto arg : args) {
-                arg->cb();
+                if (arg->cb) {
+                    arg->cb();
+                }
                 f(arg->arguments);
             }
         };
