@@ -16,11 +16,19 @@ set -Eeuo pipefail
 mkdir -p bootstrap.d && cd $_
 
 echo "building temporary busy executable"
-g++ -std=c++20 ../src/busy/main.cpp ../src/busy-lib/main.cpp -lyaml-cpp -lfmt -O0 -ggdb3 -o busy
+g++ -std=c++20 -lyaml-cpp -lfmt -O0 -ggdb3 -o busy \
+    -isystem ../src \
+    ../src/busy/main.cpp \
+    ../src/busy-lib/main.cpp \
+    ../src/busy-lib/cmdInstall.cpp \
+    ../src/busy-lib/cmdStatus.cpp \
+    ../src/busy-lib/cmdInfo.cpp \
+    ../src/clice-main/main.cpp \
+    ../src/clice/Argument.cpp
+
 
 
 echo "creating proper busy environment"
-mkdir -p build
 mkdir -p tmp-root
 
 for f in "compilers" "stdlib" "yaml-cpp" "fmt"; do
