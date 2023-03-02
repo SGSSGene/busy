@@ -5,6 +5,7 @@
 #include "Workspace.h"
 #include "utils.h"
 
+#include <cctype>
 
 namespace {
 auto _ = cliModeStatus.run([]() {
@@ -25,8 +26,13 @@ auto _ = cliModeStatus.run([]() {
         auto const& lts = *std::get<1>(lhs);
         auto const& rts = *std::get<1>(rhs);
 
-        return std::tie(lts.precompiled, lts.installed, std::get<0>(lhs)) <
-               std::tie(rts.precompiled, lts.installed, std::get<0>(rhs));
+        auto lstr = std::string{std::get<0>(lhs)};
+        auto rstr = std::string{std::get<0>(rhs)};
+        std::ranges::transform(lstr, lstr.begin(), ::tolower);
+        std::ranges::transform(rstr, rstr.begin(), ::tolower);
+
+        return std::tie(lts.precompiled, lts.installed, lstr) <
+               std::tie(rts.precompiled, rts.installed, rstr);
     });
 
 
