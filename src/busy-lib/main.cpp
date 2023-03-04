@@ -17,7 +17,7 @@ void app_main() {
 
     auto toolchains = loadAllBusyFiles(workspace, cliVerbose);
 
-    updateWorkspaceToolchains(workspace, toolchains);
+    updateWorkspaceToolchains(workspace, toolchains, *cliToolchains);
 
 
     auto root = [&]() -> std::vector<std::string> {

@@ -85,13 +85,18 @@ void updateWorkspace(Workspace& workspace) {
     }
 };
 
-void updateWorkspaceToolchains(Workspace& workspace, std::map<std::string, std::filesystem::path> const& toolchains) {
+void updateWorkspaceToolchains(Workspace& workspace, std::map<std::string, std::filesystem::path> const& toolchains, std::vector<std::string> const& newToolchains) {
     // add more toolchains if set by commandline
-    for (auto t : *cliToolchains) {
+    for (auto t : newToolchains) {
         if (toolchains.find(t) == toolchains.end()) {
             throw "unknown toolchain";
         }
         workspace.toolchains.emplace_back(*cliBuildPath, toolchains.at(t));
     }
+};
+
+
+void updateWorkspaceToolchains(Workspace& workspace, std::map<std::string, std::filesystem::path> const& toolchains) {
+    updateWorkspaceToolchains(workspace, toolchains, *cliToolchains);
 };
 
