@@ -80,6 +80,8 @@ private:
                         toolchains.emplace_back(buildPath, e.as<std::string>());
                     }
                 }
+                // load options
+                options.clear();
                 if (node["options"].IsSequence()) {
                     for (auto e : node["options"]) {
                         options.emplace_back(e.as<std::string>());
