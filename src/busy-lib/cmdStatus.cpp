@@ -41,7 +41,9 @@ auto _ = cliModeStatus.run([]() {
         fmt::print("  {}:\n", type);
         for (auto const& [key, ts] : allSets) {
             if (ts->type != type) continue;
-            fmt::print("    - {}{}{}\n", ts->name, ts->precompiled?" (precompiled)":"", ts->installed?" (installed)":"");
+            if (!ts->installed or cliVerbose) {
+                fmt::print("    - {}{}{}\n", ts->name, ts->precompiled?" (precompiled)":"", ts->installed?" (installed)":"");
+            }
         }
     }
     fmt::print("available toolchains:\n");

@@ -56,9 +56,6 @@ auto loadAllBusyFiles(Workspace& workspace, bool verbose) -> std::map<std::strin
     // load busyFile
     auto desc = busy::desc::loadDesc(workspace.busyFile, rootDir, workspace.buildPath);
     for (auto ts : desc.translationSets) {
-        if (verbose) {
-            fmt::print("ts: {} (local)\n", ts.name);
-        }
         workspace.allSets[ts.name] = ts;
         if (ts.type == "toolchain") {
             auto path = absolute(std::filesystem::path{ts.name} / "toolchain.sh");
