@@ -239,36 +239,50 @@ public:
         }
         return units;
     }
-    auto _translateUnit(std::string const& tsName, std::string const& unit, bool verbose, bool forceCompilation) {
+    /** Returns a message why recompilation is required
+     * otherwise the optional object is std::nullopt
+     */
+    auto _translateUnitRequiresCompilation(std::string const& tsName, std::string const& unit, bool forceCompilation) -> std::optional<std::string> {
         auto const& ts = allSets.at(tsName);
-        auto tsPath    = ts.path / "src" / tsName;
         auto f         = std::filesystem::path{unit};
-        auto toolchain = getToolchain(ts.language);
+        auto tsPath    = ts.path / "src" / tsName;
 
         auto g         = std::unique_lock{mutex};
         auto tuPath    = relative(f, tsPath);
         auto& finfo    = fileInfos[tsName / tuPath];
 
-        auto recompile = fileModTime.get(f) > finfo.lastCompile;
-        recompile |= forceCompilation;
+        if (forceCompilation) return "forced";
+        if (fileModTime.get(f) > finfo.lastCompile) {
+            return fmt::format("modification time of file is newer than object file {} > {}", fileModTime.get(f), finfo.lastCompile);
+        }
         try {
             for (auto d : finfo.dependencies) {
-                recompile |= fileModTime.get(buildPath / d) > finfo.lastCompile;
+                if (fileModTime.get(buildPath / d) > finfo.lastCompile) {
+                    return fmt::format("dependend file has changed ({})", d);
+                }
             }
         } catch(std::exception const& e) {
-            recompile = true;
+            return fmt::format("new dependency discovered"); //!TODO or was removed?
         }
+        return std::nullopt;
+    }
+    void _translateUnit(std::string const& tsName, std::string const& unit, bool verbose, bool forceCompilation) {
+        auto const& ts = allSets.at(tsName);
+        auto tsPath    = ts.path / "src" / tsName;
+        auto tuPath    = relative(std::filesystem::path{unit}, tsPath);
+
+        auto recompile = _translateUnitRequiresCompilation(tsName, unit, forceCompilation);
         if (!recompile) {
             if (verbose) {
-                fmt::print("skipping {}\n", tuPath);
+                fmt::print("no change: {} {}\n", tsName, unit);
             }
+            return;
         }
-        if (verbose) {
-            fmt::print("compare: {} > {} , {}\n", fileModTime.get(f), finfo.lastCompile, recompile);
-        }
-        g.unlock();
+        fmt::print("changed: {} {} - {}\n", tsName, unit, *recompile);
+
+        auto toolchain = getToolchain(ts.language);
         auto [call, answer] = toolchain.translateUnit(ts, tuPath, verbose, options);
-        g.lock();
+
         if (verbose) {
             fmt::print("{}\n{}\n\n", call, answer.stdout);
             fmt::print("duration: {}\n", answer.compileDuration);
@@ -277,6 +291,8 @@ public:
             throw std::runtime_error(fmt::format("error compiling:\n{}\n", answer.stderr));
         }
 
+        auto g         = std::unique_lock{mutex};
+        auto& finfo    = fileInfos[tsName / tuPath];
         finfo.lastCompile = answer.compileStartTime;
         finfo.duration    = answer.compileDuration;
         finfo.dependencies.clear();
