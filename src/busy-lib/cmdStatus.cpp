@@ -44,6 +44,14 @@ auto _ = cliModeStatus.run([]() {
             if (!ts->installed or cliVerbose) {
                 fmt::print("    - {}{}{}\n", ts->name, ts->precompiled?" (precompiled)":"", ts->installed?" (installed)":"");
             }
+            if (!ts->installed) {
+                for (auto const& unit : workspace._listTranslateUnits(ts->name)) {
+                    auto recompile = workspace._translateUnitRequiresCompilation(ts->name, unit, cliClean);
+                    if (recompile) {
+                        fmt::print("        {}: \"{}\"\n", unit, *recompile);
+                    }
+                }
+            }
         }
     }
     fmt::print("available toolchains:\n");
