@@ -17,6 +17,15 @@ void app_main() {
 
     auto toolchains = loadAllBusyFiles(workspace, cliVerbose);
 
+    // Update options
+    if (cliOptions) {
+        workspace.options = *cliOptions;
+    }
+
+    if (cliVerbose) {
+        fmt::print("using options: {}\n", fmt::join(workspace.options, ", "));
+    }
+
     updateWorkspaceToolchains(workspace, toolchains, *cliToolchains);
 
 
@@ -29,7 +38,7 @@ void app_main() {
     }();
 
     auto wq = WorkQueue{};
-    auto all = workspace.findDependencyNames(root); // All Translation units which root depence on
+    auto all = workspace.findDependencyNames(root); // All Translation units which root depends on
     for (auto r : root) {
         all.insert(r);
     }
@@ -40,7 +49,7 @@ void app_main() {
         auto units = std::unordered_set<std::string>{};
         for (auto const& unit : workspace._listTranslateUnits(ts)) {
             wq.insert(ts + "/unit/" + unit, [ts, &workspace, unit]() {
-                workspace._translateUnit(ts, unit, cliVerbose, cliClean, *cliOptions);
+                workspace._translateUnit(ts, unit, cliVerbose, cliClean);
             }, {ts + "/setup"});
             units.emplace(ts + "/unit/" + unit);
         }
@@ -49,7 +58,7 @@ void app_main() {
             units.emplace(dep + "/linkage");
         }
         wq.insert(ts + "/linkage", [ts, &workspace]() {
-            workspace._translateLinkage(ts, cliVerbose, *cliOptions);
+            workspace._translateLinkage(ts, cliVerbose);
         }, units);
     }
 

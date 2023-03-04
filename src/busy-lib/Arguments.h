@@ -33,7 +33,7 @@ inline auto cliJobs        = clice::Argument{ .arg    = {"-j"},
                                             };
 inline auto cliOptions     = clice::Argument{ .arg    = {"--options"},
                                               .desc   = "options given to the toolchains",
-                                              .value  = std::vector<std::string>{"debug"},
+                                              .value  = std::vector<std::string>{},
                                             };
 inline auto cliClean       = clice::Argument{ .arg    = {"--clean"},
                                               .desc   = "force a rebuild",

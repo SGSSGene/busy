@@ -30,11 +30,12 @@ struct FileTimestampCache {
 };
 
 struct Workspace {
-    std::filesystem::path  buildPath;
-    std::filesystem::path  busyConfigFile;
-    std::filesystem::path  busyFile;
-    TranslationMap         allSets;
-    std::vector<Toolchain> toolchains;
+    std::filesystem::path    buildPath;
+    std::filesystem::path    busyConfigFile;
+    std::filesystem::path    busyFile;
+    TranslationMap           allSets;
+    std::vector<Toolchain>   toolchains;
+    std::vector<std::string> options{"debug"};
 
     FileTimestampCache     fileModTime;
     bool firstLoad{true};
@@ -77,6 +78,11 @@ private:
                 if (node["toolchains"].IsSequence()) {
                     for (auto e : node["toolchains"]) {
                         toolchains.emplace_back(buildPath, e.as<std::string>());
+                    }
+                }
+                if (node["options"].IsSequence()) {
+                    for (auto e : node["options"]) {
+                        options.emplace_back(e.as<std::string>());
                     }
                 }
                 if (node["fileInfos"].IsSequence()) {
@@ -122,6 +128,9 @@ public:
         node["busyFile"] = convertToRelativeByBuildPath(busyFile).string();
         for (auto const& t : toolchains) {
             node["toolchains"].push_back(t.toolchain.string());
+        }
+        for (auto const& o : options) {
+            node["options"].push_back(o);
         }
         for (auto const& [path, value] : fileInfos) {
             auto n = YAML::Node{};
@@ -230,7 +239,7 @@ public:
         }
         return units;
     }
-    auto _translateUnit(std::string const& tsName, std::string const& unit, bool verbose, bool forceCompilation, std::vector<std::string> options) {
+    auto _translateUnit(std::string const& tsName, std::string const& unit, bool verbose, bool forceCompilation) {
         auto const& ts = allSets.at(tsName);
         auto tsPath    = ts.path / "src" / tsName;
         auto f         = std::filesystem::path{unit};
@@ -275,7 +284,7 @@ public:
             finfo.dependencies.push_back(d);
         }
     }
-    auto _translateLinkage(std::string const& tsName, bool verbose, std::vector<std::string> options) {
+    auto _translateLinkage(std::string const& tsName, bool verbose) {
         auto const& ts = allSets.at(tsName);
         auto tsPath    = ts.path / "src" / tsName;
         auto deps      = findDependencies(ts);
