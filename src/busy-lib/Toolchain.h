@@ -88,6 +88,7 @@ public:
      * finish translation set
      */
     auto finishTranslationSet(auto const& ts, auto const& objFiles, auto const& dependencies, bool verbose, std::span<std::string const> options) const {
+        auto start = file_time.now();
         auto type = [&]() -> std::string {
             if (ts.type == "executable") {
                 return "executable";
@@ -111,6 +112,10 @@ public:
             throw error_fmt("Unexpected error with the build system: {}", p.cerr());
         }
         auto answer = busy::answer::parseCompilation(p.cout());
+        auto end = file_time.now();
+
+        answer.compileStartTime = start;
+        answer.compileDuration  = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() / 1000.;
         return std::make_tuple(call, answer);
     }
 };

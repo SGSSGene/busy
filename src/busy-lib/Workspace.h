@@ -293,8 +293,8 @@ public:
             throw std::runtime_error(fmt::format("error compiling:\n{}\n", answer.stderr));
         }
 
-        auto g         = std::unique_lock{mutex};
-        auto& finfo    = fileInfos[tsName / tuPath];
+        auto g            = std::unique_lock{mutex};
+        auto& finfo       = fileInfos[tsName / tuPath];
         finfo.lastCompile = answer.compileStartTime;
         finfo.duration    = answer.compileDuration;
         finfo.dependencies.clear();
@@ -302,14 +302,55 @@ public:
             finfo.dependencies.push_back(d);
         }
     }
-    auto _translateLinkage(std::string const& tsName, bool verbose) {
+
+    auto _translateLinkageRequiresWork(std::string const& tsName, bool forceCompilation) -> std::optional<std::string> {
+        auto const& ts = allSets.at(tsName);
+        auto tsPath    = ts.path / "src" / tsName;
+
+        auto g         = std::unique_lock{mutex};
+        auto& finfo    = fileInfos[tsName];
+
+        if (forceCompilation) return "forced";
+        for (auto const& unit : _listTranslateUnits(tsName)) {
+            auto f         = std::filesystem::path{unit};
+            auto tuPath    = relative(f, tsPath);
+            if (fileModTime.get(f) > finfo.lastCompile) {
+                return fmt::format("modification time of file is newer than linkage result ({}) {} > {}", f, fileModTime.get(f), finfo.lastCompile);
+            }
+        }
+        try {
+            for (auto d : finfo.dependencies) {
+                if (fileModTime.get(buildPath / d) > finfo.lastCompile) {
+                    return fmt::format("dependend file has changed ({})", d);
+                }
+            }
+        } catch(std::exception const& e) {
+            return fmt::format("new dependency discovered"); //!TODO or was removed?
+        }
+        return std::nullopt;
+    }
+
+    auto _translateLinkage(std::string const& tsName, bool verbose, bool forceCompilation) {
         auto const& ts = allSets.at(tsName);
         auto tsPath    = ts.path / "src" / tsName;
         auto deps      = findDependencies(ts);
         auto toolchain = getToolchain(ts.language);
         if (ts.installed) {
+            if (verbose) {
+                fmt::print("installed, no linkage {}\n", tsName);
+            }
             return;
         }
+
+        auto recompile = _translateLinkageRequiresWork(tsName, forceCompilation);
+        if (!recompile) {
+            if (verbose) {
+                fmt::print("no change {}\n", tsName);
+            }
+            return;
+        }
+        fmt::print("changed, linking: {} - {}\n", tsName, *recompile);
+
         auto objFiles = std::vector<std::filesystem::path>{};
         for (auto const& unit : _listTranslateUnits(tsName)) {
             auto f         = std::filesystem::path{unit};
@@ -322,6 +363,15 @@ public:
         }
         if (verbose) {
             fmt::print("\n\nFinished translation set: {}\n", ts.name);
+        }
+
+        auto g            = std::unique_lock{mutex};
+        auto& finfo       = fileInfos[tsName];
+        finfo.lastCompile = answer.compileStartTime;
+        finfo.duration    = answer.compileDuration;
+        finfo.dependencies.clear();
+        for (auto d : answer.dependencies) {
+            finfo.dependencies.push_back(d);
         }
     }
 

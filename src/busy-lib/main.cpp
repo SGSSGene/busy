@@ -58,7 +58,7 @@ void app_main() {
             units.emplace(dep + "/linkage");
         }
         wq.insert(ts + "/linkage", [ts, &workspace]() {
-            workspace._translateLinkage(ts, cliVerbose);
+            workspace._translateLinkage(ts, cliVerbose, cliClean);
         }, units);
     }
 
